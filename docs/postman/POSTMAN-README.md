@@ -1,0 +1,89 @@
+# CeialMilk Postman Collection
+
+This directory contains Postman files for testing the CeialMilk API.
+
+## Files
+
+- `CeialMilk-Postman-Collection.json` - Complete API collection with all endpoints
+- `CeialMilk-Postman-Environment.json` - Environment variables for local development
+
+## How to Use
+
+### 1. Import the Collection
+1. Open Postman
+2. Click "Import" in the top left corner
+3. Select the `CeialMilk-Postman-Collection.json` file
+4. The collection will appear in your workspace
+
+### 2. Import the Environment
+1. In Postman, click the "Environments" tab on the left
+2. Click "Import"
+3. Select the `CeialMilk-Postman-Environment.json` file
+4. Select the "CeialMilk Local" environment from the dropdown
+
+### 3. Set Up the Application
+Make sure the CeialMilk application is running:
+```bash
+# Start the database and application
+docker-compose up -d
+
+# Run the Spring Boot application
+mvn spring-boot:run
+```
+
+### 4. Test the API
+
+#### Authentication
+1. Open the "Authentication" folder in the collection
+2. Run the "Login" request first
+   - This will automatically save the JWT token to the environment variable
+   - Credentials: admin@ceialmilk.com / password
+
+#### Farms Management
+1. After successful login, you can test all farm endpoints
+2. The token will be automatically included in all requests
+
+## Endpoints Included
+
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/validate` - Validate JWT token
+
+### Farms (Fazendas)
+- `GET /api/v1/fazendas` - List all farms
+- `GET /api/v1/fazendas/{id}` - Get farm by ID
+- `POST /api/v1/fazendas` - Create new farm
+- `PUT /api/v1/fazendas/{id}` - Update farm
+- `DELETE /api/v1/fazendas/{id}` - Delete farm
+- `GET /api/v1/fazendas/search/by-nome` - Search by name
+- `GET /api/v1/fazendas/search/by-localizacao` - Search by location
+- `GET /api/v1/fazendas/search/by-vacas-min` - Search by minimum cows
+- `GET /api/v1/fazendas/search/by-vacas-range` - Search by cows range
+- `GET /api/v1/fazendas/count` - Get total farms count
+- `GET /api/v1/fazendas/exists` - Check if farm exists
+
+## Environment Variables
+
+- `baseUrl`: http://localhost:8080
+- `authToken`: Automatically set after login
+- `adminEmail`: admin@ceialmilk.com
+- `adminPassword`: password
+
+## Features
+
+- **Automatic Token Management**: The login request automatically saves the JWT token
+- **Bearer Authentication**: All requests include the token automatically
+- **Test Scripts**: Basic response validation tests
+- **Example Data**: Pre-configured request bodies for testing
+
+## Troubleshooting
+
+1. **401 Unauthorized**: Make sure to run the Login request first
+2. **Connection Refused**: Verify the application is running on port 8080
+3. **Invalid Token**: The token expires after 24 hours - login again to get a new one
+
+## Notes
+
+- The collection uses the Portuguese endpoint names (`fazendas`) as defined in the API
+- All dates should be in ISO format: `YYYY-MM-DD`
+- The application must be running for the tests to work

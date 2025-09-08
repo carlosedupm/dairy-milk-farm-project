@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: ceialmilk
+
+  r2dbc:
+    url: r2dbc:postgresql://postgres:5432/ceialmilk
+    username: ceialmilk
+    password: ceialmilk
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+  web:
+    base-path: /api/v1
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.ceialmilk: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: always
+
+jwt:
+  secret: ceialmilk-super-secret-key-2024-spring-webflux-reactive-jwt
+  expiration: 86400

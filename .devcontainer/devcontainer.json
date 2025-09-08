@@ -1,0 +1,32 @@
+{
+  "name": "CeialMilk Development",
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "ceialmilk-dev",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-spring-boot",
+        "pivotal.vscode-spring-boot",
+        "ms-azuretools.vscode-docker",
+        "cweijan.vscode-database-client2",
+        "redhat.java",
+        "dotjoshjohnson.xml",
+        "github.copilot",
+        "saoudrizwan.claude-dev"
+      ],
+      "settings": {
+        "maven.executable.path": "/usr/share/maven/bin/mvn",
+        "java.jdt.ls.vmargs": "-Xmx2G -Xms100m",
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true
+      }
+    }
+  },
+  "forwardPorts": [8080, 5432, 6379],
+  "postCreateCommand": "mvn clean compile -DskipTests",
+  "postStartCommand": "echo '🚀 CeialMilk Dev Container pronto! Use: mvn spring-boot:run'",
+  "remoteUser": "vscode"
+}
