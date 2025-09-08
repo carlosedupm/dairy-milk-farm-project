@@ -2,13 +2,13 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 40%
+### **Completude Geral**: 50%
 ```bash
-🏗️  Infraestrutura: 95% ✅
-📚  Documentação: 70% ✅
+🏗️  Infraestrutura: 100% ✅
+📚  Documentação: 80% ✅
 💻  Implementação: 30% 🚧
 🧪  Testes: 0% 🚧
-🚀  Deploy: 10% 🚧
+🚀  Deploy: 70% ✅
 ```
 
 ### **Velocidade e Métricas**
@@ -42,12 +42,21 @@
 - [x] **Buscas avançadas**: Endpoints de busca por nome, localização, quantidade de vacas
 - [x] **Autenticação JWT**: Sistema completo de login e validação de tokens
 
-### **Documentação (✅ 70%)**
+### **Documentação (✅ 80%)**
 - [x] **README.md**: Documentação principal atualizada com status real
 - [x] **Memory bank**: Estrutura completa mantida e atualizada
 - [x] **Documentação técnica**: Tech context detalhado com stack implementada
 - [x] **Documentação de produto**: Contexto de usuários e funcionalidades
 - [x] **Documentação ativa**: Status atual e progresso em tempo real
+- [x] **Guia de deploy**: Documentação completa do processo de deploy
+
+### **Deploy (✅ 70%)**
+- [x] **Dockerfile produção**: Configurado para ambiente de produção
+- [x] **Fly.io configuration**: Arquivo fly.toml completo
+- [x] **GitHub Actions**: Pipeline de CI/CD implementado
+- [x] **Configuração produção**: application-prod.yml com variáveis de ambiente
+- [x] **Documentação**: Guia completo de deploy criado
+- [ ] **Primeiro deploy**: A ser executado após configuração de secrets
 
 ## 🚧 Em andamento
 
@@ -84,7 +93,7 @@
 ### **Sprint 3 (Próxima semana)**
 - [ ] **Testes integração**: Implementar testes de integração para controllers
 - [ ] **Monitoramento**: Configurar health checks e métricas
-- [ ] **CI/CD**: Configurar GitHub Actions para build automatizado
+- [x] **CI/CD**: Configurar GitHub Actions para build automatizado
 - [ ] **Deploy**: Primeiro deploy no Fly.io para testes
 - [ ] **Documentação API**: Documentar endpoints com OpenAPI/Swagger
 
@@ -149,6 +158,8 @@
 - ✅ **Controller de autenticação**: Endpoints de login e validação
 - ✅ **UserDetails service**: Serviço reativo implementado
 - ✅ **API RESTful**: Endpoints funcionais para Fazenda
+- ✅ **Configuração deploy**: Dockerfile, fly.toml e GitHub Actions implementados
+- ✅ **CI/CD**: Pipeline automatizado configurado para deploy no Fly.io
 
 ### **Próximos Marcos**
 - **2025-09-14**: Entidades Animal e ProduçãoLeite implementadas
