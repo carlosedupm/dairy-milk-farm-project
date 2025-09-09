@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/api/auth/**").permitAll()
+                        .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/api/v1/fazendas/**").authenticated()
                         .anyExchange().authenticated()
                 )
