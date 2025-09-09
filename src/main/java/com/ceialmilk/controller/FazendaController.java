@@ -1,12 +1,26 @@
 package com.ceialmilk.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.ceialmilk.model.Fazenda;
 import com.ceialmilk.service.FazendaService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -14,6 +28,8 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v1/fazendas")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Fazendas", description = "Operações relacionadas a fazendas leiteiras")
+@SecurityRequirement(name = "bearerAuth")
 public class FazendaController {
 
     private final FazendaService fazendaService;
@@ -22,6 +38,8 @@ public class FazendaController {
      * GET /api/v1/fazendas - Lista todas as fazendas
      */
     @GetMapping
+    @Operation(summary = "Listar todas as fazendas", 
+               description = "Retorna uma lista paginada de todas as fazendas cadastradas")
     public Flux<Fazenda> getAllFazendas() {
         log.info("Fetching all fazendas");
         return fazendaService.findAll();
@@ -31,7 +49,11 @@ public class FazendaController {
      * GET /api/v1/fazendas/{id} - Busca uma fazenda por ID
      */
     @GetMapping("/{id}")
-    public Mono<Fazenda> getFazendaById(@PathVariable Long id) {
+    @Operation(summary = "Buscar fazenda por ID", 
+               description = "Retorna os detalhes de uma fazenda específica")
+    public Mono<Fazenda> getFazendaById(
+            @Parameter(description = "ID da fazenda", required = true)
+            @PathVariable Long id) {
         return fazendaService.findById(id);
     }
 
@@ -40,7 +62,11 @@ public class FazendaController {
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Fazenda> createFazenda(@RequestBody Fazenda fazenda) {
+    @Operation(summary = "Criar nova fazenda", 
+               description = "Cadastra uma nova fazenda no sistema")
+    public Mono<Fazenda> createFazenda(
+            @Parameter(description = "Dados da fazenda", required = true)
+            @RequestBody Fazenda fazenda) {
         return fazendaService.create(fazenda);
     }
 
@@ -48,7 +74,13 @@ public class FazendaController {
      * PUT /api/v1/fazendas/{id} - Atualiza uma fazenda existente
      */
     @PutMapping("/{id}")
-    public Mono<Fazenda> updateFazenda(@PathVariable Long id, @RequestBody Fazenda fazenda) {
+    @Operation(summary = "Atualizar fazenda", 
+               description = "Atualiza os dados de uma fazenda existente")
+    public Mono<Fazenda> updateFazenda(
+            @Parameter(description = "ID da fazenda", required = true)
+            @PathVariable Long id,
+            @Parameter(description = "Dados atualizados da fazenda", required = true)
+            @RequestBody Fazenda fazenda) {
         return fazendaService.update(id, fazenda);
     }
 
@@ -57,7 +89,11 @@ public class FazendaController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> deleteFazenda(@PathVariable Long id) {
+    @Operation(summary = "Excluir fazenda", 
+               description = "Remove uma fazenda do sistema")
+    public Mono<Void> deleteFazenda(
+            @Parameter(description = "ID da fazenda", required = true)
+            @PathVariable Long id) {
         return fazendaService.deleteById(id);
     }
 

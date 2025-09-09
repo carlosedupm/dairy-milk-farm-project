@@ -16,7 +16,8 @@
         "dotjoshjohnson.xml",
         "github.copilot",
         "saoudrizwan.claude-dev",
-        "vmware.vscode-boot-dev-pack"
+        "vmware.vscode-boot-dev-pack",
+        "alphabotsec.vscode-eclipse-keybindings"
       ],
       "settings": {
         "maven.executable.path": "/usr/share/maven/bin/mvn",
