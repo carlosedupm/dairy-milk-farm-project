@@ -3,6 +3,8 @@ package com.ceialmilk.controller;
 import com.ceialmilk.model.Fazenda;
 import com.ceialmilk.service.FazendaService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -11,6 +13,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/v1/fazendas")
 @RequiredArgsConstructor
+@Slf4j
 public class FazendaController {
 
     private final FazendaService fazendaService;
@@ -20,6 +23,7 @@ public class FazendaController {
      */
     @GetMapping
     public Flux<Fazenda> getAllFazendas() {
+        log.info("Fetching all fazendas");
         return fazendaService.findAll();
     }
 

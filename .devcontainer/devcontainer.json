@@ -15,7 +15,8 @@
         "redhat.java",
         "dotjoshjohnson.xml",
         "github.copilot",
-        "saoudrizwan.claude-dev"
+        "saoudrizwan.claude-dev",
+        "vmware.vscode-boot-dev-pack"
       ],
       "settings": {
         "maven.executable.path": "/usr/share/maven/bin/mvn",
