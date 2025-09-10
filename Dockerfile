@@ -1,20 +1,17 @@
 FROM eclipse-temurin:17-jre-alpine
 
-# Instala curl para health checks
-RUN apk add --no-cache curl
+# Cria usuário não-root
+RUN addgroup -S appuser && adduser -S appuser -G appuser
 
 # Diretório de trabalho
 WORKDIR /app
 
 # Copia o JAR da aplicação
-COPY target/*.jar app.jar
+COPY --chown=appuser:appuser target/ceialmilk-1.0.0.jar app.jar
 
 # Expõe a porta da aplicação
 EXPOSE 8080
 
-# Health check para verificar se a aplicação está respondendo
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8080/actuator/health || exit 1
-
 # Comando para executar a aplicação
+USER appuser
 ENTRYPOINT ["java", "-jar", "/app.jar"]

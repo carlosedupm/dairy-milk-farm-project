@@ -77,21 +77,7 @@ jobs:
     - name: Build with Maven
       run: mvn clean package -DskipTests
 
-    - name: Login to Fly.io
-      uses: superfly/flyctl-actions@1.4
-      with:
-        args: auth login
-      env:
-        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-    - name: Deploy to Fly.io
-      uses: superfly/flyctl-actions@1.4
-      with:
-        args: deploy --remote-only
-      env:
-        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-    - name: Verify deployment
-      run: |
-        sleep 30  # Wait for deployment to complete
-        curl -f https://ceialmilk.fly.dev/actuator/health || exit 1
+    - name: Build Docker image
+      run: docker build -t ceialmilk .
+      
+    # TODO: Adicionar etapas de deploy para nova solução

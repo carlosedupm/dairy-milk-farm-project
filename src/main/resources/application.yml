@@ -3,9 +3,9 @@ spring:
     name: ceialmilk
 
   r2dbc:
-    url: r2dbc:postgresql://postgres:5432/ceialmilk
-    username: ceialmilk
-    password: ceialmilk
+    url: ${DATABASE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   data:
     redis:

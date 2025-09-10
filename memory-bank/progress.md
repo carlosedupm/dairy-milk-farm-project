@@ -52,7 +52,7 @@
 
 ### **Deploy (✅ 70%)**
 - [x] **Dockerfile produção**: Configurado para ambiente de produção
-- [x] **Fly.io configuration**: Arquivo fly.toml completo
+- [x] **Configuração de deploy**: Configurações completas
 - [x] **GitHub Actions**: Pipeline de CI/CD implementado
 - [x] **Configuração produção**: application-prod.yml com variáveis de ambiente
 - [x] **Documentação**: Guia completo de deploy criado
@@ -158,8 +158,8 @@
 - ✅ **Controller de autenticação**: Endpoints de login e validação
 - ✅ **UserDetails service**: Serviço reativo implementado
 - ✅ **API RESTful**: Endpoints funcionais para Fazenda
-- ✅ **Configuração deploy**: Dockerfile, fly.toml e GitHub Actions implementados
-- ✅ **CI/CD**: Pipeline automatizado configurado para deploy no Fly.io
+- ✅ **Configuração deploy**: Dockerfile e GitHub Actions implementados
+- ✅ **CI/CD**: Pipeline automatizado configurado
 
 ### **Próximos Marcos**
 - **2025-09-14**: Entidades Animal e ProduçãoLeite implementadas

@@ -35,7 +35,7 @@ CeialMilk é um sistema de gestão completo para fazendas leiteiras que combina 
 Framework: Spring Boot 3 + WebFlux
 Database: PostgreSQL + R2DBC (reativo)
 Autenticação: JWT + Spring Security 6
-Deploy: Docker + Fly.io (multi-region)
+Deploy: Docker
 ```
 
 ### **Frontend (Futuro)**
@@ -204,7 +204,7 @@ ceialmilk/
 # 📋 PRÓXIMOS PASSOS
 - Iniciar implementação do CRUD básico
 - Criar testes unitários
-- Primeiro deploy no Fly.io
+- Primeiro deploy em produção
 - Documentar endpoints da API
 ```
 

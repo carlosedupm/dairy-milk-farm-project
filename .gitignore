@@ -187,7 +187,7 @@ mvnw
 mvnw.cmd
 
 # Fly.io (se usado)
-.fly/
+# Pasta de configurações de deploy (removida referência ao Fly.io)
 
 # Heroku (se usado)
 .heroku/
