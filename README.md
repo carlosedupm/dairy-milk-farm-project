@@ -232,6 +232,28 @@ ceialmilk/
 
 5. **Acessar aplicação**: http://localhost:8080
 
+## 🌐 Deploy no Render
+
+### Pré-requisitos
+- Conta no [Render](https://render.com)
+- Repositório GitHub conectado
+
+### Passo a Passo
+1. Criar novo Web Service no Render
+2. Selecionar "Deploy from Git repository"
+3. Escolher este repositório
+4. Configurar:
+   - Nome: ceialmilk
+   - Branch: main
+   - Runtime: Docker
+5. Configurar variáveis de ambiente:
+   - SPRING_PROFILES_ACTIVE=prod
+   - JWT_SECRET (gerar valor seguro)
+6. Criar banco PostgreSQL no Render
+7. Configurar recursos:
+   - Plano free
+   - Health check path: /actuator/health
+
 ## 🌐 Links e Referências
 
 - **Repositório**: [github.com/ceialmilk](https://github.com/ceialmilk)

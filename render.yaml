@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: ceialmilk
+    runtime: docker
+    env: docker
+    branch: main
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: JWT_SECRET
+        generateValue: true
+    autoDeploy: true
+
+databases:
+  - name: ceialmilk-db
+    databaseName: ceialmilk
+    user: ceialmilk
+    plan: free
