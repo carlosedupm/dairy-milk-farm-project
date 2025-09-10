@@ -13,8 +13,8 @@ RUN addgroup -S appuser && adduser -S appuser -G appuser
 # Diretório de trabalho
 WORKDIR /app
 
-# Copia o JAR da aplicação
-COPY --from=builder --chown=appuser:appuser /workspace/target/ceialmilk-1.0.0.jar app.jar
+# Copia o JAR da aplicação (usando wildcard para nome dinâmico)
+COPY --from=builder --chown=appuser:appuser /workspace/target/*.jar app.jar
 
 # Expõe a porta da aplicação
 EXPOSE 8080
