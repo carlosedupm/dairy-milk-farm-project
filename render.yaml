@@ -12,14 +12,6 @@ services:
         fromDatabase:
           name: ceialmilk-db
           property: connectionString
-      - key: DB_USERNAME
-        fromDatabase:
-          name: ceialmilk-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: ceialmilk-db
-          property: password
       - key: JWT_SECRET
         generateValue: true
     autoDeploy: true
