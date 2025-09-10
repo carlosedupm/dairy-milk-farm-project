@@ -5,12 +5,11 @@ WORKDIR /workspace
 COPY pom.xml .
 COPY src src
 
-# Build otimizado com limpeza de cache
+# Build otimizado mantendo o arquivo JAR
 RUN mvn dependency:go-offline && \
     mvn package -DskipTests && \
     test -f /workspace/target/ceialmilk-*.jar && \
-    cp /workspace/target/ceialmilk-*.jar /workspace/target/app.jar && \
-    mvn clean
+    cp /workspace/target/ceialmilk-*.jar /workspace/target/app.jar
 
 FROM eclipse-temurin:17-jre-alpine
 
