@@ -65,11 +65,9 @@ Desktop.ini
 *.db
 *.sqlite
 
-# Application Properties (excluir arquivos sensíveis, manter apenas o template)
-application-dev.yml
-application-prod.yml
-application-local.yml
-*.properties
+# Application Properties (excluir apenas arquivos com dados sensíveis)
+# application-*.yml devem ser versionados com placeholders
+# *.properties devem ser versionados
 
 # Environment variables
 .env
