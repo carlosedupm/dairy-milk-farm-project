@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ceialmilk.dto.FazendaCreateDTO;
@@ -45,9 +48,12 @@ public class FazendaController {
     @GetMapping
     @Operation(summary = "Listar todas as fazendas", 
                description = "Retorna uma lista paginada de todas as fazendas cadastradas")
-    public Flux<FazendaSummaryDTO> getAllFazendas() {
-        log.info("Fetching all fazendas");
-        return fazendaService.findAll();
+    public Mono<Page<FazendaSummaryDTO>> getAllFazendas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        log.info("Fetching all fazendas with pagination, page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        return fazendaService.findAll(pageable);
     }
 
     /**

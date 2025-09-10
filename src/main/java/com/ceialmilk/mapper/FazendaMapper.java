@@ -21,4 +21,6 @@ public interface FazendaMapper {
     FazendaSummaryDTO toSummaryDTO(Fazenda entity);
 
     java.util.List<FazendaSummaryDTO> toSummaryDTOList(java.util.List<Fazenda> entities);
+    java.util.List<FazendaResponseDTO> toResponseDTOList(java.util.List<Fazenda> entities);
+    
 }

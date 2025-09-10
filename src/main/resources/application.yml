@@ -1,6 +1,9 @@
 spring:
   application:
     name: ceialmilk
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
 
   flyway:
     enabled: true
@@ -14,6 +17,10 @@ spring:
     url: r2dbc:postgresql://${DB_HOST:ceialmilk-db}:${DB_PORT:5432}/${DB_NAME:ceialmilk}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
 
   data:
     redis:
@@ -26,8 +33,9 @@ server:
 logging:
   level:
     com.ceialmilk: DEBUG
-    org.springframework.security: DEBUG
+    org.springframework.security: INFO
     org.springframework: INFO
+    org.hibernate: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 

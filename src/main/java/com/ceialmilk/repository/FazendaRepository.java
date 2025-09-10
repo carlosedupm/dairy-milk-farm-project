@@ -1,13 +1,20 @@
 package com.ceialmilk.repository;
 
-import com.ceialmilk.model.Fazenda;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
+
+import com.ceialmilk.model.Fazenda;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
 public interface FazendaRepository extends R2dbcRepository<Fazenda, Long> {
+
+    /**
+     * Busca todas as fazendas ordenadas por ID
+     */
+    Flux<Fazenda> findAllByOrderById();
 
     /**
      * Encontra uma fazenda pelo nome (case insensitive)

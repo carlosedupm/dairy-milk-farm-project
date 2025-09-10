@@ -1,5 +1,6 @@
 -- Script de inicialização do banco
--- Tabela de fazendas
+
+
 CREATE TABLE IF NOT EXISTS fazendas (
     id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,

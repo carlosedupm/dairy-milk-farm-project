@@ -1,5 +1,11 @@
 package com.ceialmilk.service;
 
+import java.time.Duration;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.stereotype.Service;
 
 import com.ceialmilk.dto.FazendaCreateDTO;
@@ -19,23 +25,37 @@ import reactor.core.publisher.Mono;
 public class FazendaService {
 
     private final FazendaRepository fazendaRepository;
+    private final ReactiveRedisOperations<String, FazendaResponseDTO> redisOperations;
 
     /**
-     * Busca todas as fazendas
+     * Busca fazendas com paginação
      */
-    public Flux<FazendaSummaryDTO> findAll() {
-        return fazendaRepository.findAll()
-                .map(fazendaMapper::toSummaryDTO);
+    public Mono<Page<FazendaSummaryDTO>> findAll(Pageable pageable) {
+        return fazendaRepository.findAllByOrderById()
+                .skip(pageable.getOffset())
+                .take(pageable.getPageSize())
+                .map(fazendaMapper::toSummaryDTO)
+                .collectList()
+                .zipWith(fazendaRepository.count())
+                .map(tuple -> new PageImpl<>(tuple.getT1(), pageable, tuple.getT2()));
     }
 
     private final FazendaMapper fazendaMapper;
 
     /**
-     * Busca uma fazenda por ID
+     * Busca uma fazenda por ID com cache
      */
     public Mono<FazendaResponseDTO> findById(Long id) {
-        return fazendaRepository.findById(id)
-                .map(fazendaMapper::toResponseDTO);
+        String key = "fazenda::" + id;
+        return redisOperations.opsForValue().get(key)
+                .switchIfEmpty(Mono.defer(() -> 
+                        fazendaRepository.findById(id)
+                                .map(fazendaMapper::toResponseDTO)
+                                .flatMap(dto -> 
+                                        redisOperations.opsForValue().set(key, dto, Duration.ofHours(1))
+                                                .then(Mono.just(dto))
+                                )
+                ));
     }
 
     /**
@@ -59,17 +79,21 @@ public class FazendaService {
      * Atualiza uma fazenda existente
      */
     public Mono<FazendaResponseDTO> update(Long id, FazendaUpdateDTO dto) {
+        String key = "fazenda::" + id;
         return fazendaRepository.findById(id)
-                .flatMap(existing -> {
-                    // Aplica apenas os campos que foram fornecidos
-                    dto.nome().filter(nome -> !nome.isBlank()).ifPresent(existing::setNome);
-                    dto.localizacao().filter(local -> local != null).ifPresent(existing::setLocalizacao);
-                    dto.quantidadeVacas().filter(qtd -> qtd >= 0).ifPresent(existing::setQuantidadeVacas);
-                    dto.fundacao().filter(data -> data != null).ifPresent(existing::setFundacao);
-                    
-                    return fazendaRepository.save(existing)
-                           .map(fazendaMapper::toResponseDTO);
-                });
+            .flatMap(existing -> {
+                // Aplica apenas os campos que foram fornecidos
+                dto.nome().filter(nome -> !nome.isBlank()).ifPresent(existing::setNome);
+                dto.localizacao().filter(local -> local != null).ifPresent(existing::setLocalizacao);
+                dto.quantidadeVacas().filter(qtd -> qtd >= 0).ifPresent(existing::setQuantidadeVacas);
+                dto.fundacao().filter(data -> data != null).ifPresent(existing::setFundacao);
+                
+                return fazendaRepository.save(existing)
+                       .map(fazendaMapper::toResponseDTO)
+                       .flatMap(updatedDto -> 
+                           redisOperations.opsForValue().delete(key).thenReturn(updatedDto)
+                       );
+            });
     }
 
     /**
@@ -120,4 +144,5 @@ public class FazendaService {
     public Mono<Long> count() {
         return fazendaRepository.count();
     }
+    
 }
