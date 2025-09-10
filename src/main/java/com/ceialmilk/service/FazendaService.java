@@ -1,9 +1,16 @@
 package com.ceialmilk.service;
 
+import org.springframework.stereotype.Service;
+
+import com.ceialmilk.dto.FazendaCreateDTO;
+import com.ceialmilk.dto.FazendaResponseDTO;
+import com.ceialmilk.dto.FazendaSummaryDTO;
+import com.ceialmilk.dto.FazendaUpdateDTO;
+import com.ceialmilk.mapper.FazendaMapper;
 import com.ceialmilk.model.Fazenda;
 import com.ceialmilk.repository.FazendaRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -16,15 +23,19 @@ public class FazendaService {
     /**
      * Busca todas as fazendas
      */
-    public Flux<Fazenda> findAll() {
-        return fazendaRepository.findAll();
+    public Flux<FazendaSummaryDTO> findAll() {
+        return fazendaRepository.findAll()
+                .map(fazendaMapper::toSummaryDTO);
     }
+
+    private final FazendaMapper fazendaMapper;
 
     /**
      * Busca uma fazenda por ID
      */
-    public Mono<Fazenda> findById(Long id) {
-        return fazendaRepository.findById(id);
+    public Mono<FazendaResponseDTO> findById(Long id) {
+        return fazendaRepository.findById(id)
+                .map(fazendaMapper::toResponseDTO);
     }
 
     /**
@@ -35,16 +46,29 @@ public class FazendaService {
     }
 
     /**
+     * Cria uma nova fazenda a partir de DTO
+     */
+    public Mono<FazendaResponseDTO> create(FazendaCreateDTO dto) {
+        return Mono.just(dto)
+                .map(fazendaMapper::toEntity)
+                .flatMap(fazendaRepository::save)
+                .map(fazendaMapper::toResponseDTO);
+    }
+
+    /**
      * Atualiza uma fazenda existente
      */
-    public Mono<Fazenda> update(Long id, Fazenda fazenda) {
+    public Mono<FazendaResponseDTO> update(Long id, FazendaUpdateDTO dto) {
         return fazendaRepository.findById(id)
-                .flatMap(existingFazenda -> {
-                    existingFazenda.setNome(fazenda.getNome());
-                    existingFazenda.setLocalizacao(fazenda.getLocalizacao());
-                    existingFazenda.setQuantidadeVacas(fazenda.getQuantidadeVacas());
-                    existingFazenda.setFundacao(fazenda.getFundacao());
-                    return fazendaRepository.save(existingFazenda);
+                .flatMap(existing -> {
+                    // Aplica apenas os campos que foram fornecidos
+                    dto.nome().filter(nome -> !nome.isBlank()).ifPresent(existing::setNome);
+                    dto.localizacao().filter(local -> local != null).ifPresent(existing::setLocalizacao);
+                    dto.quantidadeVacas().filter(qtd -> qtd >= 0).ifPresent(existing::setQuantidadeVacas);
+                    dto.fundacao().filter(data -> data != null).ifPresent(existing::setFundacao);
+                    
+                    return fazendaRepository.save(existing)
+                           .map(fazendaMapper::toResponseDTO);
                 });
     }
 

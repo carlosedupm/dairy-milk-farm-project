@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ceialmilk.dto.FazendaCreateDTO;
+import com.ceialmilk.dto.FazendaResponseDTO;
+import com.ceialmilk.dto.FazendaSummaryDTO;
+import com.ceialmilk.dto.FazendaUpdateDTO;
 import com.ceialmilk.model.Fazenda;
 import com.ceialmilk.service.FazendaService;
 
@@ -19,6 +23,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -40,7 +45,7 @@ public class FazendaController {
     @GetMapping
     @Operation(summary = "Listar todas as fazendas", 
                description = "Retorna uma lista paginada de todas as fazendas cadastradas")
-    public Flux<Fazenda> getAllFazendas() {
+    public Flux<FazendaSummaryDTO> getAllFazendas() {
         log.info("Fetching all fazendas");
         return fazendaService.findAll();
     }
@@ -51,7 +56,7 @@ public class FazendaController {
     @GetMapping("/{id}")
     @Operation(summary = "Buscar fazenda por ID", 
                description = "Retorna os detalhes de uma fazenda específica")
-    public Mono<Fazenda> getFazendaById(
+    public Mono<FazendaResponseDTO> getFazendaById(
             @Parameter(description = "ID da fazenda", required = true)
             @PathVariable Long id) {
         return fazendaService.findById(id);
@@ -64,10 +69,10 @@ public class FazendaController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Criar nova fazenda", 
                description = "Cadastra uma nova fazenda no sistema")
-    public Mono<Fazenda> createFazenda(
+    public Mono<FazendaResponseDTO> createFazenda(
             @Parameter(description = "Dados da fazenda", required = true)
-            @RequestBody Fazenda fazenda) {
-        return fazendaService.create(fazenda);
+            @Valid @RequestBody FazendaCreateDTO dto) {
+        return fazendaService.create(dto);
     }
 
     /**
@@ -76,12 +81,12 @@ public class FazendaController {
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar fazenda", 
                description = "Atualiza os dados de uma fazenda existente")
-    public Mono<Fazenda> updateFazenda(
+    public Mono<FazendaResponseDTO> updateFazenda(
             @Parameter(description = "ID da fazenda", required = true)
             @PathVariable Long id,
             @Parameter(description = "Dados atualizados da fazenda", required = true)
-            @RequestBody Fazenda fazenda) {
-        return fazendaService.update(id, fazenda);
+            @Valid @RequestBody FazendaUpdateDTO dto) {
+        return fazendaService.update(id, dto);
     }
 
     /**

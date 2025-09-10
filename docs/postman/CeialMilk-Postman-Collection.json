@@ -9,11 +9,6 @@
       "key": "baseUrl",
       "value": "http://localhost:8080",
       "type": "string"
-    },
-    {
-      "key": "authToken",
-      "value": "",
-      "type": "string"
     }
   ],
   "item": [
@@ -49,8 +44,8 @@
                 "exec": [
                   "// Save the authentication token",
                   "var jsonData = pm.response.json();",
-                  "pm.collectionVariables.set(\"authToken\", jsonData.token);",
-                  "console.log(\"Token saved: \" + pm.collectionVariables.get(\"authToken\"));",
+                  "pm.environment.set(\"authToken\", jsonData.token);",
+                  "console.log(\"Token saved to environment: \" + pm.environment.get(\"authToken\"));",
                   "",
                   "// Test response structure",
                   "pm.test(\"Status code is 200\", function () {",

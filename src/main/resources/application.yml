@@ -2,8 +2,13 @@ spring:
   application:
     name: ceialmilk
 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
   r2dbc:
-    url: ${DATABASE_URL}
+    url: r2dbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:ceialmilk}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 

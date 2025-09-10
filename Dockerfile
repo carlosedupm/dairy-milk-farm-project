@@ -25,10 +25,10 @@ COPY --from=builder --chown=appuser:appuser /workspace/target/app.jar app.jar
 # Expõe a porta da aplicação
 EXPOSE 8080
 
-# Health check
+# Health checks
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD wget -qO- http://localhost:8080/actuator/health || exit 1
 
 # Comando para executar a aplicação
 USER appuser
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-Dspring.flyway.baselineOnMigrate=true", "-jar", "/app/app.jar"]
