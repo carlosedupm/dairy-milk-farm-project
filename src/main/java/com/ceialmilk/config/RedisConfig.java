@@ -58,7 +58,6 @@ public class RedisConfig {
             
             LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
                 .clientOptions(clientOptions)
-                .useSsl() // Habilitar SSL para conexão segura
                 .build();
             
             return new LettuceConnectionFactory(config, clientConfig);
