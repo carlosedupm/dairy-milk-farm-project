@@ -1,8 +1,10 @@
 package com.ceialmilk.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -23,6 +25,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 public class RedisConfig {
 
     @Bean
+    @Primary
     public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory(
             @Value("${spring.data.redis.host}") String host,
             @Value("${spring.data.redis.port}") int port,
@@ -42,7 +45,7 @@ public class RedisConfig {
 
     @Bean
     public ReactiveRedisOperations<String, FazendaResponseDTO> reactiveRedisOperations(
-            ReactiveRedisConnectionFactory factory) {
+            @Qualifier("reactiveRedisConnectionFactory") ReactiveRedisConnectionFactory factory) {
         
         // Configurar ObjectMapper para suportar Java 8 Date/Time
         ObjectMapper objectMapper = new ObjectMapper();
