@@ -46,10 +46,11 @@ public class RedisConfig {
             config.setPassword(RedisPassword.of(password));
             
             LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .useSsl() // Habilitar SSL para conexão segura
                 .socketOptions(SocketOptions.builder()
-                    .connectTimeout(Duration.ofSeconds(10)) 
-                    .build())
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build()
+                )
+                .useSsl() // Habilitar SSL para conexão segura
                 .build();
             
             return new LettuceConnectionFactory(config, clientConfig);
