@@ -16,13 +16,7 @@ spring:
     url: ${DATABASE_URL:r2dbc:postgresql://${DB_HOST:ceialmilk-db}:${DB_PORT:5432}/${DB_NAME:ceialmilk}}
     username: ${DB_USERNAME:ceialmilk}
     password: ${DB_PASSWORD}
-
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD}
-
+      
 server:
   port: 8080
 

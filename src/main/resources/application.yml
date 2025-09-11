@@ -22,10 +22,6 @@ spring:
       max-size: 20
       max-idle-time: 30m
 
-  data:
-    redis:
-      host: redis
-      port: 6379
 
 server:
   port: 8080

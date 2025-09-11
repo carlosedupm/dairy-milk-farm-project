@@ -148,11 +148,6 @@
             <version>2.5.0</version>
         </dependency>
         
-        <!-- Redis Reactive -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
-        </dependency>
         
         <!-- Jackson Datatype JSR310 -->
         <dependency>
