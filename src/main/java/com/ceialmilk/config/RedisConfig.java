@@ -1,8 +1,13 @@
 package com.ceialmilk.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisPassword;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -16,6 +21,24 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Configuration
 public class RedisConfig {
+
+    @Bean
+    public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory(
+            @Value("${spring.data.redis.host}") String host,
+            @Value("${spring.data.redis.port}") int port,
+            @Value("${spring.data.redis.password}") String password) {
+        
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(host);
+        config.setPort(port);
+        config.setPassword(RedisPassword.of(password));
+        
+        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+            .useSsl() // Habilitar SSL para conexão segura
+            .build();
+            
+        return new LettuceConnectionFactory(config, clientConfig);
+    }
 
     @Bean
     public ReactiveRedisOperations<String, FazendaResponseDTO> reactiveRedisOperations(
