@@ -5,7 +5,6 @@ import java.time.Duration;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.stereotype.Service;
 
 import com.ceialmilk.dto.FazendaCreateDTO;
@@ -25,7 +24,6 @@ import reactor.core.publisher.Mono;
 public class FazendaService {
 
     private final FazendaRepository fazendaRepository;
-    private final ReactiveRedisOperations<String, FazendaResponseDTO> redisOperations;
 
     /**
      * Busca fazendas com paginação
@@ -46,16 +44,8 @@ public class FazendaService {
      * Busca uma fazenda por ID com cache
      */
     public Mono<FazendaResponseDTO> findById(Long id) {
-        String key = "fazenda::" + id;
-        return redisOperations.opsForValue().get(key)
-                .switchIfEmpty(Mono.defer(() -> 
-                        fazendaRepository.findById(id)
-                                .map(fazendaMapper::toResponseDTO)
-                                .flatMap(dto -> 
-                                        redisOperations.opsForValue().set(key, dto, Duration.ofHours(1))
-                                                .then(Mono.just(dto))
-                                )
-                ));
+        return fazendaRepository.findById(id)
+                .map(fazendaMapper::toResponseDTO);
     }
 
     /**
@@ -79,20 +69,15 @@ public class FazendaService {
      * Atualiza uma fazenda existente
      */
     public Mono<FazendaResponseDTO> update(Long id, FazendaUpdateDTO dto) {
-        String key = "fazenda::" + id;
         return fazendaRepository.findById(id)
             .flatMap(existing -> {
-                // Aplica apenas os campos que foram fornecidos
                 dto.nome().filter(nome -> !nome.isBlank()).ifPresent(existing::setNome);
                 dto.localizacao().filter(local -> local != null).ifPresent(existing::setLocalizacao);
                 dto.quantidadeVacas().filter(qtd -> qtd >= 0).ifPresent(existing::setQuantidadeVacas);
                 dto.fundacao().filter(data -> data != null).ifPresent(existing::setFundacao);
                 
                 return fazendaRepository.save(existing)
-                       .map(fazendaMapper::toResponseDTO)
-                       .flatMap(updatedDto -> 
-                           redisOperations.opsForValue().delete(key).thenReturn(updatedDto)
-                       );
+                       .map(fazendaMapper::toResponseDTO);
             });
     }
 
