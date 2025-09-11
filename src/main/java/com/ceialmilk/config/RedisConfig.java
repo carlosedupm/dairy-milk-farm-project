@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
-import io.lettuce.core.SocketOptions;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,8 @@ import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.SocketOptions;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -45,11 +46,18 @@ public class RedisConfig {
             config.setPort(port);
             config.setPassword(RedisPassword.of(password));
             
+            // Configurar opções de socket com timeout de conexão
+            SocketOptions socketOptions = SocketOptions.builder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+            
+            // Configurar opções do cliente
+            ClientOptions clientOptions = ClientOptions.builder()
+                .socketOptions(socketOptions)
+                .build();
+            
             LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .socketOptions(SocketOptions.builder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .build()
-                )
+                .clientOptions(clientOptions)
                 .useSsl() // Habilitar SSL para conexão segura
                 .build();
             
