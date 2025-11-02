@@ -48,7 +48,7 @@ Design: Tailwind CSS + responsive
 ## 📊 Funcionalidades por Fase
 
 ### **Fase 1 - MVP (Atual)**
-- [ ] CRUD de Fazendas
+- [✅] CRUD de Fazendas
 - [ ] CRUD de Animais
 - [ ] CRUD de Produção de Leite
 - [✅] Sistema de Autenticação JWT
@@ -202,7 +202,6 @@ ceialmilk/
 - API Restful reativa configurada
 
 # 📋 PRÓXIMOS PASSOS
-- Iniciar implementação do CRUD básico
 - Criar testes unitários
 - Primeiro deploy em produção
 - Documentar endpoints da API
