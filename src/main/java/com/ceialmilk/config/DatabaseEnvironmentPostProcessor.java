@@ -72,7 +72,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 log.info("Usando variáveis separadas: host={}, port={}, database={}", dbHost, dbPort, dbName);
                 
                 Map<String, Object> properties = new HashMap<>();
-                String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory", 
+                String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 
                                              dbHost, dbPort, dbName);
                 // R2DBC: Remove credenciais da URL e usa propriedades separadas
                 String r2dbcUrl = String.format("r2dbc:postgresql://%s:%s/%s?sslMode=require", dbHost, dbPort, dbName);
@@ -124,18 +124,25 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 String path = uri.getPath();
                 database = path != null && path.length() > 1 ? path.substring(1) : "ceialmilk";
                 
+                // Prioriza usar DB_PASSWORD do ambiente (mais confiável que extrair da URL)
+                String envPassword = environment.getProperty("DB_PASSWORD");
+                String envUsername = environment.getProperty("DB_USERNAME");
+                
                 String userInfo = uri.getUserInfo();
                 if (userInfo != null && userInfo.contains(":")) {
                     String[] credentials = userInfo.split(":", 2);
-                    username = credentials[0];
-                    password = credentials.length > 1 ? credentials[1] : "";
+                    username = envUsername != null ? envUsername : credentials[0];
+                    // Usa senha do ambiente se disponível, senão extrai da URL
+                    password = envPassword != null ? envPassword : (credentials.length > 1 ? credentials[1] : "");
                 } else {
-                    username = environment.getProperty("DB_USERNAME", "ceialmilk");
-                    password = environment.getProperty("DB_PASSWORD", "");
+                    username = envUsername != null ? envUsername : environment.getProperty("DB_USERNAME", "ceialmilk");
+                    password = envPassword != null ? envPassword : "";
                 }
                 
                 log.info("Formato R2DBC detectado. Extraído: host={}, port={}, database={}, username={}", 
                          host, port, database, username);
+                System.out.println("Credenciais R2DBC - Usando DB_PASSWORD do ambiente: " + (envPassword != null ? "SIM" : "NÃO"));
+                System.out.println("Credenciais R2DBC - Usando DB_USERNAME do ambiente: " + (envUsername != null ? "SIM" : "NÃO"));
                 System.out.println("Credenciais extraídas - Username: " + username + ", Password length: " + 
                                  (password != null ? password.length() : 0));
                 
@@ -163,18 +170,25 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 String path = uri.getPath();
                 database = path != null && path.length() > 1 ? path.substring(1) : "ceialmilk";
                 
+                // Prioriza usar DB_PASSWORD do ambiente (mais confiável que extrair da URL)
+                String envPassword = environment.getProperty("DB_PASSWORD");
+                String envUsername = environment.getProperty("DB_USERNAME");
+                
                 String userInfo = uri.getUserInfo();
                 if (userInfo != null && userInfo.contains(":")) {
                     String[] credentials = userInfo.split(":", 2);
-                    username = credentials[0];
-                    password = credentials.length > 1 ? credentials[1] : "";
+                    username = envUsername != null ? envUsername : credentials[0];
+                    // Usa senha do ambiente se disponível, senão extrai da URL
+                    password = envPassword != null ? envPassword : (credentials.length > 1 ? credentials[1] : "");
                 } else {
-                    username = environment.getProperty("DB_USERNAME", "ceialmilk");
-                    password = environment.getProperty("DB_PASSWORD", "");
+                    username = envUsername != null ? envUsername : environment.getProperty("DB_USERNAME", "ceialmilk");
+                    password = envPassword != null ? envPassword : "";
                 }
                 
                 log.info("Formato JDBC/PostgreSQL detectado. Extraído: host={}, port={}, database={}, username={}", 
                          host, port, database, username);
+                System.out.println("Credenciais - Usando DB_PASSWORD do ambiente: " + (envPassword != null ? "SIM" : "NÃO"));
+                System.out.println("Credenciais - Usando DB_USERNAME do ambiente: " + (envUsername != null ? "SIM" : "NÃO"));
                 
                 // Converte para R2DBC
                 // IMPORTANTE: Remove credenciais da URL e usa propriedades separadas
@@ -194,9 +208,9 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             }
 
             // CRÍTICO: Configura Flyway com URL JDBC completa
-            // Render PostgreSQL REQUER sslmode=require (obrigatório)
-            // Adiciona parâmetros SSL explícitos para garantir conexão segura
-            String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory", 
+            // Render PostgreSQL: Usa sslmode=prefer (mais tolerante) para evitar EOFException
+            // Adiciona parâmetros SSL explícitos e timeouts para garantir conexão estável
+            String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 
                                          host, port, database);
             properties.put("spring.flyway.url", jdbcUrl);
             properties.put("spring.flyway.user", username);
@@ -205,7 +219,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             System.out.println("URL JDBC configurada: " + jdbcUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@"));
             System.out.println("Username: " + username);
             System.out.println("Password presente: " + (password != null && !password.isEmpty()));
-            System.out.println("SSL configurado: sslmode=require, ssl=true");
+            System.out.println("SSL configurado: sslmode=prefer, ssl=true, timeouts configurados");
             
             // Também define variáveis de ambiente para garantir
             properties.put("FLYWAY_JDBC_URL", jdbcUrl);
@@ -221,7 +235,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             
             System.out.println("Configurado Flyway com URL JDBC completa: host=" + host + ", port=" + port + ", database=" + database);
             log.info("Configurado Flyway com URL JDBC completa: host={}, port={}, database={}", host, port, database);
-            log.info("URL JDBC (mascarada): jdbc:postgresql://{}:{}/{}?sslmode=require", host, port, database);
+            log.info("URL JDBC (mascarada): jdbc:postgresql://{}:{}/{}?sslmode=prefer", host, port, database);
             
             // Adiciona as propriedades ao ambiente com alta prioridade
             environment.getPropertySources().addFirst(

@@ -10,7 +10,7 @@ spring:
     validate-on-migrate: false
     # URL será configurada automaticamente pelo DatabaseEnvironmentPostProcessor a partir do DATABASE_URL
     # Valores padrão abaixo são apenas fallback - nunca serão usados se DATABASE_URL estiver presente
-    url: ${FLYWAY_JDBC_URL:jdbc:postgresql://localhost:5432/ceialmilk?sslmode=require&ssl=true}
+    url: ${FLYWAY_JDBC_URL:jdbc:postgresql://localhost:5432/ceialmilk?sslmode=prefer&ssl=true&connectTimeout=10&socketTimeout=30}
     user: ${FLYWAY_USER:${DB_USERNAME:ceialmilk}}
     password: ${FLYWAY_PASSWORD:${DB_PASSWORD:}}
 
