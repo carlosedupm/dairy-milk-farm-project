@@ -23,27 +23,36 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
         // Log sempre, independente do perfil, para debug
         String activeProfile = String.join(",", environment.getActiveProfiles());
         System.out.println("=== DatabaseEnvironmentPostProcessor: INICIADO (System.out) ===");
+        System.out.println("Perfis ativos: " + (activeProfile.isEmpty() ? "nenhum" : activeProfile));
         log.info("=== DatabaseEnvironmentPostProcessor: Iniciado ===");
         log.info("Perfis ativos: {}", activeProfile.isEmpty() ? "nenhum" : activeProfile);
-        log.info("SPRING_PROFILES_ACTIVE: {}", environment.getProperty("SPRING_PROFILES_ACTIVE"));
+        
+        String springProfilesActive = environment.getProperty("SPRING_PROFILES_ACTIVE");
+        System.out.println("SPRING_PROFILES_ACTIVE: " + springProfilesActive);
+        log.info("SPRING_PROFILES_ACTIVE: {}", springProfilesActive);
         
         // Verifica se o perfil prod está ativo (pode estar vindo de SPRING_PROFILES_ACTIVE)
-        String springProfilesActive = environment.getProperty("SPRING_PROFILES_ACTIVE");
         boolean isProdProfile = activeProfile.contains("prod") || 
                                 (springProfilesActive != null && springProfilesActive.contains("prod"));
+        System.out.println("isProdProfile: " + isProdProfile);
         
         // Se não for prod, mas DATABASE_URL estiver presente, processa mesmo assim (pode ser produção sem perfil explícito)
         String databaseUrl = environment.getProperty("DATABASE_URL");
         boolean hasDatabaseUrl = databaseUrl != null && !databaseUrl.isEmpty();
+        System.out.println("hasDatabaseUrl: " + hasDatabaseUrl);
         
         if (!isProdProfile && !hasDatabaseUrl) {
+            System.out.println("RETORNANDO: Perfil de produção não detectado e DATABASE_URL não presente.");
             log.info("Perfil de produção não detectado e DATABASE_URL não presente. Pulando processamento.");
             return;
         }
         
         if (!isProdProfile && hasDatabaseUrl) {
+            System.out.println("AVISO: DATABASE_URL presente mas perfil prod não detectado. Processando mesmo assim.");
             log.warn("DATABASE_URL presente mas perfil prod não detectado. Processando mesmo assim (pode ser produção).");
         }
+        
+        System.out.println("CONTINUANDO: Vai processar DATABASE_URL ou usar fallback");
 
         log.info("=== DatabaseEnvironmentPostProcessor: Processando variáveis de ambiente ===");
         log.info("DATABASE_URL presente: {}", databaseUrl != null && !databaseUrl.isEmpty());
@@ -77,9 +86,11 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                     new MapPropertySource("database-fallback", properties)
                 );
                 
+                System.out.println("Configuração de fallback aplicada com sucesso");
                 log.info("Configuração de fallback aplicada com sucesso");
                 return;
             } else {
+                System.out.println("ERRO: Variáveis DB_HOST ou DB_PASSWORD não encontradas!");
                 log.error("Variáveis DB_HOST ou DB_PASSWORD não encontradas. Não é possível configurar o banco.");
                 throw new RuntimeException("DATABASE_URL ou variáveis DB_HOST/DB_PASSWORD devem estar configuradas");
             }
@@ -87,8 +98,9 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
 
         // Se chegou aqui, DATABASE_URL está presente
         if (databaseUrl != null && !databaseUrl.isEmpty()) {
-            log.info("DATABASE_URL encontrado (mascarado): {}", 
-                     databaseUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@"));
+            String maskedUrl = databaseUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@");
+            System.out.println("DATABASE_URL encontrado (mascarado): " + maskedUrl);
+            log.info("DATABASE_URL encontrado (mascarado): {}", maskedUrl);
         }
 
         try {
@@ -180,6 +192,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             properties.put("DB_USERNAME", username);
             properties.put("DB_PASSWORD", password);
             
+            System.out.println("Configurado Flyway com URL JDBC completa: host=" + host + ", port=" + port + ", database=" + database);
             log.info("Configurado Flyway com URL JDBC completa: host={}, port={}, database={}", host, port, database);
             log.info("URL JDBC (mascarada): jdbc:postgresql://{}:{}/{}?sslmode=require", host, port, database);
             
@@ -188,8 +201,17 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 new MapPropertySource("database-url-processed", properties)
             );
             
+            System.out.println("=== DatabaseEnvironmentPostProcessor: Configuração concluída com sucesso ===");
+            System.out.println("Total de propriedades configuradas: " + properties.size());
             log.info("=== DatabaseEnvironmentPostProcessor: Configuração concluída com sucesso ===");
             log.info("Total de propriedades configuradas: {}", properties.size());
+            
+            // Verifica se as propriedades foram realmente aplicadas
+            String flywayUrlAfter = environment.getProperty("spring.flyway.url");
+            System.out.println("Verificação: spring.flyway.url após configuração = " + 
+                             (flywayUrlAfter != null ? flywayUrlAfter.replaceAll("://[^:]+:[^@]+@", "://***:***@") : "NULL"));
+            log.info("Verificação: spring.flyway.url após configuração = {}", 
+                    flywayUrlAfter != null ? flywayUrlAfter.replaceAll("://[^:]+:[^@]+@", "://***:***@") : "NULL");
             
         } catch (Exception e) {
             log.error("ERRO CRÍTICO ao processar DATABASE_URL: {}", e.getMessage(), e);
