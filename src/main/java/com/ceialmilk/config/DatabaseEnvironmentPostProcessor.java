@@ -57,54 +57,74 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
         log.info("=== DatabaseEnvironmentPostProcessor: Processando variáveis de ambiente ===");
         log.info("DATABASE_URL presente: {}", databaseUrl != null && !databaseUrl.isEmpty());
         
+        // PRIORIDADE 1: Tenta usar variáveis individuais (mais confiável)
+        String dbHost = environment.getProperty("DB_HOST");
+        String dbPort = environment.getProperty("DB_PORT", "5432");
+        String dbName = environment.getProperty("DB_NAME", "ceialmilk");
+        String dbUsername = environment.getProperty("DB_USERNAME", "ceialmilk");
+        String dbPassword = environment.getProperty("DB_PASSWORD");
+        
+        // Se temos todas as variáveis individuais, usa elas diretamente (NÃO usa DATABASE_URL)
+        if (dbHost != null && !dbHost.isEmpty() && dbPassword != null && !dbPassword.isEmpty()) {
+            System.out.println("=== Usando variáveis individuais (DB_HOST, DB_PORT, etc.) ===");
+            log.info("Usando variáveis individuais: host={}, port={}, database={}", dbHost, dbPort, dbName);
+            
+            Map<String, Object> properties = new HashMap<>();
+            
+            // Constrói URL JDBC completamente separada para Flyway
+            String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 
+                                         dbHost, dbPort, dbName);
+            
+            // Constrói URL R2DBC completamente separada (NUNCA compartilha base com JDBC)
+            String r2dbcUrl = String.format("r2dbc:postgresql://%s:%s/%s?sslMode=require", dbHost, dbPort, dbName);
+            
+            // Configura Flyway (JDBC)
+            properties.put("spring.flyway.url", jdbcUrl);
+            properties.put("spring.flyway.user", dbUsername);
+            properties.put("spring.flyway.password", dbPassword);
+            
+            // Configura R2DBC (separado, independente)
+            properties.put("spring.r2dbc.url", r2dbcUrl);
+            properties.put("spring.r2dbc.username", dbUsername);
+            properties.put("spring.r2dbc.password", dbPassword);
+            
+            // Também define variáveis auxiliares
+            properties.put("FLYWAY_JDBC_URL", jdbcUrl);
+            properties.put("FLYWAY_USER", dbUsername);
+            properties.put("FLYWAY_PASSWORD", dbPassword);
+            properties.put("R2DBC_URL", r2dbcUrl);
+            
+            System.out.println("JDBC URL (Flyway): " + jdbcUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@"));
+            System.out.println("R2DBC URL (aplicação): " + r2dbcUrl);
+            System.out.println("URLs construídas de forma completamente independente");
+            
+            environment.getPropertySources().addFirst(
+                new MapPropertySource("database-from-individual-vars", properties)
+            );
+            
+            System.out.println("Configuração aplicada com sucesso usando variáveis individuais");
+            log.info("Configuração aplicada com sucesso usando variáveis individuais");
+            return;
+        }
+        
+        // PRIORIDADE 2: Se não temos variáveis individuais, usa DATABASE_URL apenas para extrair informações
         if (databaseUrl == null || databaseUrl.isEmpty()) {
-            log.error("ERRO: DATABASE_URL não encontrado! Verifique as variáveis de ambiente no Render.");
-            log.warn("Tentando usar variáveis DB_HOST, DB_NAME, etc. como fallback");
-            
-            // Fallback: tenta construir a partir de variáveis separadas
-            String dbHost = environment.getProperty("DB_HOST");
-            String dbPort = environment.getProperty("DB_PORT", "5432");
-            String dbName = environment.getProperty("DB_NAME", "ceialmilk");
-            String dbUsername = environment.getProperty("DB_USERNAME", "ceialmilk");
-            String dbPassword = environment.getProperty("DB_PASSWORD");
-            
-            if (dbHost != null && !dbHost.isEmpty() && dbPassword != null && !dbPassword.isEmpty()) {
-                log.info("Usando variáveis separadas: host={}, port={}, database={}", dbHost, dbPort, dbName);
-                
-                Map<String, Object> properties = new HashMap<>();
-                String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 
-                                             dbHost, dbPort, dbName);
-                // R2DBC: Remove credenciais da URL e usa propriedades separadas
-                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%s/%s?sslMode=require", dbHost, dbPort, dbName);
-                
-                properties.put("spring.flyway.url", jdbcUrl);
-                properties.put("spring.flyway.user", dbUsername);
-                properties.put("spring.flyway.password", dbPassword);
-                properties.put("spring.r2dbc.url", r2dbcUrl);
-                properties.put("spring.r2dbc.username", dbUsername);
-                properties.put("spring.r2dbc.password", dbPassword);
-                
-                System.out.println("Fallback - R2DBC URL configurada (sem credenciais na URL): " + r2dbcUrl);
-                
-                environment.getPropertySources().addFirst(
-                    new MapPropertySource("database-fallback", properties)
-                );
-                
-                System.out.println("Configuração de fallback aplicada com sucesso");
-                log.info("Configuração de fallback aplicada com sucesso");
-                return;
-            } else {
-                System.out.println("ERRO: Variáveis DB_HOST ou DB_PASSWORD não encontradas!");
-                log.error("Variáveis DB_HOST ou DB_PASSWORD não encontradas. Não é possível configurar o banco.");
-                throw new RuntimeException("DATABASE_URL ou variáveis DB_HOST/DB_PASSWORD devem estar configuradas");
-            }
+            System.out.println("ERRO: Nem DATABASE_URL nem variáveis individuais encontradas!");
+            log.error("ERRO: DATABASE_URL não encontrado e variáveis individuais incompletas!");
+            log.error("Variáveis encontradas: DB_HOST={}, DB_PASSWORD presente={}", 
+                     dbHost != null ? "SIM" : "NÃO", 
+                     dbPassword != null && !dbPassword.isEmpty() ? "SIM" : "NÃO");
+            throw new RuntimeException("DATABASE_URL ou variáveis DB_HOST/DB_PASSWORD devem estar configuradas");
         }
 
-        // Se chegou aqui, DATABASE_URL está presente
+        // Se chegou aqui, vamos usar DATABASE_URL apenas para extrair informações
+        // e construir URLs completamente separadas para R2DBC e JDBC
         if (databaseUrl != null && !databaseUrl.isEmpty()) {
             String maskedUrl = databaseUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@");
+            System.out.println("=== Usando DATABASE_URL apenas para extrair informações ===");
             System.out.println("DATABASE_URL encontrado (mascarado): " + maskedUrl);
             log.info("DATABASE_URL encontrado (mascarado): {}", maskedUrl);
+            log.info("Usando DATABASE_URL apenas para extrair informações, construindo URLs separadas");
         }
 
         try {
@@ -114,117 +134,85 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             String database;
             String username;
             String password;
+            
+            // Prioriza usar variáveis individuais do ambiente quando disponíveis
+            String envHost = environment.getProperty("DB_HOST");
+            String envPort = environment.getProperty("DB_PORT");
+            String envDatabase = environment.getProperty("DB_NAME");
+            String envUsername = environment.getProperty("DB_USERNAME");
+            String envPassword = environment.getProperty("DB_PASSWORD");
 
-            // Processa DATABASE_URL no formato R2DBC
+            // Extrai informações do DATABASE_URL (qualquer formato)
+            String urlForParse = databaseUrl;
             if (databaseUrl.startsWith("r2dbc:postgresql://")) {
-                String urlForParse = databaseUrl.substring(6); // Remove "r2dbc:"
-                URI uri = new URI(urlForParse.replace("postgresql://", "http://"));
-                host = uri.getHost();
-                port = uri.getPort() > 0 ? uri.getPort() : 5432;
-                String path = uri.getPath();
-                database = path != null && path.length() > 1 ? path.substring(1) : "ceialmilk";
-                
-                // Prioriza usar DB_PASSWORD do ambiente (mais confiável que extrair da URL)
-                String envPassword = environment.getProperty("DB_PASSWORD");
-                String envUsername = environment.getProperty("DB_USERNAME");
-                
-                String userInfo = uri.getUserInfo();
-                if (userInfo != null && userInfo.contains(":")) {
-                    String[] credentials = userInfo.split(":", 2);
-                    username = envUsername != null ? envUsername : credentials[0];
-                    // Usa senha do ambiente se disponível, senão extrai da URL
-                    password = envPassword != null ? envPassword : (credentials.length > 1 ? credentials[1] : "");
-                } else {
-                    username = envUsername != null ? envUsername : environment.getProperty("DB_USERNAME", "ceialmilk");
-                    password = envPassword != null ? envPassword : "";
-                }
-                
-                log.info("Formato R2DBC detectado. Extraído: host={}, port={}, database={}, username={}", 
-                         host, port, database, username);
-                System.out.println("Credenciais R2DBC - Usando DB_PASSWORD do ambiente: " + (envPassword != null ? "SIM" : "NÃO"));
-                System.out.println("Credenciais R2DBC - Usando DB_USERNAME do ambiente: " + (envUsername != null ? "SIM" : "NÃO"));
-                System.out.println("Credenciais extraídas - Username: " + username + ", Password length: " + 
-                                 (password != null ? password.length() : 0));
-                
-                // Configura R2DBC
-                // IMPORTANTE: Remove credenciais da URL e usa propriedades separadas
-                // R2DBC pode ter problemas com credenciais na URL, especialmente com SSL
-                String r2dbcUrlFinal = String.format("r2dbc:postgresql://%s:%d/%s?sslMode=require", host, port, database);
-                properties.put("spring.r2dbc.url", r2dbcUrlFinal);
-                properties.put("spring.r2dbc.username", username);
-                properties.put("spring.r2dbc.password", password);
-                
-                System.out.println("R2DBC URL configurada (sem credenciais na URL): " + r2dbcUrlFinal);
-                System.out.println("R2DBC Username: " + username);
-                System.out.println("R2DBC Password presente: " + (password != null && !password.isEmpty()));
-                
-            } 
-            // Processa DATABASE_URL no formato JDBC ou postgresql://
-            else if (databaseUrl.startsWith("postgresql://") || databaseUrl.startsWith("jdbc:postgresql://")) {
-                String urlForParse = databaseUrl.startsWith("jdbc:") 
-                    ? databaseUrl.substring(5) 
-                    : databaseUrl;
-                URI uri = new URI(urlForParse.replace("postgresql://", "http://"));
-                host = uri.getHost();
-                port = uri.getPort() > 0 ? uri.getPort() : 5432;
-                String path = uri.getPath();
-                database = path != null && path.length() > 1 ? path.substring(1) : "ceialmilk";
-                
-                // Prioriza usar DB_PASSWORD do ambiente (mais confiável que extrair da URL)
-                String envPassword = environment.getProperty("DB_PASSWORD");
-                String envUsername = environment.getProperty("DB_USERNAME");
-                
-                String userInfo = uri.getUserInfo();
-                if (userInfo != null && userInfo.contains(":")) {
-                    String[] credentials = userInfo.split(":", 2);
-                    username = envUsername != null ? envUsername : credentials[0];
-                    // Usa senha do ambiente se disponível, senão extrai da URL
-                    password = envPassword != null ? envPassword : (credentials.length > 1 ? credentials[1] : "");
-                } else {
-                    username = envUsername != null ? envUsername : environment.getProperty("DB_USERNAME", "ceialmilk");
-                    password = envPassword != null ? envPassword : "";
-                }
-                
-                log.info("Formato JDBC/PostgreSQL detectado. Extraído: host={}, port={}, database={}, username={}", 
-                         host, port, database, username);
-                System.out.println("Credenciais - Usando DB_PASSWORD do ambiente: " + (envPassword != null ? "SIM" : "NÃO"));
-                System.out.println("Credenciais - Usando DB_USERNAME do ambiente: " + (envUsername != null ? "SIM" : "NÃO"));
-                
-                // Converte para R2DBC
-                // IMPORTANTE: Remove credenciais da URL e usa propriedades separadas
-                // R2DBC pode ter problemas com credenciais na URL, especialmente com SSL
-                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%d/%s?sslMode=require", host, port, database);
-                properties.put("spring.r2dbc.url", r2dbcUrl);
-                properties.put("spring.r2dbc.username", username);
-                properties.put("spring.r2dbc.password", password);
-                
-                System.out.println("R2DBC URL configurada (sem credenciais na URL): " + r2dbcUrl);
-                System.out.println("R2DBC Username: " + username);
-                System.out.println("R2DBC Password presente: " + (password != null && !password.isEmpty()));
-            } else {
-                log.warn("Formato de DATABASE_URL não reconhecido: {}", 
-                         databaseUrl.substring(0, Math.min(50, databaseUrl.length())));
-                return;
+                urlForParse = databaseUrl.substring(6); // Remove "r2dbc:"
+            } else if (databaseUrl.startsWith("jdbc:postgresql://")) {
+                urlForParse = databaseUrl.substring(5); // Remove "jdbc:"
             }
-
-            // CRÍTICO: Configura Flyway com URL JDBC completa
-            // Render PostgreSQL: Usa sslmode=prefer (mais tolerante) para evitar EOFException
-            // Adiciona parâmetros SSL explícitos e timeouts para garantir conexão estável
+            
+            URI uri = new URI(urlForParse.replace("postgresql://", "http://"));
+            
+            // Usa variáveis do ambiente se disponíveis, senão extrai do DATABASE_URL
+            host = envHost != null && !envHost.isEmpty() ? envHost : uri.getHost();
+            port = envPort != null && !envPort.isEmpty() ? Integer.parseInt(envPort) : (uri.getPort() > 0 ? uri.getPort() : 5432);
+            String path = uri.getPath();
+            database = envDatabase != null && !envDatabase.isEmpty() ? envDatabase : 
+                      (path != null && path.length() > 1 ? path.substring(1) : "ceialmilk");
+            
+            // Prioriza sempre usar credenciais do ambiente
+            String userInfo = uri.getUserInfo();
+            if (userInfo != null && userInfo.contains(":")) {
+                String[] credentials = userInfo.split(":", 2);
+                username = envUsername != null && !envUsername.isEmpty() ? envUsername : credentials[0];
+                password = envPassword != null && !envPassword.isEmpty() ? envPassword : 
+                          (credentials.length > 1 ? credentials[1] : "");
+            } else {
+                username = envUsername != null && !envUsername.isEmpty() ? envUsername : "ceialmilk";
+                password = envPassword != null && !envPassword.isEmpty() ? envPassword : "";
+            }
+            
+            log.info("Informações extraídas: host={}, port={}, database={}, username={}", 
+                     host, port, database, username);
+            System.out.println("Usando variáveis do ambiente - Host: " + (envHost != null ? "SIM" : "NÃO") + 
+                             ", Port: " + (envPort != null ? "SIM" : "NÃO") + 
+                             ", Database: " + (envDatabase != null ? "SIM" : "NÃO") +
+                             ", Username: " + (envUsername != null ? "SIM" : "NÃO") +
+                             ", Password: " + (envPassword != null ? "SIM" : "NÃO"));
+            System.out.println("Credenciais finais - Username: " + username + ", Password length: " + 
+                             (password != null ? password.length() : 0));
+            
+            // CRÍTICO: Constrói URLs completamente separadas e independentes
+            // R2DBC e JDBC NUNCA compartilham a mesma URL base
+            
+            // URL JDBC para Flyway (completamente independente)
             String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 
                                          host, port, database);
+            
+            // URL R2DBC para aplicação (completamente independente, NUNCA compartilha base com JDBC)
+            String r2dbcUrl = String.format("r2dbc:postgresql://%s:%d/%s?sslMode=require", host, port, database);
+            
+            // Configura Flyway (JDBC) - URL completamente separada
             properties.put("spring.flyway.url", jdbcUrl);
             properties.put("spring.flyway.user", username);
             properties.put("spring.flyway.password", password);
             
-            System.out.println("URL JDBC configurada: " + jdbcUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@"));
-            System.out.println("Username: " + username);
-            System.out.println("Password presente: " + (password != null && !password.isEmpty()));
-            System.out.println("SSL configurado: sslmode=prefer, ssl=true, timeouts configurados");
+            // Configura R2DBC (aplicação) - URL completamente separada
+            properties.put("spring.r2dbc.url", r2dbcUrl);
+            properties.put("spring.r2dbc.username", username);
+            properties.put("spring.r2dbc.password", password);
             
-            // Também define variáveis de ambiente para garantir
+            System.out.println("JDBC URL (Flyway) construída independentemente: " + jdbcUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@"));
+            System.out.println("R2DBC URL (aplicação) construída independentemente: " + r2dbcUrl);
+            System.out.println("IMPORTANTE: URLs são completamente separadas e não compartilham base");
+
+            // Também define variáveis auxiliares
             properties.put("FLYWAY_JDBC_URL", jdbcUrl);
             properties.put("FLYWAY_USER", username);
             properties.put("FLYWAY_PASSWORD", password);
+            properties.put("R2DBC_URL", r2dbcUrl);
+            
+            System.out.println("SSL configurado - JDBC: sslmode=prefer, R2DBC: sslMode=require");
+            System.out.println("Timeouts configurados para JDBC: connectTimeout=10, socketTimeout=30");
             
             // Atualiza DB_HOST com o host completo (importante!)
             properties.put("DB_HOST", host);
