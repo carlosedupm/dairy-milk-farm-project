@@ -46,22 +46,47 @@ A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProc
 
 ## Configuração do Flyway
 
-1. **Primeiro Deploy**:
-   - O Flyway criará automaticamente a tabela `flyway_schema_history`
+### Nova Abordagem: Flyway CLI (Implementado em 2026-01-23)
+
+**Migrações executadas ANTES da aplicação iniciar** usando Flyway CLI via script de inicialização (`entrypoint.sh`).
+
+**Vantagens:**
+- ✅ Resolve problemas de timing no Render (aguarda banco estar pronto)
+- ✅ Mantém arquitetura reativa (aplicação nunca usa JDBC, apenas R2DBC)
+- ✅ Separação de responsabilidades (migrações são responsabilidade do deploy)
+- ✅ Melhor tratamento de erros e retry
+
+**Como Funciona:**
+
+1. **Script de Inicialização** (`entrypoint.sh`):
+   - Aguarda banco estar pronto (health check com retry até 60 segundos)
+   - Executa Flyway CLI com migrações em `/app/migrations`
+   - Inicia aplicação Spring Boot apenas se migrações forem bem-sucedidas
+
+2. **Primeiro Deploy**:
+   - Flyway CLI criará automaticamente a tabela `flyway_schema_history`
    - Migrações existentes serão marcadas como já aplicadas (baseline)
-   - As migrações estão em `src/main/resources/db/migration/`
+   - As migrações estão em `src/main/resources/db/migration/` (copiadas para `/app/migrations` no container)
 
-2. **Deploys Futuros**:
+3. **Deploys Futuros**:
    - Novas migrações serão aplicadas automaticamente na ordem correta
-   - Verifique sempre os logs do Flyway após o deploy
+   - Verifique sempre os logs do script de inicialização após o deploy
+   - Logs aparecem antes da aplicação iniciar
 
-3. **Monitoramento**:
-   - Endpoint: `/actuator/flyway` (status das migrações)
-   - Logs: Buscar por "Flyway migrate" nos logs da aplicação
+4. **Monitoramento**:
+   - Logs do script: Buscar por "Executando migrações Flyway" nos logs do container
+   - Logs da aplicação: Aplicação só inicia após migrações concluírem
+   - Health check: `/actuator/health` (disponível após aplicação iniciar)
 
-4. **Rollback**:
-   - Em caso de falha, o Render fará rollback automático
+5. **Rollback**:
+   - Se migração falhar, aplicação não inicia (comportamento desejado)
+   - Render fará rollback automático do deploy
    - Sempre tenha um backup recente do banco
+
+**Configuração:**
+- Flyway está **desabilitado na aplicação** (`application-prod.yml`: `flyway.enabled: false`)
+- Migrações executadas via Flyway CLI no script de inicialização
+- Dockerfile inclui Flyway CLI e script de inicialização
 
 ## Conexões Necessárias
 
@@ -151,24 +176,39 @@ curl https://seu-app.onrender.com/actuator/flyway
    - Render PostgreSQL requer `sslmode=require`
    - O processador configura automaticamente com `sslfactory=org.postgresql.ssl.NonValidatingFactory`
 
-5. **Se o problema persistir (EOFException)**:
-   - Pode ser problema de rede/firewall no Render
-   - Verificar se aplicação e banco estão na mesma região
-   - Considerar desabilitar temporariamente o Flyway para isolar o problema:
-     ```yaml
-     spring:
-       flyway:
-         enabled: false
-     ```
-   - Ou usar variável de ambiente: `FLYWAY_ENABLED=false`
+5. **Se o problema persistir (EOFException)** - RESOLVIDO:
+   - ✅ **Solução implementada**: Flyway CLI executa migrações ANTES da aplicação iniciar
+   - ✅ Script de inicialização aguarda banco estar pronto antes de executar migrações
+   - ✅ Problema de timing resolvido com health check e retry
+   - Se ainda houver problemas:
+     - Verificar se aplicação e banco estão na mesma região
+     - Verificar logs do script de inicialização (antes dos logs da aplicação)
+     - Verificar se variáveis de ambiente estão corretas (DB_HOST, DB_PORT, etc.)
 
 ### Problema: Migrações Flyway falham
 
 **Solução**:
-1. Verificar logs do Flyway: `curl https://seu-app.onrender.com/actuator/flyway`
-2. Verificar se o banco tem permissões para criar tabelas
-3. Verificar se há migrações conflitantes
-4. Em caso de erro, fazer rollback e corrigir a migração
+1. **Verificar logs do script de inicialização** (nos logs do container, antes da aplicação iniciar):
+   - Buscar por "Executando migrações Flyway"
+   - Verificar mensagens de erro do Flyway CLI
+   - Logs aparecem com prefixo "===" ou "Executando Flyway CLI..."
+
+2. **Verificar se o banco está pronto**:
+   - Logs devem mostrar "✅ Banco de dados está pronto!" antes de executar migrações
+   - Se não aparecer, problema de conectividade com banco
+
+3. **Verificar variáveis de ambiente**:
+   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` devem estar configuradas
+   - Logs do script mostram essas variáveis (senha oculta)
+
+4. **Verificar permissões do banco**:
+   - Usuário deve ter permissão para criar tabelas
+   - Verificar se banco está ativo no dashboard do Render
+
+5. **Em caso de erro**:
+   - Aplicação não iniciará (comportamento desejado)
+   - Render fará rollback automático
+   - Corrigir migração e fazer novo deploy
 
 ### Problema: Health check falha
 
@@ -178,6 +218,21 @@ curl https://seu-app.onrender.com/actuator/flyway
 3. Verificar se o banco de dados está acessível
 4. Verificar se todas as variáveis de ambiente estão configuradas
 
+## Arquivos de Migração
+
+### Estrutura
+- **Localização**: `src/main/resources/db/migration/`
+- **Formato**: `V{versão}__{descrição}.sql`
+- **Exemplos**:
+  - `V1__Add_remaining_tables.sql`
+  - `V2__Add_indexes_to_fazendas.sql`
+
+### No Container Docker
+- Migrações são copiadas para `/app/migrations` no container
+- Flyway CLI executa migrações a partir deste diretório
+- Ordem de execução: Versões numéricas em ordem crescente
+
 ---
 
-**Última atualização**: 2025-01-23
+**Última atualização**: 2026-01-23
+**Mudança Principal**: Migração para Flyway CLI (execução antes da aplicação iniciar)

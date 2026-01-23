@@ -55,6 +55,14 @@ Usuario (N) ─── (1) Fazenda
 - **Transaction Management**: Reactive transaction management
 - **Pagination**: Reactive pagination com Pageable
 
+### **Padrões de Migração de Banco de Dados**
+- **Flyway CLI**: Migrações executadas ANTES da aplicação iniciar (via script de inicialização)
+- **Separação de Responsabilidades**: Migrações são responsabilidade do deploy, não da aplicação
+- **Arquitetura Reativa**: Aplicação nunca usa JDBC (apenas R2DBC), mantendo consistência reativa
+- **Health Check**: Script aguarda banco estar pronto antes de executar migrações
+- **Retry Logic**: Implementado no script de inicialização para problemas temporários de rede
+- **Versionamento**: Migrações versionadas em `src/main/resources/db/migration/` (V1__, V2__, etc.)
+
 ### **Padrões de Cache**
 - **Redis**: Cache distribuído para dados frequentes
 - **Caffeine**: Cache local para dados in-memory
