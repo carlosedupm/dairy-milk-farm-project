@@ -41,11 +41,15 @@ public class R2dbcConfig implements ApplicationListener<ApplicationEnvironmentPr
             return;
         }
 
-        // Se DATABASE_URL está no formato JDBC (postgresql://), converte para R2DBC
-        if (databaseUrl != null && databaseUrl.startsWith("postgresql://")) {
+        // Se DATABASE_URL está no formato postgresql:// (com ou sem jdbc:), converte para R2DBC e JDBC
+        if (databaseUrl != null && (databaseUrl.startsWith("postgresql://") || databaseUrl.startsWith("jdbc:postgresql://"))) {
             try {
+                // Remove o prefixo jdbc: se existir para fazer o parse
+                String urlForParse = databaseUrl.startsWith("jdbc:") 
+                    ? databaseUrl.substring(5) // Remove "jdbc:"
+                    : databaseUrl;
                 // Parse do DATABASE_URL no formato: postgresql://user:pass@host:port/dbname
-                URI uri = new URI(databaseUrl.replace("postgresql://", "http://"));
+                URI uri = new URI(urlForParse.replace("postgresql://", "http://"));
                 String host = uri.getHost();
                 int port = uri.getPort() > 0 ? uri.getPort() : 5432;
                 String path = uri.getPath();
@@ -74,13 +78,16 @@ public class R2dbcConfig implements ApplicationListener<ApplicationEnvironmentPr
                 properties.put("spring.r2dbc.username", username);
                 properties.put("spring.r2dbc.password", password);
                 
-                // Também atualiza para o Flyway se necessário
-                String flywayUrl = environment.getProperty("spring.flyway.url");
-                if (flywayUrl == null || flywayUrl.contains("${")) {
-                    properties.put("spring.flyway.url", databaseUrl);
-                    properties.put("spring.flyway.user", username);
-                    properties.put("spring.flyway.password", password);
-                }
+                // Sempre configura o Flyway quando DATABASE_URL está presente
+                // Flyway precisa de URL no formato JDBC (jdbc:postgresql://)
+                // Converte postgresql:// para jdbc:postgresql://
+                String jdbcUrl = databaseUrl.startsWith("jdbc:") 
+                    ? databaseUrl 
+                    : databaseUrl.replace("postgresql://", "jdbc:postgresql://");
+                properties.put("spring.flyway.url", jdbcUrl);
+                properties.put("spring.flyway.user", username);
+                properties.put("spring.flyway.password", password);
+                log.info("Configurado Flyway com URL JDBC: host={}, port={}, database={}", host, port, database);
                 
                 // Atualiza variáveis DB_* se não estiverem definidas
                 String dbHost = environment.getProperty("DB_HOST");
@@ -112,6 +119,11 @@ public class R2dbcConfig implements ApplicationListener<ApplicationEnvironmentPr
             } catch (Exception e) {
                 log.warn("Erro ao converter DATABASE_URL para R2DBC: {}. Usando configuração padrão.", e.getMessage());
             }
+        } else if (databaseUrl == null || databaseUrl.isEmpty()) {
+            log.info("DATABASE_URL não configurado. Usando variáveis DB_HOST, DB_NAME, etc. do application-prod.yml");
+        } else {
+            log.warn("DATABASE_URL em formato desconhecido: {}. Tentando usar configuração padrão.", 
+                     databaseUrl.substring(0, Math.min(50, databaseUrl.length())));
         }
     }
 }
