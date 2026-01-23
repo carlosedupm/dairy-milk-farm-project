@@ -74,6 +74,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 Map<String, Object> properties = new HashMap<>();
                 String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory", 
                                              dbHost, dbPort, dbName);
+                // R2DBC: Remove credenciais da URL e usa propriedades separadas
                 String r2dbcUrl = String.format("r2dbc:postgresql://%s:%s/%s?sslmode=require", dbHost, dbPort, dbName);
                 
                 properties.put("spring.flyway.url", jdbcUrl);
@@ -82,6 +83,8 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 properties.put("spring.r2dbc.url", r2dbcUrl);
                 properties.put("spring.r2dbc.username", dbUsername);
                 properties.put("spring.r2dbc.password", dbPassword);
+                
+                System.out.println("Fallback - R2DBC URL configurada (sem credenciais na URL): " + r2dbcUrl);
                 
                 environment.getPropertySources().addFirst(
                     new MapPropertySource("database-fallback", properties)
@@ -136,21 +139,17 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 System.out.println("Credenciais extraídas - Username: " + username + ", Password length: " + 
                                  (password != null ? password.length() : 0));
                 
-                // Configura R2DBC (já está no formato correto)
-                // Render PostgreSQL requer sslmode=require, então mantém ou adiciona se não tiver
-                String r2dbcUrlFinal = databaseUrl;
-                if (!databaseUrl.contains("sslmode=")) {
-                    r2dbcUrlFinal = databaseUrl + (databaseUrl.contains("?") ? "&" : "?") + "sslmode=require";
-                } else if (databaseUrl.contains("sslmode=prefer")) {
-                    r2dbcUrlFinal = databaseUrl.replace("sslmode=prefer", "sslmode=require");
-                }
-                // Garante que está usando require (obrigatório no Render)
-                if (!r2dbcUrlFinal.contains("sslmode=require")) {
-                    r2dbcUrlFinal = r2dbcUrlFinal.replaceAll("sslmode=[^&]+", "sslmode=require");
-                }
+                // Configura R2DBC
+                // IMPORTANTE: Remove credenciais da URL e usa propriedades separadas
+                // R2DBC pode ter problemas com credenciais na URL, especialmente com SSL
+                String r2dbcUrlFinal = String.format("r2dbc:postgresql://%s:%d/%s?sslmode=require", host, port, database);
                 properties.put("spring.r2dbc.url", r2dbcUrlFinal);
                 properties.put("spring.r2dbc.username", username);
                 properties.put("spring.r2dbc.password", password);
+                
+                System.out.println("R2DBC URL configurada (sem credenciais na URL): " + r2dbcUrlFinal);
+                System.out.println("R2DBC Username: " + username);
+                System.out.println("R2DBC Password presente: " + (password != null && !password.isEmpty()));
                 
             } 
             // Processa DATABASE_URL no formato JDBC ou postgresql://
@@ -178,10 +177,16 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                          host, port, database, username);
                 
                 // Converte para R2DBC
+                // IMPORTANTE: Remove credenciais da URL e usa propriedades separadas
+                // R2DBC pode ter problemas com credenciais na URL, especialmente com SSL
                 String r2dbcUrl = String.format("r2dbc:postgresql://%s:%d/%s?sslmode=require", host, port, database);
                 properties.put("spring.r2dbc.url", r2dbcUrl);
                 properties.put("spring.r2dbc.username", username);
                 properties.put("spring.r2dbc.password", password);
+                
+                System.out.println("R2DBC URL configurada (sem credenciais na URL): " + r2dbcUrl);
+                System.out.println("R2DBC Username: " + username);
+                System.out.println("R2DBC Password presente: " + (password != null && !password.isEmpty()));
             } else {
                 log.warn("Formato de DATABASE_URL não reconhecido: {}", 
                          databaseUrl.substring(0, Math.min(50, databaseUrl.length())));
@@ -230,10 +235,20 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             
             // Verifica se as propriedades foram realmente aplicadas
             String flywayUrlAfter = environment.getProperty("spring.flyway.url");
+            String r2dbcUrlAfter = environment.getProperty("spring.r2dbc.url");
+            String r2dbcUsernameAfter = environment.getProperty("spring.r2dbc.username");
+            
             System.out.println("Verificação: spring.flyway.url após configuração = " + 
                              (flywayUrlAfter != null ? flywayUrlAfter.replaceAll("://[^:]+:[^@]+@", "://***:***@") : "NULL"));
+            System.out.println("Verificação: spring.r2dbc.url após configuração = " + 
+                             (r2dbcUrlAfter != null ? r2dbcUrlAfter : "NULL"));
+            System.out.println("Verificação: spring.r2dbc.username após configuração = " + 
+                             (r2dbcUsernameAfter != null ? r2dbcUsernameAfter : "NULL"));
+            
             log.info("Verificação: spring.flyway.url após configuração = {}", 
                     flywayUrlAfter != null ? flywayUrlAfter.replaceAll("://[^:]+:[^@]+@", "://***:***@") : "NULL");
+            log.info("Verificação: spring.r2dbc.url após configuração = {}", r2dbcUrlAfter);
+            log.info("Verificação: spring.r2dbc.username após configuração = {}", r2dbcUsernameAfter);
             
         } catch (Exception e) {
             log.error("ERRO CRÍTICO ao processar DATABASE_URL: {}", e.getMessage(), e);

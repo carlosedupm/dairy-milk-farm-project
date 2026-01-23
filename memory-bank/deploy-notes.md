@@ -25,13 +25,24 @@ O `render.yaml` configura automaticamente as seguintes variáveis:
 
 ### Conversão Automática de DATABASE_URL
 
-A aplicação possui uma classe de configuração (`R2dbcConfig.java`) que:
-- Detecta automaticamente o `DATABASE_URL` no formato JDBC (`postgresql://`)
-- Converte para o formato R2DBC (`r2dbc:postgresql://`) necessário pela aplicação
+A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProcessor.java`) que:
+- **Executa muito cedo** no ciclo de vida do Spring Boot (antes de qualquer bean ser criado)
+- Detecta automaticamente o `DATABASE_URL` nos formatos:
+  - R2DBC: `r2dbc:postgresql://user:pass@host:port/db`
+  - JDBC: `postgresql://user:pass@host:port/db` ou `jdbc:postgresql://...`
+- Converte para os formatos necessários:
+  - R2DBC: `r2dbc:postgresql://host:port/db?sslmode=require`
+  - JDBC (Flyway): `jdbc:postgresql://host:port/db?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory`
 - Extrai e configura as variáveis `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME` e `DB_PASSWORD`
-- Configura tanto o R2DBC (aplicação) quanto o Flyway (migrações)
+- Configura tanto o R2DBC (aplicação) quanto o Flyway (migrações) com alta prioridade
 
-**Nota**: Se você configurar manualmente as variáveis `DB_HOST`, `DB_NAME`, etc., elas terão prioridade sobre a conversão do `DATABASE_URL`.
+**Nota**: O processador está registrado em `META-INF/spring.factories` e executa automaticamente antes do Flyway tentar conectar.
+
+**Logs de Debug**: O processador gera logs detalhados (incluindo `System.out.println`) para facilitar o diagnóstico:
+- `=== DatabaseEnvironmentPostProcessor: INICIADO ===`
+- `DATABASE_URL encontrado (mascarado): ...`
+- `Configurado Flyway com URL JDBC completa: ...`
+- `Verificação: spring.flyway.url após configuração = ...`
 
 ## Configuração do Flyway
 
@@ -116,11 +127,40 @@ curl https://seu-app.onrender.com/actuator/flyway
 
 ### Problema: Aplicação não conecta ao banco
 
+**Sintomas**:
+- `EOFException` durante autenticação
+- `UnknownHostException` (host incompleto)
+- `Connection refused` (tentando conectar em localhost)
+
 **Solução**:
-1. Verificar se o banco `ceialmilk-db` foi criado no Render
-2. Verificar logs da aplicação para erros de conexão
-3. Verificar se as variáveis de ambiente estão configuradas corretamente
-4. Verificar se o `DATABASE_URL` está sendo convertido corretamente (ver logs: "Convertido DATABASE_URL de JDBC para R2DBC")
+1. **Verificar logs do DatabaseEnvironmentPostProcessor**:
+   - Deve aparecer: `=== DatabaseEnvironmentPostProcessor: INICIADO ===`
+   - Deve aparecer: `Configurado Flyway com URL JDBC completa: host=..., port=..., database=...`
+   - Deve aparecer: `Verificação: spring.flyway.url após configuração = ...`
+
+2. **Verificar se o banco `ceialmilk-db` foi criado no Render**:
+   - Acessar dashboard do Render
+   - Verificar se o banco está ativo e acessível
+
+3. **Verificar variáveis de ambiente no Render**:
+   - `DATABASE_URL` deve estar presente
+   - `DB_USERNAME` e `DB_PASSWORD` devem estar configuradas
+   - Usar endpoint `/api/v1/env/check` para verificar (após aplicação iniciar)
+
+4. **Verificar configuração SSL**:
+   - Render PostgreSQL requer `sslmode=require`
+   - O processador configura automaticamente com `sslfactory=org.postgresql.ssl.NonValidatingFactory`
+
+5. **Se o problema persistir (EOFException)**:
+   - Pode ser problema de rede/firewall no Render
+   - Verificar se aplicação e banco estão na mesma região
+   - Considerar desabilitar temporariamente o Flyway para isolar o problema:
+     ```yaml
+     spring:
+       flyway:
+         enabled: false
+     ```
+   - Ou usar variável de ambiente: `FLYWAY_ENABLED=false`
 
 ### Problema: Migrações Flyway falham
 
