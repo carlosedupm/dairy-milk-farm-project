@@ -25,6 +25,7 @@ public class R2dbcConfig implements ApplicationListener<ApplicationEnvironmentPr
 
     @Override
     public void onApplicationEvent(@NonNull ApplicationEnvironmentPreparedEvent event) {
+        log.info("=== R2dbcConfig: Iniciando processamento de variáveis de ambiente ===");
         ConfigurableEnvironment environment = event.getEnvironment();
         String databaseUrl = environment.getProperty("DATABASE_URL");
         String r2dbcUrl = environment.getProperty("spring.r2dbc.url");
@@ -95,7 +96,13 @@ public class R2dbcConfig implements ApplicationListener<ApplicationEnvironmentPr
                 properties.put("spring.flyway.url", jdbcUrl);
                 properties.put("spring.flyway.user", username);
                 properties.put("spring.flyway.password", password);
+                // Também define variáveis de ambiente para garantir que sejam usadas
+                properties.put("FLYWAY_JDBC_URL", jdbcUrl);
+                properties.put("FLYWAY_USER", username);
+                properties.put("FLYWAY_PASSWORD", password);
                 log.info("Configurado Flyway com URL JDBC: host={}, port={}, database={}", host, port, database);
+                log.info("URL JDBC completa (mascarada): jdbc:postgresql://{}:{}/{}?sslmode=require", 
+                         host, port, database);
                 
                 // Sempre atualiza DB_HOST com o host completo (importante para conexão)
                 properties.put("DB_HOST", host);
@@ -121,6 +128,8 @@ public class R2dbcConfig implements ApplicationListener<ApplicationEnvironmentPr
                 );
                 
                 log.info("Propriedades R2DBC e Flyway configuradas a partir do DATABASE_URL (formato R2DBC)");
+                log.info("Total de propriedades configuradas: {}", properties.size());
+                log.info("Propriedades configuradas: spring.r2dbc.url, spring.r2dbc.username, spring.r2dbc.password, spring.flyway.url, spring.flyway.user, spring.flyway.password, DB_HOST");
             } catch (Exception e) {
                 log.error("Erro ao processar DATABASE_URL no formato R2DBC: {}", e.getMessage(), e);
             }
@@ -171,7 +180,12 @@ public class R2dbcConfig implements ApplicationListener<ApplicationEnvironmentPr
                 properties.put("spring.flyway.url", jdbcUrl);
                 properties.put("spring.flyway.user", username);
                 properties.put("spring.flyway.password", password);
+                // Também define variáveis de ambiente para garantir que sejam usadas
+                properties.put("FLYWAY_JDBC_URL", jdbcUrl);
+                properties.put("FLYWAY_USER", username);
+                properties.put("FLYWAY_PASSWORD", password);
                 log.info("Configurado Flyway com URL JDBC: host={}, port={}, database={}", host, port, database);
+                log.info("URL JDBC completa (mascarada): {}", jdbcUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@"));
                 
                 // Sempre atualiza DB_HOST com o host completo (importante para conexão)
                 // Isso garante que mesmo se DB_HOST estiver incompleto, será corrigido
@@ -198,14 +212,27 @@ public class R2dbcConfig implements ApplicationListener<ApplicationEnvironmentPr
                 );
                 
                 log.info("Propriedades R2DBC configuradas a partir do DATABASE_URL");
+                log.info("Total de propriedades configuradas: {}", properties.size());
+                log.info("Propriedades configuradas: spring.r2dbc.url, spring.r2dbc.username, spring.r2dbc.password, spring.flyway.url, spring.flyway.user, spring.flyway.password, DB_HOST");
             } catch (Exception e) {
-                log.warn("Erro ao converter DATABASE_URL para R2DBC: {}. Usando configuração padrão.", e.getMessage());
+                log.error("Erro ao converter DATABASE_URL para R2DBC: {}. Usando configuração padrão.", e.getMessage(), e);
             }
         } else if (databaseUrl == null || databaseUrl.isEmpty()) {
-            log.info("DATABASE_URL não configurado. Usando variáveis DB_HOST, DB_NAME, etc. do application-prod.yml");
+            log.warn("DATABASE_URL não configurado. Usando variáveis DB_HOST, DB_NAME, etc. do application-prod.yml");
+            log.warn("ATENÇÃO: Se DB_HOST estiver incompleto, a conexão pode falhar!");
         } else {
             log.warn("DATABASE_URL em formato desconhecido: {}. Tentando usar configuração padrão.", 
                      databaseUrl.substring(0, Math.min(50, databaseUrl.length())));
+        }
+        
+        // Log final de confirmação
+        String finalFlywayUrl = environment.getProperty("spring.flyway.url");
+        if (finalFlywayUrl != null && !finalFlywayUrl.isEmpty()) {
+            String maskedUrl = finalFlywayUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@");
+            log.info("=== R2dbcConfig: Configuração finalizada ===");
+            log.info("Flyway URL configurada: {}", maskedUrl);
+        } else {
+            log.warn("=== R2dbcConfig: ATENÇÃO - spring.flyway.url não foi configurada! ===");
         }
     }
 }
