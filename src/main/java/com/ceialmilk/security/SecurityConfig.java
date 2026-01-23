@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .pathMatchers("/v3/api-docs/**").permitAll()
                         .pathMatchers("/swagger-ui.html").permitAll()
                         .pathMatchers("/webjars/**").permitAll()
+                        .pathMatchers("/api/v1/env/**").permitAll() // Endpoint de debug (sem expor senhas)
                         .pathMatchers("/api/v1/fazendas/**").authenticated()
                         .anyExchange().authenticated()
                 )
