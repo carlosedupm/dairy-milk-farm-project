@@ -65,33 +65,17 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
         String dbUsername = environment.getProperty("DB_USERNAME", "ceialmilk");
         String dbPassword = environment.getProperty("DB_PASSWORD");
         
-        // CRÍTICO: Verifica se DB_HOST tem domínio completo (contém ponto)
-        // Se não tiver, precisa extrair do DATABASE_URL
-        boolean dbHostNeedsExtraction = dbHost != null && !dbHost.isEmpty() && !dbHost.contains(".");
-        
-        // Se DB_HOST não tem domínio completo E temos DATABASE_URL, extrai o host completo
-        if (dbHostNeedsExtraction && databaseUrl != null && !databaseUrl.isEmpty()) {
-            try {
-                String urlForParse = databaseUrl;
-                if (databaseUrl.startsWith("r2dbc:postgresql://")) {
-                    urlForParse = databaseUrl.substring(6); // Remove "r2dbc:"
-                } else if (databaseUrl.startsWith("jdbc:postgresql://")) {
-                    urlForParse = databaseUrl.substring(5); // Remove "jdbc:"
-                }
-                URI uri = new URI(urlForParse.replace("postgresql://", "http://"));
-                String fullHost = uri.getHost();
-                if (fullHost != null && fullHost.contains(".")) {
-                    System.out.println("DB_HOST incompleto detectado. Extraindo host completo do DATABASE_URL: " + fullHost);
-                    log.info("DB_HOST incompleto ({}) detectado. Extraindo host completo do DATABASE_URL: {}", dbHost, fullHost);
-                    dbHost = fullHost;
-                }
-            } catch (Exception e) {
-                log.warn("Erro ao extrair host completo do DATABASE_URL: {}", e.getMessage());
-            }
+        // CRÍTICO: Render internal URL usa host curto (ex: dpg-xxx-a). Se DB_HOST não tem ponto,
+        // anexar sufixo .oregon-postgres.render.com (override via DB_HOST_SUFFIX).
+        if (dbHost != null && !dbHost.isEmpty() && !dbHost.contains(".")) {
+            String suffix = environment.getProperty("DB_HOST_SUFFIX", ".oregon-postgres.render.com");
+            dbHost = dbHost + suffix;
+            System.out.println("DB_HOST curto detectado; usando host completo: " + dbHost);
+            log.info("DB_HOST curto; anexado sufixo Render: {}", dbHost);
         }
-        
+
         // Se temos todas as variáveis individuais (com host completo), usa elas diretamente
-        if (dbHost != null && !dbHost.isEmpty() && dbHost.contains(".") && dbPassword != null && !dbPassword.isEmpty()) {
+        if (dbHost != null && !dbHost.isEmpty() && dbPassword != null && !dbPassword.isEmpty()) {
             System.out.println("=== Usando variáveis individuais (DB_HOST, DB_PORT, etc.) ===");
             System.out.println("DB_HOST completo: " + dbHost);
             log.info("Usando variáveis individuais: host={}, port={}, database={}", dbHost, dbPort, dbName);
@@ -224,15 +208,18 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             // CRÍTICO: Constrói URLs completamente separadas e independentes
             // R2DBC e JDBC NUNCA compartilham a mesma URL base
             
-            // Valida que o host tem domínio completo
-            if (host == null || !host.contains(".")) {
-                String errorMsg = String.format("Host inválido ou incompleto: %s. Deve conter domínio completo (ex: host.example.com)", host);
-                System.out.println("ERRO: " + errorMsg);
-                log.error(errorMsg);
-                throw new RuntimeException(errorMsg);
+            // Render internal URL usa host curto (ex: dpg-xxx-a) que causa UnknownHostException.
+            // Se host não tem ponto, anexar sufixo do Render (external-style).
+            if (host != null && !host.contains(".")) {
+                String suffix = environment.getProperty("DB_HOST_SUFFIX", ".oregon-postgres.render.com");
+                host = host + suffix;
+                System.out.println("Host curto detectado; usando host completo: " + host);
+                log.info("Host curto detectado; usando host completo com sufixo: {}", host);
             }
-            
-            System.out.println("Host completo validado: " + host);
+            if (host == null || host.isEmpty()) {
+                throw new RuntimeException("Host do banco de dados não pôde ser determinado");
+            }
+            System.out.println("Host validado: " + host);
             
             // URL JDBC para Flyway (completamente independente)
             String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 

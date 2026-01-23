@@ -210,6 +210,14 @@ curl https://seu-app.onrender.com/actuator/flyway
    - Render fará rollback automático
    - Corrigir migração e fazer novo deploy
 
+### Problema: UnknownHostException com host curto (ex: dpg-xxx-a)
+
+**Causa**: Render usa URL interna com host curto. Java e algumas ferramentas não resolvem sem o domínio completo.
+
+**Solução implementada**:
+- Script `entrypoint.sh` e `DatabaseEnvironmentPostProcessor` detectam host sem ponto e anexam `.oregon-postgres.render.com`.
+- Override para outras regiões: definir `DB_HOST_SUFFIX` (ex: `.frankfurt-postgres.render.com`).
+
 ### Problema: Health check falha
 
 **Solução**:
