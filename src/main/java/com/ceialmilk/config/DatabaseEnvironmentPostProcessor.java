@@ -20,24 +20,76 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+        // Log sempre, independente do perfil, para debug
         String activeProfile = String.join(",", environment.getActiveProfiles());
+        System.out.println("=== DatabaseEnvironmentPostProcessor: INICIADO (System.out) ===");
+        log.info("=== DatabaseEnvironmentPostProcessor: Iniciado ===");
+        log.info("Perfis ativos: {}", activeProfile.isEmpty() ? "nenhum" : activeProfile);
+        log.info("SPRING_PROFILES_ACTIVE: {}", environment.getProperty("SPRING_PROFILES_ACTIVE"));
         
-        // Só processa se o perfil de produção estiver ativo
-        if (!activeProfile.contains("prod")) {
+        // Verifica se o perfil prod está ativo (pode estar vindo de SPRING_PROFILES_ACTIVE)
+        String springProfilesActive = environment.getProperty("SPRING_PROFILES_ACTIVE");
+        boolean isProdProfile = activeProfile.contains("prod") || 
+                                (springProfilesActive != null && springProfilesActive.contains("prod"));
+        
+        // Se não for prod, mas DATABASE_URL estiver presente, processa mesmo assim (pode ser produção sem perfil explícito)
+        String databaseUrl = environment.getProperty("DATABASE_URL");
+        boolean hasDatabaseUrl = databaseUrl != null && !databaseUrl.isEmpty();
+        
+        if (!isProdProfile && !hasDatabaseUrl) {
+            log.info("Perfil de produção não detectado e DATABASE_URL não presente. Pulando processamento.");
             return;
+        }
+        
+        if (!isProdProfile && hasDatabaseUrl) {
+            log.warn("DATABASE_URL presente mas perfil prod não detectado. Processando mesmo assim (pode ser produção).");
         }
 
         log.info("=== DatabaseEnvironmentPostProcessor: Processando variáveis de ambiente ===");
-        
-        String databaseUrl = environment.getProperty("DATABASE_URL");
+        log.info("DATABASE_URL presente: {}", databaseUrl != null && !databaseUrl.isEmpty());
         
         if (databaseUrl == null || databaseUrl.isEmpty()) {
-            log.warn("DATABASE_URL não encontrado. Usando configuração padrão do application-prod.yml");
-            return;
+            log.error("ERRO: DATABASE_URL não encontrado! Verifique as variáveis de ambiente no Render.");
+            log.warn("Tentando usar variáveis DB_HOST, DB_NAME, etc. como fallback");
+            
+            // Fallback: tenta construir a partir de variáveis separadas
+            String dbHost = environment.getProperty("DB_HOST");
+            String dbPort = environment.getProperty("DB_PORT", "5432");
+            String dbName = environment.getProperty("DB_NAME", "ceialmilk");
+            String dbUsername = environment.getProperty("DB_USERNAME", "ceialmilk");
+            String dbPassword = environment.getProperty("DB_PASSWORD");
+            
+            if (dbHost != null && !dbHost.isEmpty() && dbPassword != null && !dbPassword.isEmpty()) {
+                log.info("Usando variáveis separadas: host={}, port={}, database={}", dbHost, dbPort, dbName);
+                
+                Map<String, Object> properties = new HashMap<>();
+                String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=require", dbHost, dbPort, dbName);
+                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%s/%s?sslmode=require", dbHost, dbPort, dbName);
+                
+                properties.put("spring.flyway.url", jdbcUrl);
+                properties.put("spring.flyway.user", dbUsername);
+                properties.put("spring.flyway.password", dbPassword);
+                properties.put("spring.r2dbc.url", r2dbcUrl);
+                properties.put("spring.r2dbc.username", dbUsername);
+                properties.put("spring.r2dbc.password", dbPassword);
+                
+                environment.getPropertySources().addFirst(
+                    new MapPropertySource("database-fallback", properties)
+                );
+                
+                log.info("Configuração de fallback aplicada com sucesso");
+                return;
+            } else {
+                log.error("Variáveis DB_HOST ou DB_PASSWORD não encontradas. Não é possível configurar o banco.");
+                throw new RuntimeException("DATABASE_URL ou variáveis DB_HOST/DB_PASSWORD devem estar configuradas");
+            }
         }
 
-        log.info("DATABASE_URL encontrado (mascarado): {}", 
-                 databaseUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@"));
+        // Se chegou aqui, DATABASE_URL está presente
+        if (databaseUrl != null && !databaseUrl.isEmpty()) {
+            log.info("DATABASE_URL encontrado (mascarado): {}", 
+                     databaseUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@"));
+        }
 
         try {
             Map<String, Object> properties = new HashMap<>();
