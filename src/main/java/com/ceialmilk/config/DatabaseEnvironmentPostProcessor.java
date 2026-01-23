@@ -58,15 +58,42 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
         log.info("DATABASE_URL presente: {}", databaseUrl != null && !databaseUrl.isEmpty());
         
         // PRIORIDADE 1: Tenta usar variáveis individuais (mais confiável)
+        // MAS: Se DB_HOST não tiver domínio completo, extrai do DATABASE_URL
         String dbHost = environment.getProperty("DB_HOST");
         String dbPort = environment.getProperty("DB_PORT", "5432");
         String dbName = environment.getProperty("DB_NAME", "ceialmilk");
         String dbUsername = environment.getProperty("DB_USERNAME", "ceialmilk");
         String dbPassword = environment.getProperty("DB_PASSWORD");
         
-        // Se temos todas as variáveis individuais, usa elas diretamente (NÃO usa DATABASE_URL)
-        if (dbHost != null && !dbHost.isEmpty() && dbPassword != null && !dbPassword.isEmpty()) {
+        // CRÍTICO: Verifica se DB_HOST tem domínio completo (contém ponto)
+        // Se não tiver, precisa extrair do DATABASE_URL
+        boolean dbHostNeedsExtraction = dbHost != null && !dbHost.isEmpty() && !dbHost.contains(".");
+        
+        // Se DB_HOST não tem domínio completo E temos DATABASE_URL, extrai o host completo
+        if (dbHostNeedsExtraction && databaseUrl != null && !databaseUrl.isEmpty()) {
+            try {
+                String urlForParse = databaseUrl;
+                if (databaseUrl.startsWith("r2dbc:postgresql://")) {
+                    urlForParse = databaseUrl.substring(6); // Remove "r2dbc:"
+                } else if (databaseUrl.startsWith("jdbc:postgresql://")) {
+                    urlForParse = databaseUrl.substring(5); // Remove "jdbc:"
+                }
+                URI uri = new URI(urlForParse.replace("postgresql://", "http://"));
+                String fullHost = uri.getHost();
+                if (fullHost != null && fullHost.contains(".")) {
+                    System.out.println("DB_HOST incompleto detectado. Extraindo host completo do DATABASE_URL: " + fullHost);
+                    log.info("DB_HOST incompleto ({}) detectado. Extraindo host completo do DATABASE_URL: {}", dbHost, fullHost);
+                    dbHost = fullHost;
+                }
+            } catch (Exception e) {
+                log.warn("Erro ao extrair host completo do DATABASE_URL: {}", e.getMessage());
+            }
+        }
+        
+        // Se temos todas as variáveis individuais (com host completo), usa elas diretamente
+        if (dbHost != null && !dbHost.isEmpty() && dbHost.contains(".") && dbPassword != null && !dbPassword.isEmpty()) {
             System.out.println("=== Usando variáveis individuais (DB_HOST, DB_PORT, etc.) ===");
+            System.out.println("DB_HOST completo: " + dbHost);
             log.info("Usando variáveis individuais: host={}, port={}, database={}", dbHost, dbPort, dbName);
             
             Map<String, Object> properties = new HashMap<>();
@@ -152,8 +179,21 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             
             URI uri = new URI(urlForParse.replace("postgresql://", "http://"));
             
-            // Usa variáveis do ambiente se disponíveis, senão extrai do DATABASE_URL
-            host = envHost != null && !envHost.isEmpty() ? envHost : uri.getHost();
+            // Usa variáveis do ambiente se disponíveis E tiverem domínio completo, senão extrai do DATABASE_URL
+            String extractedHost = uri.getHost();
+            // CRÍTICO: Só usa envHost se tiver domínio completo (contém ponto), senão usa o extraído do DATABASE_URL
+            if (envHost != null && !envHost.isEmpty() && envHost.contains(".")) {
+                host = envHost;
+                System.out.println("Usando DB_HOST do ambiente (com domínio completo): " + host);
+            } else {
+                host = extractedHost;
+                if (envHost != null && !envHost.isEmpty()) {
+                    System.out.println("DB_HOST do ambiente não tem domínio completo (" + envHost + "). Usando host extraído do DATABASE_URL: " + host);
+                    log.warn("DB_HOST do ambiente ({}) não tem domínio completo. Usando host extraído do DATABASE_URL: {}", envHost, host);
+                } else {
+                    System.out.println("DB_HOST não disponível. Usando host extraído do DATABASE_URL: " + host);
+                }
+            }
             port = envPort != null && !envPort.isEmpty() ? Integer.parseInt(envPort) : (uri.getPort() > 0 ? uri.getPort() : 5432);
             String path = uri.getPath();
             database = envDatabase != null && !envDatabase.isEmpty() ? envDatabase : 
@@ -183,6 +223,16 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             
             // CRÍTICO: Constrói URLs completamente separadas e independentes
             // R2DBC e JDBC NUNCA compartilham a mesma URL base
+            
+            // Valida que o host tem domínio completo
+            if (host == null || !host.contains(".")) {
+                String errorMsg = String.format("Host inválido ou incompleto: %s. Deve conter domínio completo (ex: host.example.com)", host);
+                System.out.println("ERRO: " + errorMsg);
+                log.error(errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
+            
+            System.out.println("Host completo validado: " + host);
             
             // URL JDBC para Flyway (completamente independente)
             String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 
