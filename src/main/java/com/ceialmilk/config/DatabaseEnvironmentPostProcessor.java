@@ -72,8 +72,8 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 log.info("Usando variáveis separadas: host={}, port={}, database={}", dbHost, dbPort, dbName);
                 
                 Map<String, Object> properties = new HashMap<>();
-                String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=require", dbHost, dbPort, dbName);
-                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%s/%s?sslmode=require", dbHost, dbPort, dbName);
+                String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=prefer&ssl=true", dbHost, dbPort, dbName);
+                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%s/%s?sslmode=prefer", dbHost, dbPort, dbName);
                 
                 properties.put("spring.flyway.url", jdbcUrl);
                 properties.put("spring.flyway.user", dbUsername);
@@ -132,9 +132,18 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 
                 log.info("Formato R2DBC detectado. Extraído: host={}, port={}, database={}, username={}", 
                          host, port, database, username);
+                System.out.println("Credenciais extraídas - Username: " + username + ", Password length: " + 
+                                 (password != null ? password.length() : 0));
                 
-                // Configura R2DBC (já está no formato correto)
-                properties.put("spring.r2dbc.url", databaseUrl);
+                // Configura R2DBC (já está no formato correto, mas vamos garantir sslmode=prefer)
+                // Se o DATABASE_URL já tem sslmode, mantém; senão, adiciona prefer
+                String r2dbcUrlFinal = databaseUrl;
+                if (!databaseUrl.contains("sslmode=")) {
+                    r2dbcUrlFinal = databaseUrl + (databaseUrl.contains("?") ? "&" : "?") + "sslmode=prefer";
+                } else if (databaseUrl.contains("sslmode=require")) {
+                    r2dbcUrlFinal = databaseUrl.replace("sslmode=require", "sslmode=prefer");
+                }
+                properties.put("spring.r2dbc.url", r2dbcUrlFinal);
                 properties.put("spring.r2dbc.username", username);
                 properties.put("spring.r2dbc.password", password);
                 
@@ -164,7 +173,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                          host, port, database, username);
                 
                 // Converte para R2DBC
-                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%d/%s?sslmode=require", host, port, database);
+                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%d/%s?sslmode=prefer", host, port, database);
                 properties.put("spring.r2dbc.url", r2dbcUrl);
                 properties.put("spring.r2dbc.username", username);
                 properties.put("spring.r2dbc.password", password);
@@ -175,10 +184,16 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             }
 
             // CRÍTICO: Configura Flyway com URL JDBC completa
-            String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=require", host, port, database);
+            // Usa sslmode=prefer em vez de require para ser mais tolerante com SSL
+            // O Render PostgreSQL aceita conexões com ou sem SSL
+            String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=prefer&ssl=true", host, port, database);
             properties.put("spring.flyway.url", jdbcUrl);
             properties.put("spring.flyway.user", username);
             properties.put("spring.flyway.password", password);
+            
+            System.out.println("URL JDBC configurada: " + jdbcUrl.replaceAll("://[^:]+:[^@]+@", "://***:***@"));
+            System.out.println("Username: " + username);
+            System.out.println("Password presente: " + (password != null && !password.isEmpty()));
             
             // Também define variáveis de ambiente para garantir
             properties.put("FLYWAY_JDBC_URL", jdbcUrl);
