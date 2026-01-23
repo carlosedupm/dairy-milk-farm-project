@@ -1,0 +1,313 @@
+---
+description: Padrões de design de API RESTful reativa para CeialMilk
+globs: "**/controller/**/*.java,**/dto/**/*.java"
+alwaysApply: false
+---
+
+# Padrões de Design de API
+
+## Estrutura de Endpoints
+
+### Versionamento
+
+```java
+// ✅ GOOD - Versionamento no path
+@RestController
+@RequestMapping("/api/v1/fazendas")
+public class FazendaController {
+    // ...
+}
+
+// ❌ BAD - Sem versionamento
+@RequestMapping("/fazendas")
+```
+
+**SEMPRE use `/api/v1/` para versionamento de API.**
+
+### Nomenclatura de Recursos
+
+```java
+// ✅ GOOD - Nomes em português (conforme domínio do negócio)
+@RequestMapping("/api/v1/fazendas")
+@RequestMapping("/api/v1/animais")
+@RequestMapping("/api/v1/producao-leite")
+
+// ✅ GOOD - Endpoints de busca específicos
+@GetMapping("/search/by-nome")
+@GetMapping("/search/by-localizacao")
+```
+
+**Consulte `docs/postman/` para ver todos os endpoints implementados.**
+
+## HTTP Verbs e Status Codes
+
+### GET - Buscar Recursos
+
+```java
+// ✅ GOOD - GET com status apropriado
+@GetMapping("/{id}")
+public Mono<ResponseEntity<FazendaResponseDTO>> findById(@PathVariable Long id) {
+    return service.findById(id)
+        .map(ResponseEntity::ok)
+        .defaultIfEmpty(ResponseEntity.notFound().build());
+}
+
+@GetMapping
+public Mono<ResponseEntity<Flux<FazendaSummaryDTO>>> findAll() {
+    return Mono.just(ResponseEntity.ok(service.findAll()));
+}
+```
+
+**Status Codes:**
+- `200 OK`: Recurso encontrado
+- `404 Not Found`: Recurso não encontrado
+- `400 Bad Request`: Parâmetros inválidos
+
+### POST - Criar Recursos
+
+```java
+// ✅ GOOD - POST com validação e status 201
+@PostMapping
+public Mono<ResponseEntity<FazendaResponseDTO>> create(
+        @Valid @RequestBody FazendaCreateDTO dto) {
+    return service.create(dto)
+        .map(created -> ResponseEntity.status(HttpStatus.CREATED).body(created));
+}
+```
+
+**Status Codes:**
+- `201 Created`: Recurso criado com sucesso
+- `400 Bad Request`: Dados inválidos
+- `409 Conflict`: Recurso já existe
+
+### PUT - Atualizar Recursos Completos
+
+```java
+// ✅ GOOD - PUT para atualização completa
+@PutMapping("/{id}")
+public Mono<ResponseEntity<FazendaResponseDTO>> update(
+        @PathVariable Long id,
+        @Valid @RequestBody FazendaUpdateDTO dto) {
+    return service.update(id, dto)
+        .map(ResponseEntity::ok)
+        .defaultIfEmpty(ResponseEntity.notFound().build());
+}
+```
+
+**Status Codes:**
+- `200 OK`: Recurso atualizado
+- `404 Not Found`: Recurso não encontrado
+- `400 Bad Request`: Dados inválidos
+
+### DELETE - Remover Recursos
+
+```java
+// ✅ GOOD - DELETE com status apropriado
+@DeleteMapping("/{id}")
+public Mono<ResponseEntity<Void>> delete(@PathVariable Long id) {
+    return service.delete(id)
+        .then(Mono.just(ResponseEntity.noContent().build()))
+        .defaultIfEmpty(ResponseEntity.notFound().build());
+}
+```
+
+**Status Codes:**
+- `204 No Content`: Recurso removido
+- `404 Not Found`: Recurso não encontrado
+
+## Estrutura de DTOs
+
+### Padrão de Nomenclatura
+
+```java
+// ✅ GOOD - DTOs específicos por operação
+public record FazendaCreateDTO(...) {}      // Para criação
+public record FazendaUpdateDTO(...) {}      // Para atualização
+public record FazendaResponseDTO(...) {}     // Para resposta completa
+public record FazendaSummaryDTO(...) {}     // Para listagens
+```
+
+**SEMPRE separe DTOs por operação. NUNCA reutilize o mesmo DTO para diferentes operações.**
+
+### DTOs de Criação (CreateDTO)
+
+```java
+// ✅ GOOD - CreateDTO sem ID e campos gerados
+public record FazendaCreateDTO(
+    @NotBlank String nome,
+    @NotBlank String localizacao,
+    @NotNull @Min(1) Integer quantidadeVacas
+) {}
+// Sem: id, createdAt, updatedAt
+```
+
+### DTOs de Atualização (UpdateDTO)
+
+```java
+// ✅ GOOD - UpdateDTO com campos opcionais
+public record FazendaUpdateDTO(
+    @Size(min = 3, max = 100) String nome,
+    String localizacao,
+    @Min(1) Integer quantidadeVacas
+) {}
+// Todos os campos opcionais para atualização parcial
+```
+
+### DTOs de Resposta (ResponseDTO)
+
+```java
+// ✅ GOOD - ResponseDTO com todos os campos relevantes
+public record FazendaResponseDTO(
+    Long id,
+    String nome,
+    String localizacao,
+    Integer quantidadeVacas,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
+) {}
+```
+
+### DTOs de Resumo (SummaryDTO)
+
+```java
+// ✅ GOOD - SummaryDTO com campos essenciais para listagens
+public record FazendaSummaryDTO(
+    Long id,
+    String nome,
+    String localizacao,
+    Integer quantidadeVacas
+) {}
+```
+
+## Validações em DTOs
+
+### Bean Validation
+
+```java
+// ✅ GOOD - Validações completas
+public record FazendaCreateDTO(
+    @NotBlank(message = "Nome é obrigatório")
+    @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")
+    String nome,
+    
+    @NotBlank(message = "Localização é obrigatória")
+    @Size(max = 200, message = "Localização deve ter no máximo 200 caracteres")
+    String localizacao,
+    
+    @NotNull(message = "Quantidade de vacas é obrigatória")
+    @Min(value = 1, message = "Quantidade deve ser pelo menos 1")
+    @Max(value = 10000, message = "Quantidade não pode exceder 10000")
+    Integer quantidadeVacas
+) {}
+```
+
+**SEMPRE valide DTOs com Bean Validation. Use mensagens descritivas em português.**
+
+## Documentação OpenAPI/Swagger
+
+### Anotações Swagger
+
+```java
+// ✅ GOOD - Documentação completa do endpoint
+@Operation(
+    summary = "Buscar fazenda por ID",
+    description = "Retorna os detalhes completos de uma fazenda específica"
+)
+@ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Fazenda encontrada"),
+    @ApiResponse(responseCode = "404", description = "Fazenda não encontrada")
+})
+@GetMapping("/{id}")
+public Mono<ResponseEntity<FazendaResponseDTO>> findById(
+        @Parameter(description = "ID da fazenda") @PathVariable Long id) {
+    // ...
+}
+```
+
+**Mantenha a documentação Swagger atualizada. Acesse em `/swagger-ui.html`**
+
+## Endpoints de Busca
+
+### Padrão de Busca
+
+```java
+// ✅ GOOD - Endpoints de busca específicos
+@GetMapping("/search/by-nome")
+public Mono<ResponseEntity<Flux<FazendaSummaryDTO>>> searchByNome(
+        @RequestParam String nome) {
+    return Mono.just(ResponseEntity.ok(service.findByNomeContaining(nome)));
+}
+
+@GetMapping("/search/by-localizacao")
+public Mono<ResponseEntity<Flux<FazendaSummaryDTO>>> searchByLocalizacao(
+        @RequestParam String localizacao) {
+    return Mono.just(ResponseEntity.ok(service.findByLocalizacao(localizacao)));
+}
+```
+
+**Use `/search/` para endpoints de busca específicos.**
+
+## Autenticação JWT
+
+### Proteção de Endpoints
+
+```java
+// ✅ GOOD - Endpoints protegidos por padrão
+@RestController
+@RequestMapping("/api/v1/fazendas")
+@RequiredArgsConstructor
+public class FazendaController {
+    // Todos os endpoints requerem autenticação JWT
+}
+
+// ✅ GOOD - Endpoints públicos (se necessário)
+@GetMapping("/public")
+public Mono<ResponseEntity<String>> publicEndpoint() {
+    // Configurado no SecurityConfig para permitir acesso sem autenticação
+}
+```
+
+**Consulte `memory-bank/techContext.md` para configuração de segurança.**
+
+## Tratamento de Erros
+
+### Respostas de Erro Padronizadas
+
+```java
+// ✅ GOOD - Estrutura de erro consistente
+public record ErrorResponse(
+    String message,
+    String code,
+    LocalDateTime timestamp,
+    List<String> details
+) {}
+```
+
+**SEMPRE retorne erros em formato JSON consistente.**
+
+## Testes com Postman
+
+**Consulte `docs/postman/` para:**
+- Coleção completa de endpoints
+- Exemplos de requisições
+- Variáveis de ambiente
+- Scripts de teste
+
+**Use a coleção Postman como referência ao implementar novos endpoints.**
+
+## Referências
+
+- **Padrões de API**: `memory-bank/systemPatterns.md`
+- **Exemplos Postman**: `docs/postman/POSTMAN-README.md`
+- **Configuração Swagger**: `memory-bank/techContext.md`
+- **Estado Atual**: `memory-bank/activeContext.md`
+
+## Regras Importantes
+
+1. **SEMPRE** use versionamento `/api/v1/`
+2. **SEMPRE** separe DTOs por operação (Create, Update, Response, Summary)
+3. **SEMPRE** valide DTOs com Bean Validation
+4. **SEMPRE** use status codes HTTP apropriados
+5. **SEMPRE** documente endpoints com OpenAPI/Swagger
+6. **SEMPRE** mantenha consistência com endpoints existentes
+7. **SEMPRE** teste novos endpoints com a coleção Postman

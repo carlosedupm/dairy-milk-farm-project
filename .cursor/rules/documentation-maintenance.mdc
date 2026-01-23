@@ -1,0 +1,212 @@
+---
+description: Instruções para manter a documentação do projeto atualizada
+alwaysApply: true
+---
+
+# Manutenção de Documentação
+
+## Princípio Fundamental
+
+**A documentação do projeto é uma parte crítica do código.** Ela deve ser mantida atualizada sempre que houver mudanças significativas no projeto.
+
+## Quando Atualizar Cada Arquivo
+
+### `memory-bank/activeContext.md`
+
+**Atualize quando:**
+- Completar uma funcionalidade importante
+- Iniciar uma nova funcionalidade
+- Identificar um novo problema ou risco
+- Tomar uma nova decisão técnica
+- Mudar o foco ou prioridades do projeto
+- Resolver problemas conhecidos
+
+**O que atualizar:**
+- Seção "O que está funcionando"
+- Seção "Em andamento"
+- Seção "Próximos passos imediatos"
+- Seção "Problemas Conhecidos"
+- Seção "Decisões Técnicas Ativas"
+- Seção "Foco Atual"
+
+**Exemplo:**
+```markdown
+### ✅ Concluído desde a última atualização:
+1. ✅ **Nova Funcionalidade X**: Descrição do que foi implementado
+2. ✅ **Correção Y**: Problema resolvido
+
+### 🚧 Em andamento:
+- **Funcionalidade Z**: Status atual da implementação
+```
+
+### `memory-bank/progress.md`
+
+**Atualize quando:**
+- Completar tarefas ou sprints
+- Atingir marcos importantes
+- Mudar métricas de completude
+- Adicionar novas tarefas ao backlog
+
+**O que atualizar:**
+- Seção "Status Geral do Projeto" (percentuais)
+- Seção "O que foi concluído"
+- Seção "Em andamento"
+- Seção "Próximos Passos"
+- Seção "Histórico de Progresso"
+- Métricas de completude
+
+**Exemplo:**
+```markdown
+### **Completude Geral**: 45% (aumentou de 40%)
+- **Infraestrutura**: 95% ✅
+- **Documentação**: 85% ✅ (aumentou de 80%)
+- **Implementação**: 35% 🚧 (aumentou de 30%)
+```
+
+### `memory-bank/techContext.md`
+
+**Atualize quando:**
+- Adicionar novas dependências ao `pom.xml`
+- Mudar versões de dependências
+- Adicionar novas configurações no `application.yml`
+- Documentar novas decisões técnicas
+- Adicionar novas ferramentas ou tecnologias
+
+**O que atualizar:**
+- Lista de dependências
+- Versões de tecnologias
+- Configurações importantes
+- Decisões técnicas documentadas
+
+**Exemplo:**
+```markdown
+### Nova Dependência Adicionada
+- **SpringDoc OpenAPI**: Versão 2.5.0
+  - Motivo: Documentação automática da API
+  - Configuração: `OpenAPIConfig.java`
+```
+
+### `memory-bank/systemPatterns.md`
+
+**Atualize quando:**
+- Estabelecer novos padrões arquiteturais
+- Definir novos padrões de código
+- Mudar estratégias de API
+- Implementar novos padrões de segurança
+- Estabelecer novos padrões de teste
+
+**O que atualizar:**
+- Seção relevante ao novo padrão
+- Exemplos de implementação
+- Justificativas para o padrão
+
+**Exemplo:**
+```markdown
+### **Novo Padrão: Global Exception Handler**
+- Implementado: `GlobalExceptionHandler.java`
+- Motivo: Tratamento centralizado de exceções
+- Padrão: Usar `@RestControllerAdvice` com métodos reativos
+```
+
+### `memory-bank/deploy-notes.md`
+
+**Atualize quando:**
+- Modificar configurações de deploy
+- Adicionar novas variáveis de ambiente
+- Documentar novos processos de deploy
+- Adicionar notas sobre migrações de banco
+- Documentar problemas de deploy e soluções
+
+**O que atualizar:**
+- Variáveis de ambiente obrigatórias
+- Comandos úteis
+- Notas sobre migrações
+- Troubleshooting
+
+**Exemplo:**
+```markdown
+## Nova Variável de Ambiente
+- `REDIS_URL`: URL do Redis para cache (opcional em dev)
+```
+
+### `memory-bank/projectbrief.md` e `productContext.md`
+
+**Atualize quando:**
+- Mudar objetivos principais do projeto
+- Adicionar novas fases de desenvolvimento
+- Mudar público-alvo ou estratégia
+- Atualizar métricas de sucesso
+- Completar fases do roadmap
+
+**O que atualizar:**
+- Objetivos e fases
+- Roadmap e timeline
+- Métricas de sucesso
+- Diferenciais competitivos
+
+## Processo de Atualização
+
+### 1. Antes de Fazer Mudanças
+- Leia o arquivo relevante do memory-bank
+- Entenda o estado atual documentado
+
+### 2. Durante o Desenvolvimento
+- Mantenha notas mentais sobre mudanças que afetam a documentação
+- Se estabelecer um novo padrão, documente-o imediatamente
+
+### 3. Após Completar Mudanças
+- **SEMPRE** atualize a documentação relevante
+- Seja específico sobre o que mudou
+- Inclua exemplos quando apropriado
+- Atualize datas de "Última atualização"
+
+### 4. Revisão Periódica
+- Revise a documentação semanalmente
+- Verifique se está desatualizada
+- Atualize métricas e percentuais
+
+## Formato Padrão de Atualização
+
+### Data de Atualização
+Sempre inclua no final do arquivo:
+```markdown
+**Última atualização**: YYYY-MM-DD
+```
+
+### Exemplos de Entradas
+```markdown
+### ✅ Concluído desde a última atualização:
+1. ✅ **Funcionalidade X**: Descrição breve do que foi implementado
+2. ✅ **Correção Y**: Problema que foi resolvido
+
+### 🚧 Em andamento:
+- **Funcionalidade Z**: Status atual e próximos passos
+
+### 📋 Próximos passos imediatos:
+1. **Tarefa A**: Descrição da tarefa
+2. **Tarefa B**: Descrição da tarefa
+```
+
+## Checklist de Atualização
+
+Após fazer mudanças significativas, verifique:
+
+- [ ] `activeContext.md` atualizado com novo estado?
+- [ ] `progress.md` atualizado com novas completudes?
+- [ ] `techContext.md` atualizado se adicionou tecnologias?
+- [ ] `systemPatterns.md` atualizado se estabeleceu novos padrões?
+- [ ] `deploy-notes.md` atualizado se mudou deploy?
+- [ ] Data de "Última atualização" atualizada?
+- [ ] Exemplos e código de exemplo atualizados?
+
+## Importância
+
+**Documentação desatualizada é pior que documentação ausente.** Ela pode levar a decisões erradas baseadas em informações incorretas.
+
+**SEMPRE mantenha a documentação sincronizada com o código e o estado real do projeto.**
+
+## Referências
+
+- **AGENTS.md**: Visão geral do projeto e referências
+- **memory-bank/activeContext.md**: Estado atual do projeto
+- **memory-bank/progress.md**: Progresso e métricas

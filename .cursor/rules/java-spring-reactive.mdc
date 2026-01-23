@@ -1,0 +1,254 @@
+---
+description: Padrões Java/Spring WebFlux reativos para o projeto CeialMilk
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# Padrões Java/Spring WebFlux Reativos
+
+## Programação Reativa
+
+### Uso de Mono e Flux
+
+```java
+// ✅ GOOD - Retorno reativo
+public Mono<FazendaResponseDTO> findById(Long id) {
+    return repository.findById(id)
+        .map(mapper::toResponseDTO)
+        .switchIfEmpty(Mono.error(new EntityNotFoundException()));
+}
+
+// ✅ GOOD - Retorno de lista reativa
+public Flux<FazendaSummaryDTO> findAll() {
+    return repository.findAll()
+        .map(mapper::toSummaryDTO);
+}
+
+// ❌ BAD - Não use bloqueios
+public FazendaResponseDTO findById(Long id) {
+    return repository.findById(id).block(); // NUNCA use block()
+}
+```
+
+### Tratamento de Erros Reativo
+
+```java
+// ✅ GOOD - Tratamento reativo de erros
+public Mono<FazendaResponseDTO> create(FazendaCreateDTO dto) {
+    return repository.save(mapper.toEntity(dto))
+        .map(mapper::toResponseDTO)
+        .onErrorMap(DuplicateKeyException.class, 
+            e -> new BusinessException("Fazenda já existe"));
+}
+
+// ❌ BAD - Não use try-catch com bloqueios
+try {
+    Fazenda entity = repository.save(dto).block();
+} catch (Exception e) { ... }
+```
+
+## Estrutura de Camadas
+
+### Controller (Camada de Apresentação)
+
+```java
+// ✅ GOOD - Controller reativo
+@RestController
+@RequestMapping("/api/v1/fazendas")
+@RequiredArgsConstructor
+public class FazendaController {
+    
+    private final FazendaService service;
+    
+    @GetMapping("/{id}")
+    public Mono<ResponseEntity<FazendaResponseDTO>> findById(@PathVariable Long id) {
+        return service.findById(id)
+            .map(ResponseEntity::ok)
+            .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+    
+    @PostMapping
+    public Mono<ResponseEntity<FazendaResponseDTO>> create(
+            @Valid @RequestBody FazendaCreateDTO dto) {
+        return service.create(dto)
+            .map(created -> ResponseEntity.status(HttpStatus.CREATED).body(created));
+    }
+}
+```
+
+**Consulte `memory-bank/systemPatterns.md` para padrões completos de API.**
+
+### Service (Camada de Negócio)
+
+```java
+// ✅ GOOD - Service reativo
+@Service
+@RequiredArgsConstructor
+public class FazendaService {
+    
+    private final FazendaRepository repository;
+    private final FazendaMapper mapper;
+    
+    public Mono<FazendaResponseDTO> create(FazendaCreateDTO dto) {
+        return repository.existsByNome(dto.getNome())
+            .flatMap(exists -> {
+                if (exists) {
+                    return Mono.error(new BusinessException("Fazenda já existe"));
+                }
+                return repository.save(mapper.toEntity(dto))
+                    .map(mapper::toResponseDTO);
+            });
+    }
+}
+```
+
+### Repository (Camada de Dados)
+
+```java
+// ✅ GOOD - Repository R2DBC reativo
+public interface FazendaRepository extends ReactiveCrudRepository<Fazenda, Long> {
+    
+    Mono<Boolean> existsByNome(String nome);
+    
+    Flux<Fazenda> findByLocalizacaoContainingIgnoreCase(String localizacao);
+    
+    Mono<Long> countByQuantidadeVacasGreaterThanEqual(Integer min);
+}
+```
+
+**SEMPRE use interfaces R2DBC reativas. NUNCA use JPA repositories bloqueantes.**
+
+## Validações
+
+### Bean Validation em DTOs
+
+```java
+// ✅ GOOD - DTO com validações
+public record FazendaCreateDTO(
+    @NotBlank(message = "Nome é obrigatório")
+    @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")
+    String nome,
+    
+    @NotBlank(message = "Localização é obrigatória")
+    String localizacao,
+    
+    @NotNull(message = "Quantidade de vacas é obrigatória")
+    @Min(value = 1, message = "Quantidade deve ser pelo menos 1")
+    Integer quantidadeVacas
+) {}
+```
+
+### Validação no Controller
+
+```java
+// ✅ GOOD - Validação automática com @Valid
+@PostMapping
+public Mono<ResponseEntity<FazendaResponseDTO>> create(
+        @Valid @RequestBody FazendaCreateDTO dto) {
+    return service.create(dto)
+        .map(ResponseEntity::status(HttpStatus.CREATED)::body);
+}
+```
+
+## Mappers
+
+### MapStruct para Conversão
+
+```java
+// ✅ GOOD - Mapper com MapStruct
+@Mapper(componentModel = "spring")
+public interface FazendaMapper {
+    
+    Fazenda toEntity(FazendaCreateDTO dto);
+    
+    FazendaResponseDTO toResponseDTO(Fazenda entity);
+    
+    FazendaSummaryDTO toSummaryDTO(Fazenda entity);
+    
+    @Mapping(target = "id", ignore = true)
+    void updateEntity(FazendaUpdateDTO dto, @MappingTarget Fazenda entity);
+}
+```
+
+## Tratamento de Exceções
+
+### Handler Global Reativo
+
+```java
+// ✅ GOOD - Handler reativo global
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    
+    @ExceptionHandler(EntityNotFoundException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleNotFound(EntityNotFoundException ex) {
+        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(new ErrorResponse(ex.getMessage())));
+    }
+    
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleValidation(
+            MethodArgumentNotValidException ex) {
+        // Processar erros de validação
+        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(new ErrorResponse("Erros de validação")));
+    }
+}
+```
+
+## Padrões de Código
+
+### 1. Use Lombok para Reduzir Boilerplate
+
+```java
+// ✅ GOOD
+@Entity
+@Table(name = "fazendas")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Fazenda {
+    // ...
+}
+```
+
+### 2. Use Records para DTOs Imutáveis (Java 17+)
+
+```java
+// ✅ GOOD - Record para DTO
+public record FazendaResponseDTO(
+    Long id,
+    String nome,
+    String localizacao,
+    Integer quantidadeVacas,
+    LocalDateTime createdAt
+) {}
+```
+
+### 3. Injeção de Dependência
+
+```java
+// ✅ GOOD - Constructor injection com Lombok
+@Service
+@RequiredArgsConstructor
+public class FazendaService {
+    private final FazendaRepository repository;
+    private final FazendaMapper mapper;
+}
+```
+
+## Referências
+
+- **Padrões Arquiteturais**: `memory-bank/systemPatterns.md`
+- **Stack Tecnológica**: `memory-bank/techContext.md`
+- **Estado Atual**: `memory-bank/activeContext.md`
+
+## Regras Importantes
+
+1. **NUNCA** use `.block()` em código reativo
+2. **SEMPRE** retorne `Mono<>` ou `Flux<>` em métodos reativos
+3. **SEMPRE** use R2DBC repositories, nunca JPA
+4. **SEMPRE** valide DTOs com Bean Validation
+5. **SEMPRE** trate erros de forma reativa
+6. **MANTENHA** a separação de camadas: Controller → Service → Repository

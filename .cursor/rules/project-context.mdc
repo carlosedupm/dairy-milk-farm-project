@@ -1,0 +1,93 @@
+---
+description: Contexto do projeto CeialMilk - sempre consulte o memory-bank antes de decisões
+alwaysApply: true
+---
+
+# Contexto do Projeto CeialMilk
+
+## Consulta Obrigatória do Memory Bank
+
+**ANTES de tomar qualquer decisão técnica ou fazer mudanças significativas, SEMPRE consulte:**
+
+1. **`memory-bank/activeContext.md`**: Estado atual do projeto
+   - O que está funcionando
+   - O que está em andamento
+   - Próximos passos planejados
+   - Problemas conhecidos
+   - Decisões técnicas ativas
+
+2. **`memory-bank/systemPatterns.md`**: Padrões arquiteturais estabelecidos
+   - Padrões de design implementados
+   - Estrutura de camadas
+   - Padrões de API
+   - Padrões de segurança
+   - Padrões de performance
+
+3. **`memory-bank/progress.md`**: Status e histórico
+   - Completude geral do projeto
+   - Tarefas concluídas
+   - Próximos marcos
+   - Métricas de progresso
+
+4. **`memory-bank/techContext.md`**: Stack e configurações técnicas
+   - Dependências e versões
+   - Configurações do Spring Boot
+   - Configurações de banco de dados
+   - Configurações de segurança
+
+## Princípios Fundamentais
+
+### 1. Consistência Arquitetural
+- **SEMPRE** siga os padrões documentados em `memory-bank/systemPatterns.md`
+- **NUNCA** introduza padrões que contradigam os estabelecidos sem atualizar a documentação primeiro
+- **MANTENHA** a estrutura de camadas: Controller → Service → Repository
+
+### 2. Programação Reativa
+- Use `Mono<>` e `Flux<>` do Project Reactor
+- Operações não-bloqueantes com R2DBC
+- Tratamento de erros reativo
+- Backpressure adequado
+
+### 3. Atualização de Documentação
+Após mudanças significativas, atualize:
+- `activeContext.md`: Se o estado do projeto mudou
+- `progress.md`: Se completou tarefas ou atingiu marcos
+- `systemPatterns.md`: Se estabeleceu novos padrões
+- `techContext.md`: Se adicionou tecnologias ou dependências
+
+## Stack Tecnológica (Referência Rápida)
+
+- **Spring Boot**: 3.3.0
+- **WebFlux**: Programação reativa
+- **R2DBC**: Acesso reativo ao PostgreSQL
+- **PostgreSQL**: 15
+- **JWT**: Autenticação stateless
+- **Java**: 17
+
+**Para detalhes completos, consulte `memory-bank/techContext.md`**
+
+## Estado Atual (Resumo)
+
+- Infraestrutura: 95% ✅
+- Documentação: 80% ✅
+- Implementação: 30% 🚧
+- Testes: 0% 🚧
+- Deploy: 70% ✅
+
+**Para status detalhado, consulte `memory-bank/activeContext.md` e `memory-bank/progress.md`**
+
+## Quando Consultar Documentação Específica
+
+- **Implementando nova funcionalidade**: `activeContext.md` + `systemPatterns.md`
+- **Adicionando nova dependência**: `techContext.md` + `systemPatterns.md`
+- **Criando novo endpoint**: `systemPatterns.md` + `docs/postman/`
+- **Resolvendo problema**: `activeContext.md` (problemas conhecidos)
+- **Atualizando deploy**: `deploy-notes.md` + `techContext.md`
+
+## Referências Principais
+
+- **AGENTS.md**: Visão geral e guia principal
+- **memory-bank/activeContext.md**: Estado atual e contexto ativo
+- **memory-bank/systemPatterns.md**: Padrões arquiteturais
+- **memory-bank/progress.md**: Progresso e métricas
+- **memory-bank/techContext.md**: Stack e configurações
