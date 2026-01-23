@@ -75,7 +75,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory", 
                                              dbHost, dbPort, dbName);
                 // R2DBC: Remove credenciais da URL e usa propriedades separadas
-                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%s/%s?sslmode=require", dbHost, dbPort, dbName);
+                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%s/%s?sslMode=require", dbHost, dbPort, dbName);
                 
                 properties.put("spring.flyway.url", jdbcUrl);
                 properties.put("spring.flyway.user", dbUsername);
@@ -142,7 +142,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 // Configura R2DBC
                 // IMPORTANTE: Remove credenciais da URL e usa propriedades separadas
                 // R2DBC pode ter problemas com credenciais na URL, especialmente com SSL
-                String r2dbcUrlFinal = String.format("r2dbc:postgresql://%s:%d/%s?sslmode=require", host, port, database);
+                String r2dbcUrlFinal = String.format("r2dbc:postgresql://%s:%d/%s?sslMode=require", host, port, database);
                 properties.put("spring.r2dbc.url", r2dbcUrlFinal);
                 properties.put("spring.r2dbc.username", username);
                 properties.put("spring.r2dbc.password", password);
@@ -179,7 +179,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
                 // Converte para R2DBC
                 // IMPORTANTE: Remove credenciais da URL e usa propriedades separadas
                 // R2DBC pode ter problemas com credenciais na URL, especialmente com SSL
-                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%d/%s?sslmode=require", host, port, database);
+                String r2dbcUrl = String.format("r2dbc:postgresql://%s:%d/%s?sslMode=require", host, port, database);
                 properties.put("spring.r2dbc.url", r2dbcUrl);
                 properties.put("spring.r2dbc.username", username);
                 properties.put("spring.r2dbc.password", password);

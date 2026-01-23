@@ -17,7 +17,7 @@ spring:
   r2dbc:
     # Tenta usar DATABASE_URL no formato R2DBC, senão constrói a partir de variáveis
     # Se DATABASE_URL estiver no formato JDBC (postgresql://), será convertido automaticamente
-    url: ${R2DBC_URL:r2dbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:ceialmilk}?sslmode=require}
+    url: ${R2DBC_URL:r2dbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:ceialmilk}?sslMode=require}
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
 
