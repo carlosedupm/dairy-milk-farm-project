@@ -2,15 +2,17 @@
 
 ## Deploy no Render (fluxo recomendado)
 
-Flyway (JDBC) no container falha com **EOFException** ao conectar ao Postgres do Render. Use migrações **fora** do container:
+Flyway (JDBC) no container **falha no Render** (host interno → `UnknownHostException`; host externo → `EOFException`). **Não rodamos Flyway no container por padrão.** Migrações via script local:
 
 1. **Migrações**: Render Dashboard → **ceialmilk-db** → Connect → **External** → copiar External Database URL. Localmente:
    ```bash
    export RENDER_EXTERNAL_DATABASE_URL='postgresql://USER:PASS@HOST:5432/DB'
    ./scripts/flyway-migrate-render.sh
    ```
-2. **Deploy**: O `render.yaml` define `SKIP_FLYWAY_MIGRATE=true`. O container sobe **sem** Flyway; a app conecta ao banco via R2DBC (host externo).
+2. **Deploy**: Push para `main` ou deploy manual. O container sobe **sem** Flyway (padrão); a app conecta via R2DBC (host externo).
 3. **Novas migrações**: rodar o script de novo, depois deploy.
+
+**Opt-in**: Definir `RUN_FLYWAY_IN_CONTAINER=true` no Render para rodar Flyway no container (normalmente falha; use o script).
 
 ## Configuração no Render
 
@@ -37,11 +39,9 @@ O `render.yaml` configura automaticamente as seguintes variáveis:
 
 ### Opcionais (Render / conexão ao banco)
 
-- **Padrão**: Host **externo** (ex: `dpg-xxx-a.oregon-postgres.render.com`). O host interno (curto) **não resolve** em serviços Docker no Render → `UnknownHostException`.
-- `USE_INTERNAL_DB_HOST=true` - Força host **interno** (curto). Só use se o seu ambiente resolver o host interno.
+- **Padrão**: Host **externo** (ex: `dpg-xxx-a.oregon-postgres.render.com`). O host interno (curto) **não resolve** em Docker no Render.
 - `DB_HOST_SUFFIX` - Sufixo do externo (ex: `.frankfurt-postgres.render.com`) quando o host é curto.
-- `FLYWAY_RETRY_ATTEMPTS`, `FLYWAY_RETRY_SLEEP` - Retries do Flyway (padrão: 18 tentativas, 10s entre cada).
-- `SKIP_FLYWAY_MIGRATE=true` - Não executa Flyway no container; só inicia a app (migrações no CI/manual).
+- `RUN_FLYWAY_IN_CONTAINER=true` - **Opt-in** para rodar Flyway no container (em geral falha no Render; prefira o script).
 
 ### Conversão Automática de DATABASE_URL
 
@@ -66,45 +66,21 @@ A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProc
 
 ## Configuração do Flyway
 
-### Nova Abordagem: Flyway CLI (Implementado em 2026-01-23)
+### Flyway fora do container (padrão no Render)
 
-**Migrações executadas ANTES da aplicação iniciar** usando Flyway CLI via script de inicialização (`entrypoint.sh`).
+**Flyway (JDBC) no container falha no Render** (interno → `UnknownHostException`, externo → `EOFException`). Por isso:
 
-**Vantagens:**
-- ✅ Mantém arquitetura reativa (aplicação nunca usa JDBC, apenas R2DBC)
-- ✅ Separação de responsabilidades (migrações são responsabilidade do deploy)
-- ✅ Retry no Flyway CLI (evita pg_isready/nc que falham com SSL/rede no Render)
-- ✅ Melhor tratamento de erros
+- **Padrão**: O `entrypoint.sh` **não** executa Flyway. Migrações rodam localmente via `./scripts/flyway-migrate-render.sh` (External Database URL).
+- **Opt-in**: `RUN_FLYWAY_IN_CONTAINER=true` faz o container rodar Flyway antes da app (em geral continua falhando no Render).
 
-**Como Funciona:**
-
-- **Padrão (Render)**: `SKIP_FLYWAY_MIGRATE=true` no `render.yaml`. Migrações rodam via `scripts/flyway-migrate-render.sh` (local); o container **não** executa Flyway.
-- **Se `SKIP_FLYWAY_MIGRATE` não estiver definido**: o `entrypoint.sh` extrai host/port/db de `DATABASE_URL`, usa host **externo** por padrão, aguarda 10s e executa Flyway CLI com retries (18×10s). Se sucesso, inicia a app. Variáveis: `FLYWAY_RETRY_ATTEMPTS`, `FLYWAY_RETRY_SLEEP`.
-
-2. **Primeiro Deploy**:
-   - Flyway CLI criará automaticamente a tabela `flyway_schema_history`
-   - Migrações existentes serão marcadas como já aplicadas (baseline)
-   - As migrações estão em `src/main/resources/db/migration/` (copiadas para `/app/migrations` no container)
-
-3. **Deploys Futuros**:
-   - Novas migrações serão aplicadas automaticamente na ordem correta
-   - Verifique sempre os logs do script de inicialização após o deploy
-   - Logs aparecem antes da aplicação iniciar
-
-4. **Monitoramento**:
-   - Logs do script: Buscar por "Executando migrações Flyway (com retry)" e "Tentativa X/Y"
-   - Logs da aplicação: Aplicação só inicia após migrações concluírem
-   - Health check: `/actuator/health` (disponível após aplicação iniciar)
-
-5. **Rollback**:
-   - Se migração falhar, aplicação não inicia (comportamento desejado)
-   - Render fará rollback automático do deploy
-   - Sempre tenha um backup recente do banco
+**Fluxo:**
+1. Rodar `./scripts/flyway-migrate-render.sh` com `RENDER_EXTERNAL_DATABASE_URL` (copiar do Dashboard → External).
+2. Deploy. Container sobe direto para a app; R2DBC usa host externo.
+3. Novas migrações: rodar o script de novo, depois deploy.
 
 **Configuração:**
-- Flyway está **desabilitado na aplicação** (`application-prod.yml`: `flyway.enabled: false`)
-- Migrações executadas via Flyway CLI no script de inicialização
-- Dockerfile inclui Flyway CLI e script de inicialização
+- Flyway **desabilitado** na aplicação (`application-prod.yml`: `flyway.enabled: false`; `CeialMilkApplication` exclui `FlywayAutoConfiguration`).
+- Migrações em `src/main/resources/db/migration/` (copiadas para `/app/migrations` no container quando opt-in).
 
 ## Conexões Necessárias
 
@@ -243,7 +219,7 @@ curl https://seu-app.onrender.com/actuator/flyway
    export RENDER_EXTERNAL_DATABASE_URL='postgresql://USER:PASSWORD@HOST:5432/DATABASE'  # colar a URL
    ./scripts/flyway-migrate-render.sh
    ```
-3. O **render.yaml** já define `SKIP_FLYWAY_MIGRATE=true`. O container sobe **sem** rodar Flyway; a app usa R2DBC (host externo).
+3. O container **não** executa Flyway por padrão. A app sobe e usa R2DBC (host externo).
 4. **Deploy** no Render. O schema já foi aplicado no passo 2.
 
 **Comando Flyway manual** (alternativa ao script):

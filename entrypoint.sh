@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Função robusta para extrair dados da DATABASE_URL
+# Função para extrair dados da DATABASE_URL
 parse_database_url() {
     local url=$1
     url="${url#jdbc:}"
@@ -18,63 +18,33 @@ parse_database_url() {
     export DB_NAME="${db_with_params%%\?*}"
 }
 
-echo "=== Iniciando processo de deploy (Conectividade Render) ==="
+echo "=== Iniciando processo de deploy ==="
 
 if [ -n "$DATABASE_URL" ]; then
     parse_database_url "$DATABASE_URL"
-    # SEMPRE usar o host externo no Render para Java/JDBC (interno falha DNS; externo requer SSL explícito)
+    # Host externo: Render não resolve host interno (DNS) no container; externo evita UnknownHostException
     if [[ ! "$DB_HOST" == *"."* ]]; then
         DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
     fi
-    echo "Host de Conexão: $DB_HOST"
+    echo "Host de conexão: $DB_HOST"
 else
     echo "❌ ERRO: DATABASE_URL não encontrada."
     exit 1
 fi
 
-run_flyway() {
-    # Parâmetros CRÍTICOS para evitar EOFException no Render:
-    # ssl=true + sslmode=require, tcpKeepAlive para proxy
-    local jdbc="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?ssl=true&sslmode=require&tcpKeepAlive=true&targetServerType=primary"
-
-    echo "--- Tentando Flyway (Host: ${DB_HOST}) ---"
-    /app/flyway/flyway \
-        -url="${jdbc}" \
-        -user="${DB_USERNAME}" \
-        -password="${DB_PASSWORD}" \
-        -locations="filesystem:/app/migrations" \
-        -baselineOnMigrate=true \
-        -baselineVersion=1 \
-        migrate
-}
-
-# 1. Executar Migrações
-if [ "$SKIP_FLYWAY_MIGRATE" = "true" ]; then
-    echo "SKIP_FLYWAY_MIGRATE=true: pulando migrações."
-else
-    echo "=== Executando Flyway CLI ==="
-    max_attempts=5
-    attempt=1
-    success=false
-
-    while [ $attempt -le $max_attempts ]; do
-        if run_flyway; then
-            success=true
-            break
-        fi
-        echo "⏳ Falha na tentativa $attempt. Aguardando 5s..."
-        sleep 5
-        attempt=$((attempt + 1))
-    done
-
-    if [ "$success" = false ]; then
-        echo "❌ ERRO: Falha definitiva na conexão com o banco."
-        exit 1
-    fi
+# Flyway no container falha no Render (internal=UnknownHost, external=EOFException).
+# Só roda se RUN_FLYWAY_IN_CONTAINER=true (opt-in). Padrão: pular migrações.
+if [ "$RUN_FLYWAY_IN_CONTAINER" = "true" ]; then
+    echo "=== Executando Flyway CLI (RUN_FLYWAY_IN_CONTAINER=true) ==="
+    JDBC="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?ssl=true&sslmode=require"
+    /app/flyway/flyway -url="${JDBC}" -user="${DB_USERNAME}" -password="${DB_PASSWORD}" \
+        -locations="filesystem:/app/migrations" -baselineOnMigrate=true -baselineVersion=1 migrate \
+        || { echo "❌ Erro nas migrações"; exit 1; }
     echo "✅ Migrações concluídas."
+else
+    echo "Flyway no container desabilitado (padrão). Rodar migrações com: ./scripts/flyway-migrate-render.sh"
 fi
 
-# 2. Iniciar Aplicação
 echo "=== Iniciando CeialMilk Application ==="
 export SPRING_R2DBC_URL="r2dbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslMode=require"
 export SPRING_R2DBC_USERNAME="${DB_USERNAME}"

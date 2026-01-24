@@ -236,13 +236,13 @@ ceialmilk/
 O `render.yaml` na raiz configura serviço web (Docker) e banco Postgres. Ver **`memory-bank/deploy-notes.md`** para detalhes.
 
 ### Fluxo resumido
-1. **Migrações**: Rodar **antes** do primeiro deploy (Flyway no container falha com EOF no Render).  
+1. **Migrações**: Rodar **antes** do primeiro deploy (Flyway no container falha no Render).  
    Render Dashboard → **ceialmilk-db** → Connect → **External** → copiar URL. Localmente:
    ```bash
    export RENDER_EXTERNAL_DATABASE_URL='postgresql://USER:PASS@HOST:5432/DB'
    ./scripts/flyway-migrate-render.sh
    ```
-2. **Deploy**: Push para `main` ou deploy manual. O `render.yaml` usa `SKIP_FLYWAY_MIGRATE=true`; a app sobe sem rodar Flyway.
+2. **Deploy**: Push para `main` ou deploy manual. O container sobe **sem** Flyway (padrão); a app conecta via R2DBC.
 3. **Novas migrações**: Rodar o script de novo, depois deploy.
 
 ### Pré-requisitos
