@@ -13,24 +13,28 @@ O projeto utiliza uma arquitetura **monorepo** com deploy separado para backend 
 ### Configuração no Render
 
 O arquivo `render.yaml` define:
-- **Serviço Web**: Aplicação Docker na branch `main`
+- **Serviço Web**: Aplicação Docker na branch `main` (`rootDir: backend`, `buildFilter: backend/**`)
 - **Banco de Dados**: PostgreSQL gerenciado (`ceialmilk-db`)
 - **Health Check**: `/health` endpoint
-- **Auto Deploy**: Habilitado
+- **Auto Deploy**: `autoDeployTrigger: commit` (deploy a cada push na `main`)
 
 ### Variáveis de Ambiente
 
-#### Configuradas Automaticamente pelo Render
+#### Injetadas pelo Render (não definir no Blueprint)
 
-- `DATABASE_URL` - URL de conexão do banco (formato: `postgresql://user:pass@host:port/db`)
-- `JWT_PRIVATE_KEY` - Chave privada RSA para assinar tokens JWT (RS256)
-- `JWT_PUBLIC_KEY` - Chave pública RSA para verificar tokens JWT
-- `PORT` - Porta do servidor (padrão: 8080)
+- `PORT` - Porta em que o app deve escutar. O Render define automaticamente; o backend usa `getEnv("PORT", "8080")`.
 
-#### Opcionais
+#### Configuradas no `render.yaml` (Blueprint)
 
-- `LOG_LEVEL` - Nível de log (DEBUG, INFO, WARN, ERROR) - padrão: INFO
-- `CORS_ORIGIN` - Origem permitida para CORS (URL do frontend na Vercel)
+- `DATABASE_URL` - Proveniente de `fromDatabase` (Postgres `ceialmilk-db`). URL no formato `postgresql://user:pass@host:port/db`.
+- `ENV` - `production`
+- `LOG_LEVEL` - `INFO` (ou DEBUG, WARN, ERROR)
+- `CORS_ORIGIN` - URL do frontend na Vercel (ex.: `https://ceialmilk.vercel.app`)
+
+#### Obrigatórias e definidas manualmente (`sync: false`)
+
+- `JWT_PRIVATE_KEY` - Chave privada RSA (PEM) para assinar tokens JWT (RS256). **Obrigatória.** Gerar com `openssl` (ver seção "Geração de Chaves JWT") e informar na criação do Blueprint ou no Dashboard do serviço.
+- `JWT_PUBLIC_KEY` - Chave pública RSA (PEM) para verificar tokens. **Obrigatória.** Mesmo par da privada; definir no Blueprint ou no Dashboard.
 
 ### Migrações de Banco de Dados
 
@@ -98,12 +102,12 @@ Se preferir usar Neon.tech:
 ### Backend (Render)
 
 - [ ] `render.yaml` configurado corretamente
-- [ ] `Dockerfile` testado localmente
+- [ ] Build Docker local: `docker build -f backend/Dockerfile backend` (e, se possível, `docker run` com `DATABASE_URL`, `PORT`, `JWT_*`, `CORS_ORIGIN`)
 - [ ] Banco de dados PostgreSQL criado no Render (via `render.yaml`)
 - [ ] Variáveis de ambiente configuradas:
-  - [ ] `DATABASE_URL`
-  - [ ] `JWT_PRIVATE_KEY` e `JWT_PUBLIC_KEY` (gerar par de chaves RSA)
-  - [ ] `PORT` (opcional, padrão: 8080)
+  - [ ] `DATABASE_URL` (via `fromDatabase` no Blueprint)
+  - [ ] `JWT_PRIVATE_KEY` e `JWT_PUBLIC_KEY` — **obrigatórias**, definidas **manualmente** (gerar par RSA com `openssl`; informar na criação do Blueprint ou no Dashboard)
+  - [ ] `PORT` **não** definir — o Render injeta automaticamente
 - [ ] Health check endpoint funcionando (`/health`)
 - [ ] Migrações testadas localmente
 
@@ -123,6 +127,9 @@ Se preferir usar Neon.tech:
 # Build local
 cd backend
 go build -o bin/api ./cmd/api
+
+# Build Docker (validar antes do deploy no Render)
+docker build -f backend/Dockerfile backend
 
 # Testar localmente (migrações rodam no startup)
 ./bin/api
@@ -183,6 +190,7 @@ curl https://ceialmilk-api.onrender.com/api/v1/fazendas
 2. Verificar se banco está ativo
 3. Verificar logs do container no Render
 4. Testar conexão localmente com as mesmas credenciais
+5. Se usar conexão **externa** ao Postgres (ex.: Neon.tech), adicionar `?sslmode=require` à URL se necessário. A conexão **interna** (`fromDatabase`) geralmente não exige.
 
 ### Problema: Migrações falham
 
@@ -217,7 +225,9 @@ curl https://ceialmilk-api.onrender.com/api/v1/fazendas
 
 ## Geração de Chaves JWT (RS256)
 
-Para gerar o par de chaves RSA para JWT:
+As chaves JWT estão definidas no `render.yaml` com `sync: false`. O Render solicita os valores **na criação do Blueprint** ou você pode defini-los depois no **Dashboard** do serviço (Environment).
+
+Para gerar o par de chaves RSA:
 
 ```bash
 # Gerar chave privada
@@ -227,8 +237,8 @@ openssl genrsa -out private.pem 2048
 openssl rsa -in private.pem -pubout -out public.pem
 ```
 
-**Importante**: Armazenar essas chaves como variáveis de ambiente no Render:
-- `JWT_PRIVATE_KEY`: Conteúdo do arquivo `private.pem`
+**Importante**: Usar o **conteúdo completo** dos arquivos PEM como valor das variáveis no Render:
+- `JWT_PRIVATE_KEY`: Conteúdo do arquivo `private.pem` (incluindo `-----BEGIN ... -----` e `-----END ... -----`)
 - `JWT_PUBLIC_KEY`: Conteúdo do arquivo `public.pem`
 
 ### Desenvolvimento (Devcontainer)
@@ -263,3 +273,4 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 **Última atualização**: 2026-01-24
 **Stack**: Go + Next.js (Render + Vercel)
+**Backend Render**: render.yaml + Dockerfile ajustados (JWT sync:false, PORT injetado, rootDir, CI Docker build)

@@ -2,29 +2,30 @@ services:
   - type: web
     name: ceialmilk-api
     runtime: docker
-    env: docker
     branch: main
+    rootDir: backend
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /health
+    buildFilter:
+      paths:
+        - backend/**
     envVars:
-      - key: PORT
-        value: 8080
       - key: ENV
         value: production
       - key: LOG_LEVEL
         value: INFO
+      - key: CORS_ORIGIN
+        value: https://ceialmilk.vercel.app
       - key: DATABASE_URL
         fromDatabase:
           name: ceialmilk-db
           property: connectionString
       - key: JWT_PRIVATE_KEY
-        generateValue: true
+        sync: false
       - key: JWT_PUBLIC_KEY
-        generateValue: true
-      - key: CORS_ORIGIN
-        value: https://ceialmilk.vercel.app
-    autoDeploy: true
+        sync: false
+    autoDeployTrigger: commit
 
 databases:
   - name: ceialmilk-db

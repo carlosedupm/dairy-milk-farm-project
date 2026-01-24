@@ -30,10 +30,12 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 2. ✅ **Shadcn/UI**: init + button, input, card, label, table, dialog
 3. ✅ **API**: interceptors Bearer + 401 → /login; serviços auth e fazendas
 4. ✅ **TanStack Query + AuthContext**: Providers, ProtectedRoute, Header
+5. ✅ **Backend Render**: `render.yaml` e `Dockerfile` ajustados (JWT `sync: false`, PORT injetado, `rootDir`, `buildFilter`, `autoDeployTrigger`); CI com build Docker
 
 ### 📋 Próximos passos imediatos:
-1. Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
-2. Testes automatizados (E2E ou unitários)
+1. Conectar repositório ao Render, criar Blueprint a partir do `render.yaml` e configurar `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` (par RSA via `openssl`)
+2. Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
+3. Testes automatizados (E2E ou unitários)
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -71,12 +73,12 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ## 📊 Métricas de Progresso
 
-### **Completude Geral**: 55%
-- **Infraestrutura**: 70% 🚧
+### **Completude Geral**: 58%
+- **Infraestrutura**: 75% 🚧
 - **Documentação**: 90% ✅
 - **Implementação**: 65% 🚧
 - **Testes**: 0% 🚧
-- **Deploy**: 35% 🚧
+- **Deploy**: 50% 🚧 (config Render pronta; primeiro setup pendente: Blueprint + JWT)
 
 ---
 

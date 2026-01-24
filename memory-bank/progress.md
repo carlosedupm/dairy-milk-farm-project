@@ -2,13 +2,13 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 55%
+### **Completude Geral**: 58%
 ```bash
-🏗️  Infraestrutura: 70% 🚧
+🏗️  Infraestrutura: 75% 🚧
 📚  Documentação: 90% ✅
 💻  Implementação: 65% 🚧
 🧪  Testes: 0% 🚧
-🚀  Deploy: 35% 🚧
+🚀  Deploy: 50% 🚧 (config Render pronta; primeiro setup pendente)
 ```
 
 ### **Velocidade e Métricas**
@@ -38,12 +38,14 @@
   - [x] Estrutura de pastas
   - [x] Cliente API básico
 
-### **Infraestrutura (🚧 70%)**
+### **Infraestrutura (🚧 75%)**
 - [x] **Estrutura Monorepo**: Criada e organizada
 - [x] **Docker Compose**: Configurado para desenvolvimento local
-- [x] **Dockerfile Backend**: Multi-stage build otimizado
-- [x] **render.yaml**: Atualizado para nova estrutura
-- [x] **Migrações**: golang-migrate no startup; V3 seed admin
+- [x] **Dockerfile Backend**: Multi-stage build (Go 1.24), otimizado
+- [x] **render.yaml**: Ajustado para Render (JWT sync:false, PORT injetado, rootDir, buildFilter, autoDeployTrigger)
+- [x] **CI/CD**: Build Docker do backend no pipeline
+- [x] **Migrações**: golang-migrate no startup; V3 seed admin, V4 refresh tokens
+- [ ] **Deploy Backend**: Primeiro setup no Render (Blueprint + JWT)
 - [ ] **Deploy Frontend**: Configuração Vercel pendente
 
 ### **Documentação (✅ 90%)**
@@ -86,7 +88,8 @@
 - [x] Frontend Next.js básico
 - [x] Sistema de migrações (golang-migrate)
 - [x] Autenticação (login, validate) + JWT
-- [ ] Deploy configurado
+- [x] Backend Render configurado (render.yaml, Dockerfile, CI Docker build)
+- [ ] Primeiro deploy (Blueprint + JWT no Render; Vercel frontend)
 
 ### **Sprint 2 (Funcionalidades Core)**
 - [x] Login + CRUD de Fazendas no frontend
@@ -144,7 +147,7 @@
 
 ### **Infraestrutura**
 ```progress
-██████▄▄▄▄ 70%
+███████▄▄▄ 75%
 ```
 
 ## 🔄 Histórico de Progresso
@@ -175,6 +178,7 @@
   - Next.js 14+ configurado
   - Tailwind CSS configurado
   - Estrutura de pastas
+- ✅ **Backend Render**: render.yaml e Dockerfile ajustados (JWT sync:false, PORT injetado, rootDir, buildFilter, autoDeployTrigger); Dockerfile Go 1.24; CI com build Docker; deploy-notes atualizado
 
 ### **Próximos Marcos**
 - **2026-01-31**: Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
@@ -189,7 +193,8 @@
 - [x] Dominar Gin framework
 - [x] Aprender Next.js App Router
 - [x] Implementar autenticação JWT RS256
-- [ ] Configurar deploy automatizado (Render + Vercel)
+- [x] Configurar backend para Render (render.yaml, Dockerfile, CI Docker build)
+- [ ] Primeiro deploy (Blueprint + JWT); frontend Vercel
 
 ### **Produto**
 - [ ] Entender necessidades reais de fazendas leiteiras

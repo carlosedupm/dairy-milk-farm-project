@@ -42,6 +42,9 @@ jobs:
       working-directory: backend
       run: go build -o /tmp/api ./cmd/api
 
+    - name: Build Docker image
+      run: docker build -f backend/Dockerfile backend
+
   backend-test:
     name: Backend - Tests
     runs-on: ubuntu-latest
