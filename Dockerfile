@@ -13,10 +13,11 @@ FROM flyway/flyway:10 AS flyway-cli
 FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# Instalar dependências básicas
+# Instalar bash, curl e dnsutils para diagnóstico de rede
 RUN apt-get update && apt-get install -y \
     bash \
     curl \
+    dnsutils \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar Flyway CLI completo
