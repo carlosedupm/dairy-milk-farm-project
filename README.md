@@ -233,25 +233,22 @@ ceialmilk/
 
 ## 🌐 Deploy no Render
 
+O `render.yaml` na raiz configura serviço web (Docker) e banco Postgres. Ver **`memory-bank/deploy-notes.md`** para detalhes.
+
+### Fluxo resumido
+1. **Migrações**: Rodar **antes** do primeiro deploy (Flyway no container falha com EOF no Render).  
+   Render Dashboard → **ceialmilk-db** → Connect → **External** → copiar URL. Localmente:
+   ```bash
+   export RENDER_EXTERNAL_DATABASE_URL='postgresql://USER:PASS@HOST:5432/DB'
+   ./scripts/flyway-migrate-render.sh
+   ```
+2. **Deploy**: Push para `main` ou deploy manual. O `render.yaml` usa `SKIP_FLYWAY_MIGRATE=true`; a app sobe sem rodar Flyway.
+3. **Novas migrações**: Rodar o script de novo, depois deploy.
+
 ### Pré-requisitos
 - Conta no [Render](https://render.com)
 - Repositório GitHub conectado
-
-### Passo a Passo
-1. Criar novo Web Service no Render
-2. Selecionar "Deploy from Git repository"
-3. Escolher este repositório
-4. Configurar:
-   - Nome: ceialmilk
-   - Branch: main
-   - Runtime: Docker
-5. Configurar variáveis de ambiente:
-   - SPRING_PROFILES_ACTIVE=prod
-   - JWT_SECRET (gerar valor seguro)
-6. Criar banco PostgreSQL no Render
-7. Configurar recursos:
-   - Plano free
-   - Health check path: /actuator/health
+- Docker local (para `flyway-migrate-render.sh`)
 
 ## 🌐 Links e Referências
 

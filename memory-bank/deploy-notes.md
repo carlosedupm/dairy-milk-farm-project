@@ -1,5 +1,17 @@
 # Notas de Deploy - Ambiente de Produção
 
+## Deploy no Render (fluxo recomendado)
+
+Flyway (JDBC) no container falha com **EOFException** ao conectar ao Postgres do Render. Use migrações **fora** do container:
+
+1. **Migrações**: Render Dashboard → **ceialmilk-db** → Connect → **External** → copiar External Database URL. Localmente:
+   ```bash
+   export RENDER_EXTERNAL_DATABASE_URL='postgresql://USER:PASS@HOST:5432/DB'
+   ./scripts/flyway-migrate-render.sh
+   ```
+2. **Deploy**: O `render.yaml` define `SKIP_FLYWAY_MIGRATE=true`. O container sobe **sem** Flyway; a app conecta ao banco via R2DBC (host externo).
+3. **Novas migrações**: rodar o script de novo, depois deploy.
+
 ## Configuração no Render
 
 O projeto está configurado para deploy no Render usando Docker. O arquivo `render.yaml` define:
@@ -66,11 +78,8 @@ A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProc
 
 **Como Funciona:**
 
-1. **Script de Inicialização** (`entrypoint.sh`):
-   - Extrai host/port/db/user/pass de `DATABASE_URL`; usa **host interno** (curto) por padrão; `USE_EXTERNAL_DB_HOST=true` para externo
-   - Aguarda 10s (DB pode estar iniciando), depois executa Flyway CLI com **retries** (padrão: 18 tentativas, 10s entre cada)
-   - Executa migrações em `/app/migrations`; se sucesso, inicia aplicação Spring Boot
-   - Variáveis opcionais: `FLYWAY_RETRY_ATTEMPTS`, `FLYWAY_RETRY_SLEEP`
+- **Padrão (Render)**: `SKIP_FLYWAY_MIGRATE=true` no `render.yaml`. Migrações rodam via `scripts/flyway-migrate-render.sh` (local); o container **não** executa Flyway.
+- **Se `SKIP_FLYWAY_MIGRATE` não estiver definido**: o `entrypoint.sh` extrai host/port/db de `DATABASE_URL`, usa host **externo** por padrão, aguarda 10s e executa Flyway CLI com retries (18×10s). Se sucesso, inicia a app. Variáveis: `FLYWAY_RETRY_ATTEMPTS`, `FLYWAY_RETRY_SLEEP`.
 
 2. **Primeiro Deploy**:
    - Flyway CLI criará automaticamente a tabela `flyway_schema_history`
@@ -226,12 +235,25 @@ curl https://seu-app.onrender.com/actuator/flyway
 - `USE_INTERNAL_DB_HOST=true`: força interno; use apenas se o host interno resolver no seu ambiente.
 - Se `EOFException` com externo: SSL já simplificado (sem `NonValidatingFactory`); ver workaround abaixo.
 
-**Workaround se EOFException persistir** (Flyway/JDBC falha; app R2DBC pode ainda funcionar):
-1. No Render Dashboard → **ceialmilk-db** → **Connect** → copiar **External** Database URL (host, DB, user, password).
-2. Localmente (substituir `HOST`, `DB`, `SENHA`):  
-   `docker run --rm -v "$(pwd)/src/main/resources/db/migration:/flyway/sql" flyway/flyway:10-alpine -url="jdbc:postgresql://HOST:5432/DB?sslmode=require&ssl=true" -user=ceialmilk -password=SENHA -locations=filesystem:/flyway/sql -baselineOnMigrate=true migrate`
-3. No Render → **ceialmilk** → **Environment** → adicionar `SKIP_FLYWAY_MIGRATE=true`.
-4. Fazer deploy. A app sobe sem rodar Flyway no container; o schema já foi aplicado no passo 2.
+**Fluxo recomendado (Flyway fora do container)** — JDBC → Render Postgres falha com EOFException no container:
+
+1. **Render Dashboard** → **ceialmilk-db** → **Connect** → **External** → copiar **External Database URL** (ex.: `postgresql://user:pass@dpg-xxx-a.oregon-postgres.render.com:5432/ceialmilk_qqtf`).
+2. **Localmente** (com Docker):
+   ```bash
+   export RENDER_EXTERNAL_DATABASE_URL='postgresql://USER:PASSWORD@HOST:5432/DATABASE'  # colar a URL
+   ./scripts/flyway-migrate-render.sh
+   ```
+3. O **render.yaml** já define `SKIP_FLYWAY_MIGRATE=true`. O container sobe **sem** rodar Flyway; a app usa R2DBC (host externo).
+4. **Deploy** no Render. O schema já foi aplicado no passo 2.
+
+**Comando Flyway manual** (alternativa ao script):
+```bash
+docker run --rm -v "$(pwd)/src/main/resources/db/migration:/flyway/sql" flyway/flyway:10-alpine \
+  -url="jdbc:postgresql://HOST:5432/DB?sslmode=require&ssl=true" \
+  -user=ceialmilk -password=SENHA \
+  -locations=filesystem:/flyway/sql -baselineOnMigrate=true migrate
+```
+Substituir `HOST`, `DB`, `SENHA` pelos valores da External Database URL.
 
 ### Problema: Health check falha
 
