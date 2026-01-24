@@ -1,275 +1,132 @@
-## 📋 Visão Geral
+# 🐄 CeialMilk - Sistema de Gestão para Fazendas Leiteiras
 
-CeialMilk é um sistema de gestão completo para fazendas leiteiras que combina alta performance técnica com funcionalidades práticas para o agronegócio, utilizando arquitetura reativa e preparado para integração com IA.
+Sistema completo de gestão para fazendas leiteiras com arquitetura moderna usando Go no backend e Next.js no frontend.
 
-## 🎯 Objetivos Principais
+## 🏗️ Arquitetura
 
-### **Controle Operacional Completo**
-- Gestão individual de cada animal do rebanho
-- Monitoramento diário de produção de leite
-- Controle de saúde animal (vacinações, tratamentos)
-- Gestão financeira da operação leiteira
-
-### **Performance Técnica Superior**
-- API Restful reativa com Spring WebFlux
-- Tempos de resposta inferiores a 200ms
-- Escalabilidade horizontal automática
-- Baixo consumo de recursos computacionais
-
-### **Acessibilidade e Baixo Custo**
-- Stack 100% open source e custo zero inicial
-- Deploy simplificado com containers Docker
-- Funcionalidade offline-first para áreas rurais
-- Baixa necessidade de manutenção
-
-### **Experiência do Usuário**
-- Interface intuitiva para trabalhadores rurais
-- Multiplataforma (web e mobile futuro)
-- Relatórios automáticos e insights
-- Sistema de alertas inteligentes
-
-## 🏗️ Arquitetura Técnica
-
-### **Backend**
-```yaml
-Framework: Spring Boot 3 + WebFlux
-Database: PostgreSQL + R2DBC (reativo)
-Autenticação: JWT + Spring Security 6
-Deploy: Docker
-```
-
-### **Frontend (Futuro)**
-```yaml
-Framework: React + Next.js ou Vue.js
-Mobile: React Native (futuro)
-Design: Tailwind CSS + responsive
-```
-
-## 📊 Funcionalidades por Fase
-
-### **Fase 1 - MVP (Atual)**
-- [✅] CRUD de Fazendas
-- [ ] CRUD de Animais
-- [ ] CRUD de Produção de Leite
-- [✅] Sistema de Autenticação JWT
-- [✅] API Restful Reativa
-
-### **Fase 2 - Gestão Operacional**
-- [ ] Controle de saúde animal
-- [ ] Gestão reprodutiva
-- [ ] Relatórios analíticos
-- [ ] App mobile
-
-### **Fase 3 - Inteligência Artificial**
-- [ ] Predição de produção
-- [ ] Alertas de saúde preventiva
-- [ ] Otimização de recursos
-- [ ] Integração com IoT
-
-## 🌍 Público-Alvo
-
-### **Fazendas Leiteiras**
-- **Pequenas**: 10-50 animais (foco principal)
-- **Médias**: 50-200 animais
-- **Grandes**: 200+ animais (com personalizações)
-
-### **Perfis de Usuário**
-- **Proprietário**: Visão geral e financeira
-- **Gerente**: Operação diária
-- **Veterinário**: Controle de saúde
-- **Ordenhador**: Registro de produção
-
-## 🚀 Roadmap de Desenvolvimento
-
-### **Quarter 1 - MVP**
-- ✅ Definição da arquitetura
-- ✅ Ambiente de desenvolvimento
-- ✅ Estrutura base do projeto
-- [ ] Implementação CRUD completo
-- [ ] Autenticação JWT
-- [ ] Deploy em produção
-
-### **Quarter 2 - Operacional**
-- [ ] Controle de saúde animal
-- [ ] Gestão reprodutiva
-- [ ] Relatórios básicos
-- [ ] Versão mobile
-
-### **Quarter 3 - Inteligência**
-- [ ] Sistema de predições
-- [ ] Alertas automáticos
-- [ ] Integração IoT
-- [ ] Marketplace de insumos
-
-### **Quarter 4 - Expansão**
-- [ ] Múltiplas fazendas
-- [ ] API pública
-- [ ] Comunidade de usuários
-- [ ] Modelo freemium
-
-## 📈 Métricas de Sucesso
-
-### **Técnicas**
-- < 200ms response time (95% das requisições)
-- 99.9% uptime em produção
-- Suporte a 1000+ conexões simultâneas
-- Deployment automático CI/CD
-
-### **Operacionais**
-- +30% eficiência operacional
-- -20% custos com saúde animal
-- +15% produção de leite
-- -40% tempo em tarefas administrativas
-
-## 💡 Diferenciais Competitivos
-
-### **Técnicos**
-- 🚀 **Performance**: Stack reativa única no mercado
-- 📱 **Offline-first**: Funciona sem internet
-- 🤖 **AI-native**: Arquitetura preparada para IA
-- 🐳 **Containerized**: Fácil deploy e escalabilidade
-
-### **Operacionais**
-- 🐄 **Foco Leiteiro**: Especializado não genérico
-- 🇧🇷 **Realidade BR**: Feito para realidade brasileira
-- 💰 **Costo Zero**: ROI imediato para pequenas fazendas
-- 📊 **Simplicidade**: Interface fácil para não-tecnicos
-
-## 🛠️ Stack Tecnológica
-
-### **Backend**
-```xml
-<dependencies>
-  <!-- Spring WebFlux -->
-  <dependency>spring-boot-starter-webflux</dependency>
-  <!-- Database Reativo -->
-  <dependency>spring-boot-starter-data-r2dbc</dependency>
-  <dependency>r2dbc-postgresql</dependency>
-  <!-- Segurança -->
-  <dependency>spring-boot-starter-security</dependency>
-  <dependency>jjwt-api</dependency>
-  <!-- Utilitários -->
-  <dependency>lombok</dependency>
-  <dependency>spring-boot-starter-validation</dependency>
-</dependencies>
-```
-
-### **Infraestrutura**
-```yaml
-services:
-  ceialmilk-dev: # App Spring Boot
-  postgres:      # PostgreSQL 15
-  redis:         # Redis Cache
-```
-
-## 📁 Estrutura do Projeto
+Este projeto utiliza uma arquitetura **monorepo** com separação clara entre backend e frontend:
 
 ```
-ceialmilk/
-├── .devcontainer/           # Configuração Dev Container
-│   ├── devcontainer.json
-│   └── Dockerfile
-├── src/
-│   └── main/
-│       └── java/
-│           └── com/
-│               └── ceialmilk/
-│                   ├── config/
-│                   ├── controller/
-│                   ├── service/
-│                   ├── repository/
-│                   ├── model/
-│                   ├── security/
-│                   └── exception/
-├── docker-compose.yml       # Serviços Docker
-├── init.sql                # Schema inicial
-├── pom.xml                 # Dependências Maven
-├── setup.sh                # Script de configuração
-└── README.md               # Documentação
+/dairy-milk-farm-project
+  ├── /backend          # API em Go (Gin)
+  ├── /frontend         # App Next.js (React)
+  └── /memory-bank     # Documentação do projeto
 ```
 
-## 🎯 Status Atual
+## 🚀 Stack Tecnológica
+
+### Backend
+- **Linguagem**: Go 1.21+
+- **Framework**: Gin (HTTP router)
+- **Banco de Dados**: PostgreSQL 15
+- **Acesso a Dados**: pgx (driver PostgreSQL)
+- **Autenticação**: JWT RS256
+- **Logging**: slog (logs estruturados JSON)
+
+### Frontend
+- **Framework**: Next.js 14+ (App Router)
+- **Linguagem**: TypeScript
+- **Estilização**: Tailwind CSS
+- **Componentes**: Shadcn/UI
+- **State Management**: TanStack Query
+
+### Infraestrutura
+- **Backend Deploy**: Render (Docker)
+- **Frontend Deploy**: Vercel
+- **Banco de Dados**: PostgreSQL (Render Managed ou Neon.tech)
+
+## 📋 Pré-requisitos
+
+- Go 1.21 ou superior
+- Node.js 18+ e npm
+- Docker e Docker Compose
+- PostgreSQL 15 (ou usar Docker Compose)
+
+## 🛠️ Desenvolvimento Local
+
+### Backend
 
 ```bash
-# ✅ CONCLUÍDO
-- Arquitetura definida e validada
-- Ambiente de desenvolvimento containerizado
-- Stack técnica selecionada e configurada
-- Estrutura de pastas criada
-- Script de setup implementado
-- Schema do banco de dados definido
-- Sistema de autenticação JWT implementado
-- API Restful reativa configurada
+cd backend
 
-# 📋 PRÓXIMOS PASSOS
-- Criar testes unitários
-- Primeiro deploy em produção
-- Documentar endpoints da API
+# Instalar dependências
+go mod download
+
+# Rodar migrações (quando implementado)
+# go run cmd/migrate/main.go
+
+# Iniciar servidor
+go run cmd/api/main.go
 ```
 
-## 🚀 Como Começar
+O servidor estará disponível em `http://localhost:8080`
 
-1. **Configurar ambiente**:
-   ```bash
-   chmod +x setup.sh && ./setup.sh
-   ```
+### Frontend
 
-2. **Iniciar containers**:
-   ```bash
-   docker-compose up -d
-   ```
+```bash
+cd frontend
 
-3. **Compilar projeto**:
-   ```bash
-   mvn clean compile -DskipTests
-   ```
+# Instalar dependências
+npm install
 
-4. **Executar aplicação**:
-   ```bash
-   mvn spring-boot:run
-   ```
+# Iniciar servidor de desenvolvimento
+npm run dev
+```
 
-5. **Acessar aplicação**: http://localhost:8080
+O frontend estará disponível em `http://localhost:3000`
 
-## 🌐 Deploy no Render
+### Banco de Dados
 
-O `render.yaml` na raiz configura serviço web (Docker) e banco Postgres. Ver **`memory-bank/deploy-notes.md`** para detalhes.
+```bash
+# Iniciar PostgreSQL via Docker Compose
+docker-compose up -d db
 
-### Fluxo resumido
-1. **Migrações**: Rodar **antes** do primeiro deploy (Flyway no container falha no Render).  
-   Render Dashboard → **ceialmilk-db** → Connect → **External** → copiar URL. Localmente:
-   ```bash
-   export RENDER_EXTERNAL_DATABASE_URL='postgresql://USER:PASS@HOST:5432/DB'
-   ./scripts/flyway-migrate-render.sh
-   ```
-2. **Deploy**: Push para `main` ou deploy manual. O container sobe **sem** Flyway (padrão); a app conecta via R2DBC.
-3. **Novas migrações**: Rodar o script de novo, depois deploy.
+# O banco estará disponível em:
+# Host: localhost
+# Port: 5432
+# User: ceialmilk
+# Password: password
+# Database: ceialmilk
+```
 
-### Pré-requisitos
-- Conta no [Render](https://render.com)
-- Repositório GitHub conectado
-- Docker local (para `flyway-migrate-render.sh`)
+## 📚 Documentação
 
-## 🌐 Links e Referências
+Consulte a documentação completa no diretório `memory-bank/`:
 
-- **Repositório**: [github.com/ceialmilk](https://github.com/ceialmilk)
-- **Documentação**: [ceialmilk.docs](https://docs.ceialmilk.com)
-- **Demo**: [demo.ceialmilk.com](https://demo.ceialmilk.com)
+- **`activeContext.md`**: Estado atual do projeto
+- **`techContext.md`**: Stack tecnológica e configurações
+- **`systemPatterns.md`**: Padrões arquiteturais
+- **`deploy-notes.md`**: Notas sobre deploy
+- **`AGENTS.md`**: Guia para desenvolvedores e AI assistants
 
-## 🔐 Credenciais Padrão
+## 🔐 Segurança
 
-**Usuário Administrador**:
-- Email: admin@ceialmilk.com
-- Senha: password
-- Perfil: ADMIN
+- JWT com algoritmo RS256 (chaves pública/privada)
+- Cookies HttpOnly e Secure para armazenamento de tokens
+- Bcrypt para hashing de senhas
+- CORS configurado estritamente
+- Prepared statements para prevenir SQL Injection
 
-## 📞 Contato
+## 📊 Observabilidade
 
-**Equipe de Desenvolvimento**:
-- Email: dev@ceialmilk.com
-- Discord: [CeialMilk Community](https://discord.gg/ceialmilk)
-- Issues: [GitHub Issues](https://github.com/ceialmilk/issues)
+- **Sentry**: Captura de erros em tempo real
+- **BetterStack**: Agregação de logs estruturados
+- **Prometheus**: Métricas de performance (futuro)
+
+## 🚀 Deploy
+
+### Backend (Render)
+
+O deploy é automático via `render.yaml`. O backend será deployado no Render usando Docker.
+
+### Frontend (Vercel)
+
+O deploy é automático via integração com GitHub. O frontend será deployado na Vercel.
+
+## 📝 Licença
+
+Este projeto é privado e proprietário.
 
 ---
 
-*CeialMilk - Transformando a gestão de fazendas leiteiras através da tecnologia* 🐄🚀
+**Última atualização**: 2026-01-24

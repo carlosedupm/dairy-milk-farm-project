@@ -1,0 +1,48 @@
+import api from './api'
+
+export type Fazenda = {
+  id: number
+  nome: string
+  localizacao?: string | null
+  quantidade_vacas: number
+  fundacao?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type FazendaCreate = {
+  nome: string
+  localizacao?: string | null
+  quantidadeVacas: number
+  fundacao?: string | null
+}
+
+export type FazendaUpdate = FazendaCreate
+
+type ApiResponse<T> = { data: T }
+
+export async function list(): Promise<Fazenda[]> {
+  const { data } = await api.get<ApiResponse<Fazenda[]>>('/api/v1/fazendas')
+  return data.data ?? []
+}
+
+export async function get(id: number): Promise<Fazenda | null> {
+  const { data } = await api.get<ApiResponse<Fazenda>>(`/api/v1/fazendas/${id}`)
+  return data.data ?? null
+}
+
+export async function create(payload: FazendaCreate): Promise<Fazenda> {
+  const { data } = await api.post<ApiResponse<Fazenda>>('/api/v1/fazendas', payload)
+  if (!data.data) throw new Error('Resposta inválida')
+  return data.data
+}
+
+export async function update(id: number, payload: FazendaUpdate): Promise<Fazenda> {
+  const { data } = await api.put<ApiResponse<Fazenda>>(`/api/v1/fazendas/${id}`, payload)
+  if (!data.data) throw new Error('Resposta inválida')
+  return data.data
+}
+
+export async function remove(id: number): Promise<void> {
+  await api.delete(`/api/v1/fazendas/${id}`)
+}

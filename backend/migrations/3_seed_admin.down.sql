@@ -1,0 +1,1 @@
+-- seed reverso: não removemos usuário admin

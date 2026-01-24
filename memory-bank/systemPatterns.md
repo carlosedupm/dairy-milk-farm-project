@@ -3,131 +3,155 @@
 ## 🏛️ Arquitetura do Sistema
 
 ### **Padrão Arquitetural**
-- **Arquitetura**: Microservices-ready (inicialmente monolítico modular)
-- **Estilo**: API-centric com backend-for-frontend preparado
-- **Comunicação**: RESTful APIs reativas com WebFlux
+- **Arquitetura**: Monorepo com separação clara backend/frontend
+- **Estilo**: API-centric RESTful com backend-for-frontend
+- **Comunicação**: RESTful APIs com JSON
 - **Estado**: Stateless com token JWT para sessão
 
-### **Camadas da Aplicação**
+### **Camadas da Aplicação (Backend Go)**
 ```
 ┌─────────────────────────────────────────────────┐
-│                  Controllers                     │  ← REST Endpoints
+│                  Handlers                        │  ← HTTP Endpoints (Gin)
 ├─────────────────────────────────────────────────┤
 │                   Services                       │  ← Lógica de Negócio
 ├─────────────────────────────────────────────────┤
-│                 Repositories                     │  ← Acesso a Dados
+│                 Repositories                     │  ← Acesso a Dados (pgx/pgxpool)
 ├─────────────────────────────────────────────────┤
-│                   Models                         │  ← Entidades de Domínio
+│                   Models                         │  ← Structs de Domínio
 ├─────────────────────────────────────────────────┤
-│                 Database                         │  ← PostgreSQL + R2DBC
+│                 Database                         │  ← PostgreSQL (pgx)
+└─────────────────────────────────────────────────┘
+```
+
+### **Camadas da Aplicação (Frontend Next.js)**
+```
+┌─────────────────────────────────────────────────┐
+│                  Pages/App                       │  ← Rotas e Layouts
+├─────────────────────────────────────────────────┤
+│                 Components                        │  ← UI Components (Shadcn)
+├─────────────────────────────────────────────────┤
+│                   Services                        │  ← API Client (Axios)
+├─────────────────────────────────────────────────┤
+│              TanStack Query                       │  ← State Management
 └─────────────────────────────────────────────────┘
 ```
 
 ## 🔄 Padrões de Design Implementados
 
 ### **Padrões Estruturais**
-- **MVC**: Separación clara entre Model-View-Controller
-- **Dependency Injection**: Spring IOC container para injeção de dependências
-- **Repository Pattern**: Abstraction da camada de acesso a dados
+- **MVC**: Separação clara entre Handlers (Controllers), Services e Repositories
+- **Dependency Injection**: Injeção manual ou via container simples
+- **Repository Pattern**: Abstração da camada de acesso a dados
 
 ### **Padrões Comportamentais**
-- **Reactive Streams**: Programação reativa com Project Reactor
+- **Middleware Pattern**: Middleware chain no Gin para autenticação, logging, CORS
 - **Strategy Pattern**: Para diferentes algoritmos de validação e processamento
-- **Observer Pattern**: Para sistema de notificações e eventos
+- **Observer Pattern**: Para sistema de notificações e eventos (futuro)
 
 ### **Padrões Criacionais**
 - **Builder Pattern**: Para construção complexa de objetos de domínio
 - **Factory Method**: Para criação de serviços específicos
-- **Singleton**: Gerenciado pelo Spring IOC container
+- **Singleton**: Para conexão de banco de dados (pool de conexões)
 
 ## 🗃️ Padrões de Dados
 
 ### **Modelagem de Domínio**
-```java
+```go
 // Estrutura principal de entidades
 Fazenda (1) ─── (N) Animal (1) ─── (N) ProduçãoLeite
 Usuario (N) ─── (1) Fazenda
 ```
 
 ### **Padrões de Acesso a Dados**
-- **R2DBC**: Reactive Relational Database Connectivity
-- **Repository Interfaces**: Spring Data reactive repositories
-- **Transaction Management**: Reactive transaction management
-- **Pagination**: Reactive pagination com Pageable
+- **pgx/v5**: Driver PostgreSQL nativo com type safety e performance otimizada
+- **Prepared Statements**: Todas as queries parametrizadas (proteção SQL Injection)
+- **Connection Pooling**: Gerenciado pelo `pgxpool.Pool`
+- **Transactions**: Suporte nativo para transações
 
 ### **Padrões de Migração de Banco de Dados**
-- **Flyway CLI**: Migrações executadas ANTES da aplicação iniciar (via `entrypoint.sh`).
-- **Separação de Responsabilidades**: Migrações são responsabilidade do deploy, garantindo que a aplicação permaneça reativa.
-- **Conectividade**: Uso obrigatório do **host interno** do Render e `sslmode=require`.
-- **Retry Logic**: Implementado no script para lidar com o tempo de boot do banco de dados.
-- **Versionamento**: Migrações versionadas em `src/main/resources/db/migration/`.
-
-### **Padrões de Cache**
-- **Redis**: Cache distribuído para dados frequentes
-- **Caffeine**: Cache local para dados in-memory
-- **Cache-Aside**: Pattern para gestão de cache
-- **TTL**: Time-to-live automático para entradas de cache
+- **golang-migrate**: Migrações versionadas em `/backend/migrations`
+- **Execução Automática**: Migrações executadas no startup do servidor
+- **Versionamento**: Migrações versionadas em formato `{número}_{descrição}.up.sql` e `.down.sql`
 
 ## 🌐 Padrões de API
 
 ### **RESTful Design**
-- **Resources**: Entidades como recursos (/fazendas, /animais, /producao)
+- **Resources**: Entidades como recursos (`/api/v1/fazendas`, `/api/v1/animais`)
 - **HTTP Verbs**: GET, POST, PUT, DELETE, PATCH
-- **Status Codes**: Uso apropriado de códigos HTTP
-- **HATEOAS**: Preparado para hypermedia (opcional)
+- **Status Codes**: Uso apropriado de códigos HTTP (200, 201, 400, 401, 404, 500)
+- **JSON**: Formato padrão de request/response
 
 ### **Versioning**
-- **URL Path**: /api/v1/fazendas
-- **Headers**: Accept-Version: 1.0
+- **URL Path**: `/api/v1/{recurso}`
 - **Backward Compatibility**: Mantida por pelo menos 1 versão
 
 ### **Response Format**
 ```json
 {
   "data": { ... },
-  "metadata": {
-    "timestamp": "2025-09-07T23:10:00Z",
-    "version": "1.0"
+  "message": "Success",
+  "timestamp": "2026-01-24T10:00:00Z"
+}
+```
+
+### **Error Response Format**
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input",
+    "details": { ... }
   },
-  "links": { ... }
+  "timestamp": "2026-01-24T10:00:00Z"
 }
 ```
 
 ## 🔐 Padrões de Segurança
 
 ### **Autenticação**
-- **JWT**: JSON Web Tokens para autenticação stateless
-- **Spring Security**: Framework de segurança integrado
-- **Password Hashing**: BCrypt para senhas
-- **Token Refresh**: Mecanismo para renovação de tokens
+- **JWT RS256**: Tokens assinados com chave privada, verificados com chave pública
+- **Access Tokens**: Vida curta (15 minutos), armazenados em cookies HttpOnly
+- **Refresh Tokens**: Armazenados no banco de dados, vida longa (7 dias), em cookies HttpOnly
+- **Password Hashing**: BCrypt com custo 10
+- **Token Refresh**: Endpoint `/api/auth/refresh` para renovar access tokens usando refresh tokens
 
 ### **Autorização**
-- **Role-Based**: Controle de acesso baseado em roles
-- **Method Security**: @PreAuthorize em métodos de serviço
+- **Role-Based**: Controle de acesso baseado em roles (USER, ADMIN)
 - **Resource Ownership**: Verificação de propriedade de recursos
+- **Middleware de Autenticação**: Verificação de token em todas as rotas protegidas
 
 ### **Proteção**
-- **CORS**: Configurado para origens específicas
-- **CSRF**: Proteção contra Cross-Site Request Forgery
-- **Rate Limiting**: Limitação de requisições por usuário
-- **Input Validation**: Validação em todas as entradas
+- **CORS**: Configurado estritamente para domínio da Vercel
+- **Rate Limiting**: Limitação de requisições por IP (futuro)
+- **Input Validation**: Validação em todas as entradas (struct tags)
+- **SQL Injection**: Prevenido com prepared statements
+- **XSS**: Prevenido com sanitização no frontend
+
+### **Armazenamento de Tokens**
+- **HttpOnly Cookies**: Tokens armazenados em cookies HttpOnly (não acessíveis via JavaScript)
+  - `ceialmilk_token`: Access token (15 minutos)
+  - `ceialmilk_refresh_token`: Refresh token (7 dias)
+- **Secure Flag**: Cookies enviados apenas via HTTPS em produção (detectado automaticamente)
+- **SameSite**: Proteção CSRF com SameSite=Strict
+- **Frontend**: Usa `withCredentials: true` no Axios para enviar cookies automaticamente
 
 ## ⚡ Padrões de Performance
 
-### **Reactive Patterns**
-- **Non-blocking IO**: Operações de I/O não bloqueantes
-- **Backpressure**: Controle de fluxo de dados
-- **Elasticity**: Escalabilidade automática baseada em carga
+### **Backend (Go)**
+- **Goroutines**: Concorrência nativa para operações paralelas
+- **Connection Pooling**: Pool de conexões gerenciado pelo pgx
+- **Caching**: Cache em memória para dados frequentes (futuro: Redis)
 
-### **Caching Strategies**
-- **Layered Caching**: Múltiplas camadas de cache
-- **Cache Invalidation**: Estratégias de invalidation inteligentes
-- **Read-Through**: Cache que carrega dados sob demanda
+### **Frontend (Next.js)**
+- **Server-Side Rendering (SSR)**: Renderização no servidor quando necessário
+- **Static Site Generation (SSG)**: Páginas estáticas pré-renderizadas
+- **Image Optimization**: Otimização automática de imagens pela Vercel
+- **Code Splitting**: Divisão automática de código por rotas
 
 ### **Database Optimization**
 - **Indexing**: Índices apropriados para queries frequentes
-- **Connection Pooling**: Pool de conexões gerenciado
 - **Query Optimization**: Consultas otimizadas com EXPLAIN
+- **Connection Pooling**: Pool gerenciado pelo driver
 
 ## 🧪 Padrões de Teste
 
@@ -137,32 +161,31 @@ Usuario (N) ─── (1) Fazenda
 - **E2E Tests**: 10% - Testes end-to-end
 
 ### **Testing Patterns**
-- **AAA Pattern**: Arrange-Act-Assert
-- **Given-When-Then**: Para testes comportamentais
+- **Table-Driven Tests**: Padrão Go para testes com múltiplos casos
 - **Mocking**: Mock de dependências externas
-- **Test Containers**: Containers para testes de integração
+- **Test Containers**: Containers para testes de integração (futuro)
 
 ## 🔧 Padrões de Configuração
 
 ### **Configuration Management**
-- **Spring Profiles**: dev, test, prod
 - **Environment Variables**: Configuração por variáveis de ambiente
-- **Config Server**: Preparado para Spring Cloud Config
-- **Secrets Management**: Gerenciamento de segredos seguro
+- **Config Struct**: Struct centralizada para configuração
+- **Secrets Management**: Gerenciamento de segredos via variáveis de ambiente
 
 ### **Logging Patterns**
-- **Structured Logging**: JSON format para logs
+- **Structured Logging**: JSON format para logs (slog)
 - **Log Levels**: DEBUG, INFO, WARN, ERROR
-- **Correlation IDs**: IDs para tracing de requests
-- **Centralized Logging**: Preparado para ELK stack
+- **Correlation IDs**: IDs únicos para cada request (UUID), incluídos em todos os logs
+- **Request Logging**: Middleware de logging estruturado com método, path, status, latency, IP, user agent
+- **Centralized Logging**: Logs estruturados em JSON prontos para agregação (BetterStack/Logtail via stdout)
 
 ## 🚀 Padrões de Deploy
 
 ### **Deployment Patterns**
-- **Containerization**: Docker com imagem base **Debian** (`eclipse-temurin:17-jdk`) para estabilidade de DNS.
-- **Orquestração**: `render.yaml` gerenciando Web Service e Managed PostgreSQL.
-- **Startup Control**: `entrypoint.sh` gerenciando a ordem: Migração → Startup.
-- **Environment Driven**: Configuração total via variáveis de ambiente, injetadas no R2DBC.
+- **Containerization**: Docker com multi-stage build
+- **Orquestração**: Render para backend, Vercel para frontend
+- **Environment Driven**: Configuração total via variáveis de ambiente
+- **Health Checks**: Endpoints `/health` para verificação de saúde
 
 ### **CI/CD Patterns**
 - **GitHub Actions**: Pipeline de CI/CD
@@ -173,18 +196,25 @@ Usuario (N) ─── (1) Fazenda
 ## 📊 Padrões de Monitoramento
 
 ### **Observability**
-- **Metrics**: Micrometer + Prometheus
-- **Tracing**: Distributed tracing preparado
-- **Logging**: Log aggregation
-- **Health Checks**: Endpoints de health check
+- **Metrics**: Prometheus para métricas de performance (futuro)
+- **Tracing**: Distributed tracing com correlation IDs (implementado)
+  - Correlation ID gerado automaticamente para cada request
+  - Incluído em todos os logs e respostas HTTP (header `X-Correlation-ID`)
+- **Logging**: Log aggregation via BetterStack/Logtail
+  - Logs estruturados em JSON com correlation IDs
+  - Middleware de logging automático para todas as requisições
+  - Logs incluem: método, path, status, latency, IP, user agent, correlation ID
+- **Health Checks**: Endpoints `/health` para verificação de saúde
 
 ### **Alerting Patterns**
-- **Threshold-based**: Alertas baseados em thresholds
-- **Anomaly Detection**: Detecção de anomalias
-- **Notification Channels**: Slack, Email, SMS
-- **Escalation Policies**: Políticas de escalação
+- **Error Tracking**: Sentry para captura de erros em tempo real (implementado)
+  - Captura automática de panics
+  - Captura manual de erros nos handlers com contexto
+  - Inclui correlation ID, path, método, user context
+- **Threshold-based**: Alertas baseados em thresholds (futuro)
+- **Notification Channels**: Email, Slack (futuro)
 
 ---
 
-**Última atualização**: 2025-09-08
-**Versão dos Padrões**: 1.0
+**Última atualização**: 2026-01-24
+**Versão dos Padrões**: 2.0 (Go + Next.js)

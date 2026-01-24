@@ -1,0 +1,8 @@
+*.md
+.git
+.gitignore
+.env
+.env.local
+*.log
+bin/
+vendor/

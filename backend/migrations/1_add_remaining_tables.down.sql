@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS producao_leite;
+DROP TABLE IF EXISTS animais;
+DROP TABLE IF EXISTS usuarios;
+DROP TABLE IF EXISTS fazendas;

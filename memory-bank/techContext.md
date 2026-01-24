@@ -2,52 +2,155 @@
 
 ## Stack Tecnológica
 
-- **Java**: 17 (Eclipse Temurin)
-- **Framework**: Spring Boot 3.3.0
-- **Web**: Spring WebFlux (Programação Reativa)
+### Backend
+- **Linguagem**: Go 1.24+
+- **Framework Web**: Gin (HTTP router e middleware)
 - **Banco de Dados**: PostgreSQL 15
-- **Acesso a Dados**: Spring Data R2DBC (Não-bloqueante)
-- **Migrações**: Flyway CLI (Executado no deploy)
-- **Segurança**: Spring Security 6 + JWT
-- **Container**: Docker (Debian-based)
-- **Cloud**: Render
+- **Acesso a Dados**: pgx/v5 (driver PostgreSQL nativo com type safety)
+- **Migrações**: golang-migrate
+- **Autenticação**: JWT (golang-jwt/jwt/v5) com algoritmo RS256
+- **Segurança**: Bcrypt (golang.org/x/crypto/bcrypt)
+- **Logging**: slog (nativo Go) para logs estruturados JSON
+- **Observabilidade**: Sentry (getsentry/sentry-go) para captura de erros
+- **Container**: Docker (multi-stage build com imagem Alpine final)
 
-## Configurações de Produção (Render)
+### Frontend
+- **Framework**: Next.js 14+ (App Router)
+- **Linguagem**: TypeScript
+- **Estilização**: Tailwind CSS
+- **Componentes**: Shadcn/UI
+- **Gerenciamento de Estado**: TanStack Query (React Query)
+- **Cliente HTTP**: Axios ou fetch nativo
+- **Logging**: Pino (server-side)
 
-### Docker & Sistema Operacional
-- **Imagem Base**: `eclipse-temurin:17-jdk` (Debian)
-- **Motivo**: Debian provê resolução de DNS estável para hosts internos do Render, evitando `UnknownHostException`.
+### Infraestrutura
+- **Backend Deploy**: Render (Docker)
+- **Frontend Deploy**: Vercel (otimizado para Next.js)
+- **Banco de Dados**: PostgreSQL (Render Managed ou Neon.tech)
+- **Observabilidade**: Sentry (erros), BetterStack (logs), Prometheus (métricas)
 
-### Conectividade de Banco de Dados
-- **Tipo de Conexão**: Rede Interna do Render (Host curto: `dpg-xxxx`)
-- **Segurança**: SSL `sslmode=require`.
-- **Drivers**:
-  - **JDBC**: Usado apenas pelo Flyway CLI no startup.
-  - **R2DBC**: Usado pela aplicação em tempo de execução para reatividade total.
+## Configurações de Produção
 
-## Dependências Principais (pom.xml)
+### Backend (Render)
+- **Imagem Base**: `golang:1.24-alpine` (build) → `alpine:latest` (runtime)
+- **Porta**: 8080 (configurável via `PORT` env var)
+- **Health Check**: `/health` endpoint
+- **Variáveis de Ambiente**:
+  - `DATABASE_URL`: URL completa de conexão PostgreSQL
+  - `JWT_PRIVATE_KEY`: Chave privada para assinar tokens (RS256)
+  - `JWT_PUBLIC_KEY`: Chave pública para verificar tokens
+  - `PORT`: Porta do servidor (padrão: 8080)
+  - `SENTRY_DSN`: DSN do Sentry para captura de erros (opcional)
+  - `LOG_LEVEL`: Nível de log (DEBUG, INFO, WARN, ERROR) - padrão: INFO
+  - `ENV`: Ambiente (development, production) - padrão: development
 
-- `spring-boot-starter-webflux`: Core reativo.
-- `spring-boot-starter-data-r2dbc`: Repositórios reativos.
-- `r2dbc-postgresql`: Driver R2DBC para Postgres.
-- `spring-boot-starter-security`: Segurança básica.
-- `jjwt-api`, `jjwt-impl`, `jjwt-jackson`: Implementação de JWT.
-- `springdoc-openapi-starter-webflux-ui`: Documentação Swagger.
+### Frontend (Vercel)
+- **Framework**: Next.js (detectado automaticamente)
+- **Build Command**: `npm run build` (automático)
+- **Variáveis de Ambiente**:
+  - `NEXT_PUBLIC_API_URL`: URL do backend no Render
 
-## Configuração do Swagger
+### Banco de Dados
+- **Tipo**: PostgreSQL 15
+- **SSL**: Obrigatório (`sslmode=require`)
+- **Connection Pooling**: Gerenciado pelo driver pgx
 
-### Rotas liberadas no SecurityConfig.java:
-- `/swagger-ui/**`
-- `/v3/api-docs/**` 
-- `/swagger-ui.html`
-- `/webjars/**`
+## Dependências Principais (Backend Go)
 
-### URLs de acesso:
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **API Docs**: http://localhost:8080/v3/api-docs
+### go.mod (exemplo)
+```go
+module github.com/ceialmilk/api
+
+go 1.24.0
+
+require (
+    github.com/getsentry/sentry-go v0.41.0
+    github.com/gin-gonic/gin v1.10.0
+    github.com/golang-jwt/jwt/v5 v5.2.0
+    github.com/golang-migrate/migrate/v4 v4.19.1
+    github.com/google/uuid v1.6.0
+    github.com/jackc/pgx/v5 v5.5.4
+    golang.org/x/crypto v0.45.0
+)
+```
 
 ## Estratégia de Deploy
 
-1. **Build**: Maven constrói o JAR.
-2. **Flyway CLI**: O `entrypoint.sh` detecta a `DATABASE_URL`, converte para JDBC e roda as migrações usando o binário oficial do Flyway.
-3. **Startup**: A aplicação inicia após as migrações, recebendo a `SPRING_R2DBC_URL` via variável de ambiente para garantir conectividade interna.
+### Backend (Go)
+1. **Build**: `go build -o bin/api ./cmd/api` (multi-stage Docker)
+2. **Migrações**: `golang-migrate` executa antes do servidor iniciar
+3. **Startup**: `./bin/api` (binário único, startup instantâneo)
+
+### Frontend (Next.js)
+1. **Build**: Vercel detecta Next.js e faz build automático
+2. **Deploy**: Distribuição global via CDN da Vercel
+3. **SSR/SSG**: Next.js gerencia renderização server-side
+
+## Ambiente de Desenvolvimento (Dev Container)
+
+O projeto inclui um **Dev Container** (`.devcontainer/`) alinhado à stack Go + Next.js para desenvolvimento local consistente.
+
+### Estrutura
+
+```
+.devcontainer/
+├── devcontainer.json   # Configuração (extensões, features, comandos, portas)
+└── Dockerfile          # Opcional (referência); uso padrão: image + features
+```
+
+### Stack do Container
+
+- **Base**: `mcr.microsoft.com/devcontainers/base:ubuntu-22.04`
+- **Features**: `go` (1.24) e `node` (LTS) via Dev Container features
+- **Ferramentas**: `postgresql-client` (instalado no postCreateCommand), git, curl
+
+### Uso
+
+1. Abrir o projeto no VS Code/Cursor.
+2. **Reopen in Container** (ou "Dev Containers: Reopen in Container").
+3. O `docker-compose` sobe o serviço `ceialmilk-dev` e o `db` (PostgreSQL).
+
+### Portas encaminhadas
+
+| Porta | Serviço        |
+|-------|----------------|
+| 8080  | Backend Go     |
+| 3000  | Next.js (dev)  |
+| 5432  | PostgreSQL     |
+
+### Comandos no container
+
+- **Backend**: `cd backend && go run ./cmd/api` (porta 8080).
+- **Frontend**: `cd frontend && npm run dev` ou `npm run dev --prefix frontend` (porta 3000).
+- **Post-create** (automático): `apt-get install postgresql-client`, `go mod download -C backend` e `npm install --prefix frontend`.
+
+### Variáveis de ambiente (ceialmilk-dev)
+
+Definidas no `docker-compose` para o serviço `ceialmilk-dev`:
+
+- `DATABASE_URL`: `postgres://ceialmilk:password@db:5432/ceialmilk?sslmode=disable`
+- `PORT`: `8080`
+
+O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar localmente se necessário.
+
+## Vantagens da Nova Stack
+
+### Performance
+- **Memória**: Go consome ~30MB vs ~300MB do Java
+- **Startup**: < 1 segundo vs 15-30 segundos do Java
+- **Binário**: Único arquivo executável vs JAR + JVM
+
+### Desenvolvimento
+- **Simplicidade**: Código Go mais direto que Spring WebFlux
+- **Type Safety**: TypeScript no frontend garante tipos seguros
+- **Hot Reload**: Desenvolvimento rápido com ferramentas modernas
+
+### Deploy
+- **Simplicidade**: Binário único, sem necessidade de JVM
+- **Tamanho**: Imagem Docker final ~20MB vs ~200MB do Java
+- **Conectividade**: Driver pgx mais robusto que R2DBC em ambientes cloud
+
+---
+
+**Última atualização**: 2026-01-24
+**Stack**: Go + Next.js (Migração em andamento)

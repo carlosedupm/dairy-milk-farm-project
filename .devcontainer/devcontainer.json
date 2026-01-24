@@ -4,31 +4,35 @@
   "service": "ceialmilk-dev",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
+  "containerEnv": {
+    "DATABASE_URL": "postgres://ceialmilk:password@db:5432/ceialmilk?sslmode=disable",
+    "PORT": "8080"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
-        "vscjava.vscode-java-pack",
-        "vmware.vscode-spring-boot",
-        "pivotal.vscode-spring-boot",
+        "golang.go",
         "ms-azuretools.vscode-docker",
         "cweijan.vscode-database-client2",
-        "redhat.java",
-        "dotjoshjohnson.xml",
-        "github.copilot",
-        "saoudrizwan.claude-dev",
-        "vmware.vscode-boot-dev-pack",
-        "alphabotsec.vscode-eclipse-keybindings"
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "github.copilot"
       ],
       "settings": {
-        "maven.executable.path": "/usr/share/maven/bin/mvn",
-        "java.jdt.ls.vmargs": "-Xmx2G -Xms100m",
         "editor.tabSize": 2,
-        "editor.insertSpaces": true
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[go]": {
+          "editor.defaultFormatter": "golang.go",
+          "editor.formatOnSave": true
+        },
+        "go.useLanguageServer": true
       }
     }
   },
-  "forwardPorts": [8080, 5432, 6379],
-  "postCreateCommand": "mvn clean compile -DskipTests",
-  "postStartCommand": "echo '🚀 CeialMilk Dev Container pronto! Use: mvn spring-boot:run'",
+  "forwardPorts": [8080, 3000, 5432],
+  "postCreateCommand": "go mod download -C backend && npm install --prefix frontend && chmod +x /workspace/scripts/devcontainer-post-start.sh",
   "remoteUser": "vscode"
 }

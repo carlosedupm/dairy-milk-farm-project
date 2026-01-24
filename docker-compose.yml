@@ -1,69 +1,33 @@
 services:
+  db:
+    image: postgres:15-alpine
+    container_name: ceialmilk-db
+    environment:
+      POSTGRES_USER: ceialmilk
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ceialmilk
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # Dev: aceitar todas as conexões (rede Docker) sem exigir SSL
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command: ["postgres", "-c", "ssl=off", "-c", "listen_addresses=*"]
+    ports:
+      - "5432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ceialmilk -d ceialmilk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
   ceialmilk-dev:
     build:
       context: .
       dockerfile: .devcontainer/Dockerfile
     volumes:
       - .:/workspace:cached
-      - maven-repo:/home/vscode/.m2
-    environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - DATABASE_URL=jdbc:postgresql://postgres:5432/ceialmilk
-      - DB_USERNAME=ceialmilk
-      - DB_PASSWORD=ceialmilk
-      - REDIS_URL=redis://redis:6379
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - ceialmilk-network
-    labels:
-      - "com.ceialmilk.devcontainer=true"
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: ceialmilk-db
-    environment:
-      POSTGRES_DB: ceialmilk
-      POSTGRES_USER: ceialmilk
-      POSTGRES_PASSWORD: ceialmilk
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ceialmilk -d ceialmilk"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    networks:
-      - ceialmilk-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: ceialmilk-cache
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - ceialmilk-network
-
-volumes:
-  postgres_data:
-  redis_data:
-  maven-repo:
-
-networks:
-  ceialmilk-network:
-    driver: bridge

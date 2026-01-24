@@ -2,178 +2,194 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 50%
+### **Completude Geral**: 55%
 ```bash
-🏗️  Infraestrutura: 100% ✅
-📚  Documentação: 80% ✅
-💻  Implementação: 30% 🚧
+🏗️  Infraestrutura: 70% 🚧
+📚  Documentação: 90% ✅
+💻  Implementação: 65% 🚧
 🧪  Testes: 0% 🚧
-🚀  Deploy: 70% ✅
+🚀  Deploy: 35% 🚧
 ```
 
 ### **Velocidade e Métricas**
 - **Início do projeto**: 2025-09-07
-- **Tempo decorrido**: 2 dias
-- **Velocity atual**: 5-7 story points/semana
+- **Migração Arquitetural**: 2026-01-24
+- **Velocity atual**: Em reestruturação
 - **Team size**: 1 desenvolvedor
-- **Sprint atual**: Implementação inicial
+- **Sprint atual**: Migração para Go + Next.js
 - **Progresso sprint**: 60% concluído
 
 ## ✅ O que foi concluído
 
-### **Infraestrutura (✅ 95%)**
-- [x] **Arquitetura implementada**: Stack técnica completa e testada
-- [x] **Ambiente containerizado**: Docker Compose com PostgreSQL + Redis + App Spring Boot
-- [x] **Estrutura de código**: Organização completa de pacotes Java implementada
-- [x] **Schema do banco**: Estrutura completa com dados iniciais
-- [x] **Dependências Maven**: Todas as dependências configuradas e testadas
-- [x] **Configuração completa**: application.yml com todas as configurações necessárias
+### **Migração Arquitetural (✅ 60%)**
+- [x] **Limpeza**: Remoção completa de código Java/Spring legado
+- [x] **Documentação**: Memory bank atualizado para nova stack
+- [x] **Estrutura Monorepo**: Pastas `/backend` e `/frontend` criadas
+- [x] **Backend Go**: Estrutura básica implementada
+  - [x] Configuração e logger
+  - [x] Modelos (Fazenda, Usuario)
+  - [x] Repository pattern
+  - [x] Service layer
+  - [x] Handlers (CRUD Fazendas)
+  - [x] Autenticação JWT (estrutura)
+- [x] **Frontend Next.js**: Setup inicial
+  - [x] Next.js 14+ configurado
+  - [x] Tailwind CSS configurado
+  - [x] Estrutura de pastas
+  - [x] Cliente API básico
 
-### **Implementação (✅ 30%)**
-- [x] **Entidade Fazenda**: Model, Repository, Service e Controller completos
-- [x] **Entidade Usuario**: Model e Repository implementados
-- [x] **Sistema de autenticação**: JWT com Spring Security 6 totalmente funcional
-- [x] **Controller de autenticação**: Endpoints de login e validação de token
-- [x] **UserDetails service**: Serviço reativo para autenticação
+### **Infraestrutura (🚧 70%)**
+- [x] **Estrutura Monorepo**: Criada e organizada
+- [x] **Docker Compose**: Configurado para desenvolvimento local
+- [x] **Dockerfile Backend**: Multi-stage build otimizado
+- [x] **render.yaml**: Atualizado para nova estrutura
+- [x] **Migrações**: golang-migrate no startup; V3 seed admin
+- [ ] **Deploy Frontend**: Configuração Vercel pendente
 
-### **API e Serviços (✅ 40%)**
-- [x] **API RESTful reativa**: Endpoints funcionais para Fazenda com WebFlux
-- [x] **Operações CRUD**: Create, Read, Update, Delete para entidade Fazenda
-- [x] **Buscas avançadas**: Endpoints de busca por nome, localização, quantidade de vacas
-- [x] **Autenticação JWT**: Sistema completo de login e validação de tokens
-
-### **Documentação (✅ 80%)**
-- [x] **README.md**: Documentação principal atualizada com status real
-- [x] **Memory bank**: Estrutura completa mantida e atualizada
-- [x] **Documentação técnica**: Tech context detalhado com stack implementada
-- [x] **Documentação de produto**: Contexto de usuários e funcionalidades
-- [x] **Documentação ativa**: Status atual e progresso em tempo real
-- [x] **Guia de deploy**: Documentação completa do processo de deploy
-
-### **Deploy (✅ 70%)**
-- [x] **Dockerfile produção**: Configurado para ambiente de produção
-- [x] **Configuração de deploy**: Configurações completas
-- [x] **GitHub Actions**: Pipeline de CI/CD implementado
-- [x] **Configuração produção**: application-prod.yml com variáveis de ambiente
-- [x] **Documentação**: Guia completo de deploy criado
-- [ ] **Primeiro deploy**: A ser executado após configuração de secrets
+### **Documentação (✅ 90%)**
+- [x] **README.md**: Atualizado para nova stack
+- [x] **Memory bank**: Todos os arquivos atualizados
+  - [x] `activeContext.md`: Estado atual refletindo migração
+  - [x] `techContext.md`: Stack Go + Next.js documentada
+  - [x] `systemPatterns.md`: Padrões atualizados
+  - [x] `deploy-notes.md`: Deploy atualizado
+- [x] **AGENTS.md**: Diretrizes atualizadas para nova stack
 
 ## 🚧 Em andamento
 
-### **Implementação (🚧 70%)**
-- [x] Primeira entidade modelo implementada (Fazenda)
-- [x] Primeiro repositório reativo criado (FazendaRepository)
-- [x] Serviços básicos implementados (FazendaService)
-- [x] Controllers RESTful criados (FazendaController)
-- [x] Sistema de autenticação configurado (JWT + Spring Security)
+### **Backend Go (🚧 70%)**
+- [x] Estrutura básica e configuração
+- [x] Modelos de domínio
+- [x] Repository e Service para Fazendas (CRUD + search, count, exists)
+- [x] Handlers HTTP (CRUD Fazendas, search, count, exists)
+- [x] Sistema de migrações (golang-migrate no startup)
+- [x] Autenticação (login, validate), JWT RS256, middleware
+- [x] Chaves JWT de desenvolvimento (devcontainer)
+- [ ] Validações de entrada adicionais
 
-### **Desenvolvimento (🚧 50%)**
-- [ ] Implementação das entidades Animal e ProduçãoLeite
-- [ ] Validações com Bean Validation
-- [ ] Handlers de exceção global
-- [ ] Logging estruturado
-- [ ] Testes unitários
+### **Frontend Next.js (🚧 65%)**
+- [x] Setup inicial e configuração
+- [x] Estrutura básica
+- [x] Páginas de autenticação (login)
+- [x] Páginas de gestão de fazendas (listagem, nova, editar, excluir)
+- [x] Componentes Shadcn/UI (button, input, card, label, table, dialog)
+- [x] TanStack Query configurado
+- [x] Integração com API (auth + fazendas)
 
 ## 📋 Próximos Passos
 
-### **Sprint Atual (Concluída ✅)**
-- [x] **Entidades Model**: Classes para Fazenda e Usuario implementadas
-- [x] **Repositórios**: Interfaces R2DBC reativas para Fazenda e Usuario
-- [x] **Serviços**: Lógica de negócio básica para Fazenda
-- [x] **Controllers**: Endpoints RESTful para Fazenda e autenticação
-- [x] **Autenticação**: Spring Security com JWT configurado e funcional
+### **Sprint Atual (Migração)**
+- [x] Limpeza de código legado
+- [x] Atualização de documentação
+- [x] Estrutura monorepo
+- [x] Backend Go básico
+- [x] Frontend Next.js básico
+- [x] Sistema de migrações (golang-migrate)
+- [x] Autenticação (login, validate) + JWT
+- [ ] Deploy configurado
 
-### **Sprint 2 (Esta semana)**
-- [ ] **Entidade Animal**: Model, repository, service, controller completos
-- [ ] **Entidade ProduçãoLeite**: Model, repository, service, controller completos
-- [ ] **Validações**: Implementar Bean Validation para todas as entidades
-- [ ] **Exceções**: Criar handlers de exceção global
-- [ ] **Testes**: Escrever primeiros testes unitários
+### **Sprint 2 (Funcionalidades Core)**
+- [x] Login + CRUD de Fazendas no frontend
+- [ ] Autenticação completa (registro, refresh tokens)
+- [ ] CRUD de Animais (backend + frontend)
+- [ ] CRUD de Produção de Leite (backend + frontend)
+- [ ] Validações e tratamento de erros
 
-### **Sprint 3 (Próxima semana)**
-- [ ] **Testes integração**: Implementar testes de integração para controllers
-- [ ] **Monitoramento**: Configurar health checks e métricas
-- [x] **CI/CD**: Configurar GitHub Actions para build automatizado
-- [ ] **Deploy**: Primeiro deploy no Fly.io para testes
-- [ ] **Documentação API**: Documentar endpoints com OpenAPI/Swagger
+### **Sprint 3 (Melhorias)**
+- [ ] Testes unitários (Go)
+- [ ] Testes de integração
+- [ ] Observabilidade (Sentry, BetterStack)
+- [ ] Otimizações de performance
+- [ ] Documentação de API
 
 ## 🎯 Metas de Curto Prazo
 
 ### **Meta 1: MVP Básico (4 semanas)**
 - [ ] CRUD completo de todas as entidades principais
 - [ ] Autenticação JWT funcional
-- [ ] API RESTful reativa operacional
+- [ ] API RESTful operacional
 - [ ] Deploy em ambiente de produção
-- [ ] Testes unitários cobrindo 50% do código
+- [ ] Interface básica funcional
 
 ### **Meta 2: Operacional (8 semanas)**
 - [ ] Controle de saúde animal implementado
 - [ ] Gestão reprodutiva básica
 - [ ] Relatórios analíticos iniciais
-- [ ] Interface mobile responsiva
+- [ ] Versão mobile responsiva
 - [ ] Testes de integração cobrindo 70%
 
 ### **Meta 3: Inteligência (12 semanas)**
 - [ ] Sistema de predições de produção
-- [ ] Alertas automáticos de saúde
+- [ ] Alertas automáticos de saúde preventiva
+- [ ] Otimização de recursos através de IA
 - [ ] Integração com dispositivos IoT
 - [ ] Dashboard analítico completo
-- [ ] Testes E2E cobrindo fluxos críticos
 
 ## 📊 Métricas de Progresso Detalhadas
 
 ### **Desenvolvimento**
 ```progress
-████▄▄▄▄▄▄ 40%
+██████▄▄▄▄ 65%
 ```
 
 ### **Qualidade**
 ```progress
-██▄▄▄▄▄▄▄▄ 25%
+▄▄▄▄▄▄▄▄▄▄ 0%
 ```
 
 ### **Documentação**
 ```progress
-█████▄▄▄▄▄ 70%
+█████████▄ 90%
 ```
 
 ### **Infraestrutura**
 ```progress
-████████▄▄ 95%
+██████▄▄▄▄ 70%
 ```
 
 ## 🔄 Histórico de Progresso
 
 ### **2025-09-07 - Dia 1**
-- ✅ **Setup inicial**: Estrutura do projeto criada
+- ✅ **Setup inicial**: Estrutura do projeto criada (Java/Spring)
 - ✅ **Docker compose**: Serviços configurados (PostgreSQL, Redis, App)
 - ✅ **Maven setup**: Dependências configuradas com Spring WebFlux
 - ✅ **Documentação**: README.md e memory bank inicializados
 - ✅ **Schema DB**: Estrutura inicial do banco de dados
-- ✅ **Dev container**: Configuração VS Code completa
 
 ### **2025-09-08 - Dia 2**
-- ✅ **Entidade Fazenda**: Implementação completa do CRUD reativo
+- ✅ **Entidade Fazenda**: Implementação completa do CRUD reativo (Java)
 - ✅ **Sistema de autenticação**: JWT com Spring Security 6 configurado
 - ✅ **Controller de autenticação**: Endpoints de login e validação
-- ✅ **UserDetails service**: Serviço reativo implementado
 - ✅ **API RESTful**: Endpoints funcionais para Fazenda
-- ✅ **Configuração deploy**: Dockerfile e GitHub Actions implementados
-- ✅ **CI/CD**: Pipeline automatizado configurado
+
+### **2026-01-24 - Migração Arquitetural**
+- ✅ **Decisão de Stack**: Migração para Go + Next.js definida
+- ✅ **Limpeza**: Remoção de código Java/Spring legado
+- ✅ **Documentação**: Memory bank completamente atualizado
+- ✅ **Estrutura Monorepo**: `/backend` e `/frontend` criados
+- ✅ **Backend Go**: Estrutura básica implementada
+  - Configuração, logger, modelos
+  - Repository, Service, Handlers
+  - CRUD Fazendas funcional
+- ✅ **Frontend Next.js**: Setup inicial completo
+  - Next.js 14+ configurado
+  - Tailwind CSS configurado
+  - Estrutura de pastas
 
 ### **Próximos Marcos**
-- **2025-09-14**: Entidades Animal e ProduçãoLeite implementadas
-- **2025-09-21**: Validações e handlers de exceção completos
-- **2025-09-28**: Primeiro deploy no Fly.io
-- **2025-10-05**: Testes de integração implementados
+- **2026-01-31**: Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
+- **2026-02-07**: Testes automatizados (E2E ou unitários) iniciados
+- **2026-02-14**: Deploy em produção (Render + Vercel)
+- **2026-02-21**: Testes de integração implementados
 
 ## 🎯 Objetivos de Aprendizado
 
 ### **Técnicos**
-- [ ] Dominar Spring WebFlux e programação reativa
-- [ ] Aprender R2DBC e acesso reativo a banco
-- [ ] Implementar autenticação JWT com Spring Security
-- [ ] Configurar deploy automatizado com Fly.io
+- [x] Entender arquitetura Go e padrões
+- [x] Dominar Gin framework
+- [x] Aprender Next.js App Router
+- [x] Implementar autenticação JWT RS256
+- [ ] Configurar deploy automatizado (Render + Vercel)
 
 ### **Produto**
 - [ ] Entender necessidades reais de fazendas leiteiras
@@ -184,19 +200,20 @@
 ## 📈 Evolução das Decisões
 
 ### **Decisões Consolidadas**
-- ✅ Stack técnica: Spring Boot 3 + WebFlux + R2DBC
-- ✅ Banco de dados: PostgreSQL com schema definido
-- ✅ Autenticação: JWT com Spring Security 6
-- ✅ Infraestrutura: Docker + Fly.io
+- ✅ Stack técnica: Go (Gin) + Next.js 14+ + PostgreSQL
+- ✅ Banco de dados: PostgreSQL com schema mantido
+- ✅ Autenticação: JWT RS256 com refresh tokens
+- ✅ Infraestrutura: Monorepo com Render (backend) + Vercel (frontend)
+- ✅ Segurança: Cookies HttpOnly, Bcrypt, CORS estrito
+- ✅ Observabilidade: Sentry, BetterStack, Prometheus
+- ✅ Sistema de migrações: golang-migrate no startup
 
 ### **Decisões em Avaliação**
-- 🔄 Estratégia de migração de banco (Flyway vs manual)
-- 🔄 Estratégia de refresh tokens
-- 🔄 Versionamento de API (path vs header)
-- 🔄 Documentação da API (OpenAPI vs manual)
+- 🔄 Estratégia de cache (Redis vs in-memory)
+- 🔄 Estratégia de testes (table-driven vs outros padrões)
 
 ---
 
-**Última atualização**: 2025-09-08
-**Status**: Implementação inicial em andamento (60% concluída)
-**Próxima revisão**: 2025-09-14
+**Última atualização**: 2026-01-24
+**Status**: Migração arquitetural em andamento (60% concluída)
+**Próxima revisão**: 2026-01-31

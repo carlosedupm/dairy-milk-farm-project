@@ -1,86 +1,82 @@
 # Notas de Deploy - Ambiente de Produção
 
-## Deploy no Render (fluxo recomendado)
+## Arquitetura de Deploy
 
-Flyway (JDBC) no container **falha no Render** (host interno → `UnknownHostException`; host externo → `EOFException`). **Não rodamos Flyway no container por padrão.** Migrações via script local:
+O projeto utiliza uma arquitetura **monorepo** com deploy separado para backend e frontend:
 
-1. **Migrações**: Render Dashboard → **ceialmilk-db** → Connect → **External** → copiar External Database URL. Localmente:
-   ```bash
-   export RENDER_EXTERNAL_DATABASE_URL='postgresql://USER:PASS@HOST:5432/DB'
-   ./scripts/flyway-migrate-render.sh
-   ```
-2. **Deploy**: Push para `main` ou deploy manual. O container sobe **sem** Flyway (padrão); a app conecta via R2DBC (host externo).
-3. **Novas migrações**: rodar o script de novo, depois deploy.
+- **Backend (Go)**: Deploy no **Render** via Docker
+- **Frontend (Next.js)**: Deploy na **Vercel** (otimizado para Next.js)
+- **Banco de Dados**: PostgreSQL gerenciado (Render ou Neon.tech)
 
-**Opt-in**: Definir `RUN_FLYWAY_IN_CONTAINER=true` no Render para rodar Flyway no container (normalmente falha; use o script).
+## Deploy do Backend (Render)
 
-## Configuração no Render
+### Configuração no Render
 
-O projeto está configurado para deploy no Render usando Docker. O arquivo `render.yaml` define:
+O arquivo `render.yaml` define:
 - **Serviço Web**: Aplicação Docker na branch `main`
 - **Banco de Dados**: PostgreSQL gerenciado (`ceialmilk-db`)
-- **Health Check**: `/actuator/health`
+- **Health Check**: `/health` endpoint
 - **Auto Deploy**: Habilitado
 
-## Variáveis de Ambiente
+### Variáveis de Ambiente
 
-### Configuradas Automaticamente pelo Render
+#### Configuradas Automaticamente pelo Render
 
-O `render.yaml` configura automaticamente as seguintes variáveis:
+- `DATABASE_URL` - URL de conexão do banco (formato: `postgresql://user:pass@host:port/db`)
+- `JWT_PRIVATE_KEY` - Chave privada RSA para assinar tokens JWT (RS256)
+- `JWT_PUBLIC_KEY` - Chave pública RSA para verificar tokens JWT
+- `PORT` - Porta do servidor (padrão: 8080)
 
-- `SPRING_PROFILES_ACTIVE=prod` - Ativa o perfil de produção
-- `DATABASE_URL` - URL de conexão do banco (formato JDBC: `postgresql://user:pass@host:port/db`)
-- `DB_HOST` - Host do banco de dados (extraído do banco gerenciado)
-- `DB_PORT` - Porta do banco (geralmente 5432)
-- `DB_NAME` - Nome do banco de dados (extraído do banco gerenciado)
-- `DB_USERNAME` - Usuário do banco (`ceialmilk`)
-- `DB_PASSWORD` - Senha do banco (gerada automaticamente pelo Render)
-- `JWT_SECRET` - Chave secreta JWT (gerada automaticamente)
+#### Opcionais
 
-### Opcionais (Render / conexão ao banco)
+- `LOG_LEVEL` - Nível de log (DEBUG, INFO, WARN, ERROR) - padrão: INFO
+- `CORS_ORIGIN` - Origem permitida para CORS (URL do frontend na Vercel)
 
-- **Padrão**: Host **externo** (ex: `dpg-xxx-a.oregon-postgres.render.com`). O host interno (curto) **não resolve** em Docker no Render.
-- `DB_HOST_SUFFIX` - Sufixo do externo (ex: `.frankfurt-postgres.render.com`) quando o host é curto.
-- `RUN_FLYWAY_IN_CONTAINER=true` - **Opt-in** para rodar Flyway no container (em geral falha no Render; prefira o script).
+### Migrações de Banco de Dados
 
-### Conversão Automática de DATABASE_URL
+**Estratégia**: Migrações executadas automaticamente no startup do servidor Go usando `golang-migrate`.
 
-A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProcessor.java`) que:
-- **Executa muito cedo** no ciclo de vida do Spring Boot (antes de qualquer bean ser criado)
-- Detecta automaticamente o `DATABASE_URL` nos formatos:
-  - R2DBC: `r2dbc:postgresql://user:pass@host:port/db`
-  - JDBC: `postgresql://user:pass@host:port/db` ou `jdbc:postgresql://...`
-- Converte para os formatos necessários:
-  - R2DBC: `r2dbc:postgresql://host:port/db?sslmode=require`
-  - JDBC (Flyway): `jdbc:postgresql://host:port/db?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory`
-- Extrai e configura as variáveis `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME` e `DB_PASSWORD`
-- Configura tanto o R2DBC (aplicação) quanto o Flyway (migrações) com alta prioridade
+**Fluxo**:
+1. Servidor inicia
+2. Verifica versão atual do banco
+3. Executa migrações pendentes
+4. Inicia servidor HTTP
 
-**Nota**: O processador está registrado em `META-INF/spring.factories` e executa automaticamente antes do Flyway tentar conectar.
+**Localização**: `/backend/migrations/`
 
-**Logs de Debug**: O processador gera logs detalhados (incluindo `System.out.println`) para facilitar o diagnóstico:
-- `=== DatabaseEnvironmentPostProcessor: INICIADO ===`
-- `DATABASE_URL encontrado (mascarado): ...`
-- `Configurado Flyway com URL JDBC completa: ...`
-- `Verificação: spring.flyway.url após configuração = ...`
+**Formato**: `{version}_{descrição}.up.sql` e `{version}_{descrição}.down.sql` (ex.: `1_add_remaining_tables.up.sql`, `2_add_indexes_to_fazendas.up.sql`, `3_seed_admin.up.sql`, `4_add_refresh_tokens.up.sql`)
 
-## Configuração do Flyway
+### Dockerfile
 
-### Flyway fora do container (padrão no Render)
+O Dockerfile utiliza multi-stage build:
+1. **Build Stage**: Compila o binário Go
+2. **Runtime Stage**: Imagem Alpine mínima com apenas o binário
 
-**Flyway (JDBC) no container falha no Render** (interno → `UnknownHostException`, externo → `EOFException`). Por isso:
+**Vantagens**:
+- Imagem final ~20MB (vs ~200MB do Java)
+- Startup instantâneo (< 1 segundo)
+- Sem necessidade de JVM ou runtime pesado
 
-- **Padrão**: O `entrypoint.sh` **não** executa Flyway. Migrações rodam localmente via `./scripts/flyway-migrate-render.sh` (External Database URL).
-- **Opt-in**: `RUN_FLYWAY_IN_CONTAINER=true` faz o container rodar Flyway antes da app (em geral continua falhando no Render).
+## Deploy do Frontend (Vercel)
 
-**Fluxo:**
-1. Rodar `./scripts/flyway-migrate-render.sh` com `RENDER_EXTERNAL_DATABASE_URL` (copiar do Dashboard → External).
-2. Deploy. Container sobe direto para a app; R2DBC usa host externo.
-3. Novas migrações: rodar o script de novo, depois deploy.
+### Configuração na Vercel
 
-**Configuração:**
-- Flyway **desabilitado** na aplicação (`application-prod.yml`: `flyway.enabled: false`; `CeialMilkApplication` exclui `FlywayAutoConfiguration`).
-- Migrações em `src/main/resources/db/migration/` (copiadas para `/app/migrations` no container quando opt-in).
+1. **Conectar Repositório**: Vercel detecta automaticamente Next.js
+2. **Root Directory**: `/frontend`
+3. **Build Command**: Automático (`npm run build`)
+4. **Output Directory**: `.next` (automático)
+
+### Variáveis de Ambiente
+
+- `NEXT_PUBLIC_API_URL` - URL do backend no Render (ex: `https://ceialmilk-api.onrender.com`)
+
+### Otimizações Automáticas
+
+A Vercel oferece:
+- **CDN Global**: Distribuição automática via CDN
+- **Image Optimization**: Otimização automática de imagens
+- **Edge Functions**: Execução na edge quando necessário
+- **Analytics**: Métricas de performance automáticas
 
 ## Conexões Necessárias
 
@@ -90,170 +86,180 @@ A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProc
 - **Plano**: `free` (pode ser atualizado conforme necessário)
 - **SSL**: Obrigatório (`sslmode=require`)
 
-### Redis (Opcional)
+### Alternativa: Neon.tech
 
-- Redis **não está configurado** em produção atualmente
-- Está disponível apenas no ambiente de desenvolvimento (`docker-compose.yml`)
-- Se necessário adicionar Redis em produção:
-  1. Criar serviço Redis no Render (ou usar Redis externo)
-  2. Adicionar variável `REDIS_URL` no `render.yaml`
-  3. Configurar Spring Data Redis no `application-prod.yml`
-  4. Adicionar dependência no `pom.xml`
+Se preferir usar Neon.tech:
+1. Criar banco no Neon.tech
+2. Configurar `DATABASE_URL` no Render com a URL do Neon
+3. Migrações funcionam da mesma forma
 
 ## Checklist de Deploy
 
-Antes de fazer deploy no Render, verificar:
+### Backend (Render)
 
-- [x] `render.yaml` configurado corretamente
+- [ ] `render.yaml` configurado corretamente
+- [ ] `Dockerfile` testado localmente
 - [ ] Banco de dados PostgreSQL criado no Render (via `render.yaml`)
-- [x] Variáveis de ambiente definidas automaticamente (via `fromDatabase`)
-- [x] `JWT_SECRET` configurado (gerado automaticamente)
-- [x] Credenciais removidas do `application-prod.yml` (usando apenas variáveis de ambiente)
-- [x] Health check endpoint configurado (`/actuator/health`)
-- [ ] Flyway migrações testadas localmente
-- [ ] Dockerfile testado localmente
+- [ ] Variáveis de ambiente configuradas:
+  - [ ] `DATABASE_URL`
+  - [ ] `JWT_PRIVATE_KEY` e `JWT_PUBLIC_KEY` (gerar par de chaves RSA)
+  - [ ] `PORT` (opcional, padrão: 8080)
+- [ ] Health check endpoint funcionando (`/health`)
+- [ ] Migrações testadas localmente
+
+### Frontend (Vercel)
+
+- [ ] Repositório conectado na Vercel
+- [ ] Root directory configurado para `/frontend`
+- [ ] Variável de ambiente `NEXT_PUBLIC_API_URL` configurada
+- [ ] Build testado localmente (`npm run build`)
+- [ ] Deploy de preview funcionando
 
 ## Comandos Úteis
 
+### Backend
+
 ```bash
-# Verificar health da aplicação
-curl https://seu-app.onrender.com/actuator/health
+# Build local
+cd backend
+go build -o bin/api ./cmd/api
 
-# Verificar migrações Flyway
-curl https://seu-app.onrender.com/actuator/flyway
+# Testar localmente (migrações rodam no startup)
+./bin/api
+# ou: go run ./cmd/api
+```
 
-# Verificar logs no Render
-# (via dashboard do Render: https://dashboard.render.com)
+### Frontend
+
+```bash
+# Desenvolvimento local
+cd frontend
+npm run dev
+
+# Build de produção
+npm run build
+
+# Preview de produção
+npm run start
+```
+
+### Verificação de Deploy
+
+```bash
+# Verificar health do backend
+curl https://ceialmilk-api.onrender.com/health
+
+# Verificar API
+curl https://ceialmilk-api.onrender.com/api/v1/fazendas
 ```
 
 ## Segurança
 
 ### Credenciais
 
-- ✅ **Credenciais hardcoded removidas** do `application-prod.yml`
+- ✅ **Credenciais hardcoded removidas** do código
 - ✅ Todas as credenciais vêm de variáveis de ambiente
-- ✅ `JWT_SECRET` é gerado automaticamente pelo Render
-- ✅ Senha do banco é gerenciada automaticamente pelo Render
+- ✅ Chaves JWT geradas e armazenadas de forma segura
+- ✅ Senha do banco gerenciada automaticamente pelo Render
 
 ### Recomendações
 
 1. **Nunca commitar credenciais** no código
 2. **Usar sempre variáveis de ambiente** para informações sensíveis
-3. **Rotacionar JWT_SECRET** periodicamente em produção
-4. **Configurar backups automáticos** do banco de dados no Render
+3. **Rotacionar chaves JWT** periodicamente em produção
+4. **Configurar backups automáticos** do banco de dados
+5. **Usar HTTPS** sempre (Render e Vercel fornecem automaticamente)
 
 ## Troubleshooting
 
-### Problema: Aplicação não conecta ao banco
+### Problema: Backend não conecta ao banco
 
 **Sintomas**:
-- `EOFException` durante autenticação
-- `UnknownHostException` (host incompleto)
-- `Connection refused` (tentando conectar em localhost)
+- Erro de conexão no startup
+- Health check falha
 
 **Solução**:
-1. **Verificar logs do DatabaseEnvironmentPostProcessor**:
-   - Deve aparecer: `=== DatabaseEnvironmentPostProcessor: INICIADO ===`
-   - Deve aparecer: `Configurado Flyway com URL JDBC completa: host=..., port=..., database=...`
-   - Deve aparecer: `Verificação: spring.flyway.url após configuração = ...`
+1. Verificar `DATABASE_URL` no Render Dashboard
+2. Verificar se banco está ativo
+3. Verificar logs do container no Render
+4. Testar conexão localmente com as mesmas credenciais
 
-2. **Verificar se o banco `ceialmilk-db` foi criado no Render**:
-   - Acessar dashboard do Render
-   - Verificar se o banco está ativo e acessível
+### Problema: Migrações falham
 
-3. **Verificar variáveis de ambiente no Render**:
-   - `DATABASE_URL` deve estar presente
-   - `DB_USERNAME` e `DB_PASSWORD` devem estar configuradas
-   - Usar endpoint `/api/v1/env/check` para verificar (após aplicação iniciar)
-
-4. **Verificar configuração SSL**:
-   - Render PostgreSQL requer `sslmode=require`
-   - O processador configura automaticamente com `sslfactory=org.postgresql.ssl.NonValidatingFactory`
-
-5. **Se o problema persistir (EOFException)** - RESOLVIDO:
-   - ✅ **Solução implementada**: Flyway CLI executa migrações ANTES da aplicação iniciar
-   - ✅ Script de inicialização aguarda banco estar pronto antes de executar migrações
-   - ✅ Problema de timing resolvido com health check e retry
-   - Se ainda houver problemas:
-     - Verificar se aplicação e banco estão na mesma região
-     - Verificar logs do script de inicialização (antes dos logs da aplicação)
-     - Verificar se variáveis de ambiente estão corretas (DB_HOST, DB_PORT, etc.)
-
-### Problema: Migrações Flyway falham
+**Sintomas**:
+- Erro ao executar migrações no startup
 
 **Solução**:
-1. **Verificar logs do script de inicialização** (nos logs do container, antes da aplicação iniciar):
-   - Buscar por "Executando migrações Flyway"
-   - Verificar mensagens de erro do Flyway CLI
-   - Logs aparecem com prefixo "===" ou "Executando Flyway CLI..."
+1. Verificar logs do servidor no startup
+2. Verificar se arquivos de migração estão corretos
+3. Verificar permissões do usuário do banco
+4. Executar migrações manualmente para debug
 
-2. **Verificar se o banco está pronto**:
-   - Logs devem mostrar "✅ Banco de dados está pronto!" antes de executar migrações
-   - Se não aparecer, problema de conectividade com banco
+### Problema: Frontend não conecta ao backend
 
-3. **Verificar variáveis de ambiente**:
-   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` devem estar configuradas
-   - Logs do script mostram essas variáveis (senha oculta)
+**Sintomas**:
+- Erro CORS
+- 404 ao chamar API
 
-4. **Verificar permissões do banco**:
-   - Usuário deve ter permissão para criar tabelas
-   - Verificar se banco está ativo no dashboard do Render
-
-5. **Em caso de erro**:
-   - Aplicação não iniciará (comportamento desejado)
-   - Render fará rollback automático
-   - Corrigir migração e fazer novo deploy
-
-### Problema: UnknownHostException (host interno) ou EOFException (host externo)
-
-**Comportamento**:
-- **Padrão**: Host **externo** (ex: `...oregon-postgres.render.com`). O interno (curto) **não resolve** em Docker no Render → `UnknownHostException`.
-- `USE_INTERNAL_DB_HOST=true`: força interno; use apenas se o host interno resolver no seu ambiente.
-- Se `EOFException` com externo: SSL já simplificado (sem `NonValidatingFactory`); ver workaround abaixo.
-
-**Fluxo recomendado (Flyway fora do container)** — JDBC → Render Postgres falha com EOFException no container:
-
-1. **Render Dashboard** → **ceialmilk-db** → **Connect** → **External** → copiar **External Database URL** (ex.: `postgresql://user:pass@dpg-xxx-a.oregon-postgres.render.com:5432/ceialmilk_qqtf`).
-2. **Localmente** (com Docker):
-   ```bash
-   export RENDER_EXTERNAL_DATABASE_URL='postgresql://USER:PASSWORD@HOST:5432/DATABASE'  # colar a URL
-   ./scripts/flyway-migrate-render.sh
-   ```
-3. O container **não** executa Flyway por padrão. A app sobe e usa R2DBC (host externo).
-4. **Deploy** no Render. O schema já foi aplicado no passo 2.
-
-**Comando Flyway manual** (alternativa ao script):
-```bash
-docker run --rm -v "$(pwd)/src/main/resources/db/migration:/flyway/sql" flyway/flyway:10-alpine \
-  -url="jdbc:postgresql://HOST:5432/DB?sslmode=require&ssl=true" \
-  -user=ceialmilk -password=SENHA \
-  -locations=filesystem:/flyway/sql -baselineOnMigrate=true migrate
-```
-Substituir `HOST`, `DB`, `SENHA` pelos valores da External Database URL.
+**Solução**:
+1. Verificar `NEXT_PUBLIC_API_URL` na Vercel
+2. Verificar CORS configurado no backend
+3. Verificar se backend está online
+4. Verificar logs do browser (F12 → Console)
 
 ### Problema: Health check falha
 
 **Solução**:
-1. Verificar se a aplicação está rodando: `curl https://seu-app.onrender.com/actuator/health`
+1. Verificar se servidor está rodando: `curl https://ceialmilk-api.onrender.com/health`
 2. Verificar logs da aplicação no dashboard do Render
-3. Verificar se o banco de dados está acessível
+3. Verificar se banco de dados está acessível
 4. Verificar se todas as variáveis de ambiente estão configuradas
 
-## Arquivos de Migração
+## Geração de Chaves JWT (RS256)
 
-### Estrutura
-- **Localização**: `src/main/resources/db/migration/`
-- **Formato**: `V{versão}__{descrição}.sql`
-- **Exemplos**:
-  - `V1__Add_remaining_tables.sql`
-  - `V2__Add_indexes_to_fazendas.sql`
+Para gerar o par de chaves RSA para JWT:
 
-### No Container Docker
-- Migrações são copiadas para `/app/migrations` no container
-- Flyway CLI executa migrações a partir deste diretório
-- Ordem de execução: Versões numéricas em ordem crescente
+```bash
+# Gerar chave privada
+openssl genrsa -out private.pem 2048
+
+# Gerar chave pública
+openssl rsa -in private.pem -pubout -out public.pem
+```
+
+**Importante**: Armazenar essas chaves como variáveis de ambiente no Render:
+- `JWT_PRIVATE_KEY`: Conteúdo do arquivo `private.pem`
+- `JWT_PUBLIC_KEY`: Conteúdo do arquivo `public.pem`
+
+### Desenvolvimento (Devcontainer)
+
+Ao **abrir o devcontainer**:
+- **Postgres**: `db` sobe com `POSTGRES_HOST_AUTH_METHOD=trust` e **tmpfs** (sem volume persistente). Toda inicialização = banco zerado, init roda, `ceialmilk` criado. Conexão em `db:5432`.
+- **Backend**: Inicia automaticamente via `postStartCommand` em http://localhost:8080. Logs em `/tmp/ceialmilk-backend.log`.
+- **JWT**: Chaves de desenvolvimento embutidas (`internal/config/dev_jwt.go`) quando `JWT_*` não definidas.
+- **Postman**: Login (`admin@ceialmilk.com` / `password`) → Farms. Base URL: `http://localhost:8080`.
+
+## Comandos de Desenvolvimento (atualizados)
+
+### Backend
+
+```bash
+cd backend
+go build -o bin/api ./cmd/api   # build
+go run ./cmd/api                # run (migrações rodam no startup)
+```
+
+As migrações são executadas **automaticamente no startup** do servidor (golang-migrate). Não há comando `cmd/migrate` separado.
+
+### Problema: Login 404 ou backend só com /health (devcontainer)
+
+Com a configuração atual (Postgres **trust** + **tmpfs**), isso não deve ocorrer. Se ocorrer:
+- Confira os logs do backend: `cat /tmp/ceialmilk-backend.log`.
+- Reinicie o backend: `pkill -f 'go run ./cmd/api'`; depois `nohup bash -c 'cd /workspace/backend && go run ./cmd/api' > /tmp/ceialmilk-backend.log 2>&1 &`.
+
+Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são apenas para setups manuais (ex.: Postgres com volume persistente no host).
 
 ---
 
-**Última atualização**: 2026-01-23
-**Mudança Principal**: Migração para Flyway CLI (execução antes da aplicação iniciar)
+**Última atualização**: 2026-01-24
+**Stack**: Go + Next.js (Render + Vercel)

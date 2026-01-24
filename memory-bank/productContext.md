@@ -13,7 +13,7 @@ As fazendas leiteiras brasileiras, especialmente as pequenas e médias, enfrenta
 ### **Oportunidade**
 Criar uma solução acessível, especializada e de alta performance para democratizar a tecnologia no agronegócio leiteiro, combinando:
 - Baixo custo de entrada (open source)
-- Alta performance técnica (stack reativa)
+- Alta performance técnica (stack Go + Next.js)
 - Experiência simplificada para usuários não técnicos
 - Funcionalidade offline para áreas rurais
 
@@ -121,5 +121,5 @@ Ser a plataforma de referência em gestão leiteira no Brasil, atingindo 1.000+ 
 
 ---
 
-**Última atualização**: 2025-09-08
-**Versão do Contexto**: 1.0
+**Última atualização**: 2026-01-24
+**Versão do Contexto**: 2.0 (Go + Next.js)

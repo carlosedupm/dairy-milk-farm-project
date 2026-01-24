@@ -18,31 +18,49 @@ O projeto mantém documentação estruturada no diretório `memory-bank/`. **SEM
 
 ### Documentação Técnica (`docs/`)
 
-- **`docs/postman/`**: Coleção Postman com exemplos de uso da API, endpoints documentados e variáveis de ambiente
+- **`docs/postman/`**: Coleção Postman com exemplos de uso da API, endpoints documentados e variáveis de ambiente (será atualizada para nova API Go)
 
 ## 🎯 Visão Geral do Projeto
 
-CeialMilk é um sistema de gestão completo para fazendas leiteiras que combina alta performance técnica com funcionalidades práticas para o agronegócio, utilizando arquitetura reativa e preparado para integração com IA.
+CeialMilk é um sistema de gestão completo para fazendas leiteiras que combina alta performance técnica com funcionalidades práticas para o agronegócio, utilizando arquitetura moderna com Go e Next.js.
 
 **Consulte `memory-bank/projectbrief.md` para detalhes completos sobre objetivos, público-alvo e métricas de sucesso.**
 
 ## 🏗️ Arquitetura e Stack
 
 ### Stack Tecnológica
-- **Framework**: Spring Boot 3.3.0 + WebFlux (reativo)
-- **Database**: PostgreSQL 15 + R2DBC (acesso reativo)
-- **Autenticação**: JWT + Spring Security 6
-- **Cache**: Redis
-- **Build**: Maven
-- **Java**: 17
+
+#### Backend
+- **Linguagem**: Go 1.21+
+- **Framework**: Gin (HTTP router)
+- **Database**: PostgreSQL 15
+- **Acesso a Dados**: sqlx (SQL puro)
+- **Autenticação**: JWT RS256 (golang-jwt/jwt/v5)
+- **Logging**: slog (nativo Go)
+- **Deploy**: Render (Docker)
+
+#### Frontend
+- **Framework**: Next.js 14+ (App Router)
+- **Linguagem**: TypeScript
+- **Estilização**: Tailwind CSS
+- **Componentes**: Shadcn/UI
+- **State Management**: TanStack Query
+- **Deploy**: Vercel
 
 **Consulte `memory-bank/techContext.md` para configurações detalhadas e `memory-bank/systemPatterns.md` para padrões arquiteturais.**
 
 ### Padrões Arquiteturais
 
-O projeto segue uma arquitetura em camadas reativa:
+O projeto segue uma arquitetura em camadas:
+
+**Backend (Go)**:
 ```
-Controllers → Services → Repositories → Database (R2DBC)
+Handlers → Services → Repositories → Database (PostgreSQL)
+```
+
+**Frontend (Next.js)**:
+```
+Pages/App → Components → Services → API (Backend)
 ```
 
 **SEMPRE consulte `memory-bank/systemPatterns.md` antes de implementar novos componentes para garantir consistência com os padrões estabelecidos.**
@@ -57,40 +75,47 @@ Controllers → Services → Repositories → Database (R2DBC)
 - Decisões técnicas ativas
 
 ### Status Atual (Resumo)
-- ✅ Infraestrutura: 95% completa
-- ✅ Documentação: 80% completa
-- 🚧 Implementação: 30% completa
-- 🚧 Testes: 0% completo
-- ✅ Deploy: 70% completo
+- 🚧 Infraestrutura: 20% (Estrutura sendo criada)
+- ✅ Documentação: 90% (Atualizada para nova stack)
+- 🚧 Implementação: 5% (Início da migração)
+- 🚧 Testes: 0%
+- 🚧 Deploy: 10% (Configuração pendente)
 
 **Consulte `memory-bank/progress.md` para métricas detalhadas e histórico.**
 
 ## 🔧 Padrões e Convenções
 
-### Código Java/Spring
+### Código Go
 
-**Ao trabalhar com arquivos `.java`, siga os padrões em `memory-bank/systemPatterns.md`:**
+**Ao trabalhar com arquivos `.go`, siga os padrões em `memory-bank/systemPatterns.md`:**
 
-1. **Programação Reativa**: Use `Mono<>` e `Flux<>` do Project Reactor
-2. **Camadas**: Controller → Service → Repository
-3. **Repositórios**: Use interfaces R2DBC reativas
-4. **DTOs**: Separe Create, Update, Response e Summary DTOs
-5. **Validações**: Use Bean Validation (`@Valid`, `@NotNull`, etc.)
-6. **Tratamento de Erros**: Implemente handlers reativos globais
+1. **Estrutura de Pastas**: Seguir layout padrão Go (`/cmd`, `/internal`, `/pkg`)
+2. **Handlers**: Usar Gin para rotas HTTP
+3. **Services**: Lógica de negócio isolada
+4. **Repositories**: Acesso a dados com sqlx
+5. **Models**: Structs simples para entidades
+6. **Error Handling**: Retornar erros explicitamente
+7. **Logging**: Usar slog para logs estruturados JSON
 
-**Consulte a regra `.cursor/rules/java-spring-reactive.mdc` para detalhes específicos.**
+### Código TypeScript/Next.js
+
+**Ao trabalhar com arquivos `.tsx`/`.ts`, siga os padrões:**
+
+1. **App Router**: Usar App Router do Next.js 14+
+2. **Components**: Componentes funcionais com TypeScript
+3. **API Calls**: Usar TanStack Query para gerenciamento de estado
+4. **Styling**: Tailwind CSS para estilização
+5. **Type Safety**: TypeScript strict mode habilitado
 
 ### API Design
 
-**Ao trabalhar com Controllers e DTOs, siga os padrões em `memory-bank/systemPatterns.md`:**
+**Ao trabalhar com Handlers e rotas, siga os padrões em `memory-bank/systemPatterns.md`:**
 
 1. **Versionamento**: `/api/v1/{recurso}`
 2. **HTTP Verbs**: GET, POST, PUT, DELETE, PATCH
 3. **Status Codes**: Use códigos HTTP apropriados
-4. **Documentação**: Mantenha OpenAPI/Swagger atualizado
-5. **Testes**: Use a coleção Postman em `docs/postman/` como referência
-
-**Consulte a regra `.cursor/rules/api-design.mdc` para detalhes específicos.**
+4. **JSON**: Formato padrão de request/response
+5. **Error Format**: Formato padronizado de erros
 
 ## 📝 Manutenção de Documentação
 
@@ -135,8 +160,9 @@ Controllers → Services → Repositories → Database (R2DBC)
 
 2. **Durante o desenvolvimento**:
    - Siga os padrões estabelecidos em `systemPatterns.md`
-   - Consulte `docs/postman/` para exemplos de API
    - Mantenha consistência com código existente
+   - Use TypeScript strict mode no frontend
+   - Use error handling explícito no backend Go
 
 3. **Após completar mudanças significativas**:
    - Atualize `activeContext.md` se o estado mudou
@@ -153,7 +179,6 @@ Controllers → Services → Repositories → Database (R2DBC)
 - **Objetivos do Projeto**: `memory-bank/projectbrief.md`
 - **Contexto de Produto**: `memory-bank/productContext.md`
 - **Deploy**: `memory-bank/deploy-notes.md`
-- **API Examples**: `docs/postman/POSTMAN-README.md`
 
 ## ⚠️ Importante
 
@@ -161,8 +186,10 @@ Controllers → Services → Repositories → Database (R2DBC)
 - **SEMPRE** consulte a documentação antes de tomar decisões técnicas
 - **SEMPRE** atualize a documentação quando fizer mudanças significativas
 - **MANTENHA** consistência com os padrões arquiteturais documentados
+- **USE** TypeScript strict mode no frontend
+- **USE** error handling explícito no backend Go
 
 ---
 
-**Última atualização**: 2025-01-23
-**Versão**: 1.0
+**Última atualização**: 2026-01-24
+**Versão**: 2.0 (Go + Next.js)

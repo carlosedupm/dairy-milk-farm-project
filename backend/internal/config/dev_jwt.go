@@ -1,0 +1,50 @@
+package config
+
+// Dev JWT keys (RSA 2048). Usar APENAS em desenvolvimento quando
+// JWT_PRIVATE_KEY e JWT_PUBLIC_KEY não estiverem definidas.
+// Nunca usar em produção.
+
+const devJWTPrivateKey = `-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC1wBUMaltE1c6+
+TEghGCl2yForJ8ityZ/YaeR6VRN/A04jWhLVkb+O0DyYexgVwioLpTp3UVw3RujR
+9NNGk04r9LaqwX6O2yFkPo7X/qjlkgiKgAO/W6AgbiWYwDfkG+6wuHqFXto/unFr
+MfL63bop81g1AETZyZkpdojnhU+/JdQOYPhuN8dJl1j8oS4SqyS7tnTNY0LSkUWY
+TVvaFohlGwInZVTnuQo4P6O6EvdPsjEiVKIT6ES+XTm6Xg28co3NR2e/U5bgYIgQ
+e1UiL/plY3YaCrJtqNUoXqIDU3dSuvinpGN56Yia187a38cfwRcTCc3Irb4MGkzA
+rlxP7n8xAgMBAAECggEAQh2YapZMEkvW9Anq2UMhXkj+6CEGUxX8FG1dBJVrTLKG
+m7yaCmAFN64PxQZOWifyRJ88GAicS617Z1kw/ET81GemhZJy+APF72IEc5V7mluX
+yM5NzrBFnVaETb9q9Yultlq9k0PQkAtCVBTtB45eOQGBbnJlGXbJRTiOD+7Cdk1s
+0SGoHn/Fn4ojIvkleSKgwxRi3GxhrITKEvTcKA1jhParx/Fz2vWhOZrZuAIuT32c
+sFHoksCbZHLIwVk2y17+SIqctbpZ+yRQk7JiBsy3VyAAog+eD8Aa6kaKJip/6niF
+3/VEnnqrhdkmY1qOdjzXsPuSTQ8PplyxA4EAk1JbkwKBgQC16l/P75C2NiIwAn0J
+6rCtuxovP+Not0DA1A8gxSHC3wUZruYSuYQnzRxL9lAnNrSsyv7vUuLWMT607HM3
++6SGZGXlTx0Ysbm5OV3Vj4hW+AXTqOtNflI4D6I8f36pctlFQFVtjAOSlXhnlNpm
++xx7wobhkK/rRUCf9g8WmmkgRwKBgQD/xHwS3z4Kxlm2NpZ/F/Cmwe5TtR7B9pti
+F0EPHa4oU3LHV7d9iTCoNINMvP3ifXIFzLCMauD5hFFH1nhyUs0kMq6LTIY8lAwx
+sGkR98RS0urAPp52IL9iAavOndkQ+g/GIuD5vnceIJjazc8xhVSPkaf+I5tZFr+R
+GJSATvJYxwKBgETdMWH8tVJU0cJM3tqnLjTGFFZ4n/SfEnMsk4F7PpmPZVXgoJXM
+BpwuiBy1ZIhDrEeRHMqqHNaqk6tXqxIxP4nkbbJNrZ0Qglb8wWm7yQfrIgGK+3A9
+dpBkUq0GMoOgx2DwxqYOj7eov4iuj7LWMmUjMX4oEIBGmf0z32hWEZ+3AoGBANwL
+77NM3dPnUsexr0kpD6JotuLNsOivgn+iAhc/Mdb/9IAMt5EJtxMAGvaqosN5qd/T
+exFT4rrJXCSyIG47TsMV15WBAPydYuBdJgiPYhjf3ZgIR8zZ384yId5hb59rhKay
+21wCwfjpkpis+NViIJ5kcmPzvnOnXqk2vIynX1mBAoGBAJjBOOVh9K+FqMlL/VeM
+r+zDwSD6XqY/Bqk9qakN5mjuq++GQIRhq9If/fpWD73mf/yyyWezoAQ4Cy5cqF/j
+kqDqeu7N8TTQP5wU5ruxap+bROxVBtXEqDI6ErdycwRtCd3pjq6E5rAI+vNQ0YIs
+CxtcrgtnfFM4mIZ+mpm/eOZ/
+-----END PRIVATE KEY-----`
+
+const devJWTPublicKey = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtcAVDGpbRNXOvkxIIRgp
+dshaKyfIrcmf2GnkelUTfwNOI1oS1ZG/jtA8mHsYFcIqC6U6d1FcN0bo0fTTRpNO
+K/S2qsF+jtshZD6O1/6o5ZIIioADv1ugIG4lmMA35BvusLh6hV7aP7pxazHy+t26
+KfNYNQBE2cmZKXaI54VPvyXUDmD4bjfHSZdY/KEuEqsku7Z0zWNC0pFFmE1b2haI
+ZRsCJ2VU57kKOD+juhL3T7IxIlSiE+hEvl05ul4NvHKNzUdnv1OW4GCIEHtVIi/6
+ZWN2GgqybajVKF6iA1N3Urr4p6RjeemImtfO2t/HH8EXEwnNyK2+DBpMwK5cT+5/
+MQIDAQAB
+-----END PUBLIC KEY-----`
+
+// DevJWTKeys retorna chaves JWT de desenvolvimento. Usar somente quando
+// ENV=development e JWT_PRIVATE_KEY/JWT_PUBLIC_KEY não definidas.
+func DevJWTKeys() (private, public string) {
+	return devJWTPrivateKey, devJWTPublicKey
+}

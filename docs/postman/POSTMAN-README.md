@@ -23,13 +23,18 @@ This directory contains Postman files for testing the CeialMilk API.
 
 ### 3. Set Up the Application
 Make sure the CeialMilk application is running:
-```bash
-# Start the database and application
-docker-compose up -d
 
-# Run the Spring Boot application
-mvn spring-boot:run
+**Devcontainer**: O backend sobe dentro do container. O Postgres (`db`) sobe com o compose.
+
+```bash
+cd backend && go run ./cmd/api
 ```
+
+- **Base URL**: `http://localhost:8080` (porta encaminhada pelo devcontainer)
+- **Database**: `DATABASE_URL` já configurada no devcontainer (`db:5432`)
+- **JWT**: Em desenvolvimento, chaves embutidas são usadas se `JWT_*` não estiverem definidas
+
+Se o banco estiver indisponível, o backend sobe apenas com `GET /health`; após corrigir o Postgres, reinicie o backend.
 
 ### 4. Test the API
 
@@ -80,7 +85,7 @@ mvn spring-boot:run
 
 1. **401 Unauthorized**: Make sure to run the Login request first
 2. **Connection Refused**: Verify the application is running on port 8080
-3. **Invalid Token**: The token expires after 24 hours - login again to get a new one
+3. **Invalid Token**: O token expira em 15 minutos - faça login novamente para obter um novo
 
 ## Notes
 
