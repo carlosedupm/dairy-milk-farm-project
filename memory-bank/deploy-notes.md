@@ -28,6 +28,7 @@ O `render.yaml` configura automaticamente as seguintes variáveis:
 - `USE_EXTERNAL_DB_HOST=true` - Usa host **externo** (ex: `dpg-xxx-a.oregon-postgres.render.com`). Padrão: **interno** (host curto da `DATABASE_URL`). Use se aparecer `UnknownHostException` com host interno.
 - `DB_HOST_SUFFIX` - Sufixo do host externo (ex: `.frankfurt-postgres.render.com`). Só quando `USE_EXTERNAL_DB_HOST=true`.
 - `FLYWAY_RETRY_ATTEMPTS`, `FLYWAY_RETRY_SLEEP` - Retries do Flyway (padrão: 18 tentativas, 10s entre cada).
+- `SKIP_FLYWAY_MIGRATE=true` - **Não** executa Flyway no container; só inicia a app. Use se migrações forem rodadas no CI ou manualmente (ver workaround para EOFException).
 
 ### Conversão Automática de DATABASE_URL
 
@@ -221,9 +222,15 @@ curl https://seu-app.onrender.com/actuator/flyway
 
 **Comportamento**:
 - **Padrão**: Usa **URL interna** (host curto, ex: `dpg-xxx-a`) da `DATABASE_URL`. Recomendado para serviços na mesma região.
-- Se `UnknownHostException` com host interno: definir `USE_EXTERNAL_DB_HOST=true` no Render para usar host externo (ex: `dpg-xxx-a.oregon-postgres.render.com`).
-- Se `EOFException` com host externo: usar padrão (interno); garantir que web service e DB estão na **mesma região** e no mesmo workspace.
-- Override de região (só com externo): `DB_HOST_SUFFIX` (ex: `.frankfurt-postgres.render.com`).
+- Se `UnknownHostException` com host interno: definir `USE_EXTERNAL_DB_HOST=true` no Render para usar host externo.
+- Se `EOFException`: (1) garantir **interno** (não usar `USE_EXTERNAL_DB_HOST`); (2) web service e DB na **mesma região**; (3) SSL simplificado (sem `NonValidatingFactory`) já aplicado no entrypoint.
+
+**Workaround se EOFException persistir** (conexão Docker → Postgres no Render falha):
+1. No Render Dashboard → **ceialmilk-db** → **Connect** → copiar **External** Database URL (host, DB, user, password).
+2. Localmente (substituir `HOST`, `DB`, `SENHA`):  
+   `docker run --rm -v "$(pwd)/src/main/resources/db/migration:/flyway/sql" flyway/flyway:10-alpine -url="jdbc:postgresql://HOST:5432/DB?sslmode=require&ssl=true" -user=ceialmilk -password=SENHA -locations=filesystem:/flyway/sql -baselineOnMigrate=true migrate`
+3. No Render → **ceialmilk** → **Environment** → adicionar `SKIP_FLYWAY_MIGRATE=true`.
+4. Fazer deploy. A app sobe sem rodar Flyway no container; o schema já foi aplicado no passo 2.
 
 ### Problema: Health check falha
 

@@ -83,8 +83,8 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             
             Map<String, Object> properties = new HashMap<>();
             
-            // Constrói URL JDBC completamente separada para Flyway
-            String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 
+            // Constrói URL JDBC (Flyway desabilitado na app; usar só sslmode=require)
+            String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?sslmode=require&ssl=true&connectTimeout=30&socketTimeout=60&tcpKeepAlive=true", 
                                          dbHost, dbPort, dbName);
             
             // Constrói URL R2DBC completamente separada (NUNCA compartilha base com JDBC)
@@ -164,20 +164,14 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             
             URI uri = new URI(urlForParse.replace("postgresql://", "http://"));
             
-            // Usa variáveis do ambiente se disponíveis E tiverem domínio completo, senão extrai do DATABASE_URL
             String extractedHost = uri.getHost();
-            // CRÍTICO: Só usa envHost se tiver domínio completo (contém ponto), senão usa o extraído do DATABASE_URL
-            if (envHost != null && !envHost.isEmpty() && envHost.contains(".")) {
+            // Preferir DB_HOST do ambiente (ex.: definido pelo entrypoint com host interno).
+            if (envHost != null && !envHost.isEmpty()) {
                 host = envHost;
-                System.out.println("Usando DB_HOST do ambiente (com domínio completo): " + host);
+                System.out.println("Usando DB_HOST do ambiente: " + host);
             } else {
                 host = extractedHost;
-                if (envHost != null && !envHost.isEmpty()) {
-                    System.out.println("DB_HOST do ambiente não tem domínio completo (" + envHost + "). Usando host extraído do DATABASE_URL: " + host);
-                    log.warn("DB_HOST do ambiente ({}) não tem domínio completo. Usando host extraído do DATABASE_URL: {}", envHost, host);
-                } else {
-                    System.out.println("DB_HOST não disponível. Usando host extraído do DATABASE_URL: " + host);
-                }
+                System.out.println("DB_HOST não definido no ambiente; usando extraído do DATABASE_URL: " + host);
             }
             port = envPort != null && !envPort.isEmpty() ? Integer.parseInt(envPort) : (uri.getPort() > 0 ? uri.getPort() : 5432);
             String path = uri.getPath();
@@ -206,21 +200,28 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             System.out.println("Credenciais finais - Username: " + username + ", Password length: " + 
                              (password != null ? password.length() : 0));
             
-            // Só anexar sufixo externo se USE_EXTERNAL_DB_HOST=true. Padrão: host interno.
-            if ("true".equalsIgnoreCase(environment.getProperty("USE_EXTERNAL_DB_HOST"))
-                    && host != null && !host.contains(".")) {
+            // Render: forçar host interno (strip sufixo externo) se USE_EXTERNAL_DB_HOST != true.
+            boolean useExternal = "true".equalsIgnoreCase(environment.getProperty("USE_EXTERNAL_DB_HOST"));
+            if (host != null && !useExternal) {
+                if (host.endsWith(".oregon-postgres.render.com")) {
+                    host = host.replace(".oregon-postgres.render.com", "");
+                    System.out.println("Host externo detectado; forçando interno: " + host);
+                } else if (host.endsWith(".frankfurt-postgres.render.com")) {
+                    host = host.replace(".frankfurt-postgres.render.com", "");
+                    System.out.println("Host externo detectado; forçando interno: " + host);
+                }
+            } else if (useExternal && host != null && !host.contains(".")) {
                 String suffix = environment.getProperty("DB_HOST_SUFFIX", ".oregon-postgres.render.com");
                 host = host + suffix;
                 System.out.println("USE_EXTERNAL_DB_HOST=true; usando host externo: " + host);
-                log.info("Host externo: {}", host);
             }
             if (host == null || host.isEmpty()) {
                 throw new RuntimeException("Host do banco de dados não pôde ser determinado");
             }
-            System.out.println("Host: " + host);
+            System.out.println("Host final: " + host);
             
-            // URL JDBC para Flyway (completamente independente)
-            String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 
+            // URL JDBC (Flyway desabilitado na app; só sslmode=require)
+            String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=require&ssl=true&connectTimeout=30&socketTimeout=60&tcpKeepAlive=true", 
                                          host, port, database);
             
             // URL R2DBC para aplicação (completamente independente, NUNCA compartilha base com JDBC)
@@ -246,8 +247,7 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             properties.put("FLYWAY_PASSWORD", password);
             properties.put("R2DBC_URL", r2dbcUrl);
             
-            System.out.println("SSL configurado - JDBC: sslmode=prefer, R2DBC: sslMode=require");
-            System.out.println("Timeouts configurados para JDBC: connectTimeout=10, socketTimeout=30");
+            System.out.println("SSL: sslmode=require (sem NonValidatingFactory); R2DBC: sslMode=require");
             
             // Atualiza DB_HOST com o host completo (importante!)
             properties.put("DB_HOST", host);

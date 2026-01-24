@@ -30,14 +30,35 @@ parse_database_url() {
     fi
     DB_HOST="${hostport%:*}"
 
-    # Render: connectionString = URL interna (host curto, ex: dpg-xxx-a). Usar como-is.
-    # Só anexar sufixo externo se USE_EXTERNAL_DB_HOST=true (ex.: conexão de fora do Render).
-    if [ "${USE_EXTERNAL_DB_HOST}" = "true" ] && case "$DB_HOST" in *.*) false;; *) true;; esac; then
-        DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
-        echo "USE_EXTERNAL_DB_HOST=true; usando host externo: $DB_HOST"
-    else
-        echo "Usando host da DATABASE_URL (interno): $DB_HOST"
-    fi
+    # Render: preferir sempre host INTERNO (curto) na mesma região – evita EOFException com externo.
+    # Se DATABASE_URL vier com externo (ex: dpg-xxx-a.oregon-postgres.render.com), forçar interno (dpg-xxx-a).
+    # Só usar externo se USE_EXTERNAL_DB_HOST=true.
+    case "$DB_HOST" in
+        *.oregon-postgres.render.com)
+            if [ "${USE_EXTERNAL_DB_HOST}" = "true" ]; then
+                echo "USE_EXTERNAL_DB_HOST=true; usando host externo: $DB_HOST"
+            else
+                DB_HOST="${DB_HOST%.oregon-postgres.render.com}"
+                echo "Host externo detectado; forçando interno: $DB_HOST"
+            fi
+            ;;
+        *.frankfurt-postgres.render.com)
+            if [ "${USE_EXTERNAL_DB_HOST}" = "true" ]; then
+                echo "USE_EXTERNAL_DB_HOST=true; usando host externo: $DB_HOST"
+            else
+                DB_HOST="${DB_HOST%.frankfurt-postgres.render.com}"
+                echo "Host externo detectado; forçando interno: $DB_HOST"
+            fi
+            ;;
+        *)
+            if [ "${USE_EXTERNAL_DB_HOST}" = "true" ] && case "$DB_HOST" in *.*) false;; *) true;; esac; then
+                DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
+                echo "USE_EXTERNAL_DB_HOST=true; usando host externo: $DB_HOST"
+            else
+                echo "Usando host da DATABASE_URL (interno): $DB_HOST"
+            fi
+            ;;
+    esac
 
     export DB_HOST DB_PORT DB_NAME DB_USERNAME DB_PASSWORD
     return 0
@@ -56,16 +77,28 @@ else
     [ -z "$DB_NAME" ] && echo "❌ DB_NAME não definido" && exit 1
     [ -z "$DB_USERNAME" ] && echo "❌ DB_USERNAME não definido" && exit 1
     [ -z "$DB_PASSWORD" ] && echo "❌ DB_PASSWORD não definido" && exit 1
-    if [ "${USE_EXTERNAL_DB_HOST}" = "true" ] && case "$DB_HOST" in *.*) false;; *) true;; esac; then
-        DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
-        export DB_HOST
-    fi
+    case "$DB_HOST" in
+        *.oregon-postgres.render.com)
+            [ "${USE_EXTERNAL_DB_HOST}" = "true" ] || DB_HOST="${DB_HOST%.oregon-postgres.render.com}"
+            ;;
+        *.frankfurt-postgres.render.com)
+            [ "${USE_EXTERNAL_DB_HOST}" = "true" ] || DB_HOST="${DB_HOST%.frankfurt-postgres.render.com}"
+            ;;
+        *.*)
+            ;;
+        *)
+            [ "${USE_EXTERNAL_DB_HOST}" = "true" ] && DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
+            ;;
+    esac
+    export DB_HOST
 fi
 
 # Executa Flyway com retries (evita dependência de pg_isready/nc que falham com SSL/rede no Render)
 run_migrations_with_retry() {
     echo "=== Executando migrações Flyway (com retry) ==="
-    JDBC_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT:-5432}/${DB_NAME}?sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=15&socketTimeout=30"
+    # SSL: só sslmode=require (evitar NonValidatingFactory – pode causar EOFException com Render).
+    # loglevel=2 para diagnóstico se falhar.
+    JDBC_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT:-5432}/${DB_NAME}?sslmode=require&ssl=true&connectTimeout=30&socketTimeout=60&tcpKeepAlive=true&loglevel=2"
 
     max_attempts="${FLYWAY_RETRY_ATTEMPTS:-18}"
     retry_sleep="${FLYWAY_RETRY_SLEEP:-10}"
@@ -109,5 +142,11 @@ start_app() {
 }
 
 echo "Iniciando processo de deploy..."
-run_migrations_with_retry
+
+if [ "${SKIP_FLYWAY_MIGRATE}" = "true" ]; then
+    echo "SKIP_FLYWAY_MIGRATE=true: pulando migrações (rodar Flyway no CI ou manualmente)."
+else
+    run_migrations_with_retry
+fi
+
 start_app
