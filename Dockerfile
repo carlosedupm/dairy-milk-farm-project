@@ -17,6 +17,9 @@ FROM flyway/flyway:10-alpine as flyway
 # Stage final da aplicação
 FROM eclipse-temurin:17-jre-alpine
 
+# Flyway CLI usa bash internamente (#!/usr/bin/env bash)
+RUN apk add --no-cache bash
+
 # Cria usuário não-root
 RUN addgroup -S appuser && adduser -S appuser -G appuser
 
