@@ -56,12 +56,11 @@ Usuario (N) ─── (1) Fazenda
 - **Pagination**: Reactive pagination com Pageable
 
 ### **Padrões de Migração de Banco de Dados**
-- **Flyway CLI**: Migrações executadas ANTES da aplicação iniciar (via script de inicialização)
-- **Separação de Responsabilidades**: Migrações são responsabilidade do deploy, não da aplicação
-- **Arquitetura Reativa**: Aplicação nunca usa JDBC (apenas R2DBC), mantendo consistência reativa
-- **Health Check**: Script aguarda banco estar pronto antes de executar migrações
-- **Retry Logic**: Implementado no script de inicialização para problemas temporários de rede
-- **Versionamento**: Migrações versionadas em `src/main/resources/db/migration/` (V1__, V2__, etc.)
+- **Flyway CLI**: Migrações executadas ANTES da aplicação iniciar (via `entrypoint.sh`).
+- **Separação de Responsabilidades**: Migrações são responsabilidade do deploy, garantindo que a aplicação permaneça reativa.
+- **Conectividade**: Uso obrigatório do **host interno** do Render e `sslmode=require`.
+- **Retry Logic**: Implementado no script para lidar com o tempo de boot do banco de dados.
+- **Versionamento**: Migrações versionadas em `src/main/resources/db/migration/`.
 
 ### **Padrões de Cache**
 - **Redis**: Cache distribuído para dados frequentes
@@ -160,10 +159,10 @@ Usuario (N) ─── (1) Fazenda
 ## 🚀 Padrões de Deploy
 
 ### **Deployment Patterns**
-- **Containerization**: Docker para empacotamento
-- **Orchestration**: Kubernetes-ready (atualmente Docker Compose)
-- **Blue-Green**: Preparado para deployments sem downtime
-- **Canary Releases**: Rollout gradual de features
+- **Containerization**: Docker com imagem base **Debian** (`eclipse-temurin:17-jdk`) para estabilidade de DNS.
+- **Orquestração**: `render.yaml` gerenciando Web Service e Managed PostgreSQL.
+- **Startup Control**: `entrypoint.sh` gerenciando a ordem: Migração → Startup.
+- **Environment Driven**: Configuração total via variáveis de ambiente, injetadas no R2DBC.
 
 ### **CI/CD Patterns**
 - **GitHub Actions**: Pipeline de CI/CD

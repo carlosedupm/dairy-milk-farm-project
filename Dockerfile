@@ -1,52 +1,36 @@
-FROM maven:3.8.6-eclipse-temurin-17 as builder
-WORKDIR /workspace
-
-# Otimização: Copiar apenas o necessário primeiro
+# Estágio de Build
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+WORKDIR /app
 COPY pom.xml .
-COPY src src
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Build otimizado mantendo o arquivo JAR
-RUN mvn dependency:go-offline && \
-    mvn package -DskipTests && \
-    test -f /workspace/target/ceialmilk-*.jar && \
-    cp /workspace/target/ceialmilk-*.jar /workspace/target/app.jar
+# Estágio de Flyway (CLI)
+FROM flyway/flyway:10 AS flyway-cli
 
-# Stage para Flyway CLI
-FROM flyway/flyway:10-alpine as flyway
-
-# Stage final da aplicação
-FROM eclipse-temurin:17-jre-alpine
-
-# Flyway CLI usa bash internamente (#!/usr/bin/env bash)
-RUN apk add --no-cache bash
-
-# Cria usuário não-root
-RUN addgroup -S appuser && adduser -S appuser -G appuser
-
-# Diretório de trabalho
+# Estágio Final (Debian para melhor resolução de DNS)
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# Copia o JAR da aplicação
-COPY --from=builder --chown=appuser:appuser /workspace/target/app.jar app.jar
+# Instalar dependências básicas
+RUN apt-get update && apt-get install -y \
+    bash \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copia Flyway CLI completo (script + libs) — o script usa org.flywaydb.commandline.Main das libs
-COPY --from=flyway --chown=appuser:appuser /flyway /app/flyway
-RUN chmod +x /app/flyway/flyway
+# Copiar Flyway CLI completo
+COPY --from=flyway-cli /flyway /app/flyway
 
-# Copia migrações SQL
-COPY --chown=appuser:appuser src/main/resources/db/migration /app/migrations
+# Copiar artefatos da aplicação
+COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/src/main/resources/db/migration /app/migrations
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
-# Copia script de inicialização
-COPY --chown=appuser:appuser entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-# Expõe a porta da aplicação
-EXPOSE 8080
-
-# Health checks
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget -qO- http://localhost:8080/actuator/health || exit 1
-
-# Comando para executar a aplicação via script de inicialização
+# Criar usuário não-root por segurança
+RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
+
+EXPOSE 8080
 ENTRYPOINT ["/app/entrypoint.sh"]
