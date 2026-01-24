@@ -30,32 +30,34 @@ parse_database_url() {
     fi
     DB_HOST="${hostport%:*}"
 
-    # Render: preferir sempre host INTERNO (curto) na mesma região – evita EOFException com externo.
-    # Se DATABASE_URL vier com externo (ex: dpg-xxx-a.oregon-postgres.render.com), forçar interno (dpg-xxx-a).
-    # Só usar externo se USE_EXTERNAL_DB_HOST=true.
+    # Render Docker: host INTERNO (curto) não resolve – UnknownHostException. Usar EXTERNO por padrão.
+    # Se host é curto, anexar sufixo. Só manter interno se USE_INTERNAL_DB_HOST=true.
     case "$DB_HOST" in
         *.oregon-postgres.render.com)
-            if [ "${USE_EXTERNAL_DB_HOST}" = "true" ]; then
-                echo "USE_EXTERNAL_DB_HOST=true; usando host externo: $DB_HOST"
-            else
+            if [ "${USE_INTERNAL_DB_HOST}" = "true" ]; then
                 DB_HOST="${DB_HOST%.oregon-postgres.render.com}"
-                echo "Host externo detectado; forçando interno: $DB_HOST"
+                echo "USE_INTERNAL_DB_HOST=true; usando host interno: $DB_HOST"
+            else
+                echo "Usando host externo (padrão): $DB_HOST"
             fi
             ;;
         *.frankfurt-postgres.render.com)
-            if [ "${USE_EXTERNAL_DB_HOST}" = "true" ]; then
-                echo "USE_EXTERNAL_DB_HOST=true; usando host externo: $DB_HOST"
-            else
+            if [ "${USE_INTERNAL_DB_HOST}" = "true" ]; then
                 DB_HOST="${DB_HOST%.frankfurt-postgres.render.com}"
-                echo "Host externo detectado; forçando interno: $DB_HOST"
+                echo "USE_INTERNAL_DB_HOST=true; usando host interno: $DB_HOST"
+            else
+                echo "Usando host externo (padrão): $DB_HOST"
             fi
             ;;
+        *.*)
+            echo "Usando host da DATABASE_URL: $DB_HOST"
+            ;;
         *)
-            if [ "${USE_EXTERNAL_DB_HOST}" = "true" ] && case "$DB_HOST" in *.*) false;; *) true;; esac; then
-                DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
-                echo "USE_EXTERNAL_DB_HOST=true; usando host externo: $DB_HOST"
+            if [ "${USE_INTERNAL_DB_HOST}" = "true" ]; then
+                echo "USE_INTERNAL_DB_HOST=true; usando host interno: $DB_HOST"
             else
-                echo "Usando host da DATABASE_URL (interno): $DB_HOST"
+                DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
+                echo "Host curto detectado; usando externo (padrão): $DB_HOST"
             fi
             ;;
     esac
@@ -78,16 +80,10 @@ else
     [ -z "$DB_USERNAME" ] && echo "❌ DB_USERNAME não definido" && exit 1
     [ -z "$DB_PASSWORD" ] && echo "❌ DB_PASSWORD não definido" && exit 1
     case "$DB_HOST" in
-        *.oregon-postgres.render.com)
-            [ "${USE_EXTERNAL_DB_HOST}" = "true" ] || DB_HOST="${DB_HOST%.oregon-postgres.render.com}"
-            ;;
-        *.frankfurt-postgres.render.com)
-            [ "${USE_EXTERNAL_DB_HOST}" = "true" ] || DB_HOST="${DB_HOST%.frankfurt-postgres.render.com}"
-            ;;
-        *.*)
-            ;;
+        *.oregon-postgres.render.com|*.frankfurt-postgres.render.com) ;;
+        *.*) ;;
         *)
-            [ "${USE_EXTERNAL_DB_HOST}" = "true" ] && DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
+            [ "${USE_INTERNAL_DB_HOST}" != "true" ] && DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
             ;;
     esac
     export DB_HOST

@@ -65,13 +65,12 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
         String dbUsername = environment.getProperty("DB_USERNAME", "ceialmilk");
         String dbPassword = environment.getProperty("DB_PASSWORD");
         
-        // Só anexar sufixo externo se USE_EXTERNAL_DB_HOST=true (ex.: conexão de fora do Render).
-        // Padrão: usar host interno (curto) como na DATABASE_URL.
-        if ("true".equalsIgnoreCase(environment.getProperty("USE_EXTERNAL_DB_HOST"))
+        // Render Docker: host interno não resolve. Padrão = externo (anexar sufixo se curto).
+        if (!"true".equalsIgnoreCase(environment.getProperty("USE_INTERNAL_DB_HOST"))
                 && dbHost != null && !dbHost.isEmpty() && !dbHost.contains(".")) {
             String suffix = environment.getProperty("DB_HOST_SUFFIX", ".oregon-postgres.render.com");
             dbHost = dbHost + suffix;
-            System.out.println("USE_EXTERNAL_DB_HOST=true; usando host externo: " + dbHost);
+            System.out.println("Host curto; usando externo (padrão): " + dbHost);
             log.info("Host externo: {}", dbHost);
         }
 
@@ -200,20 +199,18 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             System.out.println("Credenciais finais - Username: " + username + ", Password length: " + 
                              (password != null ? password.length() : 0));
             
-            // Render: forçar host interno (strip sufixo externo) se USE_EXTERNAL_DB_HOST != true.
-            boolean useExternal = "true".equalsIgnoreCase(environment.getProperty("USE_EXTERNAL_DB_HOST"));
-            if (host != null && !useExternal) {
-                if (host.endsWith(".oregon-postgres.render.com")) {
+            // Render Docker: interno não resolve. Padrão = externo. Só usar interno se USE_INTERNAL_DB_HOST=true.
+            boolean useInternal = "true".equalsIgnoreCase(environment.getProperty("USE_INTERNAL_DB_HOST"));
+            if (useInternal && host != null) {
+                if (host.endsWith(".oregon-postgres.render.com"))
                     host = host.replace(".oregon-postgres.render.com", "");
-                    System.out.println("Host externo detectado; forçando interno: " + host);
-                } else if (host.endsWith(".frankfurt-postgres.render.com")) {
+                else if (host.endsWith(".frankfurt-postgres.render.com"))
                     host = host.replace(".frankfurt-postgres.render.com", "");
-                    System.out.println("Host externo detectado; forçando interno: " + host);
-                }
-            } else if (useExternal && host != null && !host.contains(".")) {
+                System.out.println("USE_INTERNAL_DB_HOST=true; usando host interno: " + host);
+            } else if (!useInternal && host != null && !host.contains(".")) {
                 String suffix = environment.getProperty("DB_HOST_SUFFIX", ".oregon-postgres.render.com");
                 host = host + suffix;
-                System.out.println("USE_EXTERNAL_DB_HOST=true; usando host externo: " + host);
+                System.out.println("Host curto; usando externo (padrão): " + host);
             }
             if (host == null || host.isEmpty()) {
                 throw new RuntimeException("Host do banco de dados não pôde ser determinado");
