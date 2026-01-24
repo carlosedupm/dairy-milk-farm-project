@@ -30,13 +30,14 @@ parse_database_url() {
     fi
     DB_HOST="${hostport%:*}"
 
-    case "$DB_HOST" in
-        *.*) ;;
-        *)
-            DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
-            echo "Host curto detectado; usando host completo: $DB_HOST"
-            ;;
-    esac
+    # Render: connectionString = URL interna (host curto, ex: dpg-xxx-a). Usar como-is.
+    # Só anexar sufixo externo se USE_EXTERNAL_DB_HOST=true (ex.: conexão de fora do Render).
+    if [ "${USE_EXTERNAL_DB_HOST}" = "true" ] && case "$DB_HOST" in *.*) false;; *) true;; esac; then
+        DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
+        echo "USE_EXTERNAL_DB_HOST=true; usando host externo: $DB_HOST"
+    else
+        echo "Usando host da DATABASE_URL (interno): $DB_HOST"
+    fi
 
     export DB_HOST DB_PORT DB_NAME DB_USERNAME DB_PASSWORD
     return 0
@@ -55,10 +56,10 @@ else
     [ -z "$DB_NAME" ] && echo "❌ DB_NAME não definido" && exit 1
     [ -z "$DB_USERNAME" ] && echo "❌ DB_USERNAME não definido" && exit 1
     [ -z "$DB_PASSWORD" ] && echo "❌ DB_PASSWORD não definido" && exit 1
-    case "$DB_HOST" in
-        *.*) ;;
-        *) DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"; export DB_HOST;;
-    esac
+    if [ "${USE_EXTERNAL_DB_HOST}" = "true" ] && case "$DB_HOST" in *.*) false;; *) true;; esac; then
+        DB_HOST="${DB_HOST}${DB_HOST_SUFFIX:-.oregon-postgres.render.com}"
+        export DB_HOST
+    fi
 fi
 
 # Executa Flyway com retries (evita dependência de pg_isready/nc que falham com SSL/rede no Render)

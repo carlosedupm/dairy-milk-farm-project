@@ -65,13 +65,14 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
         String dbUsername = environment.getProperty("DB_USERNAME", "ceialmilk");
         String dbPassword = environment.getProperty("DB_PASSWORD");
         
-        // CRÍTICO: Render internal URL usa host curto (ex: dpg-xxx-a). Se DB_HOST não tem ponto,
-        // anexar sufixo .oregon-postgres.render.com (override via DB_HOST_SUFFIX).
-        if (dbHost != null && !dbHost.isEmpty() && !dbHost.contains(".")) {
+        // Só anexar sufixo externo se USE_EXTERNAL_DB_HOST=true (ex.: conexão de fora do Render).
+        // Padrão: usar host interno (curto) como na DATABASE_URL.
+        if ("true".equalsIgnoreCase(environment.getProperty("USE_EXTERNAL_DB_HOST"))
+                && dbHost != null && !dbHost.isEmpty() && !dbHost.contains(".")) {
             String suffix = environment.getProperty("DB_HOST_SUFFIX", ".oregon-postgres.render.com");
             dbHost = dbHost + suffix;
-            System.out.println("DB_HOST curto detectado; usando host completo: " + dbHost);
-            log.info("DB_HOST curto; anexado sufixo Render: {}", dbHost);
+            System.out.println("USE_EXTERNAL_DB_HOST=true; usando host externo: " + dbHost);
+            log.info("Host externo: {}", dbHost);
         }
 
         // Se temos todas as variáveis individuais (com host completo), usa elas diretamente
@@ -205,21 +206,18 @@ public class DatabaseEnvironmentPostProcessor implements EnvironmentPostProcesso
             System.out.println("Credenciais finais - Username: " + username + ", Password length: " + 
                              (password != null ? password.length() : 0));
             
-            // CRÍTICO: Constrói URLs completamente separadas e independentes
-            // R2DBC e JDBC NUNCA compartilham a mesma URL base
-            
-            // Render internal URL usa host curto (ex: dpg-xxx-a) que causa UnknownHostException.
-            // Se host não tem ponto, anexar sufixo do Render (external-style).
-            if (host != null && !host.contains(".")) {
+            // Só anexar sufixo externo se USE_EXTERNAL_DB_HOST=true. Padrão: host interno.
+            if ("true".equalsIgnoreCase(environment.getProperty("USE_EXTERNAL_DB_HOST"))
+                    && host != null && !host.contains(".")) {
                 String suffix = environment.getProperty("DB_HOST_SUFFIX", ".oregon-postgres.render.com");
                 host = host + suffix;
-                System.out.println("Host curto detectado; usando host completo: " + host);
-                log.info("Host curto detectado; usando host completo com sufixo: {}", host);
+                System.out.println("USE_EXTERNAL_DB_HOST=true; usando host externo: " + host);
+                log.info("Host externo: {}", host);
             }
             if (host == null || host.isEmpty()) {
                 throw new RuntimeException("Host do banco de dados não pôde ser determinado");
             }
-            System.out.println("Host validado: " + host);
+            System.out.println("Host: " + host);
             
             // URL JDBC para Flyway (completamente independente)
             String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=prefer&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true", 

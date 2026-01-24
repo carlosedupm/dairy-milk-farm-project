@@ -23,6 +23,12 @@ O `render.yaml` configura automaticamente as seguintes variáveis:
 - `DB_PASSWORD` - Senha do banco (gerada automaticamente pelo Render)
 - `JWT_SECRET` - Chave secreta JWT (gerada automaticamente)
 
+### Opcionais (Render / conexão ao banco)
+
+- `USE_EXTERNAL_DB_HOST=true` - Usa host **externo** (ex: `dpg-xxx-a.oregon-postgres.render.com`). Padrão: **interno** (host curto da `DATABASE_URL`). Use se aparecer `UnknownHostException` com host interno.
+- `DB_HOST_SUFFIX` - Sufixo do host externo (ex: `.frankfurt-postgres.render.com`). Só quando `USE_EXTERNAL_DB_HOST=true`.
+- `FLYWAY_RETRY_ATTEMPTS`, `FLYWAY_RETRY_SLEEP` - Retries do Flyway (padrão: 18 tentativas, 10s entre cada).
+
 ### Conversão Automática de DATABASE_URL
 
 A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProcessor.java`) que:
@@ -59,7 +65,7 @@ A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProc
 **Como Funciona:**
 
 1. **Script de Inicialização** (`entrypoint.sh`):
-   - Extrai host/port/db/user/pass de `DATABASE_URL`; host curto → anexa `.oregon-postgres.render.com`
+   - Extrai host/port/db/user/pass de `DATABASE_URL`; usa **host interno** (curto) por padrão; `USE_EXTERNAL_DB_HOST=true` para externo
    - Aguarda 10s (DB pode estar iniciando), depois executa Flyway CLI com **retries** (padrão: 18 tentativas, 10s entre cada)
    - Executa migrações em `/app/migrations`; se sucesso, inicia aplicação Spring Boot
    - Variáveis opcionais: `FLYWAY_RETRY_ATTEMPTS`, `FLYWAY_RETRY_SLEEP`
@@ -211,13 +217,13 @@ curl https://seu-app.onrender.com/actuator/flyway
    - Render fará rollback automático
    - Corrigir migração e fazer novo deploy
 
-### Problema: UnknownHostException com host curto (ex: dpg-xxx-a)
+### Problema: UnknownHostException (host curto) ou EOFException (host externo)
 
-**Causa**: Render usa URL interna com host curto. Java e algumas ferramentas não resolvem sem o domínio completo.
-
-**Solução implementada**:
-- Script `entrypoint.sh` e `DatabaseEnvironmentPostProcessor` detectam host sem ponto e anexam `.oregon-postgres.render.com`.
-- Override para outras regiões: definir `DB_HOST_SUFFIX` (ex: `.frankfurt-postgres.render.com`).
+**Comportamento**:
+- **Padrão**: Usa **URL interna** (host curto, ex: `dpg-xxx-a`) da `DATABASE_URL`. Recomendado para serviços na mesma região.
+- Se `UnknownHostException` com host interno: definir `USE_EXTERNAL_DB_HOST=true` no Render para usar host externo (ex: `dpg-xxx-a.oregon-postgres.render.com`).
+- Se `EOFException` com host externo: usar padrão (interno); garantir que web service e DB estão na **mesma região** e no mesmo workspace.
+- Override de região (só com externo): `DB_HOST_SUFFIX` (ex: `.frankfurt-postgres.render.com`).
 
 ### Problema: Health check falha
 
