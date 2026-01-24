@@ -33,7 +33,7 @@ const (
 	CodeUnauthorized    = "UNAUTHORIZED"
 	CodeForbidden       = "FORBIDDEN"
 	CodeNotFound        = "NOT_FOUND"
-	CodeConflict       = "CONFLICT"
+	CodeConflict        = "CONFLICT"
 	CodeInternalError   = "INTERNAL_ERROR"
 	CodeBadRequest      = "BAD_REQUEST"
 )

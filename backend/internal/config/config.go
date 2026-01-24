@@ -20,7 +20,7 @@ func Load() *Config {
 		Port:          getEnv("PORT", "8080"),
 		Env:           getEnv("ENV", "development"),
 		LogLevel:      getEnv("LOG_LEVEL", "INFO"),
-		DatabaseURL:    getEnv("DATABASE_URL", ""),
+		DatabaseURL:   getEnv("DATABASE_URL", ""),
 		JWTPrivateKey: getEnv("JWT_PRIVATE_KEY", ""),
 		JWTPublicKey:  getEnv("JWT_PUBLIC_KEY", ""),
 		CORSOrigin:    getEnv("CORS_ORIGIN", "http://localhost:3000"),

@@ -96,7 +96,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Validate(c *gin.Context) {
 	// Tentar obter token do cookie primeiro, depois do header Authorization
 	var tokenStr string
-	
+
 	// Verificar cookie HttpOnly
 	if cookieToken, err := c.Cookie("ceialmilk_token"); err == nil && cookieToken != "" {
 		tokenStr = cookieToken
@@ -106,7 +106,7 @@ func (h *AuthHandler) Validate(c *gin.Context) {
 		if err == nil {
 			tokenStr = string(body)
 		}
-		
+
 		// Se ainda não encontrou, tentar header Authorization
 		if tokenStr == "" {
 			authHeader := c.GetHeader("Authorization")

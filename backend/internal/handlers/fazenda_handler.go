@@ -102,9 +102,9 @@ func (h *FazendaHandler) Update(c *gin.Context) {
 	}
 
 	fazenda := &models.Fazenda{
-		ID:             id,
-		Nome:           req.Nome,
-		Localizacao:    req.Localizacao,
+		ID:              id,
+		Nome:            req.Nome,
+		Localizacao:     req.Localizacao,
 		QuantidadeVacas: req.QuantidadeVacas,
 	}
 	if fundacao, err := parseFundacao(req.Fundacao); err != nil {

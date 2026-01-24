@@ -10,7 +10,7 @@ import (
 // SetSecureCookie configura um cookie HttpOnly com flags de segurança apropriadas
 func SetSecureCookie(c *gin.Context, name, value string, maxAge int) {
 	isSecure := c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil
-	
+
 	// Usar http.SetCookie diretamente para ter controle sobre SameSite
 	cookie := &http.Cookie{
 		Name:     name,
@@ -21,7 +21,7 @@ func SetSecureCookie(c *gin.Context, name, value string, maxAge int) {
 		Secure:   isSecure,
 		SameSite: http.SameSiteStrictMode, // Proteção CSRF
 	}
-	
+
 	http.SetCookie(c.Writer, cookie)
 }
 
@@ -37,6 +37,6 @@ func ClearCookie(c *gin.Context, name string) {
 		SameSite: http.SameSiteStrictMode,
 		Expires:  time.Unix(0, 0),
 	}
-	
+
 	http.SetCookie(c.Writer, cookie)
 }

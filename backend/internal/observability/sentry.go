@@ -36,7 +36,7 @@ func CaptureError(err error, tags map[string]string, extra map[string]interface{
 	}
 
 	hub := sentry.CurrentHub().Clone()
-	
+
 	// Adicionar tags
 	for k, v := range tags {
 		hub.Scope().SetTag(k, v)
@@ -53,7 +53,7 @@ func CaptureError(err error, tags map[string]string, extra map[string]interface{
 // CaptureMessage captura uma mensagem no Sentry
 func CaptureMessage(message string, tags map[string]string) {
 	hub := sentry.CurrentHub().Clone()
-	
+
 	for k, v := range tags {
 		hub.Scope().SetTag(k, v)
 	}

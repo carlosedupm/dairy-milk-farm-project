@@ -45,11 +45,11 @@ func main() {
 	}
 
 	router := gin.New()
-	
+
 	// Middlewares de observabilidade (ordem importa)
-	router.Use(middleware.CorrelationIDMiddleware())      // Correlation ID primeiro
-	router.Use(middleware.StructuredLoggingMiddleware())  // Logging estruturado
-	router.Use(middleware.SentryRecoveryMiddleware())     // Captura de panics no Sentry
+	router.Use(middleware.CorrelationIDMiddleware())     // Correlation ID primeiro
+	router.Use(middleware.StructuredLoggingMiddleware()) // Logging estruturado
+	router.Use(middleware.SentryRecoveryMiddleware())    // Captura de panics no Sentry
 
 	// CORS
 	router.Use(corsMiddleware(cfg.CORSOrigin))
