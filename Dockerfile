@@ -17,12 +17,6 @@ FROM flyway/flyway:10-alpine as flyway
 # Stage final da aplicação
 FROM eclipse-temurin:17-jre-alpine
 
-# Instala dependências necessárias para health check do banco
-RUN apk add --no-cache \
-    postgresql-client \
-    netcat-openbsd \
-    bash
-
 # Cria usuário não-root
 RUN addgroup -S appuser && adduser -S appuser -G appuser
 

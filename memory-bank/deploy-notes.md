@@ -51,17 +51,18 @@ A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProc
 **Migrações executadas ANTES da aplicação iniciar** usando Flyway CLI via script de inicialização (`entrypoint.sh`).
 
 **Vantagens:**
-- ✅ Resolve problemas de timing no Render (aguarda banco estar pronto)
 - ✅ Mantém arquitetura reativa (aplicação nunca usa JDBC, apenas R2DBC)
 - ✅ Separação de responsabilidades (migrações são responsabilidade do deploy)
-- ✅ Melhor tratamento de erros e retry
+- ✅ Retry no Flyway CLI (evita pg_isready/nc que falham com SSL/rede no Render)
+- ✅ Melhor tratamento de erros
 
 **Como Funciona:**
 
 1. **Script de Inicialização** (`entrypoint.sh`):
-   - Aguarda banco estar pronto (health check com retry até 60 segundos)
-   - Executa Flyway CLI com migrações em `/app/migrations`
-   - Inicia aplicação Spring Boot apenas se migrações forem bem-sucedidas
+   - Extrai host/port/db/user/pass de `DATABASE_URL`; host curto → anexa `.oregon-postgres.render.com`
+   - Aguarda 10s (DB pode estar iniciando), depois executa Flyway CLI com **retries** (padrão: 18 tentativas, 10s entre cada)
+   - Executa migrações em `/app/migrations`; se sucesso, inicia aplicação Spring Boot
+   - Variáveis opcionais: `FLYWAY_RETRY_ATTEMPTS`, `FLYWAY_RETRY_SLEEP`
 
 2. **Primeiro Deploy**:
    - Flyway CLI criará automaticamente a tabela `flyway_schema_history`
@@ -74,7 +75,7 @@ A aplicação possui um `EnvironmentPostProcessor` (`DatabaseEnvironmentPostProc
    - Logs aparecem antes da aplicação iniciar
 
 4. **Monitoramento**:
-   - Logs do script: Buscar por "Executando migrações Flyway" nos logs do container
+   - Logs do script: Buscar por "Executando migrações Flyway (com retry)" e "Tentativa X/Y"
    - Logs da aplicação: Aplicação só inicia após migrações concluírem
    - Health check: `/actuator/health` (disponível após aplicação iniciar)
 
