@@ -13,7 +13,7 @@ O projeto utiliza uma arquitetura **monorepo** com deploy separado para backend 
 ### Configuração no Render
 
 O arquivo `render.yaml` define:
-- **Serviço Web**: Aplicação Docker na branch `main` (`rootDir: backend`, `buildFilter: backend/**`)
+- **Serviço Web**: Aplicação Docker na branch `main` (`buildFilter: backend/**` — build só em mudanças em `backend/`)
 - **Banco de Dados**: PostgreSQL gerenciado (`ceialmilk-db`)
 - **Health Check**: `/health` endpoint
 - **Auto Deploy**: `autoDeployTrigger: commit` (deploy a cada push na `main`)
@@ -273,4 +273,4 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 **Última atualização**: 2026-01-24
 **Stack**: Go + Next.js (Render + Vercel)
-**Backend Render**: render.yaml + Dockerfile ajustados (JWT sync:false, PORT injetado, rootDir, CI Docker build)
+**Backend Render**: render.yaml + Dockerfile ajustados (JWT sync:false, PORT injetado, buildFilter, CI Docker build)

@@ -42,7 +42,7 @@
 - [x] **Estrutura Monorepo**: Criada e organizada
 - [x] **Docker Compose**: Configurado para desenvolvimento local
 - [x] **Dockerfile Backend**: Multi-stage build (Go 1.24), otimizado
-- [x] **render.yaml**: Ajustado para Render (JWT sync:false, PORT injetado, rootDir, buildFilter, autoDeployTrigger)
+- [x] **render.yaml**: Ajustado para Render (JWT sync:false, PORT injetado, buildFilter, autoDeployTrigger)
 - [x] **CI/CD**: Build Docker do backend no pipeline
 - [x] **Migrações**: golang-migrate no startup; V3 seed admin, V4 refresh tokens
 - [ ] **Deploy Backend**: Primeiro setup no Render (Blueprint + JWT)
@@ -178,7 +178,7 @@
   - Next.js 14+ configurado
   - Tailwind CSS configurado
   - Estrutura de pastas
-- ✅ **Backend Render**: render.yaml e Dockerfile ajustados (JWT sync:false, PORT injetado, rootDir, buildFilter, autoDeployTrigger); Dockerfile Go 1.24; CI com build Docker; deploy-notes atualizado
+- ✅ **Backend Render**: render.yaml e Dockerfile ajustados (JWT sync:false, PORT injetado, buildFilter, autoDeployTrigger); Dockerfile Go 1.24; CI com build Docker; deploy-notes atualizado
 
 ### **Próximos Marcos**
 - **2026-01-31**: Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`

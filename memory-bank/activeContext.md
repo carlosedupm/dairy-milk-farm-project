@@ -30,7 +30,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 2. ✅ **Shadcn/UI**: init + button, input, card, label, table, dialog
 3. ✅ **API**: interceptors Bearer + 401 → /login; serviços auth e fazendas
 4. ✅ **TanStack Query + AuthContext**: Providers, ProtectedRoute, Header
-5. ✅ **Backend Render**: `render.yaml` e `Dockerfile` ajustados (JWT `sync: false`, PORT injetado, `rootDir`, `buildFilter`, `autoDeployTrigger`); CI com build Docker
+5. ✅ **Backend Render**: `render.yaml` e `Dockerfile` ajustados (JWT `sync: false`, PORT injetado, `buildFilter`, `autoDeployTrigger`); CI com build Docker
 
 ### 📋 Próximos passos imediatos:
 1. Conectar repositório ao Render, criar Blueprint a partir do `render.yaml` e configurar `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` (par RSA via `openssl`)
