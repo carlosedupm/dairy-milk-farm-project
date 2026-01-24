@@ -29,9 +29,9 @@ WORKDIR /app
 # Copia o JAR da aplicação
 COPY --from=builder --chown=appuser:appuser /workspace/target/app.jar app.jar
 
-# Copia Flyway CLI do stage flyway
-COPY --from=flyway /flyway/flyway /usr/local/bin/flyway
-RUN chmod +x /usr/local/bin/flyway
+# Copia Flyway CLI completo (script + libs) — o script usa org.flywaydb.commandline.Main das libs
+COPY --from=flyway --chown=appuser:appuser /flyway /app/flyway
+RUN chmod +x /app/flyway/flyway
 
 # Copia migrações SQL
 COPY --chown=appuser:appuser src/main/resources/db/migration /app/migrations

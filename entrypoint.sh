@@ -78,7 +78,7 @@ run_migrations_with_retry() {
 
     while [ $attempt -le $max_attempts ]; do
         echo "--- Tentativa $attempt/$max_attempts ---"
-        if flyway \
+        if FLYWAY_HOME=/app/flyway /app/flyway/flyway \
             -url="${JDBC_URL}" \
             -user="${DB_USERNAME}" \
             -password="${DB_PASSWORD}" \
