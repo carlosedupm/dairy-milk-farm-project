@@ -17,7 +17,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
   - Middleware de logging automático para todas as requisições
 - **Migrações**: golang-migrate no startup; seed do usuário admin (V3); refresh tokens (V4)
 - **Postman**: Rotas compatíveis com a collection (`/api/auth/*`, `/api/v1/fazendas/*`)
-- **Frontend + Backend**: Integração validada — login, listagem, criar/editar/excluir fazendas funcionando
+- **Frontend + Backend**: Integração validada — login, listagem, criar/editar/excluir fazendas (dev e **produção** Vercel + Render)
 - **Devcontainer**: `DATABASE_URL` e `PORT` pré-configurados; backend via `go run ./cmd/api`
 - **Resiliência**: Se o Postgres falhar (ex.: pg_hba), o backend sobe e expõe apenas `GET /health`; auth/fazendas ficam inativos até o DB estar ok
 - **Postgres no compose**: `scripts/db/init-pg-hba.sh` + `ssl=off` para aceitar conexões do devcontainer (após recriar o volume)
@@ -35,10 +35,10 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 7. ✅ **Atualização Next.js**: Migrado de Next.js 14.1.0 para 16.1.4 com React 19.2.3 e todas as dependências atualizadas
 8. ✅ **Deploy Vercel (preparação)**: Build de produção validado; `deploy-notes.md` com checklist e passos para deploy manual via Dashboard
 9. ✅ **401 pós-login em produção**: Cookies com SameSite=None quando `CORS_ORIGIN` ≠ localhost; `AuthHandler` recebe `cookieSameSite`; `deploy-notes` com troubleshooting
+10. ✅ **Deploy frontend Vercel**: Deploy manual concluído; login, validate e CRUD validados em produção
 
 ### 📋 Próximos passos imediatos:
-1. **Deploy frontend (Vercel)**: Deploy manual via Dashboard — conectar repositório, Root Directory `frontend`, `NEXT_PUBLIC_API_URL` = `https://ceialmilk-api.onrender.com`. Build local já validado.
-2. Testes automatizados (E2E ou unitários)
+1. Testes automatizados (E2E ou unitários)
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -77,14 +77,14 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ## 📊 Métricas de Progresso
 
-### **Completude Geral**: 65%
-- **Infraestrutura**: 85% ✅ (backend em produção)
+### **Completude Geral**: 70%
+- **Infraestrutura**: 90% ✅ (backend + frontend em produção)
 - **Documentação**: 90% ✅
-- **Implementação**: 65% 🚧
+- **Implementação**: 70% 🚧
 - **Testes**: 0% 🚧
-- **Deploy**: 75% ✅ (backend no Render; frontend preparado — build OK, script e docs; falta executar deploy)
+- **Deploy**: 90% ✅ (backend Render + frontend Vercel; login e CRUD validados no ar)
 
 ---
 
 **Última atualização**: 2026-01-25
-**Contexto Ativo**: Migração arquitetural em andamento - Go + Next.js 16 | Backend em produção no Render | Frontend atualizado para Next.js 16.1.4 e React 19
+**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar

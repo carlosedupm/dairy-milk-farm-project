@@ -115,11 +115,11 @@ Se preferir usar Neon.tech:
 
 ### Frontend (Vercel) — deploy manual via Dashboard
 
-- [ ] Repositório conectado na Vercel (Add New → Project)
-- [ ] Root Directory configurado para `frontend`
-- [ ] Variável de ambiente `NEXT_PUBLIC_API_URL` = `https://ceialmilk-api.onrender.com`
+- [x] Repositório conectado na Vercel (Add New → Project)
+- [x] Root Directory configurado para `frontend`
+- [x] Variável de ambiente `NEXT_PUBLIC_API_URL` = `https://ceialmilk-api.onrender.com` (ou URL do backend)
 - [x] Build testado localmente (`npm run build`)
-- [ ] Deploy de produção concluído
+- [x] **Deploy de produção concluído** ✅ — login, validate e CRUD validados no ar (Vercel + Render)
 
 ## Comandos Úteis
 
@@ -291,4 +291,5 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 **Última atualização**: 2026-01-25
 **Stack**: Go + Next.js (Render + Vercel)
-**Backend Render**: ✅ **Deploy em produção funcionando** - Configuração manual (sem Blueprint) com banco PostgreSQL, variáveis de ambiente e chaves JWT configuradas. Health check e rotas de API operacionais.
+**Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
+**Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

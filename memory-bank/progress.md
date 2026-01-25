@@ -2,13 +2,13 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 65%
+### **Completude Geral**: 70%
 ```bash
-🏗️  Infraestrutura: 85% ✅
+🏗️  Infraestrutura: 90% ✅
 📚  Documentação: 90% ✅
-💻  Implementação: 65% 🚧
+💻  Implementação: 70% 🚧
 🧪  Testes: 0% 🚧
-🚀  Deploy: 70% ✅ (backend em produção no Render; frontend pendente)
+🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção; login e CRUD validados)
 ```
 
 ### **Velocidade e Métricas**
@@ -45,8 +45,8 @@
 - [x] **render.yaml**: Ajustado para Render (JWT sync:false, PORT injetado, buildFilter, autoDeployTrigger)
 - [x] **CI/CD**: Build Docker do backend no pipeline
 - [x] **Migrações**: golang-migrate no startup; V3 seed admin, V4 refresh tokens
-- [x] **Deploy Backend**: ✅ **Funcionando em produção no Render** (banco PostgreSQL + variáveis de ambiente + chaves JWT configuradas manualmente)
-- [ ] **Deploy Frontend**: Configuração Vercel pendente
+- [x] **Deploy Backend**: ✅ Funcionando em produção no Render (PostgreSQL, JWT, CORS)
+- [x] **Deploy Frontend**: ✅ Funcionando em produção na Vercel; login, validate e CRUD validados no ar
 
 ### **Documentação (✅ 90%)**
 - [x] **README.md**: Atualizado para nova stack
@@ -90,7 +90,7 @@
 - [x] Autenticação (login, validate) + JWT
 - [x] Backend Render configurado (render.yaml, Dockerfile, CI Docker build)
 - [x] ✅ **Deploy Backend em produção** (Render - configuração manual com banco PostgreSQL e chaves JWT)
-- [ ] Deploy Frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
+- [x] ✅ **Deploy Frontend em produção** (Vercel; `NEXT_PUBLIC_API_URL`; login, validate e CRUD validados)
 
 ### **Sprint 2 (Funcionalidades Core)**
 - [x] Login + CRUD de Fazendas no frontend
@@ -133,7 +133,7 @@
 
 ### **Desenvolvimento**
 ```progress
-██████▄▄▄▄ 65%
+███████▄▄▄ 70%
 ```
 
 ### **Qualidade**
@@ -148,7 +148,7 @@
 
 ### **Infraestrutura**
 ```progress
-█████████▄ 85%
+██████████ 90%
 ```
 
 ## 🔄 Histórico de Progresso
@@ -188,11 +188,14 @@
   - Chaves JWT geradas e configuradas (par RSA via openssl)
   - Health check e rotas de API operacionais
   - Migrações executadas automaticamente no startup
+- ✅ **Deploy Frontend**: Frontend funcionando em produção na Vercel
+  - Repositório conectado, Root Directory `frontend`, `NEXT_PUBLIC_API_URL` apontando para o backend
+  - Correção 401 pós-login: cookies `SameSite=None` em produção cross-origin (Vercel + Render)
+  - Login, validate e CRUD de fazendas validados no ar
 
 ### **Próximos Marcos**
-- **2026-01-31**: Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
 - **2026-02-07**: Testes automatizados (E2E ou unitários) iniciados
-- **2026-02-14**: Deploy completo em produção (Render + Vercel) ✅ Backend concluído
+- **2026-02-14**: Deploy completo em produção (Render + Vercel) ✅ concluído
 - **2026-02-21**: Testes de integração implementados
 
 ## 🎯 Objetivos de Aprendizado
@@ -204,7 +207,7 @@
 - [x] Implementar autenticação JWT RS256
 - [x] Configurar backend para Render (render.yaml, Dockerfile, CI Docker build)
 - [x] ✅ **Deploy Backend em produção** (Render - configuração manual com banco PostgreSQL e chaves JWT)
-- [ ] Deploy Frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
+- [x] ✅ **Deploy Frontend em produção** (Vercel; `NEXT_PUBLIC_API_URL`; login, validate e CRUD validados)
 
 ### **Produto**
 - [ ] Entender necessidades reais de fazendas leiteiras
@@ -230,5 +233,5 @@
 ---
 
 **Última atualização**: 2026-01-25
-**Status**: Migração arquitetural em andamento (65% concluída) | Backend em produção no Render ✅
-**Próxima revisão**: 2026-01-31
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar
+**Próxima revisão**: 2026-02-07
