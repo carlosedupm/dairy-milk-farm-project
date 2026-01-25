@@ -43,7 +43,7 @@ jobs:
       run: go build -o /tmp/api ./cmd/api
 
     - name: Build Docker image
-      run: docker build -f backend/Dockerfile backend
+      run: docker build -f Dockerfile .
 
   backend-test:
     name: Backend - Tests

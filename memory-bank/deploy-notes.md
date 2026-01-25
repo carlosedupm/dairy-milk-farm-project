@@ -52,7 +52,7 @@ O arquivo `render.yaml` define:
 
 ### Dockerfile
 
-O Dockerfile utiliza multi-stage build:
+O `Dockerfile` na **raiz do repositório** é usado pelo Render (`dockerfilePath: ./Dockerfile`, `dockerContext: .`). Utiliza multi-stage build:
 1. **Build Stage**: Compila o binário Go
 2. **Runtime Stage**: Imagem Alpine mínima com apenas o binário
 
@@ -102,7 +102,7 @@ Se preferir usar Neon.tech:
 ### Backend (Render)
 
 - [ ] `render.yaml` configurado corretamente
-- [ ] Build Docker local: `docker build -f backend/Dockerfile backend` (e, se possível, `docker run` com `DATABASE_URL`, `PORT`, `JWT_*`, `CORS_ORIGIN`)
+- [ ] Build Docker local: `docker build -f Dockerfile .` (e, se possível, `docker run` com `DATABASE_URL`, `PORT`, `JWT_*`, `CORS_ORIGIN`)
 - [ ] Banco de dados PostgreSQL criado no Render (via `render.yaml`)
 - [ ] Variáveis de ambiente configuradas:
   - [ ] `DATABASE_URL` (via `fromDatabase` no Blueprint)
@@ -128,8 +128,8 @@ Se preferir usar Neon.tech:
 cd backend
 go build -o bin/api ./cmd/api
 
-# Build Docker (validar antes do deploy no Render)
-docker build -f backend/Dockerfile backend
+# Build Docker (validar antes do deploy no Render; usa Dockerfile na raiz)
+docker build -f Dockerfile .
 
 # Testar localmente (migrações rodam no startup)
 ./bin/api

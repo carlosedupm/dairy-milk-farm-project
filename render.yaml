@@ -3,8 +3,8 @@ services:
     name: ceialmilk-api
     runtime: docker
     branch: main
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     buildFilter:
       paths:
