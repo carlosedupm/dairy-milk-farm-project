@@ -2,13 +2,13 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 58%
+### **Completude Geral**: 65%
 ```bash
-🏗️  Infraestrutura: 75% 🚧
+🏗️  Infraestrutura: 85% ✅
 📚  Documentação: 90% ✅
 💻  Implementação: 65% 🚧
 🧪  Testes: 0% 🚧
-🚀  Deploy: 50% 🚧 (config Render pronta; primeiro setup pendente)
+🚀  Deploy: 70% ✅ (backend em produção no Render; frontend pendente)
 ```
 
 ### **Velocidade e Métricas**
@@ -38,14 +38,14 @@
   - [x] Estrutura de pastas
   - [x] Cliente API básico
 
-### **Infraestrutura (🚧 75%)**
+### **Infraestrutura (✅ 85%)**
 - [x] **Estrutura Monorepo**: Criada e organizada
 - [x] **Docker Compose**: Configurado para desenvolvimento local
 - [x] **Dockerfile Backend**: Multi-stage build (Go 1.24), otimizado
 - [x] **render.yaml**: Ajustado para Render (JWT sync:false, PORT injetado, buildFilter, autoDeployTrigger)
 - [x] **CI/CD**: Build Docker do backend no pipeline
 - [x] **Migrações**: golang-migrate no startup; V3 seed admin, V4 refresh tokens
-- [ ] **Deploy Backend**: Primeiro setup no Render (Blueprint + JWT)
+- [x] **Deploy Backend**: ✅ **Funcionando em produção no Render** (banco PostgreSQL + variáveis de ambiente + chaves JWT configuradas manualmente)
 - [ ] **Deploy Frontend**: Configuração Vercel pendente
 
 ### **Documentação (✅ 90%)**
@@ -89,7 +89,8 @@
 - [x] Sistema de migrações (golang-migrate)
 - [x] Autenticação (login, validate) + JWT
 - [x] Backend Render configurado (render.yaml, Dockerfile, CI Docker build)
-- [ ] Primeiro deploy (Blueprint + JWT no Render; Vercel frontend)
+- [x] ✅ **Deploy Backend em produção** (Render - configuração manual com banco PostgreSQL e chaves JWT)
+- [ ] Deploy Frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
 
 ### **Sprint 2 (Funcionalidades Core)**
 - [x] Login + CRUD de Fazendas no frontend
@@ -147,7 +148,7 @@
 
 ### **Infraestrutura**
 ```progress
-███████▄▄▄ 75%
+█████████▄ 85%
 ```
 
 ## 🔄 Histórico de Progresso
@@ -180,10 +181,18 @@
   - Estrutura de pastas
 - ✅ **Backend Render**: render.yaml e Dockerfile ajustados (JWT sync:false, PORT injetado, buildFilter, autoDeployTrigger); Dockerfile Go 1.24; CI com build Docker; deploy-notes atualizado
 
+### **2026-01-25 - Deploy em Produção**
+- ✅ **Deploy Backend**: Backend funcionando em produção no Render
+  - Banco PostgreSQL criado e configurado
+  - Variáveis de ambiente configuradas (DATABASE_URL, JWT_PRIVATE_KEY, JWT_PUBLIC_KEY, ENV, LOG_LEVEL, CORS_ORIGIN)
+  - Chaves JWT geradas e configuradas (par RSA via openssl)
+  - Health check e rotas de API operacionais
+  - Migrações executadas automaticamente no startup
+
 ### **Próximos Marcos**
 - **2026-01-31**: Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
 - **2026-02-07**: Testes automatizados (E2E ou unitários) iniciados
-- **2026-02-14**: Deploy em produção (Render + Vercel)
+- **2026-02-14**: Deploy completo em produção (Render + Vercel) ✅ Backend concluído
 - **2026-02-21**: Testes de integração implementados
 
 ## 🎯 Objetivos de Aprendizado
@@ -194,7 +203,8 @@
 - [x] Aprender Next.js App Router
 - [x] Implementar autenticação JWT RS256
 - [x] Configurar backend para Render (render.yaml, Dockerfile, CI Docker build)
-- [ ] Primeiro deploy (Blueprint + JWT); frontend Vercel
+- [x] ✅ **Deploy Backend em produção** (Render - configuração manual com banco PostgreSQL e chaves JWT)
+- [ ] Deploy Frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
 
 ### **Produto**
 - [ ] Entender necessidades reais de fazendas leiteiras
@@ -219,6 +229,6 @@
 
 ---
 
-**Última atualização**: 2026-01-24
-**Status**: Migração arquitetural em andamento (60% concluída)
+**Última atualização**: 2026-01-25
+**Status**: Migração arquitetural em andamento (65% concluída) | Backend em produção no Render ✅
 **Próxima revisão**: 2026-01-31

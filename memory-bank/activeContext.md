@@ -31,11 +31,11 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 3. ✅ **API**: interceptors Bearer + 401 → /login; serviços auth e fazendas
 4. ✅ **TanStack Query + AuthContext**: Providers, ProtectedRoute, Header
 5. ✅ **Backend Render**: `render.yaml` e `Dockerfile` ajustados (JWT `sync: false`, PORT injetado, `buildFilter`, `autoDeployTrigger`); CI com build Docker
+6. ✅ **Deploy Produção**: Backend configurado e funcionando no Render (banco PostgreSQL + variáveis de ambiente + chaves JWT)
 
 ### 📋 Próximos passos imediatos:
-1. Conectar repositório ao Render, criar Blueprint a partir do `render.yaml` e configurar `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` (par RSA via `openssl`)
-2. Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL`
-3. Testes automatizados (E2E ou unitários)
+1. Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL` apontando para o backend no Render
+2. Testes automatizados (E2E ou unitários)
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -73,14 +73,14 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ## 📊 Métricas de Progresso
 
-### **Completude Geral**: 58%
-- **Infraestrutura**: 75% 🚧
+### **Completude Geral**: 65%
+- **Infraestrutura**: 85% ✅ (backend em produção)
 - **Documentação**: 90% ✅
 - **Implementação**: 65% 🚧
 - **Testes**: 0% 🚧
-- **Deploy**: 50% 🚧 (config Render pronta; primeiro setup pendente: Blueprint + JWT)
+- **Deploy**: 70% ✅ (backend funcionando no Render; frontend pendente)
 
 ---
 
-**Última atualização**: 2026-01-24
-**Contexto Ativo**: Migração arquitetural em andamento - Go + Next.js
+**Última atualização**: 2026-01-25
+**Contexto Ativo**: Migração arquitetural em andamento - Go + Next.js | Backend em produção no Render

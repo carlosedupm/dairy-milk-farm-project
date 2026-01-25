@@ -101,15 +101,17 @@ Se preferir usar Neon.tech:
 
 ### Backend (Render)
 
-- [ ] `render.yaml` configurado corretamente
-- [ ] Build Docker local: `docker build -f Dockerfile .` (e, se possível, `docker run` com `DATABASE_URL`, `PORT`, `JWT_*`, `CORS_ORIGIN`)
-- [ ] Banco de dados PostgreSQL criado no Render (via `render.yaml`)
-- [ ] Variáveis de ambiente configuradas:
-  - [ ] `DATABASE_URL` (via `fromDatabase` no Blueprint)
-  - [ ] `JWT_PRIVATE_KEY` e `JWT_PUBLIC_KEY` — **obrigatórias**, definidas **manualmente** (gerar par RSA com `openssl`; informar na criação do Blueprint ou no Dashboard)
-  - [ ] `PORT` **não** definir — o Render injeta automaticamente
-- [ ] Health check endpoint funcionando (`/health`)
-- [ ] Migrações testadas localmente
+- [x] `render.yaml` configurado corretamente
+- [x] Build Docker local: `docker build -f Dockerfile .` (e, se possível, `docker run` com `DATABASE_URL`, `PORT`, `JWT_*`, `CORS_ORIGIN`)
+- [x] Banco de dados PostgreSQL criado no Render (configuração manual - Blueprint requer plano pago)
+- [x] Variáveis de ambiente configuradas:
+  - [x] `DATABASE_URL` (configurada manualmente com "Internal Database URL" do banco)
+  - [x] `JWT_PRIVATE_KEY` e `JWT_PUBLIC_KEY` — **obrigatórias**, definidas **manualmente** (par RSA gerado com `openssl`)
+  - [x] `ENV`, `LOG_LEVEL`, `CORS_ORIGIN` configuradas
+  - [x] `PORT` **não** definida — o Render injeta automaticamente
+- [x] Health check endpoint funcionando (`/health`)
+- [x] Migrações executadas automaticamente no startup
+- [x] **Deploy em produção funcionando** ✅
 
 ### Frontend (Vercel)
 
@@ -271,6 +273,6 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 ---
 
-**Última atualização**: 2026-01-24
+**Última atualização**: 2026-01-25
 **Stack**: Go + Next.js (Render + Vercel)
-**Backend Render**: render.yaml + Dockerfile ajustados (JWT sync:false, PORT injetado, buildFilter, CI Docker build)
+**Backend Render**: ✅ **Deploy em produção funcionando** - Configuração manual (sem Blueprint) com banco PostgreSQL, variáveis de ambiente e chaves JWT configuradas. Health check e rotas de API operacionais.
