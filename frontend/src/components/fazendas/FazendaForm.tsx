@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Fazenda, FazendaCreate } from '@/services/fazendas'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,24 +20,13 @@ export function FazendaForm({
   isPending = false,
   submitLabel = 'Salvar',
 }: Props) {
-  const [nome, setNome] = useState('')
-  const [localizacao, setLocalizacao] = useState('')
-  const [quantidadeVacas, setQuantidadeVacas] = useState(0)
-  const [fundacao, setFundacao] = useState('')
+  const [nome, setNome] = useState(initial?.nome ?? '')
+  const [localizacao, setLocalizacao] = useState(initial?.localizacao ?? '')
+  const [quantidadeVacas, setQuantidadeVacas] = useState(initial?.quantidade_vacas ?? 0)
+  const [fundacao, setFundacao] = useState(
+    initial?.fundacao ? initial.fundacao.slice(0, 10) : ''
+  )
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (initial) {
-      setNome(initial.nome)
-      setLocalizacao(initial.localizacao ?? '')
-      setQuantidadeVacas(initial.quantidade_vacas)
-      setFundacao(
-        initial.fundacao
-          ? initial.fundacao.slice(0, 10)
-          : ''
-      )
-    }
-  }, [initial])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
