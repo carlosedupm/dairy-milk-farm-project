@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -97,7 +98,11 @@ func main() {
 					refreshTokenRepo := repository.NewRefreshTokenRepository(pool)
 					fazendaSvc := service.NewFazendaService(fazendaRepo)
 					refreshTokenSvc := service.NewRefreshTokenService(refreshTokenRepo)
-					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc)
+					cookieSameSite := http.SameSiteStrictMode
+					if !strings.Contains(cfg.CORSOrigin, "localhost") {
+						cookieSameSite = http.SameSiteNoneMode // cross-origin (Vercel + Render)
+					}
+					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
 
 					api := router.Group("/api")

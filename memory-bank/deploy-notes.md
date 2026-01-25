@@ -29,7 +29,7 @@ O arquivo `render.yaml` define:
 - `DATABASE_URL` - Proveniente de `fromDatabase` (Postgres `ceialmilk-db`). URL no formato `postgresql://user:pass@host:port/db`.
 - `ENV` - `production`
 - `LOG_LEVEL` - `INFO` (ou DEBUG, WARN, ERROR)
-- `CORS_ORIGIN` - URL do frontend na Vercel (ex.: `https://ceialmilk.vercel.app`)
+- `CORS_ORIGIN` - URL do frontend na Vercel (ex.: `https://ceialmilk.vercel.app`). Quando **não** for localhost, os cookies de auth usam `SameSite=None` para requisições cross-origin (frontend Vercel ↔ backend Render).
 
 #### Obrigatórias e definidas manualmente (`sync: false`)
 
@@ -221,6 +221,17 @@ curl https://ceialmilk-api.onrender.com/api/v1/fazendas
 2. Verificar CORS configurado no backend
 3. Verificar se backend está online
 4. Verificar logs do browser (F12 → Console)
+
+### Problema: 401 em `/api/auth/validate` após login (produção)
+
+**Sintomas**: Login parece OK, mas ao validar sessão ou acessar rotas protegidas retorna 401.
+
+**Causa**: Frontend (Vercel) e backend (Render) estão em origens diferentes. Cookies com `SameSite=Strict` não são enviados em requisições cross-origin.
+
+**Solução**:
+1. Garantir que `CORS_ORIGIN` no Render seja a URL **exata** do frontend (ex.: `https://ceialmilk.vercel.app`). O backend usa `SameSite=None` nos cookies quando `CORS_ORIGIN` não contém `localhost`.
+2. Fazer **redeploy** do backend no Render após alterar `CORS_ORIGIN`.
+3. Confirmar que o frontend usa `withCredentials: true` nas chamadas à API (já configurado no `api.ts`).
 
 ### Problema: Health check falha
 

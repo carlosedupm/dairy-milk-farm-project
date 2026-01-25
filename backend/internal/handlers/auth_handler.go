@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"io"
+	"net/http"
 
 	"github.com/ceialmilk/api/internal/auth"
 	"github.com/ceialmilk/api/internal/observability"
@@ -17,17 +18,20 @@ type AuthHandler struct {
 	userRepo        *repository.UsuarioRepository
 	jwt             *auth.JWTService
 	refreshTokenSvc *service.RefreshTokenService
+	cookieSameSite  http.SameSite
 }
 
 func NewAuthHandler(
 	userRepo *repository.UsuarioRepository,
 	jwt *auth.JWTService,
 	refreshTokenSvc *service.RefreshTokenService,
+	cookieSameSite http.SameSite,
 ) *AuthHandler {
 	return &AuthHandler{
 		userRepo:        userRepo,
 		jwt:             jwt,
 		refreshTokenSvc: refreshTokenSvc,
+		cookieSameSite:  cookieSameSite,
 	}
 }
 
@@ -81,10 +85,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Configurar cookie HttpOnly para o access token (15 minutos)
-	auth.SetSecureCookie(c, "ceialmilk_token", accessToken, 15*60)
+	auth.SetSecureCookie(c, "ceialmilk_token", accessToken, 15*60, h.cookieSameSite)
 
 	// Configurar cookie HttpOnly para o refresh token (7 dias)
-	auth.SetSecureCookie(c, "ceialmilk_refresh_token", refreshToken.Token, 7*24*60*60)
+	auth.SetSecureCookie(c, "ceialmilk_refresh_token", refreshToken.Token, 7*24*60*60, h.cookieSameSite)
 
 	loginData := gin.H{
 		"email":  user.Email,
@@ -142,8 +146,8 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	// Limpar cookies HttpOnly
-	auth.ClearCookie(c, "ceialmilk_token")
-	auth.ClearCookie(c, "ceialmilk_refresh_token")
+	auth.ClearCookie(c, "ceialmilk_token", h.cookieSameSite)
+	auth.ClearCookie(c, "ceialmilk_refresh_token", h.cookieSameSite)
 	response.SuccessOK(c, nil, "Logout realizado com sucesso")
 }
 
@@ -198,7 +202,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	}
 
 	// Configurar cookie HttpOnly para o novo access token
-	auth.SetSecureCookie(c, "ceialmilk_token", accessToken, 15*60) // 15 minutos
+	auth.SetSecureCookie(c, "ceialmilk_token", accessToken, 15*60, h.cookieSameSite) // 15 minutos
 
 	refreshData := gin.H{
 		"email":  user.Email,

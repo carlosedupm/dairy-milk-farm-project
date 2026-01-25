@@ -132,7 +132,7 @@ Usuario (N) ─── (1) Fazenda
   - `ceialmilk_token`: Access token (15 minutos)
   - `ceialmilk_refresh_token`: Refresh token (7 dias)
 - **Secure Flag**: Cookies enviados apenas via HTTPS em produção (detectado automaticamente)
-- **SameSite**: Proteção CSRF com SameSite=Strict
+- **SameSite**: `SameSite=Strict` em dev (CORS localhost); `SameSite=None` em produção cross-origin (frontend Vercel ↔ backend Render), para que o navegador envie cookies em requisições cross-origin
 - **Frontend**: Usa `withCredentials: true` no Axios para enviar cookies automaticamente
 
 ## ⚡ Padrões de Performance

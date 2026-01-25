@@ -7,7 +7,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ### ✅ O que está funcionando:
 - **Backend Go**: API com Gin, health, auth (login/logout/refresh/validate) e CRUD + search de fazendas
-- **Autenticação**: JWT RS256, middleware, bcrypt; refresh tokens no banco; cookies HttpOnly com SameSite Strict
+- **Autenticação**: JWT RS256, middleware, bcrypt; refresh tokens no banco; cookies HttpOnly (SameSite=Strict em dev, SameSite=None em produção cross-origin Vercel+Render)
 - **Formato de Resposta**: Padronizado com `data`, `message`, `timestamp` em todas as respostas
 - **Formato de Erro**: Padronizado com `error.code`, `error.message`, `error.details`, `timestamp`
 - **Observabilidade**: 
@@ -34,6 +34,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 6. ✅ **Deploy Produção**: Backend configurado e funcionando no Render (banco PostgreSQL + variáveis de ambiente + chaves JWT)
 7. ✅ **Atualização Next.js**: Migrado de Next.js 14.1.0 para 16.1.4 com React 19.2.3 e todas as dependências atualizadas
 8. ✅ **Deploy Vercel (preparação)**: Build de produção validado; `deploy-notes.md` com checklist e passos para deploy manual via Dashboard
+9. ✅ **401 pós-login em produção**: Cookies com SameSite=None quando `CORS_ORIGIN` ≠ localhost; `AuthHandler` recebe `cookieSameSite`; `deploy-notes` com troubleshooting
 
 ### 📋 Próximos passos imediatos:
 1. **Deploy frontend (Vercel)**: Deploy manual via Dashboard — conectar repositório, Root Directory `frontend`, `NEXT_PUBLIC_API_URL` = `https://ceialmilk-api.onrender.com`. Build local já validado.
