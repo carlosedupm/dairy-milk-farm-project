@@ -113,13 +113,13 @@ Se preferir usar Neon.tech:
 - [x] Migrações executadas automaticamente no startup
 - [x] **Deploy em produção funcionando** ✅
 
-### Frontend (Vercel)
+### Frontend (Vercel) — deploy manual via Dashboard
 
-- [ ] Repositório conectado na Vercel
-- [ ] Root directory configurado para `/frontend`
-- [ ] Variável de ambiente `NEXT_PUBLIC_API_URL` configurada
-- [ ] Build testado localmente (`npm run build`)
-- [ ] Deploy de preview funcionando
+- [ ] Repositório conectado na Vercel (Add New → Project)
+- [ ] Root Directory configurado para `frontend`
+- [ ] Variável de ambiente `NEXT_PUBLIC_API_URL` = `https://ceialmilk-api.onrender.com`
+- [x] Build testado localmente (`npm run build`)
+- [ ] Deploy de produção concluído
 
 ## Comandos Úteis
 
@@ -161,6 +161,11 @@ curl https://ceialmilk-api.onrender.com/health
 # Verificar API
 curl https://ceialmilk-api.onrender.com/api/v1/fazendas
 ```
+
+**Frontend (após deploy na Vercel)**:
+1. Abrir a URL de produção (ex.: `https://ceialmilk.vercel.app`).
+2. Acessar `/login` e fazer login (`admin@ceialmilk.com` / `password`).
+3. Navegar para `/fazendas`, listar, criar e editar uma fazenda para validar integração com a API.
 
 ## Segurança
 

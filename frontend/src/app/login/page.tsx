@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -25,6 +25,13 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') ?? '/fazendas'
 
+  // Redirecionar se já estiver autenticado (usando useEffect para evitar erro no React 19)
+  useEffect(() => {
+    if (isReady && isAuthenticated) {
+      router.replace(redirect)
+    }
+  }, [isReady, isAuthenticated, router, redirect])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -45,7 +52,6 @@ function LoginForm() {
   }
 
   if (isReady && isAuthenticated) {
-    router.replace(redirect)
     return (
       <main className="flex min-h-screen items-center justify-center">
         <p className="text-muted-foreground">Redirecionando…</p>

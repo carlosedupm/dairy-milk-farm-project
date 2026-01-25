@@ -32,16 +32,19 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 4. ✅ **TanStack Query + AuthContext**: Providers, ProtectedRoute, Header
 5. ✅ **Backend Render**: `render.yaml` e `Dockerfile` ajustados (JWT `sync: false`, PORT injetado, `buildFilter`, `autoDeployTrigger`); CI com build Docker
 6. ✅ **Deploy Produção**: Backend configurado e funcionando no Render (banco PostgreSQL + variáveis de ambiente + chaves JWT)
+7. ✅ **Atualização Next.js**: Migrado de Next.js 14.1.0 para 16.1.4 com React 19.2.3 e todas as dependências atualizadas
+8. ✅ **Deploy Vercel (preparação)**: Build de produção validado; `deploy-notes.md` com checklist e passos para deploy manual via Dashboard
 
 ### 📋 Próximos passos imediatos:
-1. Deploy frontend (Vercel) e configurar `NEXT_PUBLIC_API_URL` apontando para o backend no Render
+1. **Deploy frontend (Vercel)**: Deploy manual via Dashboard — conectar repositório, Root Directory `frontend`, `NEXT_PUBLIC_API_URL` = `https://ceialmilk-api.onrender.com`. Build local já validado.
 2. Testes automatizados (E2E ou unitários)
 
 ## 🛠️ Decisões Técnicas Ativas
 
 ### **Arquitetura e Stack**
 - ✅ **Decidido**: Backend em **Go** usando framework **Gin**
-- ✅ **Decidido**: Frontend em **Next.js 14+** com App Router
+- ✅ **Decidido**: Frontend em **Next.js 16.1.4** com App Router e Turbopack
+- ✅ **Decidido**: **React 19.2.3** para melhor performance e novas features
 - ✅ **Decidido**: Banco de dados **PostgreSQL** mantido (schema existente)
 - ✅ **Decidido**: Estrutura **Monorepo** com `/backend` e `/frontend`
 
@@ -78,9 +81,9 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 - **Documentação**: 90% ✅
 - **Implementação**: 65% 🚧
 - **Testes**: 0% 🚧
-- **Deploy**: 70% ✅ (backend funcionando no Render; frontend pendente)
+- **Deploy**: 75% ✅ (backend no Render; frontend preparado — build OK, script e docs; falta executar deploy)
 
 ---
 
 **Última atualização**: 2026-01-25
-**Contexto Ativo**: Migração arquitetural em andamento - Go + Next.js | Backend em produção no Render
+**Contexto Ativo**: Migração arquitetural em andamento - Go + Next.js 16 | Backend em produção no Render | Frontend atualizado para Next.js 16.1.4 e React 19

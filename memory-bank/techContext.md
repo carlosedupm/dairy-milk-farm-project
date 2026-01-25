@@ -15,12 +15,13 @@
 - **Container**: Docker (multi-stage build com imagem Alpine final)
 
 ### Frontend
-- **Framework**: Next.js 14+ (App Router)
-- **Linguagem**: TypeScript
-- **Estilização**: Tailwind CSS
-- **Componentes**: Shadcn/UI
-- **Gerenciamento de Estado**: TanStack Query (React Query)
-- **Cliente HTTP**: Axios ou fetch nativo
+- **Framework**: Next.js 16.1.4 (App Router, Turbopack como bundler padrão)
+- **React**: 19.2.3 (compatível com Next.js 16)
+- **Linguagem**: TypeScript 5.7.2
+- **Estilização**: Tailwind CSS 3.4.17
+- **Componentes**: Shadcn/UI (compatível com React 19)
+- **Gerenciamento de Estado**: TanStack Query 5.90.20
+- **Cliente HTTP**: Axios 1.7.9
 - **Logging**: Pino (server-side)
 
 ### Infraestrutura
@@ -82,9 +83,10 @@ require (
 3. **Startup**: `./bin/api` (binário único, startup instantâneo)
 
 ### Frontend (Next.js)
-1. **Build**: Vercel detecta Next.js e faz build automático
+1. **Build**: Vercel detecta Next.js 16 e faz build automático com Turbopack
 2. **Deploy**: Distribuição global via CDN da Vercel
 3. **SSR/SSG**: Next.js gerencia renderização server-side
+4. **Bundler**: Turbopack é o padrão no Next.js 16 (mais rápido que Webpack)
 
 ## Ambiente de Desenvolvimento (Dev Container)
 
@@ -152,5 +154,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-01-24
-**Stack**: Go + Next.js (Migração em andamento)
+**Última atualização**: 2026-01-25
+**Stack**: Go + Next.js 16 (Atualizado para Next.js 16.1.4 e React 19)
