@@ -20,9 +20,11 @@ export function Header() {
           <Link href="/fazendas/nova" className="text-sm text-muted-foreground hover:text-foreground">
             Nova fazenda
           </Link>
-          <Link href="/dev-studio" className="text-sm text-muted-foreground hover:text-foreground">
-            Dev Studio
-          </Link>
+          {user && user.email === 'dev@ceial.com' && (
+            <Link href="/dev-studio" className="text-sm text-muted-foreground hover:text-foreground">
+              Dev Studio
+            </Link>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {user && (
