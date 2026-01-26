@@ -39,6 +39,7 @@ Procure por esta mensagem nos logs:
 **Se aparecer**: ✅ `GEMINI_API_KEY` está configurada!
 
 **Se aparecer esta mensagem:**
+
 ```
 ⚠️ GEMINI_API_KEY não configurada: Dev Studio desabilitado
 ```
@@ -56,6 +57,7 @@ Procure por esta mensagem:
 **Se aparecer**: ✅ GitHub configurado!
 
 **Se aparecer:**
+
 ```
 ⚠️ GitHub não configurado (GITHUB_TOKEN ou GITHUB_REPO não definidos). Funcionalidade de PRs desabilitada.
 ```
@@ -69,19 +71,21 @@ Procure por esta mensagem:
 **Possíveis causas:**
 
 1. **Arquivo `.env` não existe ou está no lugar errado**
+
    ```bash
    # Verificar se existe
    ls -la /workspace/.env
-   
+
    # Deve estar na raiz do projeto
    ```
 
 2. **Formato incorreto no `.env`**
+
    ```bash
    # ❌ ERRADO (com espaços ou aspas extras)
    GEMINI_API_KEY = "gAIzaSy..."
    GEMINI_API_KEY="gAIzaSy..."
-   
+
    # ✅ CORRETO (sem espaços, sem aspas)
    GEMINI_API_KEY=gAIzaSy...
    ```
@@ -93,12 +97,15 @@ Procure por esta mensagem:
    ```
 
 **Solução:**
+
 1. Verifique o formato do `.env`:
+
    ```bash
    cat .env
    ```
 
 2. Certifique-se de que está no formato correto:
+
    ```bash
    GEMINI_API_KEY=sua-chave-aqui
    GITHUB_TOKEN=ghp_seu-token-aqui
@@ -113,6 +120,7 @@ Procure por esta mensagem:
 **Causa**: Caminho incorreto
 
 **Solução**: O backend procura em:
+
 - `../.env` (quando executado de `backend/`)
 - `.env` (quando executado da raiz)
 
@@ -123,6 +131,7 @@ Certifique-se de que o `.env` está em `/workspace/.env`
 **Causa**: Logs podem não mostrar valores por segurança
 
 **Solução**: Verifique se as funcionalidades funcionam:
+
 - Teste gerar código no Dev Studio
 - Se funcionar, as variáveis estão carregadas!
 
@@ -141,7 +150,7 @@ LOG_LEVEL=INFO
 CORS_ORIGIN=http://localhost:3000
 
 # Gemini API (Dev Studio)
-GEMINI_API_KEY=gAIzaSyDu2mAO8ZD6R8C8sy-SWTrMiU_Dla5xDvM
+GEMINI_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # GitHub API (Dev Studio - Fase 1: PRs Automáticos)
 GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

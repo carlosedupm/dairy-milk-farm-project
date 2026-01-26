@@ -468,6 +468,23 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown, sem código blocks, sem explica
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		
+		// Tratamento específico para erro 403 (chave vazada)
+		if resp.StatusCode == http.StatusForbidden {
+			var geminiError struct {
+				Error struct {
+					Message string `json:"message"`
+					Status  string `json:"status"`
+					Code    int    `json:"code"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal(bodyBytes, &geminiError); err == nil {
+				messageLower := strings.ToLower(geminiError.Error.Message)
+				if strings.Contains(messageLower, "leaked") || strings.Contains(messageLower, "reported") {
+					return nil, fmt.Errorf("chave da API Gemini foi reportada como vazada. Gere uma nova chave em https://ai.google.dev/ e atualize GEMINI_API_KEY")
+				}
+			}
+		}
+		
 		// Tratamento específico para erro 429 (quota excedida)
 		if resp.StatusCode == http.StatusTooManyRequests {
 			var geminiError struct {

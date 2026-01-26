@@ -36,6 +36,9 @@ func main() {
 		wd = "."
 	}
 
+	// Verificação de variáveis de ambiente carregadas
+	logEnvStatus(cfg)
+
 	slog.Info("Iniciando CeialMilk API",
 		"version", "1.0.0",
 		"port", cfg.Port,
@@ -279,4 +282,78 @@ func runMigrations(databaseURL string) error {
 	}
 	slog.Info("Migrações aplicadas")
 	return nil
+}
+
+// logEnvStatus exibe um resumo das variáveis de ambiente carregadas
+// para garantir que foram reconhecidas corretamente
+func logEnvStatus(cfg *config.Config) {
+	slog.Info("📋 Status das Variáveis de Ambiente",
+		"port", cfg.Port,
+		"env", cfg.Env,
+		"log_level", cfg.LogLevel,
+		"cors_origin", cfg.CORSOrigin,
+	)
+
+	// Verificar variáveis críticas
+	status := make(map[string]string)
+
+	if cfg.DatabaseURL != "" {
+		// Mascarar senha na URL do banco
+		maskedURL := cfg.DatabaseURL
+		if strings.Contains(maskedURL, "@") {
+			parts := strings.Split(maskedURL, "@")
+			if len(parts) > 0 {
+				userPass := strings.Split(parts[0], "://")
+				if len(userPass) > 1 {
+					credentials := strings.Split(userPass[1], ":")
+					if len(credentials) > 1 {
+						maskedURL = userPass[0] + "://" + credentials[0] + ":****@" + parts[1]
+					}
+				}
+			}
+		}
+		status["database_url"] = "✅ Configurada (" + maskedURL + ")"
+	} else {
+		status["database_url"] = "⚠️  Não configurada"
+	}
+
+	if cfg.JWTPrivateKey != "" && cfg.JWTPublicKey != "" {
+		status["jwt_keys"] = "✅ Configuradas"
+	} else if cfg.Env == "development" {
+		status["jwt_keys"] = "✅ Usando chaves de desenvolvimento"
+	} else {
+		status["jwt_keys"] = "⚠️  Não configuradas"
+	}
+
+	if cfg.GeminiAPIKey != "" {
+		maskedKey := cfg.GeminiAPIKey[:min(8, len(cfg.GeminiAPIKey))] + "..." + cfg.GeminiAPIKey[max(0, len(cfg.GeminiAPIKey)-4):]
+		status["gemini_api_key"] = "✅ Configurada (" + maskedKey + ")"
+	} else {
+		status["gemini_api_key"] = "⚠️  Não configurada (Dev Studio desabilitado)"
+	}
+
+	if cfg.GitHubToken != "" && cfg.GitHubRepo != "" {
+		status["github"] = "✅ Configurado (" + cfg.GitHubRepo + ")"
+	} else {
+		status["github"] = "ℹ️  Não configurado (PRs automáticos desabilitados)"
+	}
+
+	// Log estruturado com status
+	for key, value := range status {
+		slog.Info("  " + key + ": " + value)
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

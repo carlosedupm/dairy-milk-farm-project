@@ -100,6 +100,86 @@ O sistema agora retorna uma mensagem mais clara quando a quota é excedida:
 
 **Ver documentação completa**: `docs/dev-studio/GEMINI_QUOTA_FIX.md`
 
+## Erro: 403 - Chave da API Reportada como Vazada
+
+### Causa
+
+A chave da API Gemini foi reportada como vazada pelo Google. Isso acontece quando:
+
+- A chave foi commitada no Git (mesmo que depois removida)
+- A chave foi compartilhada publicamente
+- A chave apareceu em logs públicos ou screenshots
+
+### Solução
+
+**1. Gerar Nova Chave:**
+
+- Acesse https://ai.google.dev/
+- Faça login com sua conta Google
+- Vá em "Get API Key" ou "API Keys"
+- Clique em "Create API Key"
+- Copie a nova chave
+
+**2. Atualizar Configuração:**
+
+**Opção A: Arquivo .env (recomendado)**
+```bash
+# Editar .env na raiz do projeto
+nano /workspace/.env
+
+# Atualizar a linha:
+GEMINI_API_KEY=nova-chave-aqui
+```
+
+**Opção B: Variável de Ambiente**
+```bash
+export GEMINI_API_KEY="nova-chave-aqui"
+```
+
+**3. Reiniciar Backend:**
+```bash
+# Parar backend atual
+pkill -f "go run.*cmd/api"
+
+# Reiniciar com nova chave
+cd /workspace/backend
+go run ./cmd/api
+```
+
+**OU use o script:**
+```bash
+./scripts/start-backend-dev-studio.sh
+```
+
+**4. Verificar:**
+
+- Verifique os logs do backend - não deve mais aparecer erro 403
+- Teste fazendo uma requisição no Dev Studio
+
+### Prevenção
+
+- **NUNCA** commite o arquivo `.env` com chaves reais
+- **SEMPRE** use `.env.example` como template
+- **NUNCA** compartilhe chaves em logs, screenshots ou mensagens
+- Use variáveis de ambiente do sistema ou secrets managers em produção
+
+### Mensagem de Erro Melhorada
+
+O sistema agora retorna uma mensagem mais clara quando a chave está vazada:
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Chave da API Gemini foi reportada como vazada. Gere uma nova chave e atualize a configuração.",
+    "details": {
+      "help": "Acesse https://ai.google.dev/ para gerar uma nova chave da API",
+      "instructions": "Atualize GEMINI_API_KEY no arquivo .env ou variável de ambiente e reinicie o backend"
+    }
+  }
+}
+```
+
 ## Erro: "Unable to add filesystem: <illegal path>"
 
 Este erro geralmente vem do browser/frontend e pode ser ignorado. Não afeta o funcionamento do Dev Studio.

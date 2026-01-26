@@ -53,6 +53,19 @@ func (h *DevStudioHandler) Chat(c *gin.Context) {
 			"action": "generate_code",
 		})
 		
+		// Tratamento específico para chave vazada
+		errMsg := strings.ToLower(err.Error())
+		if strings.Contains(errMsg, "vazada") || strings.Contains(errMsg, "leaked") || strings.Contains(errMsg, "reported") {
+			response.Error(c, 403, response.CodeForbidden,
+				"Chave da API Gemini foi reportada como vazada. Gere uma nova chave e atualize a configuração.",
+				map[string]interface{}{
+					"error": err.Error(),
+					"help": "Acesse https://ai.google.dev/ para gerar uma nova chave da API",
+					"instructions": "Atualize GEMINI_API_KEY no arquivo .env ou variável de ambiente e reinicie o backend",
+				})
+			return
+		}
+		
 		// Tratamento específico para quota excedida
 		if strings.Contains(err.Error(), "quota da API Gemini excedida") {
 			response.ErrorQuotaExceeded(c, 
@@ -96,6 +109,20 @@ func (h *DevStudioHandler) Refine(c *gin.Context) {
 	codeResponse, err := h.devStudioSvc.RefineCode(c.Request.Context(), req.RequestID, userID, req.Feedback)
 	if err != nil {
 		observability.CaptureHandlerError(c, err, map[string]string{"action": "refine_code"})
+		
+		// Tratamento específico para chave vazada
+		errMsg := strings.ToLower(err.Error())
+		if strings.Contains(errMsg, "vazada") || strings.Contains(errMsg, "leaked") || strings.Contains(errMsg, "reported") {
+			response.Error(c, 403, response.CodeForbidden,
+				"Chave da API Gemini foi reportada como vazada. Gere uma nova chave e atualize a configuração.",
+				map[string]interface{}{
+					"error": err.Error(),
+					"help": "Acesse https://ai.google.dev/ para gerar uma nova chave da API",
+					"instructions": "Atualize GEMINI_API_KEY no arquivo .env ou variável de ambiente e reinicie o backend",
+				})
+			return
+		}
+		
 		if strings.Contains(err.Error(), "quota da API Gemini excedida") {
 			response.ErrorQuotaExceeded(c,
 				"Quota da API Gemini excedida. Verifique sua conta no Google Cloud Console ou aguarde o reset da quota.",
