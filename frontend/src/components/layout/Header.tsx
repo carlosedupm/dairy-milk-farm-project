@@ -11,14 +11,11 @@ export function Header() {
     <header className="border-b bg-card">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <Link href="/fazendas" className="font-semibold">
+          <Link href="/" className="font-semibold">
             CeialMilk
           </Link>
           <Link href="/fazendas" className="text-sm text-muted-foreground hover:text-foreground">
             Fazendas
-          </Link>
-          <Link href="/fazendas/nova" className="text-sm text-muted-foreground hover:text-foreground">
-            Nova fazenda
           </Link>
           {user && user.email === 'dev@ceial.com' && (
             <Link href="/dev-studio" className="text-sm text-muted-foreground hover:text-foreground">
