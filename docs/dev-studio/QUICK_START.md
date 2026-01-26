@@ -1,0 +1,116 @@
+# ⚡ Quick Start - Dev Studio
+
+## ✅ Configuração Completa
+
+Tudo já está configurado! Siga estes passos:
+
+### 1. Verificar Variável de Ambiente
+
+A `GEMINI_API_KEY` já foi adicionada ao `devcontainer.json`. Se você estiver usando o devcontainer, ela já está disponível.
+
+**Para verificar:**
+```bash
+echo $GEMINI_API_KEY
+```
+
+**Se estiver vazia, configure:**
+```bash
+export GEMINI_API_KEY="sua-chave-gemini-aqui"
+```
+**Obtenha sua chave em**: https://ai.google.dev/
+
+### 2. Iniciar o Backend
+
+**Opção 1: Debug no VS Code (recomendado para desenvolvimento)**
+1. Abra o painel de Debug (F5 ou Ctrl+Shift+D)
+2. Selecione "Debug Backend (Go)"
+3. Pressione F5 para iniciar
+
+A configuração já inclui todas as variáveis de ambiente necessárias, incluindo `GEMINI_API_KEY`.
+
+**Opção 2: Usando o script**
+```bash
+./scripts/start-backend-dev-studio.sh
+```
+
+**Opção 3: Manualmente**
+```bash
+cd /workspace/backend
+export GEMINI_API_KEY="sua-chave-gemini-aqui"
+go run ./cmd/api
+```
+
+**Você deve ver:**
+```
+✅ Rotas do Dev Studio registradas
+```
+
+**Se aparecer:**
+```
+⚠️ GEMINI_API_KEY não configurada: Dev Studio desabilitado
+```
+
+Configure a variável de ambiente (passo 1).
+
+### 3. Iniciar o Frontend (em outro terminal)
+
+```bash
+cd /workspace/frontend
+npm run dev
+```
+
+### 4. Acessar o Dev Studio
+
+1. Abra `http://localhost:3000`
+2. Faça login:
+   - **Email**: `admin@ceialmilk.com`
+   - **Senha**: `admin123`
+3. Acesse `/dev-studio` na URL ou pelo menu
+
+### 5. Testar
+
+No chat do Dev Studio, digite:
+```
+Crie um endpoint GET /api/v1/animais para listar todos os animais
+```
+
+A IA deve gerar o código seguindo os padrões do CeialMilk!
+
+## 🔍 Verificação Rápida
+
+Execute o script de verificação:
+```bash
+./scripts/verify-dev-studio.sh
+```
+
+## 📝 Notas Importantes
+
+1. **Migrações**: São executadas automaticamente ao iniciar o backend
+2. **Perfil DEVELOPER**: A migração `6_update_admin_to_developer.up.sql` atualiza automaticamente o admin para DEVELOPER
+3. **Rate Limiting**: 5 requests/hora por usuário (MVP)
+4. **Memory Bank**: O sistema carrega automaticamente os arquivos de `memory-bank/` para contexto
+
+## 🐛 Problemas Comuns
+
+### Backend não inicia
+- Verifique se o banco está rodando: `docker ps`
+- Verifique `DATABASE_URL` no devcontainer
+
+### "Acesso negado. Perfil DEVELOPER necessário"
+- Execute manualmente:
+  ```sql
+  UPDATE usuarios SET perfil = 'DEVELOPER' WHERE email = 'admin@ceialmilk.com';
+  ```
+
+### Erro ao gerar código
+- Verifique se `GEMINI_API_KEY` está correta
+- Verifique os logs do backend para detalhes
+- Limite do free tier: 1.500 requests/dia
+
+## 🎉 Pronto!
+
+O Dev Studio está configurado e pronto para uso!
+
+---
+
+**Última atualização**: 2026-01-25

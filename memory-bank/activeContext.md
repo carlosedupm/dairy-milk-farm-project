@@ -15,12 +15,13 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
   - Logging estruturado JSON com correlation IDs, método, path, status, latency
   - Sentry integrado para captura de erros e panics
   - Middleware de logging automático para todas as requisições
-- **Migrações**: golang-migrate no startup; seed do usuário admin (V3); refresh tokens (V4)
+- **Migrações**: golang-migrate no startup; seed do usuário admin (V3); refresh tokens (V4); Dev Studio (V5, V6)
 - **Postman**: Rotas compatíveis com a collection (`/api/auth/*`, `/api/v1/fazendas/*`)
 - **Frontend + Backend**: Integração validada — login, listagem, criar/editar/excluir fazendas (dev e **produção** Vercel + Render)
 - **Devcontainer**: `DATABASE_URL` e `PORT` pré-configurados; backend via `go run ./cmd/api`
 - **Resiliência**: Se o Postgres falhar (ex.: pg_hba), o backend sobe e expõe apenas `GET /health`; auth/fazendas ficam inativos até o DB estar ok
 - **Postgres no compose**: `scripts/db/init-pg-hba.sh` + `ssl=off` para aceitar conexões do devcontainer (após recriar o volume)
+- **Dev Studio (MVP)**: Área de desenvolvimento interativa com IA integrada — geração de código via Gemini API, validação sintática, preview e histórico
 
 ### 🚧 Em andamento:
 - **Testes**: Backend e frontend
@@ -36,9 +37,11 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 8. ✅ **Deploy Vercel (preparação)**: Build de produção validado; `deploy-notes.md` com checklist e passos para deploy manual via Dashboard
 9. ✅ **401 pós-login em produção**: Cookies com SameSite=None quando `CORS_ORIGIN` ≠ localhost; `AuthHandler` recebe `cookieSameSite`; `deploy-notes` com troubleshooting
 10. ✅ **Deploy frontend Vercel**: Deploy manual concluído; login, validate e CRUD validados em produção
+11. ✅ **Dev Studio MVP (Fase 0)**: Implementação completa do Dev Studio — backend (Go) com integração Gemini API, frontend (Next.js) com chat e preview, validação sintática, rate limiting, auditoria completa. Funcional e testado em produção.
 
 ### 📋 Próximos passos imediatos:
-1. Testes automatizados (E2E ou unitários)
+1. **Dev Studio - Fase 1**: Automação de PRs via GitHub API (opcional)
+2. Testes automatizados (E2E ou unitários)
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -77,14 +80,14 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ## 📊 Métricas de Progresso
 
-### **Completude Geral**: 70%
-- **Infraestrutura**: 90% ✅ (backend + frontend em produção)
-- **Documentação**: 90% ✅
-- **Implementação**: 70% 🚧
+### **Completude Geral**: 75%
+- **Infraestrutura**: 95% ✅ (backend + frontend em produção + Dev Studio)
+- **Documentação**: 95% ✅ (incluindo Dev Studio)
+- **Implementação**: 75% 🚧 (Dev Studio MVP concluído)
 - **Testes**: 0% 🚧
 - **Deploy**: 90% ✅ (backend Render + frontend Vercel; login e CRUD validados no ar)
 
 ---
 
-**Última atualização**: 2026-01-25
-**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar
+**Última atualização**: 2026-01-26
+**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar | Dev Studio MVP implementado e funcionando

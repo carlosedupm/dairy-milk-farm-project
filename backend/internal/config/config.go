@@ -13,6 +13,7 @@ type Config struct {
 	JWTPublicKey  string
 	CORSOrigin    string
 	SentryDSN     string
+	GeminiAPIKey  string
 }
 
 func Load() *Config {
@@ -25,6 +26,7 @@ func Load() *Config {
 		JWTPublicKey:  getEnv("JWT_PUBLIC_KEY", ""),
 		CORSOrigin:    getEnv("CORS_ORIGIN", "http://localhost:3000"),
 		SentryDSN:     getEnv("SENTRY_DSN", ""),
+		GeminiAPIKey:  getEnv("GEMINI_API_KEY", ""),
 	}
 }
 

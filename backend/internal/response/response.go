@@ -36,6 +36,8 @@ const (
 	CodeConflict        = "CONFLICT"
 	CodeInternalError   = "INTERNAL_ERROR"
 	CodeBadRequest      = "BAD_REQUEST"
+	CodeQuotaExceeded   = "QUOTA_EXCEEDED"
+	CodeServiceUnavailable = "SERVICE_UNAVAILABLE"
 )
 
 // Success retorna uma resposta de sucesso padronizada
@@ -102,4 +104,19 @@ func ErrorValidation(c *gin.Context, message string, details interface{}) {
 // ErrorInternal retorna uma resposta 500 Internal Server Error padronizada
 func ErrorInternal(c *gin.Context, message string, details interface{}) {
 	Error(c, http.StatusInternalServerError, CodeInternalError, message, details)
+}
+
+// ErrorTooManyRequests retorna uma resposta 429 Too Many Requests padronizada
+func ErrorTooManyRequests(c *gin.Context, message string) {
+	Error(c, http.StatusTooManyRequests, "TOO_MANY_REQUESTS", message, nil)
+}
+
+// ErrorQuotaExceeded retorna uma resposta 429 Quota Exceeded padronizada
+func ErrorQuotaExceeded(c *gin.Context, message string, details interface{}) {
+	Error(c, http.StatusTooManyRequests, CodeQuotaExceeded, message, details)
+}
+
+// ErrorServiceUnavailable retorna uma resposta 503 Service Unavailable padronizada
+func ErrorServiceUnavailable(c *gin.Context, message string, details interface{}) {
+	Error(c, http.StatusServiceUnavailable, CodeServiceUnavailable, message, details)
 }

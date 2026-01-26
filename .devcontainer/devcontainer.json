@@ -8,6 +8,9 @@
     "DATABASE_URL": "postgres://ceialmilk:password@db:5432/ceialmilk?sslmode=disable",
     "PORT": "8080"
   },
+  "remoteEnv": {
+    "GEMINI_API_KEY": "${localEnv:GEMINI_API_KEY}"
+  },
   "customizations": {
     "vscode": {
       "extensions": [

@@ -42,6 +42,24 @@ Este projeto utiliza uma arquitetura **monorepo** com separação clara entre ba
 - Docker e Docker Compose
 - PostgreSQL 15 (ou usar Docker Compose)
 
+## 🔑 Variáveis de Ambiente
+
+**⚠️ IMPORTANTE**: Nunca commite chaves de API ou credenciais reais no repositório!
+
+1. Copie o arquivo `.env.example` para `.env` na raiz do projeto:
+```bash
+cp .env.example .env
+```
+
+2. Preencha o arquivo `.env` com suas credenciais reais:
+   - `GEMINI_API_KEY`: Obtenha em https://ai.google.dev/ (necessário para Dev Studio)
+   - `DATABASE_URL`: URL de conexão do PostgreSQL
+   - Outras variáveis conforme necessário
+
+3. O arquivo `.env` está no `.gitignore` e não será versionado.
+
+**Para DevContainer**: Configure `GEMINI_API_KEY` no seu ambiente local antes de abrir o container, ou use o arquivo `.env`.
+
 ## 🛠️ Desenvolvimento Local
 
 ### Backend

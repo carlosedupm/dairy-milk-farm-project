@@ -29,6 +29,13 @@ func main() {
 	cfg := config.Load()
 	logger.Setup(cfg.LogLevel)
 
+	// Obter working directory para paths relativos
+	wd, err := os.Getwd()
+	if err != nil {
+		slog.Warn("Erro ao obter working directory", "error", err)
+		wd = "."
+	}
+
 	slog.Info("Iniciando CeialMilk API",
 		"version", "1.0.0",
 		"port", cfg.Port,
@@ -124,6 +131,56 @@ func main() {
 						v1.POST("", fazendaHandler.Create)
 						v1.PUT("/:id", fazendaHandler.Update)
 						v1.DELETE("/:id", fazendaHandler.Delete)
+					}
+
+					// Dev Studio routes (apenas se Gemini API key estiver configurada)
+					if cfg.GeminiAPIKey != "" {
+						devStudioRepo := repository.NewDevStudioRepository(pool)
+						// Memory-bank está na raiz do projeto (workspace/memory-bank)
+						// wd pode ser /workspace/backend ou /workspace/backend/cmd/api
+						// Normalizar para /workspace primeiro
+						workspaceRoot := wd
+						for {
+							if filepath.Base(workspaceRoot) == "workspace" {
+								break
+							}
+							parent := filepath.Dir(workspaceRoot)
+							if parent == workspaceRoot {
+								// Chegou na raiz, usar caminho relativo
+								workspaceRoot = wd
+								break
+							}
+							workspaceRoot = parent
+						}
+						memoryBankPath := filepath.Join(workspaceRoot, "memory-bank")
+						// Normalizar o path
+						memoryBankPath, err = filepath.Abs(memoryBankPath)
+						if err != nil {
+							slog.Warn("Erro ao obter path do memory-bank", "error", err)
+							memoryBankPath = filepath.Join(wd, "..", "..", "memory-bank")
+						}
+						slog.Info("Memory-bank path configurado", "path", memoryBankPath)
+						devStudioSvc := service.NewDevStudioService(devStudioRepo, cfg.GeminiAPIKey, memoryBankPath)
+						devStudioHandler := handlers.NewDevStudioHandler(devStudioSvc)
+
+						devStudio := api.Group("/v1/dev-studio",
+							middleware.CorrelationIDMiddleware(),
+							middleware.StructuredLoggingMiddleware(),
+							middleware.SentryRecoveryMiddleware(),
+							auth.AuthMiddleware(jwtSvc),
+							auth.RequireDeveloper(),
+							middleware.DevStudioRateLimit(),
+						)
+						{
+							devStudio.POST("/chat", devStudioHandler.Chat)
+							devStudio.POST("/validate/:request_id", devStudioHandler.Validate)
+							devStudio.GET("/history", devStudioHandler.History)
+							devStudio.GET("/status/:id", devStudioHandler.Status)
+						}
+
+						slog.Info("Rotas do Dev Studio registradas")
+					} else {
+						slog.Warn("GEMINI_API_KEY não configurada: Dev Studio desabilitado")
 					}
 
 					slog.Info("Rotas de API registradas")

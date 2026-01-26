@@ -48,3 +48,16 @@ func AuthMiddleware(jwtService *JWTService) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// RequireDeveloper verifica se o usuário tem perfil DEVELOPER
+func RequireDeveloper() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		perfil, exists := c.Get("perfil")
+		if !exists || perfil != "DEVELOPER" {
+			response.ErrorForbidden(c, "Acesso negado. Perfil DEVELOPER necessário.")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
