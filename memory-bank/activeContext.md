@@ -21,7 +21,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 - **Devcontainer**: `DATABASE_URL` e `PORT` pré-configurados; backend via `go run ./cmd/api`
 - **Resiliência**: Se o Postgres falhar (ex.: pg_hba), o backend sobe e expõe apenas `GET /health`; auth/fazendas ficam inativos até o DB estar ok
 - **Postgres no compose**: `scripts/db/init-pg-hba.sh` + `ssl=off` para aceitar conexões do devcontainer (após recriar o volume)
-- **Dev Studio (MVP)**: Área de desenvolvimento interativa com IA integrada — geração de código via Gemini API, validação sintática, preview e histórico
+- **Dev Studio (Fase 0 + Fase 1)**: Área de desenvolvimento interativa com IA integrada — geração de código via Gemini API, validação sintática, preview, histórico e criação automática de Pull Requests via GitHub API
 
 ### 🚧 Em andamento:
 - **Testes**: Backend e frontend
@@ -38,9 +38,10 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 9. ✅ **401 pós-login em produção**: Cookies com SameSite=None quando `CORS_ORIGIN` ≠ localhost; `AuthHandler` recebe `cookieSameSite`; `deploy-notes` com troubleshooting
 10. ✅ **Deploy frontend Vercel**: Deploy manual concluído; login, validate e CRUD validados em produção
 11. ✅ **Dev Studio MVP (Fase 0)**: Implementação completa do Dev Studio — backend (Go) com integração Gemini API, frontend (Next.js) com chat e preview, validação sintática, rate limiting, auditoria completa. Funcional e testado em produção.
+12. ✅ **Dev Studio Fase 1**: Automação de PRs via GitHub API — criação automática de branches, commits e Pull Requests. Integração completa com GitHub API REST, componente PRStatus no frontend, fluxo completo de validação → PR.
 
 ### 📋 Próximos passos imediatos:
-1. **Dev Studio - Fase 1**: Automação de PRs via GitHub API (opcional)
+1. **Dev Studio - Fase 2**: RAG dinâmico e monitoramento
 2. Testes automatizados (E2E ou unitários)
 
 ## 🛠️ Decisões Técnicas Ativas
@@ -90,4 +91,4 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 ---
 
 **Última atualização**: 2026-01-26
-**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar | Dev Studio MVP implementado e funcionando
+**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 implementado e funcionando

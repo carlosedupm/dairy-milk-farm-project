@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { ChatInterface } from '@/components/dev-studio/ChatInterface'
 import { CodePreview } from '@/components/dev-studio/CodePreview'
+import { PRStatus } from '@/components/dev-studio/PRStatus'
 import { useAuth } from '@/contexts/AuthContext'
 import type { CodeGenerationResponse } from '@/services/devStudio'
 
@@ -32,7 +33,7 @@ export default function DevStudioPage() {
       <div className="container mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">Dev Studio</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-12rem)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div>
             <ChatInterface onCodeGenerated={setCurrentCode} />
           </div>
@@ -40,6 +41,17 @@ export default function DevStudioPage() {
             <CodePreview code={currentCode} onCodeUpdated={setCurrentCode} />
           </div>
         </div>
+
+        {currentCode?.pr_number && currentCode.pr_url && (
+          <div className="mt-6">
+            <PRStatus
+              prNumber={currentCode.pr_number}
+              prURL={currentCode.pr_url}
+              branchName={currentCode.branch_name}
+              status={currentCode.status}
+            />
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   )

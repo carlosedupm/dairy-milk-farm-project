@@ -171,3 +171,63 @@ func (h *DevStudioHandler) Status(c *gin.Context) {
 
 	response.SuccessOK(c, status, "Status recuperado com sucesso")
 }
+
+// Implement cria Pull Request no GitHub
+func (h *DevStudioHandler) Implement(c *gin.Context) {
+	idStr := c.Param("request_id")
+	requestID, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.ErrorValidation(c, "ID inválido", err.Error())
+		return
+	}
+
+	userID := c.GetInt64("user_id")
+
+	// Verificar perfil DEVELOPER
+	perfil, exists := c.Get("perfil")
+	if !exists || perfil != "DEVELOPER" {
+		response.ErrorForbidden(c, "Acesso negado. Perfil DEVELOPER necessário.")
+		return
+	}
+
+	// Buscar request para verificar se pertence ao usuário
+	request, err := h.devStudioSvc.GetStatus(c.Request.Context(), requestID)
+	if err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{
+			"action": "get_request_before_implement",
+		})
+		response.ErrorNotFound(c, "Request não encontrado")
+		return
+	}
+
+	if request.UserID != userID {
+		response.ErrorForbidden(c, "Acesso negado. Request não pertence ao usuário.")
+		return
+	}
+
+	// Implementar (criar PR)
+	if err := h.devStudioSvc.Implement(c.Request.Context(), requestID); err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{
+			"action": "implement",
+		})
+		response.ErrorInternal(c, "Erro ao criar Pull Request", err.Error())
+		return
+	}
+
+	// Buscar request atualizado para retornar PR info
+	updatedRequest, err := h.devStudioSvc.GetStatus(c.Request.Context(), requestID)
+	if err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{
+			"action": "get_status_after_implement",
+		})
+		// Mesmo com erro ao buscar, retornar sucesso pois PR foi criado
+		response.SuccessOK(c, gin.H{
+			"request_id": requestID,
+			"status":     "implemented",
+			"message":    "Pull Request criado com sucesso",
+		}, "Pull Request criado com sucesso")
+		return
+	}
+
+	response.SuccessOK(c, updatedRequest, "Pull Request criado com sucesso")
+}

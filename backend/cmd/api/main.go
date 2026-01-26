@@ -160,7 +160,17 @@ func main() {
 							memoryBankPath = filepath.Join(wd, "..", "..", "memory-bank")
 						}
 						slog.Info("Memory-bank path configurado", "path", memoryBankPath)
-						devStudioSvc := service.NewDevStudioService(devStudioRepo, cfg.GeminiAPIKey, memoryBankPath)
+						
+						// GitHub Service (opcional - apenas se configurado)
+						var githubSvc *service.GitHubService
+						if cfg.GitHubToken != "" && cfg.GitHubRepo != "" {
+							githubSvc = service.NewGitHubService(cfg.GitHubToken, cfg.GitHubRepo)
+							slog.Info("GitHub Service configurado", "repo", cfg.GitHubRepo)
+						} else {
+							slog.Warn("GitHub não configurado (GITHUB_TOKEN ou GITHUB_REPO não definidos). Funcionalidade de PRs desabilitada.")
+						}
+						
+						devStudioSvc := service.NewDevStudioService(devStudioRepo, cfg.GeminiAPIKey, memoryBankPath, githubSvc)
 						devStudioHandler := handlers.NewDevStudioHandler(devStudioSvc)
 
 						devStudio := api.Group("/v1/dev-studio",
@@ -174,6 +184,7 @@ func main() {
 						{
 							devStudio.POST("/chat", devStudioHandler.Chat)
 							devStudio.POST("/validate/:request_id", devStudioHandler.Validate)
+							devStudio.POST("/implement/:request_id", devStudioHandler.Implement)
 							devStudio.GET("/history", devStudioHandler.History)
 							devStudio.GET("/status/:id", devStudioHandler.Status)
 						}

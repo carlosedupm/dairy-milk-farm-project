@@ -9,6 +9,9 @@ type DevStudioRequest struct {
 	Status      string                 `json:"status" db:"status"`
 	CodeChanges map[string]interface{} `json:"code_changes" db:"code_changes"` // JSONB
 	Error       *string                `json:"error,omitempty" db:"error"`
+	PRNumber    *int64                 `json:"pr_number,omitempty" db:"pr_number"`
+	PRURL       *string                 `json:"pr_url,omitempty" db:"pr_url"`
+	BranchName  *string                 `json:"branch_name,omitempty" db:"branch_name"`
 	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time              `json:"updated_at" db:"updated_at"`
 }

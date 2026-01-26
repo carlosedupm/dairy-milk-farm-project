@@ -21,9 +21,10 @@ import (
 )
 
 type DevStudioService struct {
-	repo          *repository.DevStudioRepository
-	geminiAPIKey  string
+	repo           *repository.DevStudioRepository
+	geminiAPIKey   string
 	memoryBankPath string
+	githubService  *GitHubService
 }
 
 type CodeGenerationResponse struct {
@@ -33,11 +34,12 @@ type CodeGenerationResponse struct {
 	Status      string                 `json:"status"`
 }
 
-func NewDevStudioService(repo *repository.DevStudioRepository, geminiAPIKey, memoryBankPath string) *DevStudioService {
+func NewDevStudioService(repo *repository.DevStudioRepository, geminiAPIKey, memoryBankPath string, githubService *GitHubService) *DevStudioService {
 	return &DevStudioService{
-		repo:          repo,
-		geminiAPIKey:  geminiAPIKey,
+		repo:           repo,
+		geminiAPIKey:   geminiAPIKey,
 		memoryBankPath: memoryBankPath,
+		githubService: githubService,
 	}
 }
 
@@ -351,4 +353,111 @@ func (s *DevStudioService) GetHistory(ctx context.Context, userID int64) ([]*mod
 
 func (s *DevStudioService) GetStatus(ctx context.Context, requestID int64) (*models.DevStudioRequest, error) {
 	return s.repo.GetByID(ctx, requestID)
+}
+
+func (s *DevStudioService) Implement(ctx context.Context, requestID int64) error {
+	// 1. Buscar request por ID
+	request, err := s.repo.GetByID(ctx, requestID)
+	if err != nil {
+		return fmt.Errorf("erro ao buscar request: %w", err)
+	}
+
+	// 2. Validar que status é "validated"
+	if request.Status != "validated" {
+		return fmt.Errorf("código deve estar validado antes de criar PR. Status atual: %s", request.Status)
+	}
+
+	// 3. Verificar se GitHub Service está configurado
+	if s.githubService == nil {
+		return fmt.Errorf("GitHub não configurado. Configure GITHUB_TOKEN e GITHUB_REPO")
+	}
+
+	// 4. Extrair code_changes (files)
+	filesInterface, ok := request.CodeChanges["files"]
+	if !ok {
+		return fmt.Errorf("código não encontrado no request")
+	}
+
+	filesMap, ok := filesInterface.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("formato de files inválido")
+	}
+
+	// Converter para map[string]string
+	files := make(map[string]string)
+	for path, contentInterface := range filesMap {
+		content, ok := contentInterface.(string)
+		if !ok {
+			return fmt.Errorf("conteúdo do arquivo %s inválido", path)
+		}
+		files[path] = content
+	}
+
+	// 5. Gerar nome de branch único
+	branchName := fmt.Sprintf("dev-studio/request-%d-%d", requestID, time.Now().Unix())
+
+	// 6. Gerar título e body do PR
+	explanation := ""
+	if exp, ok := request.CodeChanges["explanation"].(string); ok {
+		explanation = exp
+	}
+
+	prTitle := fmt.Sprintf("Dev Studio: %s", request.Prompt)
+	if len(prTitle) > 100 {
+		prTitle = prTitle[:97] + "..."
+	}
+
+	prBody := fmt.Sprintf("Código gerado via Dev Studio\n\n**Prompt:** %s\n\n**Explicação:** %s\n\n**Request ID:** %d", 
+		request.Prompt, explanation, requestID)
+
+	// 7. Chamar GitHubService.CreatePR()
+	pr, err := s.githubService.CreatePR(ctx, branchName, files, prTitle, prBody)
+	if err != nil {
+		observability.CaptureError(err, map[string]string{
+			"action":     "create_pr",
+			"request_id": fmt.Sprintf("%d", requestID),
+		}, map[string]interface{}{
+			"request_id": requestID,
+			"branch":     branchName,
+			"files_count": len(files),
+		})
+		return fmt.Errorf("erro ao criar Pull Request: %w", err)
+	}
+
+	// 8. Atualizar request com PR info
+	prNumber := int64(pr.Number)
+	request.PRNumber = &prNumber
+	request.PRURL = &pr.URL
+	request.BranchName = &branchName
+	request.Status = "implemented"
+
+	if err := s.repo.Update(ctx, request); err != nil {
+		return fmt.Errorf("erro ao atualizar request: %w", err)
+	}
+
+	// 9. Registrar auditoria
+	audit := &models.DevStudioAudit{
+		RequestID: &requestID,
+		UserID:    request.UserID,
+		Action:    "implement",
+		Details: map[string]interface{}{
+			"request_id": requestID,
+			"pr_number":  pr.Number,
+			"pr_url":     pr.URL,
+			"branch":     branchName,
+			"files_count": len(files),
+		},
+	}
+	if err := s.repo.CreateAudit(ctx, audit); err != nil {
+		slog.Warn("Erro ao criar auditoria", "error", err)
+	}
+
+	slog.Info("Pull Request criado com sucesso",
+		"request_id", requestID,
+		"pr_number", pr.Number,
+		"pr_url", pr.URL,
+		"branch", branchName,
+	)
+
+	return nil
 }

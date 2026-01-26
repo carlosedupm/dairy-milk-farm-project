@@ -10,6 +10,9 @@ export type DevStudioRequest = {
     explanation?: string
   }
   error?: string | null
+  pr_number?: number | null
+  pr_url?: string | null
+  branch_name?: string | null
   created_at: string
   updated_at: string
 }
@@ -19,6 +22,9 @@ export type CodeGenerationResponse = {
   files: Record<string, string>
   explanation: string
   status: string
+  pr_number?: number | null
+  pr_url?: string | null
+  branch_name?: string | null
 }
 
 type ApiResponse<T> = { data: T }
@@ -47,6 +53,14 @@ export async function getHistory(): Promise<DevStudioRequest[]> {
 
 export async function getStatus(id: number): Promise<DevStudioRequest> {
   const { data } = await api.get<ApiResponse<DevStudioRequest>>(`/api/v1/dev-studio/status/${id}`)
+  if (!data.data) throw new Error('Resposta inválida')
+  return data.data
+}
+
+export async function implement(requestId: number): Promise<DevStudioRequest> {
+  const { data } = await api.post<ApiResponse<DevStudioRequest>>(
+    `/api/v1/dev-studio/implement/${requestId}`
+  )
   if (!data.data) throw new Error('Resposta inválida')
   return data.data
 }

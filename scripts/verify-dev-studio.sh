@@ -3,13 +3,40 @@
 echo "🔍 Verificando configuração do Dev Studio..."
 echo ""
 
-# Verificar variável de ambiente
+# Carregar .env se existir
+if [ -f /workspace/.env ]; then
+    echo "📄 Carregando variáveis de .env..."
+    export $(grep -v '^#' /workspace/.env | xargs)
+fi
+
+# Verificar variável de ambiente Gemini
 if [ -z "$GEMINI_API_KEY" ]; then
     echo "❌ GEMINI_API_KEY não está configurada"
     echo "   Configure com: export GEMINI_API_KEY='sua-chave'"
+    echo "   Ou adicione ao arquivo .env"
     exit 1
 else
-    echo "✅ GEMINI_API_KEY configurada"
+    # Mostrar apenas primeiros e últimos caracteres por segurança
+    GEMINI_MASKED="${GEMINI_API_KEY:0:7}...${GEMINI_API_KEY: -4}"
+    echo "✅ GEMINI_API_KEY configurada ($GEMINI_MASKED)"
+fi
+
+# Verificar variáveis do GitHub (opcionais)
+echo ""
+echo "🔗 Verificando configuração do GitHub (opcional)..."
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "ℹ️  GITHUB_TOKEN não configurado (PRs automáticos desabilitados)"
+    echo "   Configure GITHUB_TOKEN no .env para habilitar criação de PRs"
+else
+    GITHUB_MASKED="${GITHUB_TOKEN:0:7}...${GITHUB_TOKEN: -4}"
+    echo "✅ GITHUB_TOKEN configurado ($GITHUB_MASKED)"
+    
+    if [ -z "$GITHUB_REPO" ]; then
+        echo "⚠️  GITHUB_REPO não configurado"
+        echo "   Configure GITHUB_REPO no formato owner/repo (ex: usuario/ceialmilk)"
+    else
+        echo "✅ GITHUB_REPO configurado: $GITHUB_REPO"
+    fi
 fi
 
 # Verificar se o banco está acessível

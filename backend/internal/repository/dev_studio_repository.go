@@ -44,7 +44,7 @@ func (r *DevStudioRepository) CreateRequest(ctx context.Context, request *models
 
 func (r *DevStudioRepository) GetByID(ctx context.Context, id int64) (*models.DevStudioRequest, error) {
 	query := `
-		SELECT id, user_id, prompt, status, code_changes, error, created_at, updated_at
+		SELECT id, user_id, prompt, status, code_changes, error, pr_number, pr_url, branch_name, created_at, updated_at
 		FROM dev_studio_requests
 		WHERE id = $1
 	`
@@ -60,6 +60,9 @@ func (r *DevStudioRepository) GetByID(ctx context.Context, id int64) (*models.De
 		&request.Status,
 		&codeChangesJSON,
 		&errorStr,
+		&request.PRNumber,
+		&request.PRURL,
+		&request.BranchName,
 		&request.CreatedAt,
 		&request.UpdatedAt,
 	)
@@ -92,8 +95,8 @@ func (r *DevStudioRepository) Update(ctx context.Context, request *models.DevStu
 
 	query := `
 		UPDATE dev_studio_requests
-		SET status = $1, code_changes = $2::jsonb, error = $3, updated_at = $4
-		WHERE id = $5
+		SET status = $1, code_changes = $2::jsonb, error = $3, pr_number = $4, pr_url = $5, branch_name = $6, updated_at = $7
+		WHERE id = $8
 	`
 
 	_, err = r.db.Exec(
@@ -102,6 +105,9 @@ func (r *DevStudioRepository) Update(ctx context.Context, request *models.DevStu
 		request.Status,
 		codeChangesJSON,
 		request.Error,
+		request.PRNumber,
+		request.PRURL,
+		request.BranchName,
 		time.Now(),
 		request.ID,
 	)
@@ -111,7 +117,7 @@ func (r *DevStudioRepository) Update(ctx context.Context, request *models.DevStu
 
 func (r *DevStudioRepository) GetByUserID(ctx context.Context, userID int64) ([]*models.DevStudioRequest, error) {
 	query := `
-		SELECT id, user_id, prompt, status, code_changes, error, created_at, updated_at
+		SELECT id, user_id, prompt, status, code_changes, error, pr_number, pr_url, branch_name, created_at, updated_at
 		FROM dev_studio_requests
 		WHERE user_id = $1
 		ORDER BY created_at DESC
@@ -136,6 +142,9 @@ func (r *DevStudioRepository) GetByUserID(ctx context.Context, userID int64) ([]
 			&request.Status,
 			&codeChangesJSON,
 			&errorStr,
+			&request.PRNumber,
+			&request.PRURL,
+			&request.BranchName,
 			&request.CreatedAt,
 			&request.UpdatedAt,
 		)

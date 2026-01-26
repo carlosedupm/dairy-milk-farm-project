@@ -15,6 +15,9 @@ export function CodePreview({ code, onCodeUpdated }: CodePreviewProps) {
   const [validating, setValidating] = useState(false)
   const [validationStatus, setValidationStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [validationError, setValidationError] = useState('')
+  const [implementing, setImplementing] = useState(false)
+  const [implementationStatus, setImplementationStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [implementationError, setImplementationError] = useState('')
 
   const handleValidate = async () => {
     if (!code) return
@@ -36,6 +39,9 @@ export function CodePreview({ code, onCodeUpdated }: CodePreviewProps) {
           files: files || code.files,
           explanation: updatedRequest.code_changes?.explanation as string || code.explanation,
           status: updatedRequest.status,
+          pr_number: updatedRequest.pr_number,
+          pr_url: updatedRequest.pr_url,
+          branch_name: updatedRequest.branch_name,
         }
         onCodeUpdated(updatedCode)
       }
@@ -49,6 +55,44 @@ export function CodePreview({ code, onCodeUpdated }: CodePreviewProps) {
       setValidationError(errorMessage ?? 'Erro ao validar código.')
     } finally {
       setValidating(false)
+    }
+  }
+
+  const handleImplement = async () => {
+    if (!code) return
+
+    setImplementing(true)
+    setImplementationStatus('idle')
+    setImplementationError('')
+
+    try {
+      const updatedRequest = await devStudioService.implement(code.request_id)
+      setImplementationStatus('success')
+      
+      // Atualizar código com informações do PR
+      if (onCodeUpdated) {
+        const files = updatedRequest.code_changes?.files as Record<string, string> | undefined
+        const updatedCode: CodeGenerationResponse = {
+          request_id: updatedRequest.id,
+          files: files || code.files,
+          explanation: updatedRequest.code_changes?.explanation as string || code.explanation,
+          status: updatedRequest.status,
+          pr_number: updatedRequest.pr_number,
+          pr_url: updatedRequest.pr_url,
+          branch_name: updatedRequest.branch_name,
+        }
+        onCodeUpdated(updatedCode)
+      }
+    } catch (err: unknown) {
+      setImplementationStatus('error')
+      const errorMessage =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { error?: { message?: string } } } }).response?.data
+              ?.error?.message
+          : 'Erro ao criar Pull Request.'
+      setImplementationError(errorMessage ?? 'Erro ao criar Pull Request.')
+    } finally {
+      setImplementing(false)
     }
   }
 
@@ -91,21 +135,47 @@ export function CodePreview({ code, onCodeUpdated }: CodePreviewProps) {
           ))}
         </div>
 
-        <div className="flex gap-2 items-center">
-          <Button onClick={handleValidate} disabled={validating || !code}>
-            {validating ? 'Validando...' : 'Validar Código'}
-          </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2 items-center">
+            <Button onClick={handleValidate} disabled={validating || !code}>
+              {validating ? 'Validando...' : 'Validar Código'}
+            </Button>
+            {validationStatus === 'success' && code.status === 'validated' && !code.pr_number && (
+              <Button onClick={handleImplement} disabled={implementing} variant="default">
+                {implementing ? 'Criando PR...' : 'Criar PR'}
+              </Button>
+            )}
+          </div>
+          
           {validationStatus === 'success' && (
             <span className="text-sm text-green-600">✓ Código validado com sucesso</span>
           )}
           {validationStatus === 'error' && (
             <span className="text-sm text-destructive">{validationError}</span>
           )}
+          
+          {implementationStatus === 'success' && code.pr_number && code.pr_url && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm font-semibold text-green-900 mb-1">✓ Pull Request criado!</p>
+              <a
+                href={code.pr_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Ver PR #{code.pr_number} no GitHub →
+              </a>
+            </div>
+          )}
+          {implementationStatus === 'error' && (
+            <span className="text-sm text-destructive">{implementationError}</span>
+          )}
         </div>
 
         <div className="text-xs text-muted-foreground">
           <p>Status: {code.status}</p>
           <p>Request ID: {code.request_id}</p>
+          {code.branch_name && <p>Branch: {code.branch_name}</p>}
         </div>
       </CardContent>
     </Card>

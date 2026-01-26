@@ -7,9 +7,9 @@
 3. ✅ Banco de dados PostgreSQL rodando
 4. ✅ Chave da API Gemini configurada
 
-## Passo 1: Configurar Variável de Ambiente
+## Passo 1: Configurar Variáveis de Ambiente
 
-### No DevContainer (já configurado)
+### Gemini API (Obrigatório)
 
 A variável `GEMINI_API_KEY` deve ser configurada no seu ambiente. O devcontainer usa a variável do seu sistema local.
 
@@ -23,6 +23,25 @@ export GEMINI_API_KEY="sua-chave-gemini-aqui"
 ```
 
 **Obtenha sua chave em**: https://ai.google.dev/
+
+### GitHub API (Opcional - Para PRs Automáticos - Fase 1)
+
+Para habilitar a criação automática de Pull Requests, configure:
+
+1. **GITHUB_TOKEN**: Personal Access Token do GitHub com permissão `repo`
+   - Crie em: https://github.com/settings/tokens
+   - Permissões necessárias: `repo` (acesso completo ao repositório)
+
+2. **GITHUB_REPO**: Repositório no formato `owner/repo`
+   - Exemplo: `usuario/ceialmilk`
+
+**Configurar:**
+```bash
+export GITHUB_TOKEN="ghp_seu-token-aqui"
+export GITHUB_REPO="usuario/ceialmilk"
+```
+
+**Nota**: Se não configurar, o Dev Studio funcionará normalmente, mas a funcionalidade de criar PRs estará desabilitada.
 
 ## Passo 2: Executar Migrações
 
@@ -110,6 +129,20 @@ go run ./cmd/api  # As migrações são executadas automaticamente
 
 **Solução**: Verifique os logs do backend para mais detalhes.
 
+### ❌ Erro ao criar PR
+
+**Possíveis causas**:
+- `GITHUB_TOKEN` não configurado ou inválido
+- `GITHUB_REPO` não configurado ou formato inválido (deve ser `owner/repo`)
+- Token sem permissão `repo`
+- Repositório não existe ou não tem acesso
+
+**Solução**: 
+1. Verifique se `GITHUB_TOKEN` e `GITHUB_REPO` estão configurados
+2. Verifique se o token tem permissão `repo`
+3. Verifique se o formato do repositório está correto (`owner/repo`)
+4. Verifique os logs do backend para mais detalhes
+
 ## Teste Rápido
 
 1. Acesse `/dev-studio`
@@ -117,14 +150,15 @@ go run ./cmd/api  # As migrações são executadas automaticamente
 3. Aguarde a resposta da IA
 4. Revise o código gerado no preview
 5. Clique em "Validar Código"
+6. **(Opcional)** Se configurou GitHub, clique em "Criar PR" para criar um Pull Request automaticamente
 
 ## Próximos Passos
 
-Após validar o MVP, você pode implementar:
-- **Fase 1**: Automação de PRs via GitHub
-- **Fase 2**: RAG dinâmico e monitoramento
-- **Fase 3**: Sandbox e segurança avançada
+- ✅ **Fase 0 (MVP)**: Concluída - Geração de código, validação sintática, histórico
+- ✅ **Fase 1**: Concluída - Automação de PRs via GitHub
+- 🚧 **Fase 2**: RAG dinâmico e monitoramento
+- 🚧 **Fase 3**: Sandbox e segurança avançada (opcional)
 
 ---
 
-**Última atualização**: 2026-01-25
+**Última atualização**: 2026-01-26
