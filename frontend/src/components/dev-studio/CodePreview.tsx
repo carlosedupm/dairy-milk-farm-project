@@ -1,11 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import * as devStudioService from '@/services/devStudio'
 import type { CodeGenerationResponse } from '@/services/devStudio'
+import { Copy, Download } from 'lucide-react'
 
 const RATE_LIMIT_MSG =
   'Limite de requisições atingido (5/hora). Tente novamente mais tarde.'
@@ -36,6 +39,7 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
   const [refineFeedback, setRefineFeedback] = useState('')
   const [refining, setRefining] = useState(false)
   const [refineError, setRefineError] = useState('')
+  const [copiedPath, setCopiedPath] = useState<string | null>(null)
 
   const handleValidate = async () => {
     if (!code) return
@@ -135,6 +139,53 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
     }
   }
 
+  const getLanguageFromPath = (path: string): string => {
+    const ext = path.split('.').pop()?.toLowerCase()
+    const languageMap: Record<string, string> = {
+      'go': 'go',
+      'ts': 'typescript',
+      'tsx': 'tsx',
+      'js': 'javascript',
+      'jsx': 'jsx',
+      'json': 'json',
+      'md': 'markdown',
+      'sql': 'sql',
+      'yaml': 'yaml',
+      'yml': 'yaml',
+      'sh': 'bash',
+      'py': 'python',
+      'java': 'java',
+      'html': 'html',
+      'css': 'css',
+    }
+    return languageMap[ext || ''] || 'text'
+  }
+
+  const handleCopyCode = async (path: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopiedPath(path)
+      setTimeout(() => setCopiedPath(null), 2000)
+    } catch (error) {
+      console.error('Erro ao copiar código:', error)
+    }
+  }
+
+  const handleDownloadAll = () => {
+    if (!code) return
+
+    const zipContent: Record<string, string> = code.files
+    const blob = new Blob([JSON.stringify(zipContent, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `dev-studio-${code.request_id}-files.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   if (!code) {
     return (
       <Card className="h-full">
@@ -163,13 +214,54 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
           </div>
         )}
 
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-muted-foreground">
+            {Object.keys(code.files).length} arquivo(s) gerado(s)
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadAll}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Download Todos
+          </Button>
+        </div>
+
         <div className="flex-1 overflow-y-auto space-y-4 min-h-[200px] max-h-[600px]">
           {Object.entries(code.files).map(([path, content]) => (
             <div key={path} className="border rounded-md overflow-hidden">
-              <div className="bg-muted p-2 font-mono text-sm border-b">{path}</div>
-              <pre className="p-4 bg-background text-sm overflow-x-auto">
-                <code>{content}</code>
-              </pre>
+              <div className="bg-muted p-2 font-mono text-sm border-b flex items-center justify-between">
+                <span>{path}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCopyCode(path, content)}
+                  className="h-6 px-2 text-xs"
+                >
+                  {copiedPath === path ? (
+                    '✓ Copiado'
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copiar
+                    </>
+                  )}
+                </Button>
+              </div>
+              <SyntaxHighlighter
+                language={getLanguageFromPath(path)}
+                style={vscDarkPlus}
+                customStyle={{
+                  margin: 0,
+                  padding: '1rem',
+                  background: 'transparent',
+                }}
+                showLineNumbers
+              >
+                {content}
+              </SyntaxHighlighter>
             </div>
           ))}
         </div>

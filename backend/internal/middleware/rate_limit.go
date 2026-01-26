@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -64,12 +65,20 @@ func (rl *RateLimiter) cleanup() {
 
 // DevStudioRateLimit cria um middleware de rate limiting para Dev Studio
 // MVP: 5 requests/hora por usuário.
-// GET /api/v1/dev-studio/usage não consome o limite (apenas consulta de uso).
+// Endpoints GET de consulta não consomem o limite:
+// - GET /api/v1/dev-studio/usage (estatísticas de uso)
+// - GET /api/v1/dev-studio/history (histórico de requisições)
+// - GET /api/v1/dev-studio/status/:id (status de uma requisição específica)
 func DevStudioRateLimit() gin.HandlerFunc {
 	limiter := NewRateLimiter(5) // 5 requests/hora
 
 	return func(c *gin.Context) {
-		if c.Request.Method == "GET" && c.Request.URL.Path == "/api/v1/dev-studio/usage" {
+		// Endpoints de consulta não consomem rate limit
+		path := c.Request.URL.Path
+		if c.Request.Method == "GET" && 
+			(path == "/api/v1/dev-studio/usage" || 
+			 path == "/api/v1/dev-studio/history" ||
+			 strings.HasPrefix(path, "/api/v1/dev-studio/status/")) {
 			c.Next()
 			return
 		}

@@ -18,13 +18,31 @@ export function PRStatus({ prNumber, prURL, branchName, status }: PRStatusProps)
     switch (status) {
       case 'implemented':
         return (
-          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
             PR Aberto
+          </span>
+        )
+      case 'validated':
+        return (
+          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            Validado
+          </span>
+        )
+      case 'pending':
+        return (
+          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+            Pendente
+          </span>
+        )
+      case 'error':
+        return (
+          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+            Erro
           </span>
         )
       default:
         return (
-          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
             {status || 'Desconhecido'}
           </span>
         )

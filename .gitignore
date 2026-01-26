@@ -199,3 +199,6 @@ local-dev.yml
 
 # Test files (se necessário excluir)
 test-output/
+
+# Go debug binaries (Delve)
+**/__debug_bin*

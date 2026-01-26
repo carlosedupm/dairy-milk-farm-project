@@ -6,11 +6,13 @@ import { ChatInterface } from '@/components/dev-studio/ChatInterface'
 import { CodePreview } from '@/components/dev-studio/CodePreview'
 import { PRStatus } from '@/components/dev-studio/PRStatus'
 import { UsageAlert } from '@/components/dev-studio/UsageAlert'
+import { HistoryPanel } from '@/components/dev-studio/HistoryPanel'
 import { useAuth } from '@/contexts/AuthContext'
 import * as devStudioService from '@/services/devStudio'
-import type { CodeGenerationResponse, UsageStats } from '@/services/devStudio'
+import type { CodeGenerationResponse, UsageStats, DevStudioRequest } from '@/services/devStudio'
 
 const USAGE_REFRESH_MS = 90_000
+const PR_STATUS_REFRESH_MS = 30_000 // 30 segundos
 
 export default function DevStudioPage() {
   const { user } = useAuth()
@@ -34,6 +36,47 @@ export default function DevStudioPage() {
     const id = setInterval(fetchUsage, USAGE_REFRESH_MS)
     return () => clearInterval(id)
   }, [fetchUsage])
+
+  // Polling de status do PR
+  const fetchPRStatus = useCallback(async () => {
+    if (!currentCode?.request_id) return
+
+    try {
+      const status = await devStudioService.getStatus(currentCode.request_id)
+      // Atualizar apenas se houver mudanças relevantes
+      if (
+        status.status !== currentCode.status ||
+        status.pr_number !== currentCode.pr_number ||
+        status.pr_url !== currentCode.pr_url
+      ) {
+        const files = status.code_changes?.files as Record<string, string> | undefined
+        const explanation = status.code_changes?.explanation as string | undefined
+        
+        if (files && explanation) {
+          setCurrentCode({
+            request_id: status.id,
+            files,
+            explanation,
+            status: status.status,
+            pr_number: status.pr_number,
+            pr_url: status.pr_url,
+            branch_name: status.branch_name,
+          })
+        }
+      }
+    } catch (error) {
+      // Silenciosamente falhar - não queremos interromper a experiência
+      console.error('Erro ao buscar status do PR:', error)
+    }
+  }, [currentCode])
+
+  useEffect(() => {
+    if (!currentCode?.pr_number) return
+
+    fetchPRStatus()
+    const id = setInterval(fetchPRStatus, PR_STATUS_REFRESH_MS)
+    return () => clearInterval(id)
+  }, [currentCode?.pr_number, fetchPRStatus])
 
   // Verificar perfil DEVELOPER
   if (user?.perfil !== 'DEVELOPER') {
@@ -91,6 +134,29 @@ export default function DevStudioPage() {
             />
           </div>
         )}
+
+        <div className="mt-6">
+          <HistoryPanel
+            onSelectRequest={(request: DevStudioRequest) => {
+              // Converter DevStudioRequest para CodeGenerationResponse
+              const files = request.code_changes?.files as Record<string, string> | undefined
+              const explanation = request.code_changes?.explanation as string | undefined
+              
+              if (files && explanation) {
+                const codeResponse: CodeGenerationResponse = {
+                  request_id: request.id,
+                  files,
+                  explanation,
+                  status: request.status,
+                  pr_number: request.pr_number,
+                  pr_url: request.pr_url,
+                  branch_name: request.branch_name,
+                }
+                setCurrentCode(codeResponse)
+              }
+            }}
+          />
+        </div>
       </div>
     </ProtectedRoute>
   )
