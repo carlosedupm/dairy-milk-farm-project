@@ -135,6 +135,12 @@ Definidas no `docker-compose` para o serviço `ceialmilk-dev`:
 
 O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar localmente se necessário.
 
+## Estrutura de pastas atual
+
+- **Backend**: `backend/cmd/api`, `backend/internal/{handlers,service,repository,models,response,auth,middleware,config,observability}`, `backend/migrations`.
+- **Frontend**: `frontend/src/app`, `frontend/src/components/{fazendas,dev-studio,layout,ui}`, `frontend/src/services`, `frontend/src/contexts`, `frontend/src/lib`.
+- **Referência de CRUD**: Fazenda (handler → service → repository → model). Ver `memory-bank/systemPatterns.md` para padrões e estrutura detalhada.
+
 ## Vantagens da Nova Stack
 
 ### Performance
@@ -154,5 +160,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-01-25
-**Stack**: Go + Next.js 16 (Atualizado para Next.js 16.1.4 e React 19)
+**Última atualização**: 2026-01-26
+**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — Estrutura de pastas atual documentada

@@ -170,7 +170,7 @@ func main() {
 							slog.Warn("GitHub não configurado (GITHUB_TOKEN ou GITHUB_REPO não definidos). Funcionalidade de PRs desabilitada.")
 						}
 						
-						devStudioSvc := service.NewDevStudioService(devStudioRepo, cfg.GeminiAPIKey, memoryBankPath, githubSvc)
+						devStudioSvc := service.NewDevStudioService(devStudioRepo, cfg.GeminiAPIKey, memoryBankPath, githubSvc, cfg.GitHubContextBranch)
 						devStudioHandler := handlers.NewDevStudioHandler(devStudioSvc)
 
 						devStudio := api.Group("/v1/dev-studio",
@@ -182,7 +182,9 @@ func main() {
 							middleware.DevStudioRateLimit(),
 						)
 						{
+							devStudio.GET("/usage", devStudioHandler.Usage)
 							devStudio.POST("/chat", devStudioHandler.Chat)
+							devStudio.POST("/refine", devStudioHandler.Refine)
 							devStudio.POST("/validate/:request_id", devStudioHandler.Validate)
 							devStudio.POST("/implement/:request_id", devStudioHandler.Implement)
 							devStudio.GET("/history", devStudioHandler.History)

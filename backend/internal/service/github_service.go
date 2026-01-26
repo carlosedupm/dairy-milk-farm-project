@@ -257,6 +257,60 @@ func (s *GitHubService) getFileSHA(ctx context.Context, branch, path string) (st
 	return file.SHA, nil
 }
 
+// GetFileContent retorna o conteúdo decodificado de um arquivo na branch dada (ex.: main).
+// Path é relativo à raiz do repositório (ex.: frontend/src/components/layout/Header.tsx).
+// Usado para contexto Dev Studio: sempre usar o estado da branch de produção.
+func (s *GitHubService) GetFileContent(ctx context.Context, branch, path string) (string, error) {
+	if s.token == "" || s.repo == "" {
+		return "", fmt.Errorf("GitHub token ou repositório não configurado")
+	}
+	if s.owner == "" || s.repoName == "" {
+		return "", fmt.Errorf("formato de repositório inválido. Use owner/repo")
+	}
+
+	url := fmt.Sprintf("%s/repos/%s/%s/contents/%s?ref=%s", s.baseURL, s.owner, s.repoName, path, branch)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("token %s", s.token))
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("erro ao obter arquivo %s (ref=%s): status %d, body: %s", path, branch, resp.StatusCode, string(bodyBytes))
+	}
+
+	var file struct {
+		Content  string `json:"content"`
+		Encoding string `json:"encoding"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&file); err != nil {
+		return "", fmt.Errorf("erro ao decodificar resposta do arquivo %s: %w", path, err)
+	}
+
+	if file.Encoding != "base64" {
+		return "", fmt.Errorf("encoding inesperado para %s: %s", path, file.Encoding)
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(file.Content))
+	if err != nil {
+		return "", fmt.Errorf("erro ao decodificar base64 do arquivo %s: %w", path, err)
+	}
+
+	return string(decoded), nil
+}
+
 func (s *GitHubService) openPullRequest(ctx context.Context, branchName, title, body string) (*CreatePRResponse, error) {
 	url := fmt.Sprintf("%s/repos/%s/%s/pulls", s.baseURL, s.owner, s.repoName)
 

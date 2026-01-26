@@ -27,6 +27,12 @@ export type CodeGenerationResponse = {
   branch_name?: string | null
 }
 
+export type UsageStats = {
+  used_last_hour: number
+  limit_per_hour: number
+  used_today: number
+}
+
 type ApiResponse<T> = { data: T }
 
 export async function chat(prompt: string): Promise<CodeGenerationResponse> {
@@ -38,10 +44,28 @@ export async function chat(prompt: string): Promise<CodeGenerationResponse> {
   return data.data
 }
 
+export async function refine(
+  requestId: number,
+  feedback: string
+): Promise<CodeGenerationResponse> {
+  const { data } = await api.post<ApiResponse<CodeGenerationResponse>>(
+    '/api/v1/dev-studio/refine',
+    { request_id: requestId, feedback }
+  )
+  if (!data.data) throw new Error('Resposta inválida')
+  return data.data
+}
+
 export async function validate(requestId: number): Promise<DevStudioRequest> {
   const { data } = await api.post<ApiResponse<DevStudioRequest>>(
     `/api/v1/dev-studio/validate/${requestId}`
   )
+  if (!data.data) throw new Error('Resposta inválida')
+  return data.data
+}
+
+export async function getUsage(): Promise<UsageStats> {
+  const { data } = await api.get<ApiResponse<UsageStats>>('/api/v1/dev-studio/usage')
   if (!data.data) throw new Error('Resposta inválida')
   return data.data
 }

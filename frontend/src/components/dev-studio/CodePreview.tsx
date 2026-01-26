@@ -3,21 +3,39 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import * as devStudioService from '@/services/devStudio'
 import type { CodeGenerationResponse } from '@/services/devStudio'
+
+const RATE_LIMIT_MSG =
+  'Limite de requisições atingido (5/hora). Tente novamente mais tarde.'
+
+function getRefineErrorMessage(err: unknown): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const res = (err as { response?: { status?: number; data?: { error?: { message?: string } } } })
+      .response
+    if (res?.status === 429) return RATE_LIMIT_MSG
+    return res?.data?.error?.message ?? 'Erro ao refinar código. Tente novamente.'
+  }
+  return 'Erro ao refinar código. Tente novamente.'
+}
 
 type CodePreviewProps = {
   code: CodeGenerationResponse | null
   onCodeUpdated?: (code: CodeGenerationResponse) => void
+  atLimit?: boolean
 }
 
-export function CodePreview({ code, onCodeUpdated }: CodePreviewProps) {
+export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePreviewProps) {
   const [validating, setValidating] = useState(false)
   const [validationStatus, setValidationStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [validationError, setValidationError] = useState('')
   const [implementing, setImplementing] = useState(false)
   const [implementationStatus, setImplementationStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [implementationError, setImplementationError] = useState('')
+  const [refineFeedback, setRefineFeedback] = useState('')
+  const [refining, setRefining] = useState(false)
+  const [refineError, setRefineError] = useState('')
 
   const handleValidate = async () => {
     if (!code) return
@@ -96,6 +114,27 @@ export function CodePreview({ code, onCodeUpdated }: CodePreviewProps) {
     }
   }
 
+  const handleRefine = async () => {
+    if (!code || !refineFeedback.trim() || refining || atLimit) return
+
+    setRefining(true)
+    setRefineError('')
+
+    try {
+      const refined = await devStudioService.refine(code.request_id, refineFeedback.trim())
+      setRefineFeedback('')
+      setValidationStatus('idle')
+      setValidationError('')
+      setImplementationStatus('idle')
+      setImplementationError('')
+      if (onCodeUpdated) onCodeUpdated(refined)
+    } catch (err: unknown) {
+      setRefineError(getRefineErrorMessage(err))
+    } finally {
+      setRefining(false)
+    }
+  }
+
   if (!code) {
     return (
       <Card className="h-full">
@@ -135,7 +174,34 @@ export function CodePreview({ code, onCodeUpdated }: CodePreviewProps) {
           ))}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
+          <div>
+            <p className="text-sm font-medium mb-1">Refinar código (divergente da estrutura?)</p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Descreva o que ajustar (ex.: &quot;Use response.SuccessOK como em fazenda_handler&quot;,
+              &quot;Siga o padrão Handler → Service → Repository&quot;).
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={refineFeedback}
+                onChange={(e) => setRefineFeedback(e.target.value)}
+                placeholder="Ex.: Use response.SuccessOK, siga fazenda_handler..."
+                disabled={refining || atLimit}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleRefine}
+                disabled={refining || atLimit || !refineFeedback.trim()}
+                variant="secondary"
+              >
+                {refining ? 'Refinando...' : 'Refinar'}
+              </Button>
+            </div>
+            {refineError && (
+              <p className="text-sm text-destructive mt-1">{refineError}</p>
+            )}
+          </div>
+
           <div className="flex gap-2 items-center">
             <Button onClick={handleValidate} disabled={validating || !code}>
               {validating ? 'Validando...' : 'Validar Código'}

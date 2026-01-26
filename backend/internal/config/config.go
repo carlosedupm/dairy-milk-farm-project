@@ -18,8 +18,9 @@ type Config struct {
 	CORSOrigin    string
 	SentryDSN     string
 	GeminiAPIKey  string
-	GitHubToken   string
-	GitHubRepo    string
+	GitHubToken        string
+	GitHubRepo         string
+	GitHubContextBranch string // branch de produção para contexto Dev Studio (default: main)
 }
 
 func Load() *Config {
@@ -67,8 +68,9 @@ func Load() *Config {
 		CORSOrigin:    getEnv("CORS_ORIGIN", "http://localhost:3000"),
 		SentryDSN:     getEnv("SENTRY_DSN", ""),
 		GeminiAPIKey:  getEnv("GEMINI_API_KEY", ""),
-		GitHubToken:   getEnv("GITHUB_TOKEN", ""),
-		GitHubRepo:    getEnv("GITHUB_REPO", ""),
+		GitHubToken:         getEnv("GITHUB_TOKEN", ""),
+		GitHubRepo:          getEnv("GITHUB_REPO", ""),
+		GitHubContextBranch: getEnv("GITHUB_CONTEXT_BRANCH", "main"),
 	}
 }
 

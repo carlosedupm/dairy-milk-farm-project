@@ -166,6 +166,17 @@ func (r *DevStudioRepository) GetByUserID(ctx context.Context, userID int64) ([]
 	return requests, rows.Err()
 }
 
+// CountByUserSince retorna a quantidade de requests do usuário desde o timestamp given.
+func (r *DevStudioRepository) CountByUserSince(ctx context.Context, userID int64, since time.Time) (int, error) {
+	query := `
+		SELECT COUNT(*) FROM dev_studio_requests
+		WHERE user_id = $1 AND created_at >= $2
+	`
+	var count int
+	err := r.db.QueryRow(ctx, query, userID, since).Scan(&count)
+	return count, err
+}
+
 func (r *DevStudioRepository) CreateAudit(ctx context.Context, audit *models.DevStudioAudit) error {
 	detailsJSON, err := json.Marshal(audit.Details)
 	if err != nil {

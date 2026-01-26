@@ -15,16 +15,33 @@ type Message = {
 
 type ChatInterfaceProps = {
   onCodeGenerated: (code: CodeGenerationResponse) => void
+  atLimit?: boolean
 }
 
-export function ChatInterface({ onCodeGenerated }: ChatInterfaceProps) {
+const RATE_LIMIT_MSG =
+  'Limite de requisições atingido (5/hora). Tente novamente mais tarde.'
+
+function getErrorMessage(err: unknown): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const res = (err as { response?: { status?: number; data?: { error?: { message?: string } } } })
+      .response
+    if (res?.status === 429) return RATE_LIMIT_MSG
+    return res?.data?.error?.message ?? 'Erro ao gerar código. Tente novamente.'
+  }
+  return 'Erro ao gerar código. Tente novamente.'
+}
+
+export function ChatInterface({
+  onCodeGenerated,
+  atLimit = false,
+}: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return
+    if (!input.trim() || loading || atLimit) return
 
     const userMessage: Message = {
       role: 'user',
@@ -45,21 +62,19 @@ export function ChatInterface({ onCodeGenerated }: ChatInterfaceProps) {
       setMessages((prev) => [...prev, aiMessage])
       onCodeGenerated(response)
     } catch (err: unknown) {
-      const errorMessage =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: { message?: string } } } }).response?.data
-              ?.error?.message
-          : 'Erro ao gerar código. Tente novamente.'
-      setError(errorMessage ?? 'Erro ao gerar código.')
+      const errorMessage = getErrorMessage(err)
+      setError(errorMessage)
       const errorMsg: Message = {
         role: 'assistant',
-        content: errorMessage ?? 'Erro ao gerar código.',
+        content: errorMessage,
       }
       setMessages((prev) => [...prev, errorMsg])
     } finally {
       setLoading(false)
     }
   }
+
+  const disabled = loading || atLimit
 
   return (
     <Card className="h-full flex flex-col">
@@ -94,6 +109,11 @@ export function ChatInterface({ onCodeGenerated }: ChatInterfaceProps) {
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
+        {atLimit && (
+          <p className="text-sm text-destructive">
+            Limite atingido. Aguarde para fazer novas requisições.
+          </p>
+        )}
 
         <div className="flex gap-2">
           <Input
@@ -101,10 +121,10 @@ export function ChatInterface({ onCodeGenerated }: ChatInterfaceProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Descreva a feature que deseja implementar..."
-            disabled={loading}
+            disabled={disabled}
             className="flex-1"
           />
-          <Button onClick={handleSend} disabled={loading || !input.trim()}>
+          <Button onClick={handleSend} disabled={disabled || !input.trim()}>
             {loading ? 'Gerando...' : 'Enviar'}
           </Button>
         </div>

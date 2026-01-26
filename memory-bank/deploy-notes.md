@@ -36,6 +36,12 @@ O arquivo `render.yaml` define:
 - `JWT_PRIVATE_KEY` - Chave privada RSA (PEM) para assinar tokens JWT (RS256). **Obrigatória.** Gerar com `openssl` (ver seção "Geração de Chaves JWT") e informar na criação do Blueprint ou no Dashboard do serviço.
 - `JWT_PUBLIC_KEY` - Chave pública RSA (PEM) para verificar tokens. **Obrigatória.** Mesmo par da privada; definir no Blueprint ou no Dashboard.
 
+#### Opcionais (Dev Studio)
+
+- `GEMINI_API_KEY` - Chave da API Gemini (geração de código).
+- `GITHUB_TOKEN`, `GITHUB_REPO` - Para PRs automáticos e **contexto da IA** (exemplos + arquivos-alvo) sempre da branch de produção.
+- `GITHUB_CONTEXT_BRANCH` - Branch de referência para contexto (default: `main`). Quando GitHub está configurado, a IA usa o estado do repositório nessa branch. Ver `docs/dev-studio/SETUP.md`.
+
 ### Migrações de Banco de Dados
 
 **Estratégia**: Migrações executadas automaticamente no startup do servidor Go usando `golang-migrate`.

@@ -21,7 +21,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 - **Devcontainer**: `DATABASE_URL` e `PORT` pré-configurados; backend via `go run ./cmd/api`
 - **Resiliência**: Se o Postgres falhar (ex.: pg_hba), o backend sobe e expõe apenas `GET /health`; auth/fazendas ficam inativos até o DB estar ok
 - **Postgres no compose**: `scripts/db/init-pg-hba.sh` + `ssl=off` para aceitar conexões do devcontainer (após recriar o volume)
-- **Dev Studio (Fase 0 + Fase 1)**: Área de desenvolvimento interativa com IA integrada — geração de código via Gemini API, validação sintática, preview, histórico e criação automática de Pull Requests via GitHub API
+- **Dev Studio (Fase 0 + Fase 1 + Fase 2)**: Área de desenvolvimento interativa com IA integrada — geração de código via Gemini API, validação sintática, preview, histórico, criação automática de PRs via GitHub API, **RAG dinâmico** (seleção de contexto por palavras-chave), **monitoramento** (GET /usage, alertas de limite, tratamento 429), **Refinar** (feedback para corrigir divergências) e **exemplos de código** (handler/service/repository/model/response de Fazenda) sempre incluídos no contexto da IA. **Contexto tipo Cursor**: quando o prompt indica edição de menu/UI (ex.: "menu", "Header", "rota", "link", "dev-studio"), o backend inclui o **estado atual** dos arquivos-alvo (ex.: `Header.tsx`, `layout.tsx`) e instruções para **editar em cima do existente** e **preservar** o que não foi pedido para alterar. **Contexto sempre do repositório**: quando `GITHUB_TOKEN` e `GITHUB_REPO` estão configurados, **exemplos** e **arquivos-alvo** são sempre buscados da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) no GitHub, pois o resultado aprovado irá para lá (PR → merge).
 
 ### 🚧 Em andamento:
 - **Testes**: Backend e frontend
@@ -39,10 +39,13 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 10. ✅ **Deploy frontend Vercel**: Deploy manual concluído; login, validate e CRUD validados em produção
 11. ✅ **Dev Studio MVP (Fase 0)**: Implementação completa do Dev Studio — backend (Go) com integração Gemini API, frontend (Next.js) com chat e preview, validação sintática, rate limiting, auditoria completa. Funcional e testado em produção.
 12. ✅ **Dev Studio Fase 1**: Automação de PRs via GitHub API — criação automática de branches, commits e Pull Requests. Integração completa com GitHub API REST, componente PRStatus no frontend, fluxo completo de validação → PR.
+13. ✅ **Dev Studio Fase 2**: RAG dinâmico e monitoramento — `loadProjectContext` + `selectRelevantContext` (base fixa systemPatterns/techContext + até 2 docs variáveis por keywords; fallback activeContext). API `GET /api/v1/dev-studio/usage` (used_last_hour, limit_per_hour, used_today) sem consumir rate limit. Frontend: UsageAlert, alertas próximo/limite, ChatInterface desabilita ao limite e 429 com mensagem clara.
+14. ✅ **Memory-bank e exemplos no Dev Studio**: `systemPatterns` e `techContext` atualizados com **estrutura atual do projeto** (pastas backend/frontend, rotas, padrões Handler/Service/Repository/Model/response). Dev Studio passa a incluir **trechos de código** (fazenda_handler, fazenda_service, fazenda_repository, models/fazenda, response) no contexto da IA em toda geração e refinamento.
+15. ✅ **Contexto tipo Cursor no Dev Studio**: `loadTargetFilesForPrompt` infere arquivos-alvo (ex.: Header.tsx, layout.tsx) por palavras-chave do prompt (menu, Header, rota, link, dev-studio); inclui o **estado atual** no contexto. Prompt com **INSTRUÇÕES (comportamento tipo IDE)**: usar como base, preservar o resto; editar em cima do existente. Geração e refinamento usam o mesmo fluxo.
+16. ✅ **Contexto sempre do repositório (GitHub)**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo passam a ser obtidos sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via GitHub Contents API. `GitHubService.GetFileContent(ctx, branch, path)`; fallback para disco local quando GitHub não está configurado.
 
 ### 📋 Próximos passos imediatos:
-1. **Dev Studio - Fase 2**: RAG dinâmico e monitoramento
-2. Testes automatizados (E2E ou unitários)
+1. Testes automatizados (E2E ou unitários)
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -81,14 +84,14 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ## 📊 Métricas de Progresso
 
-### **Completude Geral**: 75%
+### **Completude Geral**: 78%
 - **Infraestrutura**: 95% ✅ (backend + frontend em produção + Dev Studio)
 - **Documentação**: 95% ✅ (incluindo Dev Studio)
-- **Implementação**: 75% 🚧 (Dev Studio MVP concluído)
+- **Implementação**: 78% 🚧 (Dev Studio Fase 0 + 1 + 2 concluído)
 - **Testes**: 0% 🚧
 - **Deploy**: 90% ✅ (backend Render + frontend Vercel; login e CRUD validados no ar)
 
 ---
 
 **Última atualização**: 2026-01-26
-**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 implementado e funcionando
+**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 + Fase 2 (RAG dinâmico + monitoramento) implementado

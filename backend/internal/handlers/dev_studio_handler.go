@@ -23,6 +23,11 @@ type ChatRequest struct {
 	Prompt string `json:"prompt" binding:"required"`
 }
 
+type RefineRequest struct {
+	RequestID int64  `json:"request_id" binding:"required"`
+	Feedback  string `json:"feedback" binding:"required"`
+}
+
 // Chat gera código via IA
 func (h *DevStudioHandler) Chat(c *gin.Context) {
 	var req ChatRequest
@@ -71,6 +76,47 @@ func (h *DevStudioHandler) Chat(c *gin.Context) {
 	response.SuccessOK(c, codeResponse, "Código gerado com sucesso")
 }
 
+// Refine refina o código gerado a partir do feedback do usuário (ex.: divergência da estrutura do projeto).
+func (h *DevStudioHandler) Refine(c *gin.Context) {
+	var req RefineRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorValidation(c, "Dados inválidos", err.Error())
+		return
+	}
+
+	userID := c.GetInt64("user_id")
+	logger := requestctx.GetLogger(c)
+
+	perfil, exists := c.Get("perfil")
+	if !exists || perfil != "DEVELOPER" {
+		response.ErrorForbidden(c, "Acesso negado. Perfil DEVELOPER necessário.")
+		return
+	}
+
+	codeResponse, err := h.devStudioSvc.RefineCode(c.Request.Context(), req.RequestID, userID, req.Feedback)
+	if err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{"action": "refine_code"})
+		if strings.Contains(err.Error(), "quota da API Gemini excedida") {
+			response.ErrorQuotaExceeded(c,
+				"Quota da API Gemini excedida. Verifique sua conta no Google Cloud Console ou aguarde o reset da quota.",
+				map[string]interface{}{
+					"error": err.Error(),
+					"help":  "https://ai.google.dev/gemini-api/docs/rate-limits",
+				})
+			return
+		}
+		if strings.Contains(err.Error(), "não pertence ao usuário") {
+			response.ErrorForbidden(c, "Request não pertence ao usuário.")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao refinar código", err.Error())
+		return
+	}
+
+	logger.Info("Código refinado com sucesso", "user_id", userID, "request_id", codeResponse.RequestID)
+	response.SuccessOK(c, codeResponse, "Código refinado com sucesso")
+}
+
 // Validate valida código sintaticamente
 func (h *DevStudioHandler) Validate(c *gin.Context) {
 	idStr := c.Param("request_id")
@@ -111,6 +157,29 @@ func (h *DevStudioHandler) Validate(c *gin.Context) {
 	}
 
 	response.SuccessOK(c, updatedRequest, "Código validado com sucesso")
+}
+
+// Usage retorna métricas de uso do Dev Studio (última hora e hoje).
+func (h *DevStudioHandler) Usage(c *gin.Context) {
+	userID := c.GetInt64("user_id")
+
+	// Verificar perfil DEVELOPER
+	perfil, exists := c.Get("perfil")
+	if !exists || perfil != "DEVELOPER" {
+		response.ErrorForbidden(c, "Acesso negado. Perfil DEVELOPER necessário.")
+		return
+	}
+
+	usage, err := h.devStudioSvc.GetUsage(c.Request.Context(), userID)
+	if err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{
+			"action": "get_usage",
+		})
+		response.ErrorInternal(c, "Erro ao buscar uso", err.Error())
+		return
+	}
+
+	response.SuccessOK(c, usage, "Uso recuperado com sucesso")
 }
 
 // History lista histórico de requests do usuário

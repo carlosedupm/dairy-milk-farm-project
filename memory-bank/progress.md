@@ -2,11 +2,11 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 75%
+### **Completude Geral**: 78%
 ```bash
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 95% ✅
-💻  Implementação: 75% 🚧
+💻  Implementação: 78% 🚧 (Dev Studio Fase 0 + 1 + 2 concluído)
 🧪  Testes: 0% 🚧
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção; login e CRUD validados)
 ```
@@ -59,7 +59,7 @@
 
 ## 🚧 Em andamento
 
-### **Backend Go (🚧 70%)**
+### **Backend Go (🚧 75%)**
 - [x] Estrutura básica e configuração
 - [x] Modelos de domínio
 - [x] Repository e Service para Fazendas (CRUD + search, count, exists)
@@ -133,7 +133,7 @@
 
 ### **Desenvolvimento**
 ```progress
-███████▄▄▄ 70%
+███████▄▄▄ 78%
 ```
 
 ### **Qualidade**
@@ -241,6 +241,13 @@
   - Migração 7_add_pr_fields_to_dev_studio para campos PR no banco
   - Documentação atualizada (QUICK_START.md, SETUP.md)
 
+### **2026-01-26 - Dev Studio Fase 2**
+- ✅ **Dev Studio Fase 2**: RAG dinâmico e monitoramento implementados
+  - RAG dinâmico: `loadProjectContext` retorna mapa de arquivos; `selectRelevantContext` escolhe systemPatterns + techContext (fixos) + até 2 docs variáveis (activeContext, progress, productContext, projectbrief) por relevância ao prompt (keywords). Fallback activeContext se todos score 0.
+  - API `GET /api/v1/dev-studio/usage`: retorna `used_last_hour`, `limit_per_hour`, `used_today`. **Não consome** rate limit.
+  - Rate limit: `GET /api/v1/dev-studio/usage` excluído do limite de 5 req/hora.
+  - Frontend: `UsageAlert` (métricas + alertas próximo/limite), integração na página Dev Studio, `ChatInterface` desabilita envio ao limite e exibe mensagem clara em 429.
+
 **Última atualização**: 2026-01-26
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 concluído
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 + Fase 2 concluído
 **Próxima revisão**: 2026-02-07

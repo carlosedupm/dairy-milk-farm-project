@@ -63,11 +63,17 @@ func (rl *RateLimiter) cleanup() {
 }
 
 // DevStudioRateLimit cria um middleware de rate limiting para Dev Studio
-// MVP: 5 requests/hora por usuário
+// MVP: 5 requests/hora por usuário.
+// GET /api/v1/dev-studio/usage não consome o limite (apenas consulta de uso).
 func DevStudioRateLimit() gin.HandlerFunc {
 	limiter := NewRateLimiter(5) // 5 requests/hora
 
 	return func(c *gin.Context) {
+		if c.Request.Method == "GET" && c.Request.URL.Path == "/api/v1/dev-studio/usage" {
+			c.Next()
+			return
+		}
+
 		userID, exists := c.Get("user_id")
 		if !exists {
 			response.ErrorUnauthorized(c, "Usuário não autenticado")

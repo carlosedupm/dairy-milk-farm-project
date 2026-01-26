@@ -36,6 +36,84 @@
 └─────────────────────────────────────────────────┘
 ```
 
+### **Estrutura atual do projeto**
+
+**Backend** (`/backend`):
+```
+cmd/api/main.go                 # Entrada, rotas, middleware, DB pool
+internal/
+├── handlers/                   # HTTP handlers (Gin)
+│   ├── auth_handler.go         # Login, logout, refresh, validate
+│   ├── fazenda_handler.go      # CRUD + search fazendas (referência)
+│   └── dev_studio_handler.go   # Chat, refine, validate, implement, usage
+├── service/                    # Lógica de negócio
+│   ├── fazenda_service.go      # Referência
+│   ├── dev_studio_service.go   # IA, RAG, GitHub
+│   ├── github_service.go       # PRs
+│   └── refresh_token_service.go
+├── repository/                 # Acesso a dados (pgx)
+│   ├── fazenda_repository.go   # Referência
+│   ├── dev_studio_repository.go
+│   ├── usuario_repository.go
+│   └── refresh_token_repository.go
+├── models/                     # Structs de domínio (json/db tags)
+│   ├── fazenda.go
+│   ├── usuario.go
+│   ├── dev_studio.go
+│   └── refresh_token.go
+├── response/                   # Respostas padronizadas
+│   └── response.go             # SuccessOK, SuccessCreated, ErrorValidation, ErrorNotFound, etc.
+├── auth/                       # JWT, cookies, middleware RequireAuth/RequireDeveloper
+├── middleware/                 # CorrelationID, Logging, RateLimit, Recovery, Sentry
+├── config/                     # Config, DB, dev JWT
+└── observability/              # Sentry, error handler
+migrations/                     # golang-migrate .up.sql / .down.sql
+```
+
+**Frontend** (`/frontend/src`):
+```
+app/                            # App Router (Next.js)
+├── page.tsx, layout.tsx
+├── login/page.tsx
+├── fazendas/page.tsx           # Listagem
+├── fazendas/nova/page.tsx
+├── fazendas/[id]/editar/page.tsx
+└── dev-studio/page.tsx
+components/
+├── fazendas/                   # FazendaForm, FazendaTable
+├── dev-studio/                 # ChatInterface, CodePreview, PRStatus, UsageAlert
+├── layout/                     # Header, ProtectedRoute, Providers
+└── ui/                         # Shadcn: button, card, dialog, input, label, table
+services/                       # api.ts (Axios + interceptors), auth, fazendas, devStudio
+contexts/                       # AuthContext
+lib/utils.ts
+```
+
+**Rotas API (referência)**:
+- `POST /api/auth/login|logout|refresh|validate`
+- `GET|POST|PUT|DELETE /api/v1/fazendas` (+ /count, /exists, /search/by-*)
+- `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`
+
+**Padrão Handler (referência: fazenda_handler)**:
+- Struct do handler com `service *service.XxxService`; `NewXxxHandler(svc)`.
+- Request DTOs com `binding:"required"` e `json` tags; `c.ShouldBindJSON(&req)`.
+- Respostas: `response.SuccessOK`, `response.SuccessCreated`, `response.ErrorValidation`, `response.ErrorNotFound`, `response.ErrorInternal`, etc.
+- IDs de path: `c.Param("id")` → `strconv.ParseInt`; erros retornam via `response.*`.
+- Handler chama `h.service.Method(c.Request.Context(), ...)` e mapeia erros (ex.: `pgx.ErrNoRows` → `ErrorNotFound`).
+
+**Padrão Service (referência: fazenda_service)**:
+- Struct com `repo *repository.XxxRepository`; `NewXxxService(repo)`.
+- Métodos recebem `ctx context.Context`; regras de negócio; delega persistência ao repo.
+- Erros de domínio (ex.: `ErrXxxNotFound`) para o handler mapear.
+
+**Padrão Repository (referência: fazenda_repository)**:
+- Struct com `db *pgxpool.Pool`; `NewXxxRepository(db)`.
+- Queries SQL parametrizadas; `QueryRow` / `Query` / `Exec`; `pgx.ErrNoRows` quando não encontrar.
+- Models com tags `db` para Scan.
+
+**Model (referência: fazenda)**:
+- Struct com `json` e `db` tags; `*string` / `*time.Time` para opcionais; `CreatedAt` / `UpdatedAt`.
+
 ## 🔄 Padrões de Design Implementados
 
 ### **Padrões Estruturais**
@@ -116,7 +194,8 @@ Usuario (N) ─── (1) Fazenda
 - **Token Refresh**: Endpoint `/api/auth/refresh` para renovar access tokens usando refresh tokens
 
 ### **Autorização**
-- **Role-Based**: Controle de acesso baseado em roles (USER, ADMIN)
+- **Role-Based**: Controle de acesso baseado em roles (USER, ADMIN, DEVELOPER)
+- **DEVELOPER**: Perfil para acesso ao Dev Studio (`/api/v1/dev-studio/*`); requer `auth.RequireDeveloper()`.
 - **Resource Ownership**: Verificação de propriedade de recursos
 - **Middleware de Autenticação**: Verificação de token em todas as rotas protegidas
 
@@ -216,5 +295,5 @@ Usuario (N) ─── (1) Fazenda
 
 ---
 
-**Última atualização**: 2026-01-24
-**Versão dos Padrões**: 2.0 (Go + Next.js)
+**Última atualização**: 2026-01-26
+**Versão dos Padrões**: 2.0 (Go + Next.js) — Estrutura atual do projeto documentada
