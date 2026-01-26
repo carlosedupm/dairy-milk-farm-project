@@ -97,8 +97,15 @@ Dev Studio Service
   - Fase 0: MVP (chat, validação, histórico)
   - Fase 1: PRs automáticos via GitHub API
   - Fase 2: RAG dinâmico (seleção de contexto por keywords) + monitoramento (GET /usage, alertas, 429)
+- ✅ **Contexto tipo Cursor**: Arquivos-alvo (ex.: Header, layout) inferidos por palavras-chave; estado atual incluído no contexto; instruções para editar em cima do existente e preservar o resto.
+- ✅ **Contexto sempre do repositório**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo vêm sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via GitHub Contents API. O resultado aprovado segue para essa branch (PR → merge).
 
 ## 📝 Histórico de Decisões
+
+### 2026-01-26
+
+- ✅ **Contexto tipo Cursor**: `loadTargetFilesForPrompt` infere arquivos-alvo (menu, Header, rota, link, dev-studio); inclui estado atual no contexto. Instruções no prompt: usar como base, preservar o resto; trabalhar como IDE.
+- ✅ **Contexto sempre do repositório**: Com GitHub configurado, exemplos e arquivos-alvo obtidos da branch de produção via `GitHubService.GetFileContent`. Variável `GITHUB_CONTEXT_BRANCH` (default `main`). Documentação em SETUP, deploy-notes, activeContext.
 
 ### 2026-01-25
 
@@ -126,6 +133,6 @@ Dev Studio Service
 
 ---
 
-**Última atualização**: 2026-01-25  
-**Versão**: 1.2  
-**Status**: Documentação completa com melhorias práticas específicas para CeialMilk - Pronto para implementação (abordagem incremental recomendada)
+**Última atualização**: 2026-01-26  
+**Versão**: 1.3  
+**Status**: Documentação completa com melhorias práticas específicas para CeialMilk - Contexto tipo Cursor e contexto do repositório (branch de produção) implementados e validados

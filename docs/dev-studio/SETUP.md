@@ -209,4 +209,4 @@ No frontend, use a seção **Refinar código** no preview: descreva o que ajusta
 
 ---
 
-**Última atualização**: 2026-01-26
+**Última atualização**: 2026-01-26 (contexto tipo Cursor, contexto do repositório, GITHUB_CONTEXT_BRANCH)

@@ -89,6 +89,8 @@ Se você configurou `GITHUB_TOKEN` e `GITHUB_REPO`:
    - Um Pull Request apontando para `main`
 5. **Ver PR no GitHub** através do link exibido
 
+**Contexto do repositório**: Com GitHub configurado, a IA usa sempre o estado da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) para exemplos de código e arquivos-alvo (ex.: menu, Header). O resultado aprovado segue para essa branch (PR → merge).
+
 ## 🔍 Verificação Rápida
 
 Execute o script de verificação:
@@ -103,6 +105,7 @@ Execute o script de verificação:
 3. **Rate Limiting**: 5 requests/hora por usuário (MVP)
 4. **Memory Bank**: O sistema carrega automaticamente os arquivos de `memory-bank/` para contexto
 5. **Pull Requests Automáticos (Fase 1)**: Após validar código, você pode criar um PR automaticamente no GitHub. Configure `GITHUB_TOKEN` e `GITHUB_REPO` para habilitar.
+6. **Contexto do repositório**: Com GitHub configurado, exemplos e arquivos-alvo vêm da branch de produção (`GITHUB_CONTEXT_BRANCH`). Use **Refinar código** se o resultado divergir da estrutura do projeto.
 
 ## 🐛 Problemas Comuns
 
@@ -125,6 +128,7 @@ Execute o script de verificação:
 - Verifique se `GITHUB_TOKEN` está configurado
 - Verifique se `GITHUB_REPO` está no formato `owner/repo` (ex: `usuario/ceialmilk`)
 - Verifique se o token tem permissão `repo`
+- Opcional: `GITHUB_CONTEXT_BRANCH` (default `main`) — branch usada para contexto da IA e base do PR
 - Verifique os logs do backend para detalhes
 
 ## 🎉 Pronto!
@@ -133,4 +137,4 @@ O Dev Studio está configurado e pronto para uso!
 
 ---
 
-**Última atualização**: 2026-01-26
+**Última atualização**: 2026-01-26 (contexto do repositório e GITHUB_CONTEXT_BRANCH)

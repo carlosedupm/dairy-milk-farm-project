@@ -14,6 +14,7 @@ Este script verifica:
 - ✅ `GEMINI_API_KEY` configurada
 - ✅ `GITHUB_TOKEN` configurada (opcional)
 - ✅ `GITHUB_REPO` configurada (opcional)
+- ✅ `GITHUB_CONTEXT_BRANCH` (opcional; default `main` — branch para contexto da IA)
 - ✅ Tabelas do Dev Studio no banco
 - ✅ Perfil DEVELOPER do usuário admin
 
@@ -33,13 +34,17 @@ echo $GITHUB_TOKEN
 # Verificar GitHub Repo
 echo $GITHUB_REPO
 # Deve mostrar: usuario/ceialmilk (se configurado)
+
+# Verificar branch de contexto (opcional; default: main)
+echo $GITHUB_CONTEXT_BRANCH
+# Quando GitHub está configurado, exemplos e arquivos-alvo vêm dessa branch no repositório.
 ```
 
 ### 2.2 Verificar Arquivo .env
 
 ```bash
 # Ver conteúdo do .env (sem mostrar valores completos por segurança)
-cat .env | grep -E "GEMINI_API_KEY|GITHUB_TOKEN|GITHUB_REPO"
+cat .env | grep -E "GEMINI_API_KEY|GITHUB_TOKEN|GITHUB_REPO|GITHUB_CONTEXT_BRANCH"
 ```
 
 ### 2.3 Verificar Logs do Backend
@@ -55,6 +60,7 @@ Ao iniciar o backend, procure por estas mensagens nos logs:
 ```
 ✅ GitHub Service configurado repo=usuario/ceialmilk
 ```
+Com GitHub configurado, o contexto da IA (exemplos de código e arquivos-alvo) vem sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) no repositório.
 
 **Se GitHub NÃO estiver configurado:**
 ```
@@ -115,6 +121,12 @@ Após subir o devcontainer, verifique:
   ```bash
   echo $GITHUB_REPO
   ```
+
+- [ ] `GITHUB_CONTEXT_BRANCH` está definida (opcional; default `main`)
+  ```bash
+  echo $GITHUB_CONTEXT_BRANCH
+  ```
+  Usada como branch de referência para contexto da IA quando GitHub está configurado.
 
 - [ ] Arquivo `.env` existe e tem os valores
   ```bash
@@ -200,4 +212,4 @@ echo "${TOKEN:0:7}...${TOKEN: -4}"
 
 ---
 
-**Última atualização**: 2026-01-26
+**Última atualização**: 2026-01-26 (incl. GITHUB_CONTEXT_BRANCH e contexto do repositório)

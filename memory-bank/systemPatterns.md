@@ -94,6 +94,10 @@ lib/utils.ts
 - `GET|POST|PUT|DELETE /api/v1/fazendas` (+ /count, /exists, /search/by-*)
 - `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`
 
+**Dev Studio – contexto da IA**:
+- **Contexto tipo Cursor**: `loadTargetFilesForPrompt` infere arquivos-alvo (menu, Header, rota, link, dev-studio) e inclui o **estado atual** no contexto. Instruções no prompt: usar como base, preservar o resto; trabalhar como IDE.
+- **Contexto do repositório**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo vêm sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via `GitHubService.GetFileContent`. Fallback para disco local quando GitHub não está configurado.
+
 **Padrão Handler (referência: fazenda_handler)**:
 - Struct do handler com `service *service.XxxService`; `NewXxxHandler(svc)`.
 - Request DTOs com `binding:"required"` e `json` tags; `c.ShouldBindJSON(&req)`.
@@ -296,4 +300,4 @@ Usuario (N) ─── (1) Fazenda
 ---
 
 **Última atualização**: 2026-01-26
-**Versão dos Padrões**: 2.0 (Go + Next.js) — Estrutura atual do projeto documentada
+**Versão dos Padrões**: 2.0 (Go + Next.js) — Estrutura atual do projeto documentada; Dev Studio contexto tipo Cursor e do repositório

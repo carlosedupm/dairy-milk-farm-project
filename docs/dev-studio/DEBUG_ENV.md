@@ -60,7 +60,7 @@ Procure por esta mensagem:
 ⚠️ GitHub não configurado (GITHUB_TOKEN ou GITHUB_REPO não definidos). Funcionalidade de PRs desabilitada.
 ```
 
-**Solução**: Configure `GITHUB_TOKEN` e `GITHUB_REPO` no `.env`
+**Solução**: Configure `GITHUB_TOKEN` e `GITHUB_REPO` no `.env`. Opcionalmente, `GITHUB_CONTEXT_BRANCH` (default `main`) define a branch de produção usada para contexto da IA (exemplos e arquivos-alvo).
 
 ## 🐛 Troubleshooting
 
@@ -103,6 +103,7 @@ Procure por esta mensagem:
    GEMINI_API_KEY=sua-chave-aqui
    GITHUB_TOKEN=ghp_seu-token-aqui
    GITHUB_REPO=usuario/ceialmilk
+   GITHUB_CONTEXT_BRANCH=main   # opcional; default main (branch de produção para contexto IA)
    ```
 
 3. Reinicie o debug do VS Code
@@ -160,4 +161,4 @@ Após configurar o `.env` e iniciar o debug:
 
 ---
 
-**Última atualização**: 2026-01-26
+**Última atualização**: 2026-01-26 (incl. GITHUB_CONTEXT_BRANCH e contexto do repositório)

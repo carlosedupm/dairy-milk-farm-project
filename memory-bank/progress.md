@@ -248,6 +248,10 @@
   - Rate limit: `GET /api/v1/dev-studio/usage` excluído do limite de 5 req/hora.
   - Frontend: `UsageAlert` (métricas + alertas próximo/limite), integração na página Dev Studio, `ChatInterface` desabilita envio ao limite e exibe mensagem clara em 429.
 
+### **2026-01-26 - Contexto tipo Cursor e contexto do repositório**
+- ✅ **Contexto tipo Cursor**: `loadTargetFilesForPrompt` infere arquivos-alvo (menu, Header, rota, link, dev-studio) e inclui o estado atual no contexto. Instruções no prompt: usar como base, preservar o resto; trabalhar como IDE. Geração e refinamento usam o mesmo fluxo.
+- ✅ **Contexto sempre do repositório**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo vêm sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via `GitHubService.GetFileContent`. Config `GITHUB_CONTEXT_BRANCH`; fallback para disco local quando GitHub não está configurado. Solução validada em uso.
+
 **Última atualização**: 2026-01-26
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 + Fase 2 concluído
 **Próxima revisão**: 2026-02-07

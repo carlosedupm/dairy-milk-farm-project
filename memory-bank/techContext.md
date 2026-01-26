@@ -44,6 +44,7 @@
   - `SENTRY_DSN`: DSN do Sentry para captura de erros (opcional)
   - `LOG_LEVEL`: Nível de log (DEBUG, INFO, WARN, ERROR) - padrão: INFO
   - `ENV`: Ambiente (development, production) - padrão: development
+  - **Dev Studio** (opcional): `GEMINI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_CONTEXT_BRANCH` (default `main`). Com GitHub configurado, contexto da IA (exemplos + arquivos-alvo) vem da branch de produção via `GitHubService.GetFileContent`. Ver `docs/dev-studio/SETUP.md`.
 
 ### Frontend (Vercel)
 - **Framework**: Next.js (detectado automaticamente)
@@ -140,6 +141,7 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 - **Backend**: `backend/cmd/api`, `backend/internal/{handlers,service,repository,models,response,auth,middleware,config,observability}`, `backend/migrations`.
 - **Frontend**: `frontend/src/app`, `frontend/src/components/{fazendas,dev-studio,layout,ui}`, `frontend/src/services`, `frontend/src/contexts`, `frontend/src/lib`.
 - **Referência de CRUD**: Fazenda (handler → service → repository → model). Ver `memory-bank/systemPatterns.md` para padrões e estrutura detalhada.
+- **Dev Studio**: `GitHubService.GetFileContent(ctx, branch, path)` obtém conteúdo de arquivos na branch de produção (GitHub Contents API). Usado para contexto da IA quando `GITHUB_*` configurados.
 
 ## Vantagens da Nova Stack
 
@@ -161,4 +163,4 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 ---
 
 **Última atualização**: 2026-01-26
-**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — Estrutura de pastas atual documentada
+**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — Estrutura de pastas atual documentada; Dev Studio com contexto do repositório (GitHub)

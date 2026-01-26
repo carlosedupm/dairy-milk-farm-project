@@ -36,6 +36,11 @@ else
         echo "   Configure GITHUB_REPO no formato owner/repo (ex: usuario/ceialmilk)"
     else
         echo "✅ GITHUB_REPO configurado: $GITHUB_REPO"
+        if [ -n "$GITHUB_CONTEXT_BRANCH" ]; then
+            echo "✅ GITHUB_CONTEXT_BRANCH: $GITHUB_CONTEXT_BRANCH (contexto da IA)"
+        else
+            echo "ℹ️  GITHUB_CONTEXT_BRANCH não definido (usa default: main)"
+        fi
     fi
 fi
 
