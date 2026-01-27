@@ -144,7 +144,7 @@ func (h *DevStudioHandler) Refine(c *gin.Context) {
 	response.SuccessOK(c, codeResponse, "Código refinado com sucesso")
 }
 
-// Validate valida código sintaticamente
+// Validate valida código sintaticamente e com linter
 func (h *DevStudioHandler) Validate(c *gin.Context) {
 	idStr := c.Param("request_id")
 	requestID, err := strconv.ParseInt(idStr, 10, 64)
@@ -160,8 +160,9 @@ func (h *DevStudioHandler) Validate(c *gin.Context) {
 		return
 	}
 
-	// Validar código
-	if err := h.devStudioSvc.ValidateCode(c.Request.Context(), requestID); err != nil {
+	// Validar código (retorna ValidationResult)
+	validationResult, err := h.devStudioSvc.ValidateCode(c.Request.Context(), requestID)
+	if err != nil {
 		observability.CaptureHandlerError(c, err, map[string]string{
 			"action": "validate_code",
 		})
@@ -175,15 +176,24 @@ func (h *DevStudioHandler) Validate(c *gin.Context) {
 		observability.CaptureHandlerError(c, err, map[string]string{
 			"action": "get_status_after_validate",
 		})
-		// Mesmo com erro ao buscar, retornar sucesso pois validação foi bem-sucedida
-		response.SuccessOK(c, gin.H{
-			"request_id": requestID,
-			"status":     "validated",
-		}, "Código validado com sucesso")
+		// Retornar ValidationResult mesmo se não conseguir buscar request
+		response.SuccessOK(c, validationResult, "Validação concluída")
 		return
 	}
 
-	response.SuccessOK(c, updatedRequest, "Código validado com sucesso")
+	// Combinar ValidationResult com informações do request
+	responseData := gin.H{
+		"validation": validationResult,
+		"request":    updatedRequest,
+	}
+
+	// Se houver erros, retornar como erro de validação
+	if !validationResult.SyntaxValid || validationResult.HasErrors {
+		response.ErrorValidation(c, "Código contém erros", responseData)
+		return
+	}
+
+	response.SuccessOK(c, responseData, "Código validado com sucesso")
 }
 
 // Usage retorna métricas de uso do Dev Studio (última hora e hoje).
@@ -230,6 +240,34 @@ func (h *DevStudioHandler) History(c *gin.Context) {
 	}
 
 	response.SuccessOK(c, history, "Histórico recuperado com sucesso")
+}
+
+// GetDiff retorna diffs entre código gerado e código atual do repositório
+func (h *DevStudioHandler) GetDiff(c *gin.Context) {
+	idStr := c.Param("request_id")
+	requestID, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.ErrorValidation(c, "ID inválido", err.Error())
+		return
+	}
+
+	// Verificar perfil DEVELOPER
+	perfil, exists := c.Get("perfil")
+	if !exists || perfil != "DEVELOPER" {
+		response.ErrorForbidden(c, "Acesso negado. Perfil DEVELOPER necessário.")
+		return
+	}
+
+	diffs, err := h.devStudioSvc.GetFileDiffs(c.Request.Context(), requestID)
+	if err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{
+			"action": "get_diff",
+		})
+		response.ErrorInternal(c, "Erro ao buscar diffs", err.Error())
+		return
+	}
+
+	response.SuccessOK(c, diffs, "Diffs recuperados com sucesso")
 }
 
 // Status busca status de request específico

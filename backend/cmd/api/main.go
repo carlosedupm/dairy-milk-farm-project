@@ -185,13 +185,14 @@ func main() {
 							middleware.DevStudioRateLimit(),
 						)
 						{
-							devStudio.GET("/usage", devStudioHandler.Usage)
-							devStudio.POST("/chat", devStudioHandler.Chat)
-							devStudio.POST("/refine", devStudioHandler.Refine)
-							devStudio.POST("/validate/:request_id", devStudioHandler.Validate)
-							devStudio.POST("/implement/:request_id", devStudioHandler.Implement)
-							devStudio.GET("/history", devStudioHandler.History)
-							devStudio.GET("/status/:id", devStudioHandler.Status)
+						devStudio.GET("/usage", devStudioHandler.Usage)
+						devStudio.POST("/chat", devStudioHandler.Chat)
+						devStudio.POST("/refine", devStudioHandler.Refine)
+						devStudio.POST("/validate/:request_id", devStudioHandler.Validate)
+						devStudio.POST("/implement/:request_id", devStudioHandler.Implement)
+						devStudio.GET("/history", devStudioHandler.History)
+						devStudio.GET("/status/:id", devStudioHandler.Status)
+						devStudio.GET("/diff/:request_id", devStudioHandler.GetDiff)
 						}
 
 						slog.Info("Rotas do Dev Studio registradas")

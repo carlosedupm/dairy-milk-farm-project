@@ -31,6 +31,7 @@ type DevStudioService struct {
 	memoryBankPath       string
 	githubService        *GitHubService
 	githubContextBranch  string // branch de produção para contexto (ex.: main). Usado quando githubService != nil.
+	linterService        *LinterService
 }
 
 type CodeGenerationResponse struct {
@@ -57,6 +58,7 @@ func NewDevStudioService(repo *repository.DevStudioRepository, geminiAPIKey, mem
 		memoryBankPath:      memoryBankPath,
 		githubService:       githubService,
 		githubContextBranch: githubContextBranch,
+		linterService:       NewLinterService(),
 	}
 }
 
@@ -670,21 +672,30 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown, sem blocos de código, sem text
 	}, nil
 }
 
-func (s *DevStudioService) ValidateCode(ctx context.Context, requestID int64) error {
+// ValidationResult contém resultados da validação incluindo linter
+type ValidationResult struct {
+	SyntaxValid   bool                      `json:"syntax_valid"`
+	LinterResults map[string]*LinterResult  `json:"linter_results"`
+	HasErrors     bool                      `json:"has_errors"`
+	HasWarnings   bool                      `json:"has_warnings"`
+}
+
+// ValidateCode valida código sintaticamente e com linter, retornando ValidationResult
+func (s *DevStudioService) ValidateCode(ctx context.Context, requestID int64) (*ValidationResult, error) {
 	request, err := s.repo.GetByID(ctx, requestID)
 	if err != nil {
-		return fmt.Errorf("erro ao buscar request: %w", err)
+		return nil, fmt.Errorf("erro ao buscar request: %w", err)
 	}
 
 	// Extrair files do code_changes
 	filesInterface, ok := request.CodeChanges["files"]
 	if !ok {
-		return fmt.Errorf("código não encontrado no request")
+		return nil, fmt.Errorf("código não encontrado no request")
 	}
 
 	filesMap, ok := filesInterface.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("formato de files inválido")
+		return nil, fmt.Errorf("formato de files inválido")
 	}
 
 	// Converter para map[string]string
@@ -692,31 +703,82 @@ func (s *DevStudioService) ValidateCode(ctx context.Context, requestID int64) er
 	for path, contentInterface := range filesMap {
 		content, ok := contentInterface.(string)
 		if !ok {
-			return fmt.Errorf("conteúdo do arquivo %s inválido", path)
+			return nil, fmt.Errorf("conteúdo do arquivo %s inválido", path)
 		}
 		files[path] = content
 	}
 
-	// Validar cada arquivo
+	result := &ValidationResult{
+		SyntaxValid:   true,
+		LinterResults: make(map[string]*LinterResult),
+		HasErrors:     false,
+		HasWarnings:   false,
+	}
+
+	// Validar sintaxe e executar linter para cada arquivo
 	for path, content := range files {
 		ext := filepath.Ext(path)
+		syntaxValid := true
+
+		// Validação sintática básica
 		switch ext {
 		case ".go":
 			if err := s.validateSyntaxGo(content); err != nil {
-				return fmt.Errorf("arquivo %s: %w", path, err)
+				result.SyntaxValid = false
+				syntaxValid = false
+				result.LinterResults[path] = &LinterResult{
+					File:    path,
+					Errors:  []string{fmt.Sprintf("Erro de sintaxe: %v", err)},
+					Success: false,
+				}
+				result.HasErrors = true
+				continue
 			}
 		case ".ts", ".tsx", ".js", ".jsx":
 			// Validação básica de TypeScript/JavaScript
 			if len(content) == 0 {
-				return fmt.Errorf("arquivo %s está vazio", path)
+				result.SyntaxValid = false
+				syntaxValid = false
+				result.LinterResults[path] = &LinterResult{
+					File:    path,
+					Errors:  []string{"Arquivo está vazio"},
+					Success: false,
+				}
+				result.HasErrors = true
+				continue
+			}
+		}
+
+		// Se sintaxe válida, executar linter
+		if syntaxValid {
+			linterResult, err := s.linterService.RunLinter(ctx, path, content)
+			if err != nil {
+				slog.Warn("Erro ao executar linter", "path", path, "error", err)
+				// Continuar mesmo se linter falhar
+				linterResult = &LinterResult{
+					File:    path,
+					Errors:  []string{fmt.Sprintf("Erro ao executar linter: %v", err)},
+					Success: false,
+				}
+			}
+
+			result.LinterResults[path] = linterResult
+
+			if len(linterResult.Errors) > 0 {
+				result.HasErrors = true
+			}
+			if len(linterResult.Warnings) > 0 {
+				result.HasWarnings = true
 			}
 		}
 	}
 
-	// Atualizar status
-	request.Status = "validated"
-	if err := s.repo.Update(ctx, request); err != nil {
-		return fmt.Errorf("erro ao atualizar request: %w", err)
+	// Atualizar status apenas se não houver erros
+	if result.SyntaxValid && !result.HasErrors {
+		request.Status = "validated"
+		if err := s.repo.Update(ctx, request); err != nil {
+			return nil, fmt.Errorf("erro ao atualizar request: %w", err)
+		}
 	}
 
 	// Registrar auditoria
@@ -725,15 +787,18 @@ func (s *DevStudioService) ValidateCode(ctx context.Context, requestID int64) er
 		UserID:    request.UserID,
 		Action:    "validate",
 		Details: map[string]interface{}{
-			"request_id": requestID,
-			"files_count": len(files),
+			"request_id":     requestID,
+			"files_count":     len(files),
+			"syntax_valid":    result.SyntaxValid,
+			"has_errors":      result.HasErrors,
+			"has_warnings":    result.HasWarnings,
 		},
 	}
 	if err := s.repo.CreateAudit(ctx, audit); err != nil {
 		slog.Warn("Erro ao criar auditoria", "error", err)
 	}
 
-	return nil
+	return result, nil
 }
 
 func (s *DevStudioService) validateSyntaxGo(code string) error {
@@ -773,6 +838,75 @@ func (s *DevStudioService) GetUsage(ctx context.Context, userID int64) (*UsageSt
 
 func (s *DevStudioService) GetStatus(ctx context.Context, requestID int64) (*models.DevStudioRequest, error) {
 	return s.repo.GetByID(ctx, requestID)
+}
+
+// FileDiff representa a diferença entre código atual e código gerado
+type FileDiff struct {
+	Path    string `json:"path"`
+	OldCode string `json:"old_code"` // código atual do repositório
+	NewCode string `json:"new_code"`  // código gerado
+	IsNew   bool   `json:"is_new"`   // true se arquivo não existe ainda
+}
+
+// GetFileDiffs retorna diffs entre código gerado e código atual do repositório
+func (s *DevStudioService) GetFileDiffs(ctx context.Context, requestID int64) ([]FileDiff, error) {
+	// 1. Buscar request
+	request, err := s.repo.GetByID(ctx, requestID)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar request: %w", err)
+	}
+
+	// 2. Extrair files do code_changes
+	filesInterface, ok := request.CodeChanges["files"]
+	if !ok {
+		return nil, fmt.Errorf("código não encontrado no request")
+	}
+
+	filesMap, ok := filesInterface.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("formato de files inválido")
+	}
+
+	// Converter para map[string]string
+	files := make(map[string]string)
+	for path, contentInterface := range filesMap {
+		content, ok := contentInterface.(string)
+		if !ok {
+			return nil, fmt.Errorf("conteúdo do arquivo %s inválido", path)
+		}
+		files[path] = content
+	}
+
+	// 3. Para cada arquivo, buscar conteúdo atual do GitHub (se configurado)
+	diffs := make([]FileDiff, 0, len(files))
+	for path, newCode := range files {
+		diff := FileDiff{
+			Path:    path,
+			NewCode: newCode,
+			IsNew:   true,
+		}
+
+		// Tentar buscar arquivo atual do GitHub
+		if s.githubService != nil {
+			oldCode, err := s.githubService.GetFileContent(ctx, s.githubContextBranch, path)
+			if err == nil {
+				// Arquivo existe no repositório
+				diff.OldCode = oldCode
+				diff.IsNew = false
+			} else {
+				// Arquivo não existe (é novo) ou erro ao buscar
+				// Se for erro de "não encontrado", manter IsNew = true
+				// Se for outro erro, logar mas continuar
+				if !strings.Contains(err.Error(), "404") && !strings.Contains(err.Error(), "não encontrado") {
+					slog.Warn("Erro ao buscar arquivo do GitHub para diff", "path", path, "error", err)
+				}
+			}
+		}
+
+		diffs = append(diffs, diff)
+	}
+
+	return diffs, nil
 }
 
 func (s *DevStudioService) Implement(ctx context.Context, requestID int64) error {

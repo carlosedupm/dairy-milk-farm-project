@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import * as devStudioService from '@/services/devStudio'
-import type { CodeGenerationResponse } from '@/services/devStudio'
+import type { CodeGenerationResponse, FileDiff, ValidationResult } from '@/services/devStudio'
 import { Copy, Download } from 'lucide-react'
+import { DiffViewer } from './DiffViewer'
 
 const RATE_LIMIT_MSG =
   'Limite de requisições atingido (5/hora). Tente novamente mais tarde.'
@@ -40,6 +41,11 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
   const [refining, setRefining] = useState(false)
   const [refineError, setRefineError] = useState('')
   const [copiedPath, setCopiedPath] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'preview' | 'diff'>('preview')
+  const [diffs, setDiffs] = useState<FileDiff[]>([])
+  const [diffsLoading, setDiffsLoading] = useState(false)
+  const [diffsError, setDiffsError] = useState<string | null>(null)
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
 
   const handleValidate = async () => {
     if (!code) return
@@ -47,23 +53,36 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
     setValidating(true)
     setValidationStatus('idle')
     setValidationError('')
+    setValidationResult(null)
 
     try {
-      const updatedRequest = await devStudioService.validate(code.request_id)
-      setValidationStatus('success')
+      const result = await devStudioService.validate(code.request_id)
+      setValidationResult(result.validation)
+      
+      // Verificar se há erros
+      if (!result.validation.syntax_valid || result.validation.has_errors) {
+        setValidationStatus('error')
+        const errorFiles = Object.entries(result.validation.linter_results)
+          .filter(([_, lr]) => lr.errors.length > 0)
+          .map(([file, lr]) => `${file}: ${lr.errors.join(', ')}`)
+          .join('; ')
+        setValidationError(`Erros encontrados: ${errorFiles}`)
+      } else {
+        setValidationStatus('success')
+      }
       
       // Atualizar código com status atualizado
       if (onCodeUpdated) {
         // Extrair files do code_changes se necessário
-        const files = updatedRequest.code_changes?.files as Record<string, string> | undefined
+        const files = result.request.code_changes?.files as Record<string, string> | undefined
         const updatedCode: CodeGenerationResponse = {
-          request_id: updatedRequest.id,
+          request_id: result.request.id,
           files: files || code.files,
-          explanation: updatedRequest.code_changes?.explanation as string || code.explanation,
-          status: updatedRequest.status,
-          pr_number: updatedRequest.pr_number,
-          pr_url: updatedRequest.pr_url,
-          branch_name: updatedRequest.branch_name,
+          explanation: result.request.code_changes?.explanation as string || code.explanation,
+          status: result.request.status,
+          pr_number: result.request.pr_number,
+          pr_url: result.request.pr_url,
+          branch_name: result.request.branch_name,
         }
         onCodeUpdated(updatedCode)
       }
@@ -186,6 +205,34 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
     URL.revokeObjectURL(url)
   }
 
+  // Carregar diffs quando tab Diff for selecionada
+  useEffect(() => {
+    if (activeTab === 'diff' && code && diffs.length === 0 && !diffsLoading) {
+      loadDiffs()
+    }
+  }, [activeTab, code])
+
+  const loadDiffs = async () => {
+    if (!code) return
+
+    setDiffsLoading(true)
+    setDiffsError(null)
+
+    try {
+      const loadedDiffs = await devStudioService.getDiff(code.request_id)
+      setDiffs(loadedDiffs)
+    } catch (err) {
+      const errorMessage =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { error?: { message?: string } } } }).response?.data
+              ?.error?.message
+          : 'Erro ao carregar diffs.'
+      setDiffsError(errorMessage ?? 'Erro ao carregar diffs.')
+    } finally {
+      setDiffsLoading(false)
+    }
+  }
+
   if (!code) {
     return (
       <Card className="h-full">
@@ -215,9 +262,22 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
         )}
 
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm text-muted-foreground">
-            {Object.keys(code.files).length} arquivo(s) gerado(s)
-          </p>
+          <div className="flex gap-2">
+            <Button
+              variant={activeTab === 'preview' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('preview')}
+            >
+              Preview
+            </Button>
+            <Button
+              variant={activeTab === 'diff' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('diff')}
+            >
+              Diff
+            </Button>
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -230,40 +290,69 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-4 min-h-[200px] max-h-[600px]">
-          {Object.entries(code.files).map(([path, content]) => (
-            <div key={path} className="border rounded-md overflow-hidden">
-              <div className="bg-muted p-2 font-mono text-sm border-b flex items-center justify-between">
-                <span>{path}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleCopyCode(path, content)}
-                  className="h-6 px-2 text-xs"
+          {activeTab === 'preview' ? (
+            Object.entries(code.files).map(([path, content]) => (
+              <div key={path} className="border rounded-md overflow-hidden">
+                <div className="bg-muted p-2 font-mono text-sm border-b flex items-center justify-between">
+                  <span>{path}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopyCode(path, content)}
+                    className="h-6 px-2 text-xs"
+                  >
+                    {copiedPath === path ? (
+                      '✓ Copiado'
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copiar
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <SyntaxHighlighter
+                  language={getLanguageFromPath(path)}
+                  style={vscDarkPlus}
+                  customStyle={{
+                    margin: 0,
+                    padding: '1rem',
+                    background: 'transparent',
+                  }}
+                  showLineNumbers
                 >
-                  {copiedPath === path ? (
-                    '✓ Copiado'
-                  ) : (
-                    <>
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copiar
-                    </>
-                  )}
-                </Button>
+                  {content}
+                </SyntaxHighlighter>
               </div>
-              <SyntaxHighlighter
-                language={getLanguageFromPath(path)}
-                style={vscDarkPlus}
-                customStyle={{
-                  margin: 0,
-                  padding: '1rem',
-                  background: 'transparent',
-                }}
-                showLineNumbers
-              >
-                {content}
-              </SyntaxHighlighter>
-            </div>
-          ))}
+            ))
+          ) : (
+            <>
+              {diffsLoading && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Carregando diffs...
+                </p>
+              )}
+              {diffsError && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                  <p className="text-sm text-amber-800">{diffsError}</p>
+                </div>
+              )}
+              {!diffsLoading && !diffsError && diffs.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum diff disponível.
+                </p>
+              )}
+              {!diffsLoading && !diffsError && diffs.map((diff) => (
+                <DiffViewer
+                  key={diff.path}
+                  oldCode={diff.old_code}
+                  newCode={diff.new_code}
+                  path={diff.path}
+                  isNew={diff.is_new}
+                />
+              ))}
+            </>
+          )}
         </div>
 
         <div className="flex flex-col gap-3">
@@ -298,7 +387,10 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
             <Button onClick={handleValidate} disabled={validating || !code}>
               {validating ? 'Validando...' : 'Validar Código'}
             </Button>
-            {validationStatus === 'success' && code.status === 'validated' && !code.pr_number && (
+            {validationStatus === 'success' && 
+             code.status === 'validated' && 
+             !code.pr_number && 
+             (!validationResult || !validationResult.has_errors) && (
               <Button onClick={handleImplement} disabled={implementing} variant="default">
                 {implementing ? 'Criando PR...' : 'Criar PR'}
               </Button>

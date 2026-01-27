@@ -33,6 +33,27 @@ export type UsageStats = {
   used_today: number
 }
 
+export type FileDiff = {
+  path: string
+  old_code: string
+  new_code: string
+  is_new: boolean
+}
+
+export type LinterResult = {
+  file: string
+  errors: string[]
+  warnings: string[]
+  success: boolean
+}
+
+export type ValidationResult = {
+  syntax_valid: boolean
+  linter_results: Record<string, LinterResult>
+  has_errors: boolean
+  has_warnings: boolean
+}
+
 type ApiResponse<T> = { data: T }
 
 export async function chat(prompt: string): Promise<CodeGenerationResponse> {
@@ -56,8 +77,14 @@ export async function refine(
   return data.data
 }
 
-export async function validate(requestId: number): Promise<DevStudioRequest> {
-  const { data } = await api.post<ApiResponse<DevStudioRequest>>(
+export async function validate(requestId: number): Promise<{
+  validation: ValidationResult
+  request: DevStudioRequest
+}> {
+  const { data } = await api.post<ApiResponse<{
+    validation: ValidationResult
+    request: DevStudioRequest
+  }>>(
     `/api/v1/dev-studio/validate/${requestId}`
   )
   if (!data.data) throw new Error('Resposta inválida')
@@ -77,6 +104,12 @@ export async function getHistory(): Promise<DevStudioRequest[]> {
 
 export async function getStatus(id: number): Promise<DevStudioRequest> {
   const { data } = await api.get<ApiResponse<DevStudioRequest>>(`/api/v1/dev-studio/status/${id}`)
+  if (!data.data) throw new Error('Resposta inválida')
+  return data.data
+}
+
+export async function getDiff(requestId: number): Promise<FileDiff[]> {
+  const { data } = await api.get<ApiResponse<FileDiff[]>>(`/api/v1/dev-studio/diff/${requestId}`)
   if (!data.data) throw new Error('Resposta inválida')
   return data.data
 }
