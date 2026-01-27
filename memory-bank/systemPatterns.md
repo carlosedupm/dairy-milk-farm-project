@@ -276,6 +276,33 @@ Usuario (N) ─── (1) Fazenda
 - **Docker Builds**: Builds automatizados de containers
 - **Infrastructure as Code**: Terraform-ready
 
+## 🎨 Padrões de UI/UX
+
+### **Componentes Shadcn/UI**
+- **Biblioteca**: Shadcn/UI como base de componentes
+- **Componentes Disponíveis**: button, card, dialog, input, label, table
+- **Estilização**: Tailwind CSS com tema customizado
+
+### **Dialogs de Confirmação**
+- **Padrão**: Usar Shadcn/UI Dialog para confirmações de ações destrutivas
+- **Nunca usar**: `confirm()` ou `alert()` nativos do JavaScript
+- **Estrutura**:
+  - `Dialog` com `open` e `onOpenChange` para controle de estado
+  - `DialogHeader` com `DialogTitle` e `DialogDescription`
+  - `DialogFooter` com botões de ação (cancelar e confirmar)
+  - Botão de cancelar: `variant="outline"`
+  - Botão de confirmar: `variant="destructive"` para ações destrutivas
+- **Exemplo**: Cancelamento de requisições no Dev Studio usa Dialog com confirmação clara
+
+### **Atualização Automática de Listas**
+- **Padrão**: Usar `refreshTrigger` (número) para forçar atualização de listas/históricos
+- **Implementação**: 
+  - Estado `refreshTrigger` na página principal
+  - Passar `refreshTrigger` como prop para componente de lista
+  - `useEffect` no componente de lista observa mudanças em `refreshTrigger`
+  - Incrementar `refreshTrigger` após ações que modificam dados (criar, atualizar, deletar, cancelar)
+- **Exemplo**: `HistoryPanel` atualiza automaticamente após cancelar requisição
+
 ## 📊 Padrões de Monitoramento
 
 ### **Observability**
@@ -300,4 +327,4 @@ Usuario (N) ─── (1) Fazenda
 ---
 
 **Última atualização**: 2026-01-26
-**Versão dos Padrões**: 2.0 (Go + Next.js) — Estrutura atual do projeto documentada; Dev Studio contexto tipo Cursor e do repositório
+**Versão dos Padrões**: 2.1 (Go + Next.js) — Estrutura atual do projeto documentada; Dev Studio Fase 3 (Diff Viewer, Linter, Cancelamento) implementado; Padrões de UI/UX para dialogs e atualização automática

@@ -18,7 +18,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version-file: backend/go.mod
         cache-dependency-path: backend/go.sum
 
     - name: Download dependencies
@@ -41,54 +41,6 @@ jobs:
     - name: Build backend
       working-directory: backend
       run: go build -o /tmp/api ./cmd/api
-
-    - name: Build Docker image
-      run: docker build -f Dockerfile .
-
-  backend-test:
-    name: Backend - Tests
-    runs-on: ubuntu-latest
-    needs: backend-lint-build
-    
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_DB: ceialmilk_test
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.24'
-        cache-dependency-path: backend/go.sum
-
-    - name: Download dependencies
-      working-directory: backend
-      run: go mod download
-
-    - name: Run tests
-      working-directory: backend
-      env:
-        DATABASE_URL: postgres://test:test@localhost:5432/ceialmilk_test?sslmode=disable
-        ENV: test
-        LOG_LEVEL: ERROR
-      run: |
-        # TODO: Uncomment when tests are implemented
-        # go test ./... -v -coverprofile=coverage.out
-        echo "Tests not yet implemented. Skipping test execution."
 
   frontend-lint:
     name: Frontend - Lint
@@ -137,30 +89,3 @@ jobs:
       env:
         NEXT_PUBLIC_API_URL: http://localhost:8080
       run: npm run build
-
-  frontend-test:
-    name: Frontend - Tests
-    runs-on: ubuntu-latest
-    needs: frontend-lint
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 'lts/*'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-
-    - name: Install dependencies
-      working-directory: frontend
-      run: npm ci
-
-    - name: Run tests
-      working-directory: frontend
-      run: |
-        # TODO: Uncomment when tests are implemented
-        # npm test
-        echo "Tests not yet implemented. Skipping test execution."

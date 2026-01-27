@@ -21,7 +21,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 - **Devcontainer**: `DATABASE_URL` e `PORT` pré-configurados; backend via `go run ./cmd/api`
 - **Resiliência**: Se o Postgres falhar (ex.: pg_hba), o backend sobe e expõe apenas `GET /health`; auth/fazendas ficam inativos até o DB estar ok
 - **Postgres no compose**: `scripts/db/init-pg-hba.sh` + `ssl=off` para aceitar conexões do devcontainer (após recriar o volume)
-- **Dev Studio (Fase 0 + Fase 1 + Fase 2)**: Área de desenvolvimento interativa com IA integrada — geração de código via Gemini API, validação sintática, preview, histórico, criação automática de PRs via GitHub API, **RAG dinâmico** (seleção de contexto por palavras-chave), **monitoramento** (GET /usage, alertas de limite, tratamento 429), **Refinar** (feedback para corrigir divergências) e **exemplos de código** (handler/service/repository/model/response de Fazenda) sempre incluídos no contexto da IA. **Contexto tipo Cursor**: quando o prompt indica edição de menu/UI (ex.: "menu", "Header", "rota", "link", "dev-studio"), o backend inclui o **estado atual** dos arquivos-alvo (ex.: `Header.tsx`, `layout.tsx`) e instruções para **editar em cima do existente** e **preservar** o que não foi pedido para alterar. **Contexto sempre do repositório**: quando `GITHUB_TOKEN` e `GITHUB_REPO` estão configurados, **exemplos** e **arquivos-alvo** são sempre buscados da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) no GitHub, pois o resultado aprovado irá para lá (PR → merge).
+- **Dev Studio (Fase 0 + Fase 1 + Fase 2 + Fase 3)**: Área de desenvolvimento interativa com IA integrada — geração de código via Gemini API, validação sintática, preview, histórico, criação automática de PRs via GitHub API, **RAG dinâmico** (seleção de contexto por palavras-chave), **monitoramento** (GET /usage, alertas de limite, tratamento 429), **Refinar** (feedback para corrigir divergências) e **exemplos de código** (handler/service/repository/model/response de Fazenda) sempre incluídos no contexto da IA. **Contexto tipo Cursor**: quando o prompt indica edição de menu/UI (ex.: "menu", "Header", "rota", "link", "dev-studio"), o backend inclui o **estado atual** dos arquivos-alvo (ex.: `Header.tsx`, `layout.tsx`) e instruções para **editar em cima do existente** e **preservar** o que não foi pedido para alterar. **Contexto sempre do repositório**: quando `GITHUB_TOKEN` e `GITHUB_REPO` estão configurados, **exemplos** e **arquivos-alvo** são sempre buscados da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) no GitHub, pois o resultado aprovado irá para lá (PR → merge). **Diff Viewer**: visualização de diferenças entre código gerado e código atual no repositório (comparação linha por linha). **Linter Automático**: validação sintática e de lint para Go e TypeScript com exibição de erros e avisos. **Cancelamento de Requisições**: funcionalidade para cancelar requisições geradas (status "cancelled"), com dialog de confirmação moderno (Shadcn/UI) e atualização automática do histórico.
 
 ### 🚧 Em andamento:
 - **Testes**: Backend e frontend
@@ -43,6 +43,8 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 14. ✅ **Memory-bank e exemplos no Dev Studio**: `systemPatterns` e `techContext` atualizados com **estrutura atual do projeto** (pastas backend/frontend, rotas, padrões Handler/Service/Repository/Model/response). Dev Studio passa a incluir **trechos de código** (fazenda_handler, fazenda_service, fazenda_repository, models/fazenda, response) no contexto da IA em toda geração e refinamento.
 15. ✅ **Contexto tipo Cursor no Dev Studio**: `loadTargetFilesForPrompt` infere arquivos-alvo (ex.: Header.tsx, layout.tsx) por palavras-chave do prompt (menu, Header, rota, link, dev-studio); inclui o **estado atual** no contexto. Prompt com **INSTRUÇÕES (comportamento tipo IDE)**: usar como base, preservar o resto; editar em cima do existente. Geração e refinamento usam o mesmo fluxo.
 16. ✅ **Contexto sempre do repositório (GitHub)**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo passam a ser obtidos sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via GitHub Contents API. `GitHubService.GetFileContent(ctx, branch, path)`; fallback para disco local quando GitHub não está configurado.
+17. ✅ **Dev Studio Fase 3 - Diff Viewer e Linter**: Implementação completa do Diff Viewer (visualização de diferenças entre código gerado e código atual no repositório) e Linter Automático (validação sintática e de lint para Go e TypeScript). Backend: `GetFileDiffs()` no service, endpoint `GET /api/v1/dev-studio/diff/:request_id`, `LinterService` com validação básica de sintaxe. Frontend: componente `DiffViewer` customizado usando biblioteca `diff`, integração no `CodePreview` com tabs Preview/Diff, exibição de resultados do linter com erros e avisos, botão "Criar PR" desabilitado quando há erros.
+18. ✅ **Dev Studio - Cancelamento de Requisições**: Funcionalidade completa para cancelar requisições geradas. Backend: método `CancelRequest()` no service com validação de autorização e proteção contra cancelamento de requisições já implementadas, endpoint `DELETE /api/v1/dev-studio/:request_id`, auditoria de cancelamentos. Frontend: botão "Cancelar" no `CodePreview` com dialog de confirmação moderno (Shadcn/UI Dialog), atualização automática do histórico após cancelamento via `refreshTrigger`, badge "Cancelado" no `HistoryPanel`, filtro por status "cancelled".
 
 ### 📋 Próximos passos imediatos:
 1. Testes automatizados (E2E ou unitários)
@@ -84,14 +86,14 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ## 📊 Métricas de Progresso
 
-### **Completude Geral**: 78%
+### **Completude Geral**: 80%
 - **Infraestrutura**: 95% ✅ (backend + frontend em produção + Dev Studio)
 - **Documentação**: 95% ✅ (incluindo Dev Studio)
-- **Implementação**: 78% 🚧 (Dev Studio Fase 0 + 1 + 2 concluído)
+- **Implementação**: 80% 🚧 (Dev Studio Fase 0 + 1 + 2 + 3 concluído)
 - **Testes**: 0% 🚧
 - **Deploy**: 90% ✅ (backend Render + frontend Vercel; login e CRUD validados no ar)
 
 ---
 
 **Última atualização**: 2026-01-26
-**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 + Fase 2 (RAG dinâmico + monitoramento) implementado
+**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 + Fase 2 + Fase 3 (Diff Viewer, Linter Automático, Cancelamento) implementado

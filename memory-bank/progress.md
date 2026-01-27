@@ -2,11 +2,11 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 78%
+### **Completude Geral**: 80%
 ```bash
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 95% ✅
-💻  Implementação: 78% 🚧 (Dev Studio Fase 0 + 1 + 2 concluído)
+💻  Implementação: 80% 🚧 (Dev Studio Fase 0 + 1 + 2 + 3 concluído)
 🧪  Testes: 0% 🚧
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção; login e CRUD validados)
 ```
@@ -133,7 +133,7 @@
 
 ### **Desenvolvimento**
 ```progress
-███████▄▄▄ 78%
+████████▄▄ 80%
 ```
 
 ### **Qualidade**
@@ -252,6 +252,31 @@
 - ✅ **Contexto tipo Cursor**: `loadTargetFilesForPrompt` infere arquivos-alvo (menu, Header, rota, link, dev-studio) e inclui o estado atual no contexto. Instruções no prompt: usar como base, preservar o resto; trabalhar como IDE. Geração e refinamento usam o mesmo fluxo.
 - ✅ **Contexto sempre do repositório**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo vêm sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via `GitHubService.GetFileContent`. Config `GITHUB_CONTEXT_BRANCH`; fallback para disco local quando GitHub não está configurado. Solução validada em uso.
 
+### **2026-01-26 - Dev Studio Fase 3 (Diff Viewer e Linter Automático)**
+- ✅ **Diff Viewer**: Visualização de diferenças entre código gerado e código atual no repositório
+  - Backend: `GetFileDiffs()` no `DevStudioService` que compara código gerado com conteúdo da branch `main` via `GitHubService.GetFileContent()`
+  - Endpoint `GET /api/v1/dev-studio/diff/:request_id` com validação de perfil DEVELOPER
+  - Frontend: componente `DiffViewer` customizado usando biblioteca `diff` para cálculo de diferenças
+  - Integração no `CodePreview` com tabs "Preview" e "Diff" para alternar entre visualizações
+  - Exibição linha por linha com cores (verde para adições, vermelho para remoções)
+- ✅ **Linter Automático**: Validação sintática e de lint para Go e TypeScript
+  - Backend: `LinterService` com validação básica de sintaxe (arquivos vazios, chaves balanceadas)
+  - Integração no `ValidateCode()` do `DevStudioService` retornando `ValidationResult` com erros e avisos
+  - Endpoint `POST /api/v1/dev-studio/validate/:request_id` atualizado para retornar resultados do linter
+  - Frontend: exibição de erros e avisos do linter em boxes coloridos (amber para avisos, red para erros)
+  - Botão "Criar PR" desabilitado quando `validationResult.has_errors` é true
+
+### **2026-01-26 - Dev Studio - Cancelamento de Requisições**
+- ✅ **Cancelamento de Requisições**: Funcionalidade completa para cancelar requisições geradas
+  - Backend: método `CancelRequest()` no `DevStudioService` com validação de autorização (apenas dono pode cancelar) e proteção contra cancelamento de requisições já implementadas (com PR criado)
+  - Endpoint `DELETE /api/v1/dev-studio/:request_id` com validação de perfil DEVELOPER
+  - Auditoria de cancelamentos registrada em `dev_studio_audit`
+  - Frontend: botão "Cancelar" no `CodePreview` (visível apenas quando status não é "cancelled" ou "implemented")
+  - Dialog de confirmação moderno usando Shadcn/UI Dialog (substituindo `confirm()` nativo)
+  - Atualização automática do histórico após cancelamento via `refreshTrigger` no `HistoryPanel`
+  - Badge "Cancelado" no `HistoryPanel` e filtro por status "cancelled"
+  - Status "cancelled" exibido no histórico e no preview de código
+
 **Última atualização**: 2026-01-26
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 + Fase 2 concluído
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 + Fase 2 + Fase 3 concluído
 **Próxima revisão**: 2026-02-07
