@@ -18,6 +18,7 @@ type Message = {
 type ChatInterfaceProps = {
   onCodeGenerated: (code: CodeGenerationResponse) => void
   atLimit?: boolean
+  onCodeCleared?: () => void
 }
 
 const RATE_LIMIT_MSG =

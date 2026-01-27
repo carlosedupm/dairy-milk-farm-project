@@ -190,6 +190,7 @@ func main() {
 						devStudio.POST("/refine", devStudioHandler.Refine)
 						devStudio.POST("/validate/:request_id", devStudioHandler.Validate)
 						devStudio.POST("/implement/:request_id", devStudioHandler.Implement)
+						devStudio.DELETE("/:request_id", devStudioHandler.Cancel)
 						devStudio.GET("/history", devStudioHandler.History)
 						devStudio.GET("/status/:id", devStudioHandler.Status)
 						devStudio.GET("/diff/:request_id", devStudioHandler.GetDiff)

@@ -121,3 +121,7 @@ export async function implement(requestId: number): Promise<DevStudioRequest> {
   if (!data.data) throw new Error('Resposta inválida')
   return data.data
 }
+
+export async function cancel(requestId: number): Promise<void> {
+  await api.delete(`/api/v1/dev-studio/${requestId}`)
+}

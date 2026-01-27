@@ -840,6 +840,50 @@ func (s *DevStudioService) GetStatus(ctx context.Context, requestID int64) (*mod
 	return s.repo.GetByID(ctx, requestID)
 }
 
+// CancelRequest cancela uma requisição, mudando seu status para "cancelled"
+func (s *DevStudioService) CancelRequest(ctx context.Context, requestID int64, userID int64) error {
+	// Buscar request
+	request, err := s.repo.GetByID(ctx, requestID)
+	if err != nil {
+		return fmt.Errorf("erro ao buscar request: %w", err)
+	}
+
+	// Verificar se o usuário é o dono da requisição
+	if request.UserID != userID {
+		return fmt.Errorf("usuário não autorizado a cancelar esta requisição")
+	}
+
+	// Verificar se já está implementado (não pode cancelar se já tem PR)
+	if request.Status == "implemented" && request.PRNumber != nil {
+		return fmt.Errorf("não é possível cancelar uma requisição que já foi implementada (PR criado)")
+	}
+
+	// Salvar status anterior para auditoria
+	previousStatus := request.Status
+
+	// Atualizar status para cancelled
+	request.Status = "cancelled"
+	if err := s.repo.Update(ctx, request); err != nil {
+		return fmt.Errorf("erro ao atualizar request: %w", err)
+	}
+
+	// Registrar auditoria
+	audit := &models.DevStudioAudit{
+		RequestID: &requestID,
+		UserID:    userID,
+		Action:    "cancel",
+		Details: map[string]interface{}{
+			"request_id":     requestID,
+			"previous_status": previousStatus,
+		},
+	}
+	if err := s.repo.CreateAudit(ctx, audit); err != nil {
+		slog.Warn("Erro ao criar auditoria", "error", err)
+	}
+
+	return nil
+}
+
 // FileDiff representa a diferença entre código atual e código gerado
 type FileDiff struct {
 	Path    string `json:"path"`

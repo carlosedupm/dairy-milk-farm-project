@@ -270,6 +270,52 @@ func (h *DevStudioHandler) GetDiff(c *gin.Context) {
 	response.SuccessOK(c, diffs, "Diffs recuperados com sucesso")
 }
 
+// Cancel cancela uma requisição
+func (h *DevStudioHandler) Cancel(c *gin.Context) {
+	idStr := c.Param("request_id")
+	requestID, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.ErrorValidation(c, "ID inválido", err.Error())
+		return
+	}
+
+	userID := c.GetInt64("user_id")
+
+	// Verificar perfil DEVELOPER
+	perfil, exists := c.Get("perfil")
+	if !exists || perfil != "DEVELOPER" {
+		response.ErrorForbidden(c, "Acesso negado. Perfil DEVELOPER necessário.")
+		return
+	}
+
+	// Cancelar requisição
+	if err := h.devStudioSvc.CancelRequest(c.Request.Context(), requestID, userID); err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{
+			"action": "cancel_request",
+		})
+		
+		// Verificar se é erro de autorização
+		if strings.Contains(err.Error(), "não autorizado") {
+			response.ErrorForbidden(c, err.Error())
+			return
+		}
+		
+		// Verificar se é erro de requisição já implementada
+		if strings.Contains(err.Error(), "já foi implementada") {
+			response.ErrorValidation(c, "Não é possível cancelar", err.Error())
+			return
+		}
+		
+		response.ErrorInternal(c, "Erro ao cancelar requisição", err.Error())
+		return
+	}
+
+	response.SuccessOK(c, gin.H{
+		"request_id": requestID,
+		"status":     "cancelled",
+	}, "Requisição cancelada com sucesso")
+}
+
 // Status busca status de request específico
 func (h *DevStudioHandler) Status(c *gin.Context) {
 	idStr := c.Param("id")

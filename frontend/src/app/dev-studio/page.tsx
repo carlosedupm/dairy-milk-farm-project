@@ -19,6 +19,7 @@ export default function DevStudioPage() {
   const [currentCode, setCurrentCode] = useState<CodeGenerationResponse | null>(null)
   const [usage, setUsage] = useState<UsageStats | null>(null)
   const [usageLoading, setUsageLoading] = useState(true)
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0)
 
   const fetchUsage = useCallback(async () => {
     try {
@@ -113,6 +114,7 @@ export default function DevStudioPage() {
                 fetchUsage()
               }}
               atLimit={atLimit}
+              onCodeCleared={() => setCurrentCode(null)}
             />
           </div>
           <div>
@@ -120,6 +122,10 @@ export default function DevStudioPage() {
               code={currentCode}
               onCodeUpdated={setCurrentCode}
               atLimit={atLimit}
+              onRequestCancelled={() => {
+                // Forçar atualização do histórico
+                setHistoryRefreshTrigger((prev) => prev + 1)
+              }}
             />
           </div>
         </div>
@@ -137,6 +143,7 @@ export default function DevStudioPage() {
 
         <div className="mt-6">
           <HistoryPanel
+            refreshTrigger={historyRefreshTrigger}
             onSelectRequest={(request: DevStudioRequest) => {
               // Converter DevStudioRequest para CodeGenerationResponse
               const files = request.code_changes?.files as Record<string, string> | undefined

@@ -6,9 +6,17 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import * as devStudioService from '@/services/devStudio'
 import type { CodeGenerationResponse, FileDiff, ValidationResult } from '@/services/devStudio'
-import { Copy, Download } from 'lucide-react'
+import { Copy, Download, X } from 'lucide-react'
 import { DiffViewer } from './DiffViewer'
 
 const RATE_LIMIT_MSG =
@@ -28,9 +36,16 @@ type CodePreviewProps = {
   code: CodeGenerationResponse | null
   onCodeUpdated?: (code: CodeGenerationResponse) => void
   atLimit?: boolean
+  onRequestCancelled?: () => void // Callback quando uma requisição é cancelada
 }
 
-export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePreviewProps) {
+export function CodePreview({ code, onCodeUpdated, atLimit = false, onRequestCancelled }: CodePreviewProps) {
+  const [currentCode, setCurrentCode] = useState<CodeGenerationResponse | null>(code)
+  
+  // Sincronizar currentCode com code prop
+  useEffect(() => {
+    setCurrentCode(code)
+  }, [code])
   const [validating, setValidating] = useState(false)
   const [validationStatus, setValidationStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [validationError, setValidationError] = useState('')
@@ -46,9 +61,12 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
   const [diffsLoading, setDiffsLoading] = useState(false)
   const [diffsError, setDiffsError] = useState<string | null>(null)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
 
   const handleValidate = async () => {
-    if (!code) return
+    if (!currentCode) return
 
     setValidating(true)
     setValidationStatus('idle')
@@ -56,7 +74,7 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
     setValidationResult(null)
 
     try {
-      const result = await devStudioService.validate(code.request_id)
+      const result = await devStudioService.validate(currentCode.request_id)
       setValidationResult(result.validation)
       
       // Verificar se há erros
@@ -77,13 +95,14 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
         const files = result.request.code_changes?.files as Record<string, string> | undefined
         const updatedCode: CodeGenerationResponse = {
           request_id: result.request.id,
-          files: files || code.files,
-          explanation: result.request.code_changes?.explanation as string || code.explanation,
+          files: files || currentCode.files,
+          explanation: result.request.code_changes?.explanation as string || currentCode.explanation,
           status: result.request.status,
           pr_number: result.request.pr_number,
           pr_url: result.request.pr_url,
           branch_name: result.request.branch_name,
         }
+        setCurrentCode(updatedCode)
         onCodeUpdated(updatedCode)
       }
     } catch (err: unknown) {
@@ -100,14 +119,14 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
   }
 
   const handleImplement = async () => {
-    if (!code) return
+    if (!currentCode) return
 
     setImplementing(true)
     setImplementationStatus('idle')
     setImplementationError('')
 
     try {
-      const updatedRequest = await devStudioService.implement(code.request_id)
+      const updatedRequest = await devStudioService.implement(currentCode.request_id)
       setImplementationStatus('success')
       
       // Atualizar código com informações do PR
@@ -115,13 +134,14 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
         const files = updatedRequest.code_changes?.files as Record<string, string> | undefined
         const updatedCode: CodeGenerationResponse = {
           request_id: updatedRequest.id,
-          files: files || code.files,
-          explanation: updatedRequest.code_changes?.explanation as string || code.explanation,
+          files: files || currentCode.files,
+          explanation: updatedRequest.code_changes?.explanation as string || currentCode.explanation,
           status: updatedRequest.status,
           pr_number: updatedRequest.pr_number,
           pr_url: updatedRequest.pr_url,
           branch_name: updatedRequest.branch_name,
         }
+        setCurrentCode(updatedCode)
         onCodeUpdated(updatedCode)
       }
     } catch (err: unknown) {
@@ -138,18 +158,19 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
   }
 
   const handleRefine = async () => {
-    if (!code || !refineFeedback.trim() || refining || atLimit) return
+    if (!currentCode || !refineFeedback.trim() || refining || atLimit) return
 
     setRefining(true)
     setRefineError('')
 
     try {
-      const refined = await devStudioService.refine(code.request_id, refineFeedback.trim())
+      const refined = await devStudioService.refine(currentCode.request_id, refineFeedback.trim())
       setRefineFeedback('')
       setValidationStatus('idle')
       setValidationError('')
       setImplementationStatus('idle')
       setImplementationError('')
+      setCurrentCode(refined)
       if (onCodeUpdated) onCodeUpdated(refined)
     } catch (err: unknown) {
       setRefineError(getRefineErrorMessage(err))
@@ -191,14 +212,14 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
   }
 
   const handleDownloadAll = () => {
-    if (!code) return
+    if (!currentCode) return
 
-    const zipContent: Record<string, string> = code.files
+    const zipContent: Record<string, string> = currentCode.files
     const blob = new Blob([JSON.stringify(zipContent, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `dev-studio-${code.request_id}-files.json`
+    a.download = `dev-studio-${currentCode.request_id}-files.json`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -207,19 +228,19 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
 
   // Carregar diffs quando tab Diff for selecionada
   useEffect(() => {
-    if (activeTab === 'diff' && code && diffs.length === 0 && !diffsLoading) {
+    if (activeTab === 'diff' && currentCode && diffs.length === 0 && !diffsLoading) {
       loadDiffs()
     }
-  }, [activeTab, code])
+  }, [activeTab, currentCode])
 
   const loadDiffs = async () => {
-    if (!code) return
+    if (!currentCode) return
 
     setDiffsLoading(true)
     setDiffsError(null)
 
     try {
-      const loadedDiffs = await devStudioService.getDiff(code.request_id)
+      const loadedDiffs = await devStudioService.getDiff(currentCode.request_id)
       setDiffs(loadedDiffs)
     } catch (err) {
       const errorMessage =
@@ -233,7 +254,45 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
     }
   }
 
-  if (!code) {
+  const handleCancelClick = () => {
+    setShowCancelDialog(true)
+  }
+
+  const handleCancelConfirm = async () => {
+    if (!currentCode) return
+
+    setShowCancelDialog(false)
+    setCancelling(true)
+    setCancelError(null)
+
+    try {
+      await devStudioService.cancel(currentCode.request_id)
+      // Atualizar código com status cancelled
+      const cancelledCode: CodeGenerationResponse = {
+        ...currentCode,
+        status: 'cancelled',
+      }
+      setCurrentCode(cancelledCode)
+      if (onCodeUpdated) {
+        onCodeUpdated(cancelledCode)
+      }
+      // Notificar que uma requisição foi cancelada para atualizar histórico
+      if (onRequestCancelled) {
+        onRequestCancelled()
+      }
+    } catch (err) {
+      const errorMessage =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { error?: { message?: string } } } }).response?.data
+              ?.error?.message
+          : 'Erro ao cancelar requisição.'
+      setCancelError(errorMessage ?? 'Erro ao cancelar requisição.')
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  if (!currentCode) {
     return (
       <Card className="h-full">
         <CardHeader>
@@ -250,14 +309,27 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Preview de Código</CardTitle>
+        {currentCode.status !== 'cancelled' && 
+         currentCode.status !== 'implemented' && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleCancelClick}
+            disabled={cancelling}
+            className="flex items-center gap-2"
+          >
+            <X className="h-4 w-4" />
+            {cancelling ? 'Cancelando...' : 'Cancelar'}
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
-        {code.explanation && (
+        {currentCode.explanation && (
           <div className="p-3 bg-muted rounded-md">
             <p className="text-sm font-semibold mb-2">Explicação:</p>
-            <p className="text-sm">{code.explanation}</p>
+            <p className="text-sm">{currentCode.explanation}</p>
           </div>
         )}
 
@@ -291,7 +363,7 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
 
         <div className="flex-1 overflow-y-auto space-y-4 min-h-[200px] max-h-[600px]">
           {activeTab === 'preview' ? (
-            Object.entries(code.files).map(([path, content]) => (
+            Object.entries(currentCode.files).map(([path, content]) => (
               <div key={path} className="border rounded-md overflow-hidden">
                 <div className="bg-muted p-2 font-mono text-sm border-b flex items-center justify-between">
                   <span>{path}</span>
@@ -383,19 +455,21 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
             )}
           </div>
 
-          <div className="flex gap-2 items-center">
-            <Button onClick={handleValidate} disabled={validating || !code}>
-              {validating ? 'Validando...' : 'Validar Código'}
-            </Button>
-            {validationStatus === 'success' && 
-             code.status === 'validated' && 
-             !code.pr_number && 
-             (!validationResult || !validationResult.has_errors) && (
-              <Button onClick={handleImplement} disabled={implementing} variant="default">
-                {implementing ? 'Criando PR...' : 'Criar PR'}
+          {currentCode.status !== 'cancelled' && (
+            <div className="flex gap-2 items-center">
+              <Button onClick={handleValidate} disabled={validating || !currentCode}>
+                {validating ? 'Validando...' : 'Validar Código'}
               </Button>
-            )}
-          </div>
+              {validationStatus === 'success' && 
+               currentCode.status === 'validated' && 
+               !currentCode.pr_number && 
+               (!validationResult || !validationResult.has_errors) && (
+                <Button onClick={handleImplement} disabled={implementing} variant="default">
+                  {implementing ? 'Criando PR...' : 'Criar PR'}
+                </Button>
+              )}
+            </div>
+          )}
           
           {validationStatus === 'success' && (
             <span className="text-sm text-green-600">✓ Código validado com sucesso</span>
@@ -404,16 +478,16 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
             <span className="text-sm text-destructive">{validationError}</span>
           )}
           
-          {implementationStatus === 'success' && code.pr_number && code.pr_url && (
+          {implementationStatus === 'success' && currentCode.pr_number && currentCode.pr_url && (
             <div className="p-3 bg-green-50 border border-green-200 rounded-md">
               <p className="text-sm font-semibold text-green-900 mb-1">✓ Pull Request criado!</p>
               <a
-                href={code.pr_url}
+                href={currentCode.pr_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:underline"
               >
-                Ver PR #{code.pr_number} no GitHub →
+                Ver PR #{currentCode.pr_number} no GitHub →
               </a>
             </div>
           )}
@@ -423,11 +497,38 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false }: CodePrevie
         </div>
 
         <div className="text-xs text-muted-foreground">
-          <p>Status: {code.status}</p>
-          <p>Request ID: {code.request_id}</p>
-          {code.branch_name && <p>Branch: {code.branch_name}</p>}
+          <p>Status: {currentCode.status}</p>
+          <p>Request ID: {currentCode.request_id}</p>
+          {currentCode.branch_name && <p>Branch: {currentCode.branch_name}</p>}
         </div>
       </CardContent>
+
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar Requisição</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja cancelar esta requisição? O código gerado será descartado e não poderá ser recuperado.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelDialog(false)}
+              disabled={cancelling}
+            >
+              Não, manter
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelConfirm}
+              disabled={cancelling}
+            >
+              {cancelling ? 'Cancelando...' : 'Sim, cancelar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

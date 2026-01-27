@@ -9,11 +9,12 @@ import type { DevStudioRequest } from '@/services/devStudio'
 
 type HistoryPanelProps = {
   onSelectRequest?: (request: DevStudioRequest) => void
+  refreshTrigger?: number // Quando muda, força refresh
 }
 
 type StatusFilter = 'all' | 'pending' | 'validated' | 'implemented' | 'error'
 
-export function HistoryPanel({ onSelectRequest }: HistoryPanelProps) {
+export function HistoryPanel({ onSelectRequest, refreshTrigger }: HistoryPanelProps) {
   const [history, setHistory] = useState<DevStudioRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -23,6 +24,13 @@ export function HistoryPanel({ onSelectRequest }: HistoryPanelProps) {
   useEffect(() => {
     loadHistory()
   }, [])
+
+  // Recarregar histórico quando refreshTrigger mudar
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      loadHistory()
+    }
+  }, [refreshTrigger])
 
   const loadHistory = async () => {
     try {
@@ -66,6 +74,12 @@ export function HistoryPanel({ onSelectRequest }: HistoryPanelProps) {
         return (
           <span className={`${baseClasses} bg-blue-100 text-blue-800`}>
             PR Criado
+          </span>
+        )
+      case 'cancelled':
+        return (
+          <span className={`${baseClasses} bg-gray-100 text-gray-800`}>
+            Cancelado
           </span>
         )
       case 'error':
@@ -136,6 +150,7 @@ export function HistoryPanel({ onSelectRequest }: HistoryPanelProps) {
             <option value="pending">Pendente</option>
             <option value="validated">Validado</option>
             <option value="implemented">PR Criado</option>
+            <option value="cancelled">Cancelado</option>
             <option value="error">Erro</option>
           </select>
         </div>
