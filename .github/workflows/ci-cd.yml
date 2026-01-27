@@ -32,11 +32,14 @@ jobs:
     - name: Check code formatting
       working-directory: backend
       run: |
-        if [ "$(gofmt -d . | wc -l)" -gt 0 ]; then
-          echo "Code is not formatted. Run 'go fmt ./...' to fix."
-          gofmt -d .
+        unformatted=$(gofmt -l .)
+        if [ -n "$unformatted" ]; then
+          echo "The following files are not formatted:"
+          echo "$unformatted"
+          echo "Please run 'go fmt ./...' to fix."
           exit 1
         fi
+        echo "All Go files are properly formatted."
 
     - name: Build backend
       working-directory: backend
