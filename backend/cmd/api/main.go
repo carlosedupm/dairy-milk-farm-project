@@ -163,7 +163,7 @@ func main() {
 							memoryBankPath = filepath.Join(wd, "..", "..", "memory-bank")
 						}
 						slog.Info("Memory-bank path configurado", "path", memoryBankPath)
-						
+
 						// GitHub Service (opcional - apenas se configurado)
 						var githubSvc *service.GitHubService
 						if cfg.GitHubToken != "" && cfg.GitHubRepo != "" {
@@ -172,7 +172,7 @@ func main() {
 						} else {
 							slog.Warn("GitHub não configurado (GITHUB_TOKEN ou GITHUB_REPO não definidos). Funcionalidade de PRs desabilitada.")
 						}
-						
+
 						devStudioSvc := service.NewDevStudioService(devStudioRepo, cfg.GeminiAPIKey, memoryBankPath, githubSvc, cfg.GitHubContextBranch)
 						devStudioHandler := handlers.NewDevStudioHandler(devStudioSvc)
 
@@ -185,20 +185,30 @@ func main() {
 							middleware.DevStudioRateLimit(),
 						)
 						{
-						devStudio.GET("/usage", devStudioHandler.Usage)
-						devStudio.POST("/chat", devStudioHandler.Chat)
-						devStudio.POST("/refine", devStudioHandler.Refine)
-						devStudio.POST("/validate/:request_id", devStudioHandler.Validate)
-						devStudio.POST("/implement/:request_id", devStudioHandler.Implement)
-						devStudio.DELETE("/:request_id", devStudioHandler.Cancel)
-						devStudio.GET("/history", devStudioHandler.History)
-						devStudio.GET("/status/:id", devStudioHandler.Status)
-						devStudio.GET("/diff/:request_id", devStudioHandler.GetDiff)
+							devStudio.GET("/usage", devStudioHandler.Usage)
+							devStudio.POST("/chat", devStudioHandler.Chat)
+							devStudio.POST("/refine", devStudioHandler.Refine)
+							devStudio.POST("/validate/:request_id", devStudioHandler.Validate)
+							devStudio.POST("/implement/:request_id", devStudioHandler.Implement)
+							devStudio.DELETE("/:request_id", devStudioHandler.Cancel)
+							devStudio.GET("/history", devStudioHandler.History)
+							devStudio.GET("/status/:id", devStudioHandler.Status)
+							devStudio.GET("/diff/:request_id", devStudioHandler.GetDiff)
 						}
 
 						slog.Info("Rotas do Dev Studio registradas")
+
+						// Assistente em linguagem natural (interpretar + executar; qualquer usuário autenticado)
+						assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, fazendaSvc)
+						assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc)
+						assistente := api.Group("/v1/assistente", auth.AuthMiddleware(jwtSvc))
+						{
+							assistente.POST("/interpretar", assistenteHandler.Interpretar)
+							assistente.POST("/executar", assistenteHandler.Executar)
+						}
+						slog.Info("Rotas do Assistente (linguagem natural) registradas")
 					} else {
-						slog.Warn("GEMINI_API_KEY não configurada: Dev Studio desabilitado")
+						slog.Warn("GEMINI_API_KEY não configurada: Dev Studio e Assistente desabilitados")
 					}
 
 					slog.Info("Rotas de API registradas")

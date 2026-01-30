@@ -2,16 +2,18 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 80%
+### **Completude Geral**: 82%
+
 ```bash
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 95% ✅
-💻  Implementação: 80% 🚧 (Dev Studio Fase 0 + 1 + 2 + 3 concluído)
+💻  Implementação: 82% 🚧 (Dev Studio Fase 0–3 + Assistente em linguagem natural)
 🧪  Testes: 0% 🚧
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção; login e CRUD validados)
 ```
 
 ### **Velocidade e Métricas**
+
 - **Início do projeto**: 2025-09-07
 - **Migração Arquitetural**: 2026-01-24
 - **Velocity atual**: Em reestruturação
@@ -22,6 +24,7 @@
 ## ✅ O que foi concluído
 
 ### **Migração Arquitetural (✅ 60%)**
+
 - [x] **Limpeza**: Remoção completa de código Java/Spring legado
 - [x] **Documentação**: Memory bank atualizado para nova stack
 - [x] **Estrutura Monorepo**: Pastas `/backend` e `/frontend` criadas
@@ -39,6 +42,7 @@
   - [x] Cliente API básico
 
 ### **Infraestrutura (✅ 85%)**
+
 - [x] **Estrutura Monorepo**: Criada e organizada
 - [x] **Docker Compose**: Configurado para desenvolvimento local
 - [x] **Dockerfile Backend**: Multi-stage build (Go 1.24), otimizado
@@ -49,6 +53,7 @@
 - [x] **Deploy Frontend**: ✅ Funcionando em produção na Vercel; login, validate e CRUD validados no ar
 
 ### **Documentação (✅ 90%)**
+
 - [x] **README.md**: Atualizado para nova stack
 - [x] **Memory bank**: Todos os arquivos atualizados
   - [x] `activeContext.md`: Estado atual refletindo migração
@@ -60,6 +65,7 @@
 ## 🚧 Em andamento
 
 ### **Backend Go (🚧 75%)**
+
 - [x] Estrutura básica e configuração
 - [x] Modelos de domínio
 - [x] Repository e Service para Fazendas (CRUD + search, count, exists)
@@ -70,6 +76,7 @@
 - [ ] Validações de entrada adicionais
 
 ### **Frontend Next.js (🚧 65%)**
+
 - [x] Setup inicial e configuração
 - [x] Estrutura básica
 - [x] Páginas de autenticação (login)
@@ -77,10 +84,12 @@
 - [x] Componentes Shadcn/UI (button, input, card, label, table, dialog)
 - [x] TanStack Query configurado
 - [x] Integração com API (auth + fazendas)
+- [x] **Assistente em linguagem natural**: Barra "O que você precisa?" no Header, interpretar (Gemini) + executar (FazendaService), dialog de confirmação, entrada por voz (Web Speech API pt-BR). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog com mensagem detalhada (error.details)
 
 ## 📋 Próximos Passos
 
 ### **Sprint Atual (Migração)**
+
 - [x] Limpeza de código legado
 - [x] Atualização de documentação
 - [x] Estrutura monorepo
@@ -93,6 +102,7 @@
 - [x] ✅ **Deploy Frontend em produção** (Vercel; `NEXT_PUBLIC_API_URL`; login, validate e CRUD validados)
 
 ### **Sprint 2 (Funcionalidades Core)**
+
 - [x] Login + CRUD de Fazendas no frontend
 - [ ] Autenticação completa (registro, refresh tokens)
 - [ ] CRUD de Animais (backend + frontend)
@@ -100,6 +110,7 @@
 - [ ] Validações e tratamento de erros
 
 ### **Sprint 3 (Melhorias)**
+
 - [ ] Testes unitários (Go)
 - [ ] Testes de integração
 - [ ] Observabilidade (Sentry, BetterStack)
@@ -109,6 +120,7 @@
 ## 🎯 Metas de Curto Prazo
 
 ### **Meta 1: MVP Básico (4 semanas)**
+
 - [ ] CRUD completo de todas as entidades principais
 - [ ] Autenticação JWT funcional
 - [ ] API RESTful operacional
@@ -116,6 +128,7 @@
 - [ ] Interface básica funcional
 
 ### **Meta 2: Operacional (8 semanas)**
+
 - [ ] Controle de saúde animal implementado
 - [ ] Gestão reprodutiva básica
 - [ ] Relatórios analíticos iniciais
@@ -123,6 +136,7 @@
 - [ ] Testes de integração cobrindo 70%
 
 ### **Meta 3: Inteligência (12 semanas)**
+
 - [ ] Sistema de predições de produção
 - [ ] Alertas automáticos de saúde preventiva
 - [ ] Otimização de recursos através de IA
@@ -132,21 +146,25 @@
 ## 📊 Métricas de Progresso Detalhadas
 
 ### **Desenvolvimento**
+
 ```progress
 ████████▄▄ 80%
 ```
 
 ### **Qualidade**
+
 ```progress
 ▄▄▄▄▄▄▄▄▄▄ 0%
 ```
 
 ### **Documentação**
+
 ```progress
 █████████▄ 90%
 ```
 
 ### **Infraestrutura**
+
 ```progress
 ██████████ 90%
 ```
@@ -154,6 +172,7 @@
 ## 🔄 Histórico de Progresso
 
 ### **2025-09-07 - Dia 1**
+
 - ✅ **Setup inicial**: Estrutura do projeto criada (Java/Spring)
 - ✅ **Docker compose**: Serviços configurados (PostgreSQL, Redis, App)
 - ✅ **Maven setup**: Dependências configuradas com Spring WebFlux
@@ -161,12 +180,14 @@
 - ✅ **Schema DB**: Estrutura inicial do banco de dados
 
 ### **2025-09-08 - Dia 2**
+
 - ✅ **Entidade Fazenda**: Implementação completa do CRUD reativo (Java)
 - ✅ **Sistema de autenticação**: JWT com Spring Security 6 configurado
 - ✅ **Controller de autenticação**: Endpoints de login e validação
 - ✅ **API RESTful**: Endpoints funcionais para Fazenda
 
 ### **2026-01-24 - Migração Arquitetural**
+
 - ✅ **Decisão de Stack**: Migração para Go + Next.js definida
 - ✅ **Limpeza**: Remoção de código Java/Spring legado
 - ✅ **Documentação**: Memory bank completamente atualizado
@@ -182,6 +203,7 @@
 - ✅ **Backend Render**: render.yaml e Dockerfile ajustados (JWT sync:false, PORT injetado, buildFilter, autoDeployTrigger); Dockerfile Go 1.24; CI com build Docker; deploy-notes atualizado
 
 ### **2026-01-25 - Deploy em Produção**
+
 - ✅ **Deploy Backend**: Backend funcionando em produção no Render
   - Banco PostgreSQL criado e configurado
   - Variáveis de ambiente configuradas (DATABASE_URL, JWT_PRIVATE_KEY, JWT_PUBLIC_KEY, ENV, LOG_LEVEL, CORS_ORIGIN)
@@ -194,6 +216,7 @@
   - Login, validate e CRUD de fazendas validados no ar
 
 ### **Próximos Marcos**
+
 - **2026-02-07**: Testes automatizados (E2E ou unitários) iniciados
 - **2026-02-14**: Deploy completo em produção (Render + Vercel) ✅ concluído
 - **2026-02-21**: Testes de integração implementados
@@ -201,6 +224,7 @@
 ## 🎯 Objetivos de Aprendizado
 
 ### **Técnicos**
+
 - [x] Entender arquitetura Go e padrões
 - [x] Dominar Gin framework
 - [x] Aprender Next.js App Router
@@ -210,6 +234,7 @@
 - [x] ✅ **Deploy Frontend em produção** (Vercel; `NEXT_PUBLIC_API_URL`; login, validate e CRUD validados)
 
 ### **Produto**
+
 - [ ] Entender necessidades reais de fazendas leiteiras
 - [ ] Coletar feedback constante dos usuários
 - [ ] Iterar rapidamente baseado em métricas
@@ -218,6 +243,7 @@
 ## 📈 Evolução das Decisões
 
 ### **Decisões Consolidadas**
+
 - ✅ Stack técnica: Go (Gin) + Next.js 14+ + PostgreSQL
 - ✅ Banco de dados: PostgreSQL com schema mantido
 - ✅ Autenticação: JWT RS256 com refresh tokens
@@ -227,12 +253,14 @@
 - ✅ Sistema de migrações: golang-migrate no startup
 
 ### **Decisões em Avaliação**
+
 - 🔄 Estratégia de cache (Redis vs in-memory)
 - 🔄 Estratégia de testes (table-driven vs outros padrões)
 
 ---
 
 ### **2026-01-26 - Dev Studio Fase 1**
+
 - ✅ **Dev Studio Fase 1**: Automação de PRs via GitHub API implementada
   - GitHubService criado com integração completa à GitHub API REST
   - Endpoint `/api/v1/dev-studio/implement/:request_id` para criar PRs
@@ -242,6 +270,7 @@
   - Documentação atualizada (QUICK_START.md, SETUP.md)
 
 ### **2026-01-26 - Dev Studio Fase 2**
+
 - ✅ **Dev Studio Fase 2**: RAG dinâmico e monitoramento implementados
   - RAG dinâmico: `loadProjectContext` retorna mapa de arquivos; `selectRelevantContext` escolhe systemPatterns + techContext (fixos) + até 2 docs variáveis (activeContext, progress, productContext, projectbrief) por relevância ao prompt (keywords). Fallback activeContext se todos score 0.
   - API `GET /api/v1/dev-studio/usage`: retorna `used_last_hour`, `limit_per_hour`, `used_today`. **Não consome** rate limit.
@@ -249,10 +278,12 @@
   - Frontend: `UsageAlert` (métricas + alertas próximo/limite), integração na página Dev Studio, `ChatInterface` desabilita envio ao limite e exibe mensagem clara em 429.
 
 ### **2026-01-26 - Contexto tipo Cursor e contexto do repositório**
+
 - ✅ **Contexto tipo Cursor**: `loadTargetFilesForPrompt` infere arquivos-alvo (menu, Header, rota, link, dev-studio) e inclui o estado atual no contexto. Instruções no prompt: usar como base, preservar o resto; trabalhar como IDE. Geração e refinamento usam o mesmo fluxo.
 - ✅ **Contexto sempre do repositório**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo vêm sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via `GitHubService.GetFileContent`. Config `GITHUB_CONTEXT_BRANCH`; fallback para disco local quando GitHub não está configurado. Solução validada em uso.
 
 ### **2026-01-26 - Dev Studio Fase 3 (Diff Viewer e Linter Automático)**
+
 - ✅ **Diff Viewer**: Visualização de diferenças entre código gerado e código atual no repositório
   - Backend: `GetFileDiffs()` no `DevStudioService` que compara código gerado com conteúdo da branch `main` via `GitHubService.GetFileContent()`
   - Endpoint `GET /api/v1/dev-studio/diff/:request_id` com validação de perfil DEVELOPER
@@ -267,6 +298,7 @@
   - Botão "Criar PR" desabilitado quando `validationResult.has_errors` é true
 
 ### **2026-01-26 - Dev Studio - Cancelamento de Requisições**
+
 - ✅ **Cancelamento de Requisições**: Funcionalidade completa para cancelar requisições geradas
   - Backend: método `CancelRequest()` no `DevStudioService` com validação de autorização (apenas dono pode cancelar) e proteção contra cancelamento de requisições já implementadas (com PR criado)
   - Endpoint `DELETE /api/v1/dev-studio/:request_id` com validação de perfil DEVELOPER
@@ -277,6 +309,13 @@
   - Badge "Cancelado" no `HistoryPanel` e filtro por status "cancelled"
   - Status "cancelled" exibido no histórico e no preview de código
 
-**Última atualização**: 2026-01-26
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0 + Fase 1 + Fase 2 + Fase 3 concluído
+### **2026-01-27 - Assistente: persistência e feedback de erro**
+
+- ✅ **Persistência na edição**: Repositório de fazendas valida ID no Update e verifica RowsAffected (erro se nenhuma linha atualizada); queryList corrigido (cópia por linha). Assistente valida ID da fazenda resolvida e log de debug.
+- ✅ **Erro na confirmação**: Frontend exibe erro **dentro** do dialog de confirmação; getErrorMessage prioriza `error.details` (motivo real da API) sobre `error.message`; limpeza de erro ao cancelar e ao tentar confirmar novamente.
+
+---
+
+**Última atualização**: 2026-01-27
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0–3 concluído | Assistente com persistência e feedback de erro no dialog
 **Próxima revisão**: 2026-02-07

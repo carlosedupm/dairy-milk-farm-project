@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ceialmilk/api/internal/models"
@@ -96,13 +98,16 @@ func (r *FazendaRepository) GetAll(ctx context.Context) ([]*models.Fazenda, erro
 }
 
 func (r *FazendaRepository) Update(ctx context.Context, fazenda *models.Fazenda) error {
+	if fazenda.ID <= 0 {
+		return fmt.Errorf("id da fazenda inválido: %d", fazenda.ID)
+	}
 	query := `
 		UPDATE fazendas
 		SET nome = $1, localizacao = $2, quantidade_vacas = $3, fundacao = $4, updated_at = $5
 		WHERE id = $6
 	`
 
-	_, err := r.db.Exec(
+	cmd, err := r.db.Exec(
 		ctx,
 		query,
 		fazenda.Nome,
@@ -112,8 +117,13 @@ func (r *FazendaRepository) Update(ctx context.Context, fazenda *models.Fazenda)
 		time.Now(),
 		fazenda.ID,
 	)
-
-	return err
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return errors.New("nenhuma linha atualizada (id não encontrado ou sem alteração)")
+	}
+	return nil
 }
 
 func (r *FazendaRepository) Delete(ctx context.Context, id int64) error {
@@ -194,7 +204,8 @@ func (r *FazendaRepository) queryList(ctx context.Context, query string, args ..
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, &f)
+		fCopy := f
+		list = append(list, &fCopy)
 	}
 	return list, rows.Err()
 }
