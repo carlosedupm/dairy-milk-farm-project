@@ -2,12 +2,12 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 82%
+### **Completude Geral**: 85%
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 95% ✅
-💻  Implementação: 82% 🚧 (Dev Studio Fase 0–3 + Assistente em linguagem natural)
+💻  Implementação: 85% 🚧 (Dev Studio Fase 0–3 + Assistente + Módulo Administrador)
 🧪  Testes: 0% 🚧
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção; login e CRUD validados)
 ```
@@ -85,6 +85,8 @@
 - [x] TanStack Query configurado
 - [x] Integração com API (auth + fazendas)
 - [x] **Assistente em linguagem natural**: Barra "O que você precisa?" no Header, interpretar (Gemini) + executar (FazendaService), dialog de confirmação, entrada por voz (Web Speech API pt-BR). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog com mensagem detalhada (error.details)
+- [x] **Layout e DRY**: PageContainer (variantes default, narrow, wide, centered) em todas as páginas; BackLink para "Voltar"; getApiErrorMessage (lib/errors.ts) centralizado; ApiResponse<T> em api.ts; Header responsivo com menu hamburger em mobile
+- [x] **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER); constraint unicidade DEVELOPER (migração 8); área admin `/admin/usuarios` (listagem, criar, editar, ativar/desativar); RequireAdmin; link Admin no Header para ADMIN/DEVELOPER
 
 ## 📋 Próximos Passos
 
@@ -316,6 +318,6 @@
 
 ---
 
-**Última atualização**: 2026-01-27
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0–3 concluído | Assistente com persistência e feedback de erro no dialog
+**Última atualização**: 2026-01-31
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0–3 concluído | Assistente com persistência e feedback de erro no dialog | Módulo Administrador implementado (perfis, constraint DEVELOPER único, área admin)
 **Próxima revisão**: 2026-02-07

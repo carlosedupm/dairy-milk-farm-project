@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { PageContainer } from '@/components/layout/PageContainer'
 
 export default function Home() {
   const { isAuthenticated, isReady } = useAuth()
@@ -18,8 +19,8 @@ export default function Home() {
   }, [isReady, isAuthenticated, router])
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <PageContainer variant="centered">
       <p className="text-muted-foreground">Carregando…</p>
-    </main>
+    </PageContainer>
   )
 }

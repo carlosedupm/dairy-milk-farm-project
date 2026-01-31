@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
+import { PageContainer } from '@/components/layout/PageContainer'
 import { ChatInterface } from '@/components/dev-studio/ChatInterface'
 import { CodePreview } from '@/components/dev-studio/CodePreview'
 import { PRStatus } from '@/components/dev-studio/PRStatus'
@@ -83,14 +84,14 @@ export default function DevStudioPage() {
   if (user?.perfil !== 'DEVELOPER') {
     return (
       <ProtectedRoute>
-        <div className="flex min-h-screen items-center justify-center">
+        <PageContainer variant="centered">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">Acesso Negado</h1>
             <p className="text-muted-foreground">
               Apenas usuários com perfil DEVELOPER podem acessar o Dev Studio.
             </p>
           </div>
-        </div>
+        </PageContainer>
       </ProtectedRoute>
     )
   }
@@ -101,8 +102,8 @@ export default function DevStudioPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Dev Studio</h1>
+      <PageContainer variant="wide">
+        <h1 className="text-2xl font-bold mb-6 sm:text-3xl">Dev Studio</h1>
 
         <UsageAlert usage={usage} loading={usageLoading} />
 
@@ -164,7 +165,7 @@ export default function DevStudioPage() {
             }}
           />
         </div>
-      </div>
+      </PageContainer>
     </ProtectedRoute>
   )
 }

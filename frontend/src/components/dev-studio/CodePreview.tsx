@@ -16,21 +16,9 @@ import {
 } from '@/components/ui/dialog'
 import * as devStudioService from '@/services/devStudio'
 import type { CodeGenerationResponse, FileDiff, ValidationResult } from '@/services/devStudio'
+import { getApiErrorMessage } from '@/lib/errors'
 import { Copy, Download, X } from 'lucide-react'
 import { DiffViewer } from './DiffViewer'
-
-const RATE_LIMIT_MSG =
-  'Limite de requisições atingido (5/hora). Tente novamente mais tarde.'
-
-function getRefineErrorMessage(err: unknown): string {
-  if (err && typeof err === 'object' && 'response' in err) {
-    const res = (err as { response?: { status?: number; data?: { error?: { message?: string } } } })
-      .response
-    if (res?.status === 429) return RATE_LIMIT_MSG
-    return res?.data?.error?.message ?? 'Erro ao refinar código. Tente novamente.'
-  }
-  return 'Erro ao refinar código. Tente novamente.'
-}
 
 type CodePreviewProps = {
   code: CodeGenerationResponse | null
@@ -107,12 +95,7 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false, onRequestCan
       }
     } catch (err: unknown) {
       setValidationStatus('error')
-      const errorMessage =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: { message?: string } } } }).response?.data
-              ?.error?.message
-          : 'Erro ao validar código.'
-      setValidationError(errorMessage ?? 'Erro ao validar código.')
+      setValidationError(getApiErrorMessage(err, 'Erro ao validar código.'))
     } finally {
       setValidating(false)
     }
@@ -146,12 +129,9 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false, onRequestCan
       }
     } catch (err: unknown) {
       setImplementationStatus('error')
-      const errorMessage =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: { message?: string } } } }).response?.data
-              ?.error?.message
-          : 'Erro ao criar Pull Request.'
-      setImplementationError(errorMessage ?? 'Erro ao criar Pull Request.')
+      setImplementationError(
+        getApiErrorMessage(err, 'Erro ao criar Pull Request.')
+      )
     } finally {
       setImplementing(false)
     }
@@ -173,7 +153,9 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false, onRequestCan
       setCurrentCode(refined)
       if (onCodeUpdated) onCodeUpdated(refined)
     } catch (err: unknown) {
-      setRefineError(getRefineErrorMessage(err))
+      setRefineError(
+        getApiErrorMessage(err, 'Erro ao refinar código. Tente novamente.')
+      )
     } finally {
       setRefining(false)
     }
@@ -243,12 +225,9 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false, onRequestCan
       const loadedDiffs = await devStudioService.getDiff(currentCode.request_id)
       setDiffs(loadedDiffs)
     } catch (err) {
-      const errorMessage =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: { message?: string } } } }).response?.data
-              ?.error?.message
-          : 'Erro ao carregar diffs.'
-      setDiffsError(errorMessage ?? 'Erro ao carregar diffs.')
+      setDiffsError(
+        getApiErrorMessage(err as unknown, 'Erro ao carregar diffs.')
+      )
     } finally {
       setDiffsLoading(false)
     }
@@ -281,12 +260,9 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false, onRequestCan
         onRequestCancelled()
       }
     } catch (err) {
-      const errorMessage =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: { message?: string } } } }).response?.data
-              ?.error?.message
-          : 'Erro ao cancelar requisição.'
-      setCancelError(errorMessage ?? 'Erro ao cancelar requisição.')
+      setCancelError(
+        getApiErrorMessage(err as unknown, 'Erro ao cancelar requisição.')
+      )
     } finally {
       setCancelling(false)
     }

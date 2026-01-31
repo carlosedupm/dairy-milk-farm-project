@@ -1,4 +1,4 @@
-import api from './api'
+import api, { type ApiResponse } from './api'
 
 export type Fazenda = {
   id: number
@@ -18,8 +18,6 @@ export type FazendaCreate = {
 }
 
 export type FazendaUpdate = FazendaCreate
-
-type ApiResponse<T> = { data: T }
 
 export async function list(): Promise<Fazenda[]> {
   const { data } = await api.get<ApiResponse<Fazenda[]>>('/api/v1/fazendas')

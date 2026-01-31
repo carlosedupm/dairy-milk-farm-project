@@ -1,6 +1,4 @@
-import api from "./api";
-
-type ApiResponse<T> = { data: T; message?: string; timestamp?: string };
+import api, { type ApiResponse } from "./api";
 
 export type InterpretResponse = {
   intent: string;

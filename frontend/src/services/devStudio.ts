@@ -1,4 +1,4 @@
-import api from './api'
+import api, { type ApiResponse } from './api'
 
 export type DevStudioRequest = {
   id: number
@@ -53,8 +53,6 @@ export type ValidationResult = {
   has_errors: boolean
   has_warnings: boolean
 }
-
-type ApiResponse<T> = { data: T }
 
 export async function chat(prompt: string): Promise<CodeGenerationResponse> {
   const { data } = await api.post<ApiResponse<CodeGenerationResponse>>(

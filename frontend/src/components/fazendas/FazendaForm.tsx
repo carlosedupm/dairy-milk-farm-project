@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getApiErrorMessage } from '@/lib/errors'
 
 type Props = {
   initial?: Fazenda | null
@@ -44,19 +45,7 @@ export function FazendaForm({
     try {
       await onSubmit(payload)
     } catch (err: unknown) {
-      const msg =
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        err.response &&
-        typeof err.response === 'object' &&
-        'data' in err.response &&
-        err.response.data &&
-        typeof err.response.data === 'object' &&
-        'error' in err.response.data
-          ? String((err.response.data as { error?: string }).error)
-          : 'Erro ao salvar. Tente novamente.'
-      setError(msg)
+      setError(getApiErrorMessage(err, 'Erro ao salvar. Tente novamente.'))
     }
   }
 

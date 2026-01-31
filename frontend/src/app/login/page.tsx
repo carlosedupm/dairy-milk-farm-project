@@ -14,6 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { PageContainer } from '@/components/layout/PageContainer'
+import { getApiErrorMessage } from '@/lib/errors'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
@@ -40,12 +42,9 @@ function LoginForm() {
       await login(email, password)
       router.replace(redirect)
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: string } } }).response?.data
-              ?.error
-          : 'Erro ao fazer login. Verifique email e senha.'
-      setError(msg ?? 'Erro ao fazer login.')
+      setError(
+        getApiErrorMessage(err, 'Erro ao fazer login. Verifique email e senha.')
+      )
     } finally {
       setLoading(false)
     }
@@ -53,14 +52,14 @@ function LoginForm() {
 
   if (isReady && isAuthenticated) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
+      <PageContainer variant="centered">
         <p className="text-muted-foreground">Redirecionando…</p>
-      </main>
+      </PageContainer>
     )
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
+    <PageContainer variant="centered">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>CeialMilk</CardTitle>
@@ -103,7 +102,7 @@ function LoginForm() {
           </p>
         </CardContent>
       </Card>
-    </main>
+    </PageContainer>
   )
 }
 
@@ -111,9 +110,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center">
+        <PageContainer variant="centered">
           <p className="text-muted-foreground">Carregando…</p>
-        </main>
+        </PageContainer>
       }
     >
       <LoginForm />

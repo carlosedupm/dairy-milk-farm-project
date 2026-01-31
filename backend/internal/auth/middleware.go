@@ -3,6 +3,7 @@ package auth
 import (
 	"strings"
 
+	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/response"
 	"github.com/gin-gonic/gin"
 )
@@ -49,11 +50,30 @@ func AuthMiddleware(jwtService *JWTService) gin.HandlerFunc {
 	}
 }
 
+// RequireAdmin verifica se o usuário tem perfil ADMIN ou DEVELOPER
+func RequireAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		perfil, exists := c.Get("perfil")
+		if !exists {
+			response.ErrorForbidden(c, "Acesso negado. Perfil ADMIN ou DEVELOPER necessário.")
+			c.Abort()
+			return
+		}
+		p, ok := perfil.(string)
+		if !ok || (p != models.PerfilAdmin && p != models.PerfilDeveloper) {
+			response.ErrorForbidden(c, "Acesso negado. Perfil ADMIN ou DEVELOPER necessário.")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 // RequireDeveloper verifica se o usuário tem perfil DEVELOPER
 func RequireDeveloper() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		perfil, exists := c.Get("perfil")
-		if !exists || perfil != "DEVELOPER" {
+		if !exists || perfil != models.PerfilDeveloper {
 			response.ErrorForbidden(c, "Acesso negado. Perfil DEVELOPER necessário.")
 			c.Abort()
 			return

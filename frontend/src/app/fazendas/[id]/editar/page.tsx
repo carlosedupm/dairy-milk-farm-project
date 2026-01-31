@@ -2,12 +2,12 @@
 
 import { useRouter, useParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import Link from 'next/link'
 import { get, update } from '@/services/fazendas'
 import type { FazendaUpdate } from '@/services/fazendas'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
+import { PageContainer } from '@/components/layout/PageContainer'
+import { BackLink } from '@/components/layout/BackLink'
 import { FazendaForm } from '@/components/fazendas/FazendaForm'
-import { Button } from '@/components/ui/button'
 
 function EditarFazendaContent() {
   const params = useParams()
@@ -31,40 +31,34 @@ function EditarFazendaContent() {
 
   if (Number.isNaN(id)) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-6">
+      <PageContainer variant="narrow">
         <p className="text-destructive">ID inválido.</p>
-        <Button variant="outline" asChild>
-          <Link href="/fazendas">Voltar</Link>
-        </Button>
-      </main>
+        <BackLink href="/fazendas" children="Voltar" />
+      </PageContainer>
     )
   }
 
   if (isLoading || (!error && !initial)) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-6">
+      <PageContainer variant="narrow">
         <p className="text-muted-foreground">Carregando…</p>
-      </main>
+      </PageContainer>
     )
   }
 
   if (error || !initial) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-6">
+      <PageContainer variant="narrow">
         <p className="text-destructive">Fazenda não encontrada.</p>
-        <Button variant="outline" asChild>
-          <Link href="/fazendas">Voltar</Link>
-        </Button>
-      </main>
+        <BackLink href="/fazendas" children="Voltar" />
+      </PageContainer>
     )
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-6">
+    <PageContainer variant="narrow">
       <div className="mb-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/fazendas">← Voltar</Link>
-        </Button>
+        <BackLink href="/fazendas" />
       </div>
       <FazendaForm
         initial={initial}
@@ -73,7 +67,7 @@ function EditarFazendaContent() {
         }}
         isPending={mutation.isPending}
       />
-    </main>
+    </PageContainer>
   )
 }
 

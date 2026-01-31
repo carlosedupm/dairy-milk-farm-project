@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { list } from '@/services/fazendas'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
+import { PageContainer } from '@/components/layout/PageContainer'
 import { FazendaTable } from '@/components/fazendas/FazendaTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,7 +17,7 @@ function FazendasContent() {
   })
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-6">
+    <PageContainer variant="default">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle>Fazendas</CardTitle>
@@ -39,7 +40,7 @@ function FazendasContent() {
           {!isLoading && !error && <FazendaTable items={items} />}
         </CardContent>
       </Card>
-    </main>
+    </PageContainer>
   )
 }
 

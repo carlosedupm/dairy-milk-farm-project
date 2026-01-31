@@ -2,12 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { create } from "@/services/fazendas";
 import type { FazendaCreate } from "@/services/fazendas";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { BackLink } from "@/components/layout/BackLink";
 import { FazendaForm } from "@/components/fazendas/FazendaForm";
-import { Button } from "@/components/ui/button";
 
 function NovaFazendaContent() {
   const router = useRouter();
@@ -21,11 +21,9 @@ function NovaFazendaContent() {
   });
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-6">
+    <PageContainer variant="narrow">
       <div className="mb-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/fazendas">← Voltar</Link>
-        </Button>
+        <BackLink href="/fazendas" />
       </div>
       <FazendaForm
         onSubmit={async (p) => {
@@ -34,7 +32,7 @@ function NovaFazendaContent() {
         isPending={mutation.isPending}
         submitLabel="Criar"
       />
-    </main>
+    </PageContainer>
   );
 }
 

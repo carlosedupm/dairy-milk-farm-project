@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import * as devStudioService from '@/services/devStudio'
 import type { CodeGenerationResponse } from '@/services/devStudio'
+import { getApiErrorMessage } from '@/lib/errors'
 import { Download } from 'lucide-react'
 
 type Message = {
@@ -19,19 +20,6 @@ type ChatInterfaceProps = {
   onCodeGenerated: (code: CodeGenerationResponse) => void
   atLimit?: boolean
   onCodeCleared?: () => void
-}
-
-const RATE_LIMIT_MSG =
-  'Limite de requisições atingido (5/hora). Tente novamente mais tarde.'
-
-function getErrorMessage(err: unknown): string {
-  if (err && typeof err === 'object' && 'response' in err) {
-    const res = (err as { response?: { status?: number; data?: { error?: { message?: string } } } })
-      .response
-    if (res?.status === 429) return RATE_LIMIT_MSG
-    return res?.data?.error?.message ?? 'Erro ao gerar código. Tente novamente.'
-  }
-  return 'Erro ao gerar código. Tente novamente.'
 }
 
 export function ChatInterface({
@@ -77,7 +65,7 @@ export function ChatInterface({
       setMessages((prev) => [...prev, aiMessage])
       onCodeGenerated(response)
     } catch (err: unknown) {
-      const errorMessage = getErrorMessage(err)
+      const errorMessage = getApiErrorMessage(err, 'Erro ao gerar código. Tente novamente.')
       setError(errorMessage)
       const errorMsg: Message = {
         role: 'assistant',

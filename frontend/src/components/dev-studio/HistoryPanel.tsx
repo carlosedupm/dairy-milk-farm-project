@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import * as devStudioService from '@/services/devStudio'
 import type { DevStudioRequest } from '@/services/devStudio'
+import { getApiErrorMessage } from '@/lib/errors'
 
 type HistoryPanelProps = {
   onSelectRequest?: (request: DevStudioRequest) => void
@@ -40,19 +41,9 @@ export function HistoryPanel({ onSelectRequest, refreshTrigger }: HistoryPanelPr
       setHistory(data)
     } catch (err) {
       console.error('Erro ao carregar histórico:', err)
-      // Se for erro 429, manter histórico existente se houver
-      if (err && typeof err === 'object' && 'response' in err) {
-        const res = (err as { response?: { status?: number; data?: { error?: { message?: string } } } }).response
-        if (res?.status === 429) {
-          // Rate limit - não limpar histórico existente, apenas não atualizar
-          setError('Limite de requisições atingido. O histórico não foi atualizado.')
-          return
-        }
-        setError(res?.data?.error?.message || 'Erro ao carregar histórico.')
-      } else {
-        setError('Erro ao carregar histórico. Tente novamente mais tarde.')
-      }
-      // Só limpar histórico se não houver dados anteriores
+      setError(
+        getApiErrorMessage(err, 'Erro ao carregar histórico. Tente novamente mais tarde.')
+      )
       if (history.length === 0) {
         setHistory([])
       }

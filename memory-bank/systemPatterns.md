@@ -199,7 +199,9 @@ Usuario (N) ─── (1) Fazenda
 
 ### **Autorização**
 - **Role-Based**: Controle de acesso baseado em roles (USER, ADMIN, DEVELOPER)
-- **DEVELOPER**: Perfil para acesso ao Dev Studio (`/api/v1/dev-studio/*`); requer `auth.RequireDeveloper()`.
+- **USER**: Perfil padrão; acesso a Fazendas e Assistente.
+- **ADMIN**: Perfil para acesso à área administrativa (`/api/v1/admin/*`); requer `auth.RequireAdmin()` (ADMIN ou DEVELOPER).
+- **DEVELOPER**: Perfil único no sistema (constraint no banco garante 1 apenas); acesso ao Dev Studio (`/api/v1/dev-studio/*`) e área Admin; requer `auth.RequireDeveloper()` para Dev Studio, `auth.RequireAdmin()` para Admin.
 - **Resource Ownership**: Verificação de propriedade de recursos
 - **Middleware de Autenticação**: Verificação de token em todas as rotas protegidas
 
@@ -303,6 +305,21 @@ Usuario (N) ─── (1) Fazenda
   - Incrementar `refreshTrigger` após ações que modificam dados (criar, atualizar, deletar, cancelar)
 - **Exemplo**: `HistoryPanel` atualiza automaticamente após cancelar requisição
 
+### **Layout de Página (PageContainer)**
+- **Padrão**: Usar o componente `PageContainer` para wrappers de `<main>` em todas as páginas
+- **Variantes**: `default` (max-w-5xl), `narrow` (max-w-2xl), `wide` (container max-w-6xl), `centered` (flex center para login/home)
+- **Implementação**: `frontend/src/components/layout/PageContainer.tsx` com props `variant`, `className`, `children`
+- **Uso**: Fazendas → default; nova/editar fazenda → narrow; Dev Studio → wide; login e home → centered
+
+### **Extração de Erro da API (getApiErrorMessage)**
+- **Padrão**: Usar `getApiErrorMessage(err, fallback)` de `lib/errors.ts` para mensagens de erro vindas da API
+- **Implementação**: Trata `response.data.error` (string ou objeto com `message`/`details`), status 429 (rate limit) e retorna fallback caso contrário
+- **Uso**: Login, FazendaForm, AssistenteInput, ChatInterface, CodePreview, HistoryPanel — evitar extração inline repetida de `err.response?.data?.error`
+
+### **Header Responsivo**
+- **Padrão**: Navegação desktop (lg:) com links visíveis; em mobile (< lg) menu hamburger que abre drawer lateral
+- **Implementação**: `Header.tsx` — estado `mobileMenuOpen`, ícone Menu (lucide-react), overlay + painel fixo com links, AssistenteInput, email e Sair; fechar ao clicar no overlay ou no link
+
 ## 📊 Padrões de Monitoramento
 
 ### **Observability**
@@ -326,5 +343,5 @@ Usuario (N) ─── (1) Fazenda
 
 ---
 
-**Última atualização**: 2026-01-26
-**Versão dos Padrões**: 2.1 (Go + Next.js) — Estrutura atual do projeto documentada; Dev Studio Fase 3 (Diff Viewer, Linter, Cancelamento) implementado; Padrões de UI/UX para dialogs e atualização automática
+**Última atualização**: 2026-01-30
+**Versão dos Padrões**: 2.2 (Go + Next.js) — PageContainer, getApiErrorMessage (lib/errors), Header responsivo (menu hamburger), BackLink; ApiResponse centralizado em api.ts

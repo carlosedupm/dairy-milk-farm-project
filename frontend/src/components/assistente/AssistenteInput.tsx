@@ -15,25 +15,8 @@ import {
 import * as assistenteService from "@/services/assistente";
 import type { InterpretResponse } from "@/services/assistente";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
+import { getApiErrorMessage } from "@/lib/errors";
 import { MessageCircle, Mic, MicOff } from "lucide-react";
-
-type ApiErrorShape = {
-  response?: {
-    data?: {
-      error?: { message?: string; details?: unknown };
-    };
-  };
-};
-
-function getErrorMessage(err: unknown, fallback: string): string {
-  if (!err || typeof err !== "object" || !("response" in err)) return fallback;
-  const data = (err as ApiErrorShape).response?.data?.error;
-  if (!data) return fallback;
-  const details = data.details;
-  if (typeof details === "string" && details.trim()) return details;
-  if (typeof data.message === "string" && data.message.trim()) return data.message;
-  return fallback;
-}
 
 export function AssistenteInput() {
   const router = useRouter();
@@ -66,7 +49,7 @@ export function AssistenteInput() {
         setDialogOpen(true);
       }
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Erro ao interpretar. Tente novamente."));
+      setError(getApiErrorMessage(err, "Erro ao interpretar. Tente novamente."));
       setInterpretado(null);
       setDialogOpen(false);
     } finally {
@@ -118,7 +101,7 @@ export function AssistenteInput() {
       await queryClient.invalidateQueries({ queryKey: ["fazendas"] });
       router.push("/fazendas");
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Erro ao executar. Tente novamente."));
+      setError(getApiErrorMessage(err, "Erro ao executar. Tente novamente."));
     } finally {
       setExecutando(false);
     }

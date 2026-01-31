@@ -114,6 +114,8 @@ func main() {
 					}
 					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
+					usuarioSvc := service.NewUsuarioService(userRepo)
+					adminHandler := handlers.NewAdminHandler(usuarioSvc)
 
 					api := router.Group("/api")
 					api.POST("/auth/login", authHandler.Login)
@@ -135,6 +137,16 @@ func main() {
 						v1.PUT("/:id", fazendaHandler.Update)
 						v1.DELETE("/:id", fazendaHandler.Delete)
 					}
+
+					// Admin routes (perfil ADMIN ou DEVELOPER)
+					admin := api.Group("/v1/admin", auth.AuthMiddleware(jwtSvc), auth.RequireAdmin())
+					{
+						admin.GET("/usuarios", adminHandler.ListUsuarios)
+						admin.POST("/usuarios", adminHandler.CreateUsuario)
+						admin.PUT("/usuarios/:id", adminHandler.UpdateUsuario)
+						admin.PATCH("/usuarios/:id/toggle-enabled", adminHandler.ToggleEnabled)
+					}
+					slog.Info("Rotas de Admin registradas")
 
 					// Dev Studio routes (apenas se Gemini API key estiver configurada)
 					if cfg.GeminiAPIKey != "" {
