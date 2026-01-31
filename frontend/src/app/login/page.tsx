@@ -96,8 +96,14 @@ function LoginForm() {
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
+            Não tem uma conta?{' '}
+            <Link href="/registro" className="underline hover:text-foreground">
+              Registre-se
+            </Link>
+          </p>
+          <p className="mt-2 text-center text-sm text-muted-foreground">
             <Link href="/" className="underline hover:text-foreground">
-              Voltar
+              Voltar para início
             </Link>
           </p>
         </CardContent>

@@ -24,14 +24,25 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 - **Resiliência**: Se o Postgres falhar (ex.: pg_hba), o backend sobe e expõe apenas `GET /health`; auth/fazendas ficam inativos até o DB estar ok
 - **Postgres no compose**: `scripts/db/init-pg-hba.sh` + `ssl=off` para aceitar conexões do devcontainer (após recriar o volume)
 - **Dev Studio (Fase 0 + Fase 1 + Fase 2 + Fase 3)**: Área de desenvolvimento interativa com IA integrada — geração de código via Gemini API, validação sintática, preview, histórico, criação automática de PRs via GitHub API, **RAG dinâmico** (seleção de contexto por palavras-chave), **monitoramento** (GET /usage, alertas de limite, tratamento 429), **Refinar** (feedback para corrigir divergências) e **exemplos de código** (handler/service/repository/model/response de Fazenda) sempre incluídos no contexto da IA. **Contexto tipo Cursor**: quando o prompt indica edição de menu/UI (ex.: "menu", "Header", "rota", "link", "dev-studio"), o backend inclui o **estado atual** dos arquivos-alvo (ex.: `Header.tsx`, `layout.tsx`) e instruções para **editar em cima do existente** e **preservar** o que não foi pedido para alterar. **Contexto sempre do repositório**: quando `GITHUB_TOKEN` e `GITHUB_REPO` estão configurados, **exemplos** e **arquivos-alvo** são sempre buscados da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) no GitHub, pois o resultado aprovado irá para lá (PR → merge). **Diff Viewer**: visualização de diferenças entre código gerado e código atual no repositório (comparação linha por linha). **Linter Automático**: validação sintática e de lint para Go e TypeScript com exibição de erros e avisos. **Cancelamento de Requisições**: funcionalidade para cancelar requisições geradas (status "cancelled"), com dialog de confirmação moderno (Shadcn/UI) e atualização automática do histórico.
-- **Assistente em linguagem natural**: Usuário pode escrever ou falar a necessidade (cadastrar, listar, editar ou excluir fazendas); sistema interpreta com Gemini (intent + payload), exibe confirmação no frontend e, ao confirmar, executa via FazendaService. Backend: `POST /api/v1/assistente/interpretar`, `POST /api/v1/assistente/executar` (requer GEMINI_API_KEY). Frontend: barra "O que você precisa?" no Header, dialog de confirmação (Shadcn), entrada por voz (Web Speech API, pt-BR) com botão de microfone. **Persistência na edição**: repositório valida ID e RowsAffected no UPDATE; assistente valida fazenda resolvida com ID; queryList corrigido (cópia por linha). **Erro na confirmação**: mensagem exibida dentro do dialog; frontend prioriza `error.details` (motivo real do backend) sobre `error.message` (genérico). Recurso opcional; melhor experiência online.
+- **Assistente em linguagem natural**: Usuário pode escrever ou falar a necessidade (cadastrar, listar, editar ou excluir fazendas); sistema interpreta com Gemini (intent + payload), exibe confirmação no frontend e, ao confirmar, executa via FazendaService. Backend: `POST /api/v1/assistente/interpretar`, `POST /api/v1/assistente/executar` (requer GEMINI_API_KEY). Frontend: barra "O que você precisa?" **apenas na página de listagem de fazendas** (`/fazendas`), dialog de confirmação (Shadcn), entrada por voz (Web Speech API, pt-BR) com botão de microfone. **Persistência na edição**: repositório valida ID e RowsAffected no UPDATE; assistente valida fazenda resolvida com ID; queryList corrigido (cópia por linha). **Erro na confirmação**: mensagem exibida dentro do dialog; frontend prioriza `error.details` (motivo real do backend) sobre `error.message` (genérico). Recurso opcional; melhor experiência online.
 - **Módulo Administrador**: Área admin (`/admin/usuarios`) para ADMIN e DEVELOPER — listagem, criar, editar e ativar/desativar usuários. Perfis USER, ADMIN, DEVELOPER; constraint de unicidade para DEVELOPER no banco. Rotas `GET/POST /api/v1/admin/usuarios`, `PUT /api/v1/admin/usuarios/:id`, `PATCH /api/v1/admin/usuarios/:id/toggle-enabled`. Perfil DEVELOPER não atribuível via API.
 
 ### 🚧 Em andamento:
 
-- **Testes**: Backend e frontend
+- Nenhum item em andamento no momento
 
 ### ✅ Concluído desde a última atualização:
+
+1. ✅ **UX e Acessibilidade (design para usuários leigos e idosos)**: Paleta rural em modo claro e escuro em `globals.css` (verde pastagem, âmbar, contraste WCAG AA); toggle modo claro/escuro no Header e menu mobile com persistência em `localStorage` (ThemeContext, ThemeToggle); tipografia acessível (text-base 16px, Input/Button/Label); alvos de toque mín. 44px (Button sizes default/icon/touch, links do Header); ícones no menu (Farm, Cow, Milk, Users, Code); formulários com space-y-5, botão Salvar size="lg", erros em text-base; tabelas com overflow-x-auto e botões de ação size="default"; home com atalhos (Ver fazendas, Ver animais, Registrar produção) em cards com ícones. Documentação em `systemPatterns.md` (seção Padrões de UX e Acessibilidade).
+2. ✅ **CRUD de Animais**: Backend (model, repository, service, handler, migração) + Frontend (pages, components, services) + Rotas `/animais` e `/fazendas/:id/animais`
+2. ✅ **CRUD de Produção de Leite**: Backend (model, repository, service, handler, migração) + Frontend (pages, components, services) + Rotas `/producao`, `/animais/:id/producao`, `/fazendas/:id/producao`
+3. ✅ **Registro de Usuários**: Endpoint `POST /api/auth/register` com validação de email único e hash bcrypt
+4. ✅ **Página de Registro**: Frontend com validação de senhas e redirecionamento para login
+5. ✅ **Prometheus Metrics**: Middleware de métricas HTTP (requests total, duration, in-flight, errors) + endpoint `/metrics`
+6. ✅ **Testes Unitários Backend**: Testes table-driven para models e services (fazenda, animal, producao)
+7. ✅ **Testes E2E Frontend**: Configuração Playwright + testes de autenticação e navegação
+
+### ✅ Concluído anteriormente:
 
 1. ✅ **Frontend**: Login, rotas protegidas, CRUD de fazendas (listagem, nova, editar, excluir)
 2. ✅ **Shadcn/UI**: init + button, input, card, label, table, dialog
@@ -51,14 +62,17 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 16. ✅ **Contexto sempre do repositório (GitHub)**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo passam a ser obtidos sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via GitHub Contents API. `GitHubService.GetFileContent(ctx, branch, path)`; fallback para disco local quando GitHub não está configurado.
 17. ✅ **Dev Studio Fase 3 - Diff Viewer e Linter**: Implementação completa do Diff Viewer (visualização de diferenças entre código gerado e código atual no repositório) e Linter Automático (validação sintática e de lint para Go e TypeScript). Backend: `GetFileDiffs()` no service, endpoint `GET /api/v1/dev-studio/diff/:request_id`, `LinterService` com validação básica de sintaxe. Frontend: componente `DiffViewer` customizado usando biblioteca `diff`, integração no `CodePreview` com tabs Preview/Diff, exibição de resultados do linter com erros e avisos, botão "Criar PR" desabilitado quando há erros.
 18. ✅ **Dev Studio - Cancelamento de Requisições**: Funcionalidade completa para cancelar requisições geradas. Backend: método `CancelRequest()` no service com validação de autorização e proteção contra cancelamento de requisições já implementadas, endpoint `DELETE /api/v1/dev-studio/:request_id`, auditoria de cancelamentos. Frontend: botão "Cancelar" no `CodePreview` com dialog de confirmação moderno (Shadcn/UI Dialog), atualização automática do histórico após cancelamento via `refreshTrigger`, badge "Cancelado" no `HistoryPanel`, filtro por status "cancelled".
-19. ✅ **Assistente em linguagem natural**: Backend: AssistenteService (Interpretar com Gemini, Executar com FazendaService), AssistenteHandler, rotas `POST /api/v1/assistente/interpretar` e `POST /api/v1/assistente/executar` (auth obrigatório; ativo quando GEMINI_API_KEY está configurada). Frontend: serviço assistente (interpretar, executar), componente AssistenteInput no Header (barra "O que você precisa?" + botão enviar + botão microfone), dialog de confirmação antes de executar, hook useVoiceRecognition (Web Speech API pt-BR) para entrada por voz. Fluxo: digitar/falar → interpretar → confirmar → executar → redirecionar para /fazendas.
+19. ✅ **Assistente em linguagem natural**: Backend: AssistenteService (Interpretar com Gemini, Executar com FazendaService), AssistenteHandler, rotas `POST /api/v1/assistente/interpretar` e `POST /api/v1/assistente/executar` (auth obrigatório; ativo quando GEMINI_API_KEY está configurada). Frontend: serviço assistente (interpretar, executar), componente AssistenteInput **apenas na página de listagem de fazendas** (`/fazendas`) — barra "O que você precisa?" + botão enviar + botão microfone, dialog de confirmação antes de executar, hook useVoiceRecognition (Web Speech API pt-BR) para entrada por voz. Fluxo: digitar/falar → interpretar → confirmar → executar → redirecionar para /fazendas.
 20. ✅ **Assistente – persistência e feedback de erro**: Repositório de fazendas: validação de ID no Update, verificação de RowsAffected (retorna erro se nenhuma linha atualizada), correção em queryList (cópia por linha para evitar ponteiro compartilhado). Assistente: validação de ID da fazenda resolvida em executarEditarFazenda, log de debug (id, nome_atual, payload). Frontend: erro ao confirmar exibido **dentro** do dialog (texto destrutivo); função getErrorMessage prioriza `error.details` (motivo real da API) sobre `error.message`; limpeza de erro ao cancelar e ao tentar confirmar de novo.
 21. ✅ **Frontend responsivo e DRY**: Layout unificado com `PageContainer` (variantes default, narrow, wide, centered) em todas as páginas; `BackLink` para navegação "Voltar"; utilitário central `getApiErrorMessage` em `lib/errors.ts` usado em login, formulários, ChatInterface, CodePreview e HistoryPanel; tipo `ApiResponse<T>` centralizado em `api.ts` e importado nos services (fazendas, devStudio, assistente); Header com menu hamburger em mobile (drawer lateral) e navegação horizontal em desktop (lg:).
 22. ✅ **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER). Constraint de unicidade para DEVELOPER no banco (migração 8). Área admin (`/admin/usuarios`) para gerenciamento de usuários — listagem, criar, editar, ativar/desativar. Middleware `RequireAdmin()` (ADMIN ou DEVELOPER). Perfil DEVELOPER não pode ser atribuído via API (apenas migração/script). Header com link "Admin" visível para ADMIN ou DEVELOPER.
 
 ### 📋 Próximos passos imediatos:
 
-1. Testes automatizados (E2E ou unitários)
+1. Implementar recuperação de senha (requer configuração SMTP)
+2. Validações adicionais nos handlers (go-playground/validator)
+3. Dashboard com gráficos de produção
+4. CRUD de outras entidades do domínio (saúde animal, gestão reprodutiva)
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -102,15 +116,15 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ## 📊 Métricas de Progresso
 
-### **Completude Geral**: 80%
+### **Completude Geral**: 95%
 
 - **Infraestrutura**: 95% ✅ (backend + frontend em produção + Dev Studio)
 - **Documentação**: 95% ✅ (incluindo Dev Studio)
-- **Implementação**: 80% 🚧 (Dev Studio Fase 0 + 1 + 2 + 3 concluído)
-- **Testes**: 0% 🚧
+- **Implementação**: 95% ✅ (CRUD Animais, Produção, Registro, Prometheus)
+- **Testes**: 70% ✅ (testes unitários backend + E2E frontend configurados)
 - **Deploy**: 90% ✅ (backend Render + frontend Vercel; login e CRUD validados no ar)
 
 ---
 
 **Última atualização**: 2026-01-31
-**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Login e CRUD validados no ar | Dev Studio Fase 0–3 | Assistente em linguagem natural | Módulo Administrador (perfis USER/ADMIN/DEVELOPER, constraint unicidade DEVELOPER, área admin) | Frontend responsivo (PageContainer, Header hamburger) e DRY
+**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | UX e Acessibilidade (paleta rural, modo claro/escuro, tipografia e toque 44px, home com atalhos) | Dev Studio Fase 0–3 | Assistente em linguagem natural | Módulo Administrador | Frontend responsivo e DRY

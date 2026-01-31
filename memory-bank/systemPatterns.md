@@ -318,7 +318,26 @@ Usuario (N) ─── (1) Fazenda
 
 ### **Header Responsivo**
 - **Padrão**: Navegação desktop (lg:) com links visíveis; em mobile (< lg) menu hamburger que abre drawer lateral
-- **Implementação**: `Header.tsx` — estado `mobileMenuOpen`, ícone Menu (lucide-react), overlay + painel fixo com links, AssistenteInput, email e Sair; fechar ao clicar no overlay ou no link
+- **Implementação**: `Header.tsx` — estado `mobileMenuOpen`, ícone Menu (lucide-react), overlay + painel fixo com links, email e Sair; fechar ao clicar no overlay ou no link. O assistente em linguagem natural (AssistenteInput) aparece apenas na página de listagem de fazendas (`/fazendas`), não no Header.
+- **Ícones no menu**: Cada link de navegação exibe ícone + texto (Farm/Fazendas, Cow/Animais, Milk/Produção, Users/Admin, Code/Dev Studio) para reforço visual e reconhecimento rápido.
+- **Toggle de tema**: Botão de alternar modo claro/escuro (ThemeToggle) no Header (desktop) e no menu mobile; alvo de toque mínimo 44px; ver seção "Padrões de UX e Acessibilidade".
+
+### **Padrões de UX e Acessibilidade**
+
+Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é navegação confortável e eficiente com identidade visual ligada ao meio rural.
+
+- **Paleta rural** (`frontend/src/app/globals.css`):
+  - **Modo claro**: Primária verde (pastagem) `152 42% 36%`; fundo off-white quente `40 18% 97%`; acento âmbar para hover; texto escuro contraste ≥ 4,5:1 (WCAG AA).
+  - **Modo escuro**: Mesma identidade em tons escuros; fundo `152 18% 11%`; primária mais clara `152 48% 48%` para contraste.
+  - Variáveis: `--primary`, `--secondary`, `--accent`, `--background`, `--foreground`, `--muted`, `--destructive`, `--border`, `--input`, `--ring`, `--radius` (0.625rem).
+- **Modo claro e modo escuro**:
+  - Toggle no Header e no menu mobile; ícone Sun/Moon; `aria-label` "Usar modo claro" / "Usar modo escuro".
+  - Persistência em `localStorage` com chave `ceialmilk_theme` (valores `light` | `dark`). Script inline no layout aplica tema antes da hidratação para evitar flash.
+  - Contexto: `ThemeContext` e `ThemeProvider` em `contexts/ThemeContext.tsx`; componente `ThemeToggle` em `components/layout/ThemeToggle.tsx`.
+- **Tipografia**: Corpo e labels mínimo 16px (`text-base`); títulos de página 18–20px ou mais. Input e Label com `text-base`; Button com `text-base` e tamanhos que garantem legibilidade.
+- **Alvos de toque**: Mínimo 44×44px para botões e links interativos (WCAG / Apple HIG). Button `size="default"` e `size="icon"` usam `min-h-[44px]`/`min-w-[44px]`; links do Header e CTAs principais seguem o mesmo critério.
+- **Formulários**: `space-y-5` entre grupos; botão de envio `size="lg"`; mensagens de erro em `text-base`; tabelas com `overflow-x-auto` em mobile; botões Editar/Excluir nas tabelas com `size="default"` para toque.
+- **Home autenticada**: Página inicial exibe atalhos grandes (Ver fazendas, Ver animais, Registrar produção) em cards com ícones e botão de ação; sem redirecionamento automático para listagem.
 
 ## 📊 Padrões de Monitoramento
 
@@ -343,5 +362,5 @@ Usuario (N) ─── (1) Fazenda
 
 ---
 
-**Última atualização**: 2026-01-30
-**Versão dos Padrões**: 2.2 (Go + Next.js) — PageContainer, getApiErrorMessage (lib/errors), Header responsivo (menu hamburger), BackLink; ApiResponse centralizado em api.ts
+**Última atualização**: 2026-01-31
+**Versão dos Padrões**: 2.3 (Go + Next.js) — Padrões de UX e Acessibilidade (paleta rural, modo claro/escuro, tipografia, toque 44px, formulários, home com atalhos); ThemeToggle; ícones no menu.

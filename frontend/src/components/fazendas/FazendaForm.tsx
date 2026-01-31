@@ -55,7 +55,7 @@ export function FazendaForm({
         <CardTitle>{initial ? 'Editar fazenda' : 'Nova fazenda'}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="nome">Nome *</Label>
             <Input
@@ -94,8 +94,8 @@ export function FazendaForm({
               onChange={(e) => setFundacao(e.target.value)}
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" disabled={isPending}>
+          {error && <p className="text-base text-destructive">{error}</p>}
+          <Button type="submit" size="lg" disabled={isPending}>
             {isPending ? 'Salvando…' : submitLabel}
           </Button>
         </form>

@@ -50,8 +50,9 @@ export function UsuarioTable({ items }: { items: Usuario[] }) {
   return (
     <div className="space-y-2">
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-base text-destructive">{error}</p>
       )}
+      <div className="overflow-x-auto -mx-4 sm:mx-0">
       <Table>
         <TableHeader>
           <TableRow>
@@ -87,13 +88,13 @@ export function UsuarioTable({ items }: { items: Usuario[] }) {
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" asChild>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button variant="outline" size="default" asChild>
                       <Link href={`/admin/usuarios/${u.id}/editar`}>Editar</Link>
                     </Button>
                     <Button
                       variant={u.enabled ? 'outline' : 'default'}
-                      size="sm"
+                      size="default"
                       onClick={() => handleToggle(u.id)}
                       disabled={toggleMutation.isPending}
                     >
@@ -106,6 +107,7 @@ export function UsuarioTable({ items }: { items: Usuario[] }) {
           )}
         </TableBody>
       </Table>
+      </div>
     </div>
   )
 }

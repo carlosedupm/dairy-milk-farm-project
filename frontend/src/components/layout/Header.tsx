@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { AssistenteInput } from "@/components/assistente/AssistenteInput";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { cn } from "@/lib/utils";
-import { Menu, X } from "lucide-react";
+import { Building2, List, Droplets, Menu, Users, Code, X } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -19,7 +19,7 @@ export function Header() {
 
   const navLinkClass = (path: string) =>
     cn(
-      "text-sm hover:text-foreground transition-colors",
+      "inline-flex items-center gap-2 text-base hover:text-foreground transition-colors min-h-[44px] py-2",
       isActive(path) ? "text-foreground font-medium" : "text-muted-foreground"
     );
 
@@ -33,17 +33,28 @@ export function Header() {
             CeialMilk
           </Link>
           {/* Desktop nav - hidden on mobile */}
-          <nav className="hidden lg:flex items-center gap-4">
+          <nav className="hidden lg:flex items-center gap-1">
             <Link href="/fazendas" className={navLinkClass("/fazendas")}>
+              <Building2 className="h-5 w-5 shrink-0" aria-hidden />
               Fazendas
+            </Link>
+            <Link href="/animais" className={navLinkClass("/animais")}>
+              <List className="h-5 w-5 shrink-0" aria-hidden />
+              Animais
+            </Link>
+            <Link href="/producao" className={navLinkClass("/producao")}>
+              <Droplets className="h-5 w-5 shrink-0" aria-hidden />
+              Produção
             </Link>
             {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
               <Link href="/admin/usuarios" className={navLinkClass("/admin")}>
+                <Users className="h-5 w-5 shrink-0" aria-hidden />
                 Admin
               </Link>
             )}
             {user && user.perfil === "DEVELOPER" && (
               <Link href="/dev-studio" className={navLinkClass("/dev-studio")}>
+                <Code className="h-5 w-5 shrink-0" aria-hidden />
                 Dev Studio
               </Link>
             )}
@@ -51,11 +62,11 @@ export function Header() {
         </div>
 
         {/* Desktop right block - hidden on mobile */}
-        <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1 justify-end max-w-md">
-          <AssistenteInput />
+        <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1 justify-end">
+          <ThemeToggle />
           {user && (
             <span className="text-sm text-muted-foreground truncate">
-              {user.email}
+              {user.nome?.trim() || user.email}
             </span>
           )}
           <Button variant="outline" size="sm" onClick={logout}>
@@ -101,22 +112,55 @@ export function Header() {
               </Button>
             </div>
             <nav className="flex flex-col gap-1 p-4 overflow-auto">
+              <div className="flex items-center gap-2 py-2 px-3">
+                <ThemeToggle />
+                <span className="text-sm text-muted-foreground">
+                  Alternar tema
+                </span>
+              </div>
               <Link
                 href="/fazendas"
-                className={cn("py-2 px-3 rounded-md", navLinkClass("/fazendas"))}
+                className={cn(
+                  "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                  navLinkClass("/fazendas")
+                )}
                 onClick={closeMobileMenu}
               >
+                <Building2 className="h-5 w-5 shrink-0" aria-hidden />
                 Fazendas
+              </Link>
+              <Link
+                href="/animais"
+                className={cn(
+                  "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                  navLinkClass("/animais")
+                )}
+                onClick={closeMobileMenu}
+              >
+                <List className="h-5 w-5 shrink-0" aria-hidden />
+                Animais
+              </Link>
+              <Link
+                href="/producao"
+                className={cn(
+                  "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                  navLinkClass("/producao")
+                )}
+                onClick={closeMobileMenu}
+              >
+                <Droplets className="h-5 w-5 shrink-0" aria-hidden />
+                Produção
               </Link>
               {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
                 <Link
                   href="/admin/usuarios"
                   className={cn(
-                    "py-2 px-3 rounded-md",
+                    "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
                     navLinkClass("/admin")
                   )}
                   onClick={closeMobileMenu}
                 >
+                  <Users className="h-5 w-5 shrink-0" aria-hidden />
                   Admin
                 </Link>
               )}
@@ -124,20 +168,18 @@ export function Header() {
                 <Link
                   href="/dev-studio"
                   className={cn(
-                    "py-2 px-3 rounded-md",
+                    "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
                     navLinkClass("/dev-studio")
                   )}
                   onClick={closeMobileMenu}
                 >
+                  <Code className="h-5 w-5 shrink-0" aria-hidden />
                   Dev Studio
                 </Link>
               )}
-              <div className="pt-2 mt-2 border-t">
-                <AssistenteInput />
-              </div>
               {user && (
                 <p className="py-2 px-3 text-sm text-muted-foreground truncate">
-                  {user.email}
+                  {user.nome?.trim() || user.email}
                 </p>
               )}
               <Button

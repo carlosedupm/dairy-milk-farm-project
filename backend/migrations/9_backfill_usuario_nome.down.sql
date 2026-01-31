@@ -1,0 +1,2 @@
+-- Não reverter nomes preenchidos automaticamente (sem histórico do valor anterior)
+-- Down migration vazio; se necessário, ajustar manualmente no admin.

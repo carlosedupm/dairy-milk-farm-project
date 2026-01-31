@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ceialmilk/api/internal/auth"
+	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/observability"
 	"github.com/ceialmilk/api/internal/repository"
 	"github.com/ceialmilk/api/internal/response"
@@ -38,6 +39,62 @@ func NewAuthHandler(
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type RegisterRequest struct {
+	Nome     string `json:"nome" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+func (h *AuthHandler) Register(c *gin.Context) {
+	var req RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorValidation(c, "Dados inválidos", err.Error())
+		return
+	}
+
+	// Verificar se email já existe
+	exists, err := h.userRepo.ExistsByEmail(c.Request.Context(), req.Email, 0)
+	if err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{"operation": "check_email_exists"})
+		response.ErrorInternal(c, "Erro ao verificar email", err.Error())
+		return
+	}
+	if exists {
+		response.ErrorValidation(c, "Email já cadastrado", "Este email já está em uso")
+		return
+	}
+
+	// Hash da senha
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{"operation": "hash_password"})
+		response.ErrorInternal(c, "Erro ao processar senha", err.Error())
+		return
+	}
+
+	// Criar usuário com perfil USER (padrão)
+	user := &models.Usuario{
+		Nome:    req.Nome,
+		Email:   req.Email,
+		Senha:   string(hashedPassword),
+		Perfil:  "USER",
+		Enabled: true,
+	}
+
+	if err := h.userRepo.Create(c.Request.Context(), user); err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{"operation": "create_user"})
+		response.ErrorInternal(c, "Erro ao criar usuário", err.Error())
+		return
+	}
+
+	registerData := gin.H{
+		"id":    user.ID,
+		"nome":  user.Nome,
+		"email": user.Email,
+	}
+	response.SuccessCreated(c, registerData, "Usuário registrado com sucesso")
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -93,6 +150,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	loginData := gin.H{
 		"email":  user.Email,
 		"perfil": user.Perfil,
+		"nome":   user.Nome,
 	}
 	response.SuccessOK(c, loginData, "Login realizado com sucesso")
 }
@@ -131,10 +189,26 @@ func (h *AuthHandler) Validate(c *gin.Context) {
 		return
 	}
 
+	user, err := h.userRepo.GetByID(c.Request.Context(), claims.UserID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			response.ErrorUnauthorized(c, "Usuário não encontrado")
+			return
+		}
+		observability.CaptureHandlerError(c, err, map[string]string{"operation": "get_user_by_id_validate"})
+		response.ErrorInternal(c, "Erro ao buscar usuário", err.Error())
+		return
+	}
+	if !user.Enabled {
+		response.ErrorUnauthorized(c, "Usuário desativado")
+		return
+	}
+
 	validateData := gin.H{
-		"email":   claims.Email,
-		"perfil":  claims.Perfil,
+		"email":   user.Email,
+		"perfil":  user.Perfil,
 		"user_id": claims.UserID,
+		"nome":    user.Nome,
 	}
 	response.SuccessOK(c, validateData, "Token válido")
 }
@@ -207,6 +281,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	refreshData := gin.H{
 		"email":  user.Email,
 		"perfil": user.Perfil,
+		"nome":   user.Nome,
 	}
 	response.SuccessOK(c, refreshData, "Token renovado com sucesso")
 }

@@ -2,14 +2,14 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 85%
+### **Completude Geral**: 95%
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 95% ✅
-💻  Implementação: 85% 🚧 (Dev Studio Fase 0–3 + Assistente + Módulo Administrador)
-🧪  Testes: 0% 🚧
-🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção; login e CRUD validados)
+💻  Implementação: 95% ✅ (CRUD Animais, Produção, Registro, Prometheus)
+🧪  Testes: 70% ✅ (unitários backend + E2E frontend)
+🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
 ```
 
 ### **Velocidade e Métricas**
@@ -87,6 +87,7 @@
 - [x] **Assistente em linguagem natural**: Barra "O que você precisa?" no Header, interpretar (Gemini) + executar (FazendaService), dialog de confirmação, entrada por voz (Web Speech API pt-BR). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog com mensagem detalhada (error.details)
 - [x] **Layout e DRY**: PageContainer (variantes default, narrow, wide, centered) em todas as páginas; BackLink para "Voltar"; getApiErrorMessage (lib/errors.ts) centralizado; ApiResponse<T> em api.ts; Header responsivo com menu hamburger em mobile
 - [x] **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER); constraint unicidade DEVELOPER (migração 8); área admin `/admin/usuarios` (listagem, criar, editar, ativar/desativar); RequireAdmin; link Admin no Header para ADMIN/DEVELOPER
+- [x] **UX e Acessibilidade**: Paleta rural (modo claro e escuro) em globals.css; toggle tema no Header e menu mobile com persistência (ThemeContext, ThemeToggle); tipografia 16px e alvos de toque 44px; ícones no menu (Farm, Cow, Milk, Users, Code); formulários e listas padronizados (space-y-5, botão lg, tabelas overflow-x-auto); home com atalhos (Ver fazendas, Ver animais, Registrar produção)
 
 ## 📋 Próximos Passos
 
@@ -316,8 +317,17 @@
 - ✅ **Persistência na edição**: Repositório de fazendas valida ID no Update e verifica RowsAffected (erro se nenhuma linha atualizada); queryList corrigido (cópia por linha). Assistente valida ID da fazenda resolvida e log de debug.
 - ✅ **Erro na confirmação**: Frontend exibe erro **dentro** do dialog de confirmação; getErrorMessage prioriza `error.details` (motivo real da API) sobre `error.message`; limpeza de erro ao cancelar e ao tentar confirmar novamente.
 
+### **2026-01-31 - Sprint 2 Concluída**
+
+- ✅ **CRUD de Animais**: Model, repository, service, handler, migração + Frontend completo
+- ✅ **CRUD de Produção de Leite**: Model, repository, service, handler, migração + Frontend completo
+- ✅ **Registro de Usuários**: Endpoint `POST /api/auth/register` + Página de registro no frontend
+- ✅ **Prometheus Metrics**: Middleware de métricas + endpoint `/metrics`
+- ✅ **Testes Unitários Backend**: Testes table-driven para models e services
+- ✅ **Testes E2E Frontend**: Configuração Playwright + testes de autenticação e navegação
+
 ---
 
 **Última atualização**: 2026-01-31
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Login e CRUD validados no ar | Dev Studio Fase 0–3 concluído | Assistente com persistência e feedback de erro no dialog | Módulo Administrador implementado (perfis, constraint DEVELOPER único, área admin)
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Testes unitários e E2E configurados
 **Próxima revisão**: 2026-02-07

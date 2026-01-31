@@ -38,6 +38,7 @@ export function FazendaTable({ items }: { items: Fazenda[] }) {
   }
 
   return (
+    <div className="overflow-x-auto -mx-4 sm:mx-0">
     <Table>
       <TableHeader>
         <TableRow>
@@ -100,5 +101,6 @@ export function FazendaTable({ items }: { items: Fazenda[] }) {
         )}
       </TableBody>
     </Table>
+    </div>
   )
 }

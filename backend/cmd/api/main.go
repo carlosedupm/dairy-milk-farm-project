@@ -23,6 +23,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -59,11 +60,16 @@ func main() {
 
 	// Middlewares de observabilidade (ordem importa)
 	router.Use(middleware.CorrelationIDMiddleware())     // Correlation ID primeiro
+	router.Use(middleware.PrometheusMiddleware())        // Métricas Prometheus
 	router.Use(middleware.StructuredLoggingMiddleware()) // Logging estruturado
 	router.Use(middleware.SentryRecoveryMiddleware())    // Captura de panics no Sentry
 
 	// CORS
 	router.Use(corsMiddleware(cfg.CORSOrigin))
+
+	// Endpoint de métricas Prometheus
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	slog.Info("Endpoint de métricas Prometheus registrado em /metrics")
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -105,8 +111,12 @@ func main() {
 
 					userRepo := repository.NewUsuarioRepository(pool)
 					fazendaRepo := repository.NewFazendaRepository(pool)
+					animalRepo := repository.NewAnimalRepository(pool)
+					producaoRepo := repository.NewProducaoRepository(pool)
 					refreshTokenRepo := repository.NewRefreshTokenRepository(pool)
 					fazendaSvc := service.NewFazendaService(fazendaRepo)
+					animalSvc := service.NewAnimalService(animalRepo, fazendaRepo)
+					producaoSvc := service.NewProducaoService(producaoRepo, animalRepo)
 					refreshTokenSvc := service.NewRefreshTokenService(refreshTokenRepo)
 					cookieSameSite := http.SameSiteStrictMode
 					if !strings.Contains(cfg.CORSOrigin, "localhost") {
@@ -114,10 +124,13 @@ func main() {
 					}
 					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
+					animalHandler := handlers.NewAnimalHandler(animalSvc)
+					producaoHandler := handlers.NewProducaoHandler(producaoSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
 					adminHandler := handlers.NewAdminHandler(usuarioSvc)
 
 					api := router.Group("/api")
+					api.POST("/auth/register", authHandler.Register)
 					api.POST("/auth/login", authHandler.Login)
 					api.POST("/auth/logout", authHandler.Logout)
 					api.POST("/auth/refresh", authHandler.Refresh)
@@ -134,9 +147,44 @@ func main() {
 						v1.GET("/search/by-vacas-range", fazendaHandler.SearchByVacasRange)
 						v1.GET("/:id", fazendaHandler.GetByID)
 						v1.POST("", fazendaHandler.Create)
-						v1.PUT("/:id", fazendaHandler.Update)
-						v1.DELETE("/:id", fazendaHandler.Delete)
+					v1.PUT("/:id", fazendaHandler.Update)
+					v1.DELETE("/:id", fazendaHandler.Delete)
+					// Animais por fazenda
+					v1.GET("/:id/animais", animalHandler.GetByFazendaID)
+					v1.GET("/:id/animais/count", animalHandler.CountByFazenda)
 					}
+
+					// Rotas de Animais
+					animais := api.Group("/v1/animais", auth.AuthMiddleware(jwtSvc))
+					{
+						animais.GET("", animalHandler.GetAll)
+						animais.GET("/count", animalHandler.Count)
+						animais.GET("/search/by-identificacao", animalHandler.SearchByIdentificacao)
+						animais.GET("/filter/by-status-saude", animalHandler.GetByStatusSaude)
+						animais.GET("/filter/by-sexo", animalHandler.GetBySexo)
+						animais.GET("/:id", animalHandler.GetByID)
+						animais.POST("", animalHandler.Create)
+					animais.PUT("/:id", animalHandler.Update)
+					animais.DELETE("/:id", animalHandler.Delete)
+					// Produção por animal
+					animais.GET("/:id/producao", producaoHandler.GetByAnimalID)
+					animais.GET("/:id/producao/count", producaoHandler.CountByAnimal)
+					animais.GET("/:id/producao/resumo", producaoHandler.GetResumoByAnimal)
+					}
+					slog.Info("Rotas de Animais registradas")
+
+					// Rotas de Produção de Leite
+					producao := api.Group("/v1/producao", auth.AuthMiddleware(jwtSvc))
+					{
+						producao.GET("", producaoHandler.GetAll)
+						producao.GET("/count", producaoHandler.Count)
+						producao.GET("/filter/by-date", producaoHandler.GetByDateRange)
+						producao.GET("/:id", producaoHandler.GetByID)
+						producao.POST("", producaoHandler.Create)
+						producao.PUT("/:id", producaoHandler.Update)
+						producao.DELETE("/:id", producaoHandler.Delete)
+					}
+					slog.Info("Rotas de Produção de Leite registradas")
 
 					// Admin routes (perfil ADMIN ou DEVELOPER)
 					admin := api.Group("/v1/admin", auth.AuthMiddleware(jwtSvc), auth.RequireAdmin())

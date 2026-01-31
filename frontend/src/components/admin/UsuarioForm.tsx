@@ -75,7 +75,7 @@ export function UsuarioForm({
         <CardTitle>{initial ? 'Editar usuário' : 'Novo usuário'}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="nome">Nome *</Label>
             <Input
@@ -116,7 +116,7 @@ export function UsuarioForm({
               id="perfil"
               value={perfil}
               onChange={(e) => setPerfil(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-11 min-h-[44px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               {PERFIS_DISPONIVEIS.map((p) => (
                 <option key={p.value} value={p.value}>

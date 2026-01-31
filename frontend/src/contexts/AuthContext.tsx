@@ -10,7 +10,7 @@ import {
 } from 'react'
 import * as authService from '@/services/auth'
 
-type User = { email: string; perfil: string }
+type User = { email: string; perfil: string; nome: string }
 
 type AuthContextValue = {
   user: User | null
@@ -31,7 +31,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkAuth = async () => {
       const userData = await authService.validate()
       if (userData) {
-        setUser({ email: userData.email, perfil: userData.perfil })
+        setUser({
+          email: userData.email,
+          perfil: userData.perfil,
+          nome: userData.nome ?? '',
+        })
       }
       setIsReady(true)
     }
@@ -40,7 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const userData = await authService.login(email, password)
-    setUser(userData)
+    setUser({
+      email: userData.email,
+      perfil: userData.perfil,
+      nome: userData.nome ?? '',
+    })
   }, [])
 
   const logout = useCallback(async () => {
