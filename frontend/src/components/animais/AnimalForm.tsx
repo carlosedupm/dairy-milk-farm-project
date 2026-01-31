@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { Animal, AnimalCreate, Sexo, StatusSaude } from '@/services/animais'
 import { SEXOS, STATUS_SAUDE_OPTIONS, SEXO_LABELS, STATUS_SAUDE_LABELS } from '@/services/animais'
@@ -33,7 +33,9 @@ export function AnimalForm({
   submitLabel = 'Salvar',
   defaultFazendaId,
 }: Props) {
-  const [fazendaId, setFazendaId] = useState<number>(initial?.fazenda_id ?? defaultFazendaId ?? 0)
+  const [fazendaId, setFazendaId] = useState<number>(
+    defaultFazendaId ?? initial?.fazenda_id ?? 0
+  )
   const [identificacao, setIdentificacao] = useState(initial?.identificacao ?? '')
   const [raca, setRaca] = useState(initial?.raca ?? '')
   const [dataNascimento, setDataNascimento] = useState(
@@ -47,13 +49,6 @@ export function AnimalForm({
     queryKey: ['fazendas'],
     queryFn: listFazendas,
   })
-
-  // Se tiver defaultFazendaId mas ainda não foi setado, setar quando carregar
-  useEffect(() => {
-    if (defaultFazendaId && fazendaId === 0) {
-      setFazendaId(defaultFazendaId)
-    }
-  }, [defaultFazendaId, fazendaId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

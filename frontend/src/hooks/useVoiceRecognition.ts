@@ -101,6 +101,7 @@ export function useVoiceRecognition(options?: {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- refs lidos via .current; omitir .current das deps é intencional
   const startListening = useCallback(() => {
     if (!SpeechRecognitionAPI) {
       setError("Reconhecimento de voz não suportado neste navegador.");

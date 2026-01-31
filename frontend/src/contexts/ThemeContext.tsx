@@ -51,9 +51,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = getStoredTheme()
     const resolved = stored ?? getSystemTheme()
-    setThemeState(resolved)
     applyTheme(resolved)
-    setMounted(true)
+    queueMicrotask(() => {
+      setThemeState(resolved)
+      setMounted(true)
+    })
   }, [])
 
   const setTheme = useCallback((next: Theme) => {

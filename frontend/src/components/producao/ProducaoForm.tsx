@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { ProducaoLeite, ProducaoCreate, Qualidade } from '@/services/producao'
 import { QUALIDADES, QUALIDADE_LABELS } from '@/services/producao'
@@ -37,7 +37,9 @@ export function ProducaoForm({
   defaultAnimalId,
 }: Props) {
   const [fazendaId, setFazendaId] = useState<number>(defaultFazendaId ?? 0)
-  const [animalId, setAnimalId] = useState<number>(initial?.animal_id ?? defaultAnimalId ?? 0)
+  const [animalId, setAnimalId] = useState<number>(
+    initial?.animal_id ?? defaultAnimalId ?? 0
+  )
   const [dataHora, setDataHora] = useState(
     initial?.data_hora 
       ? initial.data_hora.slice(0, 16) // YYYY-MM-DDTHH:mm
@@ -63,26 +65,13 @@ export function ProducaoForm({
     enabled: fazendaId > 0,
   })
 
-  // Se tiver defaultFazendaId mas ainda não foi setado, setar quando carregar
-  useEffect(() => {
-    if (defaultFazendaId && fazendaId === 0) {
-      setFazendaId(defaultFazendaId)
-    }
-  }, [defaultFazendaId, fazendaId])
-
-  // Se tiver defaultAnimalId mas ainda não foi setado, setar quando carregar
-  useEffect(() => {
-    if (defaultAnimalId && animalId === 0) {
-      setAnimalId(defaultAnimalId)
-    }
-  }, [defaultAnimalId, animalId])
-
-  // Resetar animal quando trocar de fazenda (exceto se for inicial ou default)
-  useEffect(() => {
+  const handleFazendaChange = (v: string) => {
+    const nextFazendaId = Number(v)
+    setFazendaId(nextFazendaId)
     if (!initial && !defaultAnimalId) {
       setAnimalId(0)
     }
-  }, [fazendaId, initial, defaultAnimalId])
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -124,7 +113,7 @@ export function ProducaoForm({
               <Label htmlFor="fazenda">Fazenda</Label>
               <Select
                 value={fazendaId?.toString() ?? ''}
-                onValueChange={(v) => setFazendaId(Number(v))}
+                onValueChange={handleFazendaChange}
                 disabled={!!initial}
               >
                 <SelectTrigger>
