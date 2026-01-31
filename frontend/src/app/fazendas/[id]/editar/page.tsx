@@ -33,7 +33,7 @@ function EditarFazendaContent() {
     return (
       <PageContainer variant="narrow">
         <p className="text-destructive">ID inválido.</p>
-        <BackLink href="/fazendas" children="Voltar" />
+        <BackLink href="/fazendas">Voltar</BackLink>
       </PageContainer>
     )
   }
@@ -50,7 +50,7 @@ function EditarFazendaContent() {
     return (
       <PageContainer variant="narrow">
         <p className="text-destructive">Fazenda não encontrada.</p>
-        <BackLink href="/fazendas" children="Voltar" />
+        <BackLink href="/fazendas">Voltar</BackLink>
       </PageContainer>
     )
   }

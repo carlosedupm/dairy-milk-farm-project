@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,18 +22,7 @@ export function HistoryPanel({ onSelectRequest, refreshTrigger }: HistoryPanelPr
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
-  useEffect(() => {
-    loadHistory()
-  }, [])
-
-  // Recarregar histórico quando refreshTrigger mudar
-  useEffect(() => {
-    if (refreshTrigger !== undefined && refreshTrigger > 0) {
-      loadHistory()
-    }
-  }, [refreshTrigger])
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -44,13 +33,21 @@ export function HistoryPanel({ onSelectRequest, refreshTrigger }: HistoryPanelPr
       setError(
         getApiErrorMessage(err, 'Erro ao carregar histórico. Tente novamente mais tarde.')
       )
-      if (history.length === 0) {
-        setHistory([])
-      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadHistory()
+  }, [loadHistory])
+
+  // Recarregar histórico quando refreshTrigger mudar
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      loadHistory()
+    }
+  }, [refreshTrigger, loadHistory])
 
   const getStatusBadge = (status: string) => {
     const baseClasses = 'px-2 py-1 text-xs font-semibold rounded-full'

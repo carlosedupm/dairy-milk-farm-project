@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@/components/ui/button'
@@ -208,14 +208,7 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false, onRequestCan
     URL.revokeObjectURL(url)
   }
 
-  // Carregar diffs quando tab Diff for selecionada
-  useEffect(() => {
-    if (activeTab === 'diff' && currentCode && diffs.length === 0 && !diffsLoading) {
-      loadDiffs()
-    }
-  }, [activeTab, currentCode])
-
-  const loadDiffs = async () => {
+  const loadDiffs = useCallback(async () => {
     if (!currentCode) return
 
     setDiffsLoading(true)
@@ -231,7 +224,14 @@ export function CodePreview({ code, onCodeUpdated, atLimit = false, onRequestCan
     } finally {
       setDiffsLoading(false)
     }
-  }
+  }, [currentCode])
+
+  // Carregar diffs quando tab Diff for selecionada
+  useEffect(() => {
+    if (activeTab === 'diff' && currentCode && diffs.length === 0 && !diffsLoading) {
+      loadDiffs()
+    }
+  }, [activeTab, currentCode, diffs.length, diffsLoading, loadDiffs])
 
   const handleCancelClick = () => {
     setShowCancelDialog(true)

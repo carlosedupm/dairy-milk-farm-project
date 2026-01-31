@@ -63,7 +63,9 @@ export function useVoiceRecognition(options?: {
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const onResultRef = useRef(options?.onResult);
-  onResultRef.current = options?.onResult;
+  useEffect(() => {
+    onResultRef.current = options?.onResult;
+  }, [options?.onResult]);
   const language = options?.language ?? "pt-BR";
 
   const isSupported = Boolean(SpeechRecognitionAPI);
@@ -110,7 +112,7 @@ export function useVoiceRecognition(options?: {
     recognition.start();
     recognitionRef.current = recognition;
     setIsListening(true);
-  }, [language, transcript]);
+  }, [language]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
