@@ -3,28 +3,41 @@ package handlers
 import (
 	"strings"
 
+	"github.com/ceialmilk/api/internal/repository"
 	"github.com/ceialmilk/api/internal/response"
 	"github.com/ceialmilk/api/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
 type AssistenteHandler struct {
-	svc *service.AssistenteService
+	svc     *service.AssistenteService
+	userRepo *repository.UsuarioRepository
 }
 
-func NewAssistenteHandler(svc *service.AssistenteService) *AssistenteHandler {
-	return &AssistenteHandler{svc: svc}
+func NewAssistenteHandler(svc *service.AssistenteService, userRepo *repository.UsuarioRepository) *AssistenteHandler {
+	return &AssistenteHandler{svc: svc, userRepo: userRepo}
 }
 
 // Interpretar recebe { "texto": "..." } e retorna { intent, payload, resumo }.
+// Usa user_id, perfil e nome do usuário logado para contexto da IA.
 func (h *AssistenteHandler) Interpretar(c *gin.Context) {
+	userID := c.GetInt64("user_id")
+	perfilVal, _ := c.Get("perfil")
+	perfil, _ := perfilVal.(string)
+	nomeUsuario := "Usuário"
+	if user, err := h.userRepo.GetByID(c.Request.Context(), userID); err == nil && user != nil {
+		if user.Nome != "" {
+			nomeUsuario = user.Nome
+		}
+	}
+
 	var req service.InterpretRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorValidation(c, "Dados inválidos", err.Error())
 		return
 	}
 
-	resp, err := h.svc.Interpretar(c.Request.Context(), req.Texto)
+	resp, err := h.svc.Interpretar(c.Request.Context(), req.Texto, userID, perfil, nomeUsuario)
 	if err != nil {
 		if strings.Contains(err.Error(), "quota da API Gemini") {
 			response.ErrorQuotaExceeded(c, "Limite de uso da API excedido. Tente novamente mais tarde.", nil)

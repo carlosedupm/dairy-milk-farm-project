@@ -53,15 +53,45 @@ func NewAssistenteService(geminiAPIKey string, fazendaSvc *FazendaService) *Assi
 	}
 }
 
-// Interpretar envia o texto ao LLM (Gemini) e retorna intent, payload e resumo para confirmação.
-func (s *AssistenteService) Interpretar(ctx context.Context, texto string) (*InterpretResponse, error) {
+// Interpretar envia o texto ao LLM (Gemini) com contexto do usuário e do sistema, e retorna intent, payload e resumo para confirmação.
+func (s *AssistenteService) Interpretar(ctx context.Context, texto string, userID int64, perfil string, nomeUsuario string) (*InterpretResponse, error) {
 	texto = strings.TrimSpace(texto)
 	if texto == "" {
 		return nil, fmt.Errorf("texto é obrigatório")
 	}
 
+	// Contexto do sistema: fazendas visíveis ao usuário (hoje todas; no futuro filtrar por ownership)
+	fazendas, err := s.fazendaSvc.GetAll(ctx)
+	if err != nil {
+		slog.Warn("Assistente: falha ao carregar fazendas para contexto", "error", err)
+		fazendas = nil
+	}
+	ctxoFazendas := "Nenhuma fazenda cadastrada."
+	if len(fazendas) > 0 {
+		parts := make([]string, 0, len(fazendas))
+		for _, f := range fazendas {
+			parts = append(parts, fmt.Sprintf("[id: %d, nome: %s]", f.ID, f.Nome))
+		}
+		ctxoFazendas = strings.Join(parts, ", ")
+	}
+
+	if nomeUsuario == "" {
+		nomeUsuario = "Usuário"
+	}
+	if perfil == "" {
+		perfil = "USER"
+	}
+
+	contextoSection := fmt.Sprintf(`Contexto do usuário: nome "%s", perfil %s.
+Fazendas no sistema: %s.
+Use essa lista para desambiguar (ex.: "editar a fazenda X" quando há várias) e para respostas naturais ("você tem N fazendas: ...").
+Se o perfil for USER, ofereça apenas intents de fazendas. Se ADMIN ou DEVELOPER, pode incluir intents administrativos quando implementados.
+
+`, nomeUsuario, perfil, ctxoFazendas)
+
 	prompt := fmt.Sprintf(`Você é um assistente do sistema CeialMilk (gestão de fazendas leiteiras).
 
+%s
 A partir da frase do usuário abaixo, extraia a INTENÇÃO e os DADOS necessários.
 
 Intenções possíveis:
@@ -72,7 +102,7 @@ Intenções possíveis:
 
 Para cadastrar_fazenda, extraia: nome, quantidadeVacas (number, 0 se não mencionado), fundacao (string YYYY ou YYYY-MM-DD), localizacao (opcional).
 
-Para listar_fazendas, payload pode ser {} e resumo algo como "Listar fazendas cadastradas".
+Para listar_fazendas, payload pode ser {} e resumo algo como "Listar fazendas cadastradas" ou "Você tem N fazendas: ..." usando a lista acima.
 
 Para editar_fazenda, extraia: id (number) OU nome (string = nome ATUAL da fazenda para identificar/buscar); depois os campos a alterar: nomeNovo (string = novo nome quando o usuário quiser RENOMEAR, ex: "editar fazenda X para se chamar Y" -> nome:"X", nomeNovo:"Y"), quantidadeVacas (number), fundacao (string), localizacao (string). Use sempre nomeNovo quando o usuário pedir para mudar o nome; use nome apenas para identificar a fazenda quando não houver id.
 
@@ -89,7 +119,7 @@ Retorne APENAS um JSON válido, sem markdown, sem explicações. Exemplos de for
 Se não for possível identificar a intenção ou dados suficientes: {"intent":"desconhecido","payload":{},"resumo":"Não foi possível entender o pedido."}
 
 Frase do usuário:
-%s`, texto)
+%s`, contextoSection, texto)
 
 	payload := map[string]interface{}{
 		"contents": []map[string]interface{}{

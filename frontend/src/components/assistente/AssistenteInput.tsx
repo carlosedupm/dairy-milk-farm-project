@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -46,6 +47,7 @@ export function AssistenteInput() {
   const alreadyHandledConfirmRef = useRef(false);
   const startConfirmationListeningRef = useRef<(() => void) | null>(null);
   const askingMoreRef = useRef(false);
+  const startedViaPointerRef = useRef(false);
 
   const runInterpretar = useCallback(async (t: string) => {
     const trimmed = t.trim();
@@ -148,8 +150,15 @@ export function AssistenteInput() {
           voiceResultRef.current?.(text);
           return;
         }
-        // Ignorar "sim"/"não" no modo principal (evita tratar confirmação como novo pedido).
-        if (interpretVoiceConfirm(text) !== "unknown") return;
+        // Ignorar só frases CURTAS de confirmação/cancelamento no modo principal (ex.: "sim", "não", "confirmar").
+        // Frases longas como "listar fazendas" não devem ser filtradas (ex.: "fazendas" contém "faz").
+        const trimmed = text.trim();
+        if (
+          trimmed.length <= 14 &&
+          interpretVoiceConfirm(text) !== "unknown"
+        ) {
+          return;
+        }
         lastInputWasVoiceRef.current = true;
         voiceResultRef.current?.(text);
       }
@@ -164,6 +173,10 @@ export function AssistenteInput() {
   stopMainVoiceRef.current = stopListening;
 
   const handleMainMicClick = () => {
+    if (startedViaPointerRef.current) {
+      startedViaPointerRef.current = false;
+      return;
+    }
     askingMoreRef.current = false;
     confirmationModeRef.current = false;
     silenceTimeoutMsRef.current = 2500;
@@ -301,6 +314,18 @@ export function AssistenteInput() {
               size="icon"
               variant={isListening ? "destructive" : "secondary"}
               onClick={handleMainMicClick}
+              onPointerDown={() => {
+                // Iniciar reconhecimento no pointer down para garantir gesto do usuário
+                // (dentro de Dialog/modal o click pode perder o contexto de permissão do microfone)
+                if (!isListening && !loading) {
+                  startedViaPointerRef.current = true;
+                  askingMoreRef.current = false;
+                  confirmationModeRef.current = false;
+                  silenceTimeoutMsRef.current = 2500;
+                  fireOnFinalSegmentRef.current = false;
+                  startListening();
+                }
+              }}
               disabled={loading}
               title={
                 isListening
@@ -346,10 +371,10 @@ export function AssistenteInput() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmar ação</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              {interpretado?.resumo ?? ""}
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {interpretado?.resumo ?? ""}
-          </p>
           {error && (
             <p className="text-sm text-destructive mt-2" role="alert">
               {error}

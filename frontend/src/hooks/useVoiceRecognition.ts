@@ -122,8 +122,6 @@ export function useVoiceRecognition(options?: {
     recognition.onresult = (event: SpeechRecognitionEventInstance) => {
       const silenceTimeoutMs =
         silenceTimeoutMsRef?.current ?? defaultSilenceTimeoutMs;
-      const fireOnFinalSegment =
-        fireOnFinalSegmentRef?.current ?? defaultFireOnFinalSegment;
 
       let fullText = "";
       let lastIsFinal = false;
@@ -136,7 +134,8 @@ export function useVoiceRecognition(options?: {
       setTranscript(fullText);
       setIsFinal(lastIsFinal);
 
-      if (fireOnFinalSegment && lastIsFinal && fullText.trim()) {
+      // Sempre finalizar ao receber segmento final com texto (evita depender só do timeout/onend em modais)
+      if (lastIsFinal && fullText.trim()) {
         clearSilenceTimer();
         userRequestedStopRef.current = true;
         onResultRef.current?.(fullText.trim(), true);

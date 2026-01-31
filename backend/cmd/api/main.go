@@ -260,7 +260,7 @@ func main() {
 
 						// Assistente em linguagem natural (interpretar + executar; qualquer usuário autenticado)
 						assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, fazendaSvc)
-						assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc)
+						assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc, userRepo)
 						assistente := api.Group("/v1/assistente", auth.AuthMiddleware(jwtSvc))
 						{
 							assistente.POST("/interpretar", assistenteHandler.Interpretar)

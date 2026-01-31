@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query'
 import { list } from '@/services/fazendas'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
-import { AssistenteInput } from '@/components/assistente/AssistenteInput'
 import { FazendaTable } from '@/components/fazendas/FazendaTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,9 +18,6 @@ function FazendasContent() {
 
   return (
     <PageContainer variant="default">
-      <div className="flex justify-end mb-4">
-        <AssistenteInput />
-      </div>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle>Fazendas</CardTitle>

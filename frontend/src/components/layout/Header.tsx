@@ -5,9 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { AssistenteInput } from "@/components/assistente/AssistenteInput";
 import { cn } from "@/lib/utils";
-import { Building2, List, Droplets, Menu, Users, Code, X } from "lucide-react";
+import { Building2, List, Droplets, Menu, Users, Code, X, MessageCircle } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -63,6 +72,26 @@ export function Header() {
 
         {/* Desktop right block - hidden on mobile */}
         <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1 justify-end">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" title="Assistente em linguagem natural">
+                <MessageCircle className="h-4 w-4 mr-1.5" aria-hidden />
+                Assistente
+              </Button>
+            </DialogTrigger>
+            <DialogContent
+              className="sm:max-w-md"
+              onOpenAutoFocus={(e) => e.preventDefault()}
+            >
+              <DialogHeader>
+                <DialogTitle>Assistente</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  Digite ou fale o que você precisa. O assistente usa o contexto do seu perfil e dos dados do sistema.
+                </DialogDescription>
+              </DialogHeader>
+              <AssistenteInput />
+            </DialogContent>
+          </Dialog>
           <ThemeToggle />
           {user && (
             <span className="text-sm text-muted-foreground truncate">
@@ -112,6 +141,26 @@ export function Header() {
               </Button>
             </div>
             <nav className="flex flex-col gap-1 p-4 overflow-auto">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="justify-center gap-2 min-h-[44px]" title="Assistente">
+                    <MessageCircle className="h-5 w-5 shrink-0" aria-hidden />
+                    Assistente
+                  </Button>
+                </DialogTrigger>
+                <DialogContent
+                  className="sm:max-w-md"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                >
+                  <DialogHeader>
+                    <DialogTitle>Assistente</DialogTitle>
+                    <DialogDescription className="text-sm text-muted-foreground">
+                      Digite ou fale o que você precisa. O assistente usa o contexto do seu perfil e dos dados do sistema.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <AssistenteInput />
+                </DialogContent>
+              </Dialog>
               <div className="flex items-center gap-2 py-2 px-3">
                 <ThemeToggle />
                 <span className="text-sm text-muted-foreground">
