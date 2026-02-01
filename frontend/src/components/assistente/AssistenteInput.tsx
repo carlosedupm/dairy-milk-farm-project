@@ -18,6 +18,7 @@ import type { InterpretResponse } from "@/services/assistente";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import { getApiErrorMessage } from "@/lib/errors";
 import {
+  cancelSpeech,
   isSpeechSynthesisSupported,
   speak,
 } from "@/lib/speechSynthesis";
@@ -48,6 +49,15 @@ export function AssistenteInput() {
   const startConfirmationListeningRef = useRef<(() => void) | null>(null);
   const askingMoreRef = useRef(false);
   const startedViaPointerRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      cancelSpeech();
+    };
+  }, []);
 
   const runInterpretar = useCallback(async (t: string) => {
     const trimmed = t.trim();
@@ -56,6 +66,7 @@ export function AssistenteInput() {
     setLoading(true);
     try {
       const resp = await assistenteService.interpretar(trimmed);
+      if (!isMountedRef.current) return;
       setInterpretado(resp);
       if (resp.intent === "desconhecido") {
         const errorMsg =
@@ -80,7 +91,7 @@ export function AssistenteInput() {
         ) {
           speak(resp.resumo, {
             onEnd: () => {
-              if (!alreadyHandledConfirmRef.current) {
+              if (isMountedRef.current && !alreadyHandledConfirmRef.current) {
                 startConfirmationListeningRef.current?.();
               }
             },
@@ -88,6 +99,7 @@ export function AssistenteInput() {
         }
       }
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       const errorMsg = getApiErrorMessage(
         err,
         "Erro ao interpretar. Tente novamente.",
@@ -102,7 +114,7 @@ export function AssistenteInput() {
         speak(errorMsg);
       }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   }, []);
 
@@ -142,6 +154,7 @@ export function AssistenteInput() {
           if (result === "cancel") {
             askingMoreRef.current = false;
             stopListening(true);
+            router.push("/fazendas");
             return;
           }
           if (result === "confirm") return;
@@ -193,19 +206,20 @@ export function AssistenteInput() {
         interpretado.intent,
         interpretado.payload,
       );
+      if (!isMountedRef.current) return;
       setDialogOpen(false);
       setInterpretado(null);
       setTexto("");
       await queryClient.invalidateQueries({ queryKey: ["fazendas"] });
-      if (
-        lastInputWasVoiceRef.current &&
-        isSpeechSynthesisSupported()
-      ) {
+      const fromVoice = lastInputWasVoiceRef.current;
+      if (fromVoice && isSpeechSynthesisSupported()) {
         speak(result.message, {
           onEnd: () => {
+            if (!isMountedRef.current) return;
             speak("Deseja efetuar mais alguma operação?", {
               cancelPrevious: false,
               onEnd: () => {
+                if (!isMountedRef.current) return;
                 askingMoreRef.current = true;
                 confirmationModeRef.current = false;
                 silenceTimeoutMsRef.current = 2500;
@@ -215,9 +229,12 @@ export function AssistenteInput() {
             });
           },
         });
+        // router.push apenas quando o fluxo "Deseja mais?" terminar (em onResult cancel)
+      } else {
+        router.push("/fazendas");
       }
-      router.push("/fazendas");
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       const errorMsg = getApiErrorMessage(
         err,
         "Erro ao executar. Tente novamente.",
@@ -230,11 +247,12 @@ export function AssistenteInput() {
         speak(errorMsg);
       }
     } finally {
-      setExecutando(false);
+      if (isMountedRef.current) setExecutando(false);
     }
   };
 
   const handleCancelar = () => {
+    cancelSpeech();
     setDialogOpen(false);
     setInterpretado(null);
     setError("");
@@ -268,7 +286,9 @@ export function AssistenteInput() {
     const fromVoice = lastInputWasVoiceRef.current;
     if (!fromVoice) {
       const delayMs = 500;
-      const t = setTimeout(() => startListening(), delayMs);
+      const t = setTimeout(() => {
+        if (isMountedRef.current) startListening();
+      }, delayMs);
       return () => {
         clearTimeout(t);
         confirmationModeRef.current = false;

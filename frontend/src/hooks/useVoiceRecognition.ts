@@ -101,11 +101,39 @@ export function useVoiceRecognition(options?: {
     }
   }, []);
 
+  const getErrorMessage = useCallback((errorType: string): string => {
+    switch (errorType) {
+      case "aborted":
+        return "";
+      case "not-allowed":
+      case "service-not-allowed":
+        return "Permissão de microfone negada.";
+      case "no-speech":
+        return "Nenhuma fala detectada. Tente novamente.";
+      case "network":
+        return "Erro de conexão. Verifique sua internet e tente novamente.";
+      case "audio-capture":
+        return "Não foi possível acessar o microfone.";
+      case "language-not-supported":
+        return "Idioma não suportado.";
+      default:
+        return `Erro: ${errorType}`;
+    }
+  }, []);
+
   // eslint-disable-next-line react-hooks/preserve-manual-memoization -- refs lidos via .current; omitir .current das deps é intencional
   const startListening = useCallback(() => {
     if (!SpeechRecognitionAPI) {
       setError("Reconhecimento de voz não suportado neste navegador.");
       return;
+    }
+    if (recognitionRef.current !== null) {
+      try {
+        recognitionRef.current.abort();
+      } catch {
+        // ignore
+      }
+      recognitionRef.current = null;
     }
     setError(null);
     setTranscript("");
@@ -167,19 +195,20 @@ export function useVoiceRecognition(options?: {
     };
 
     recognition.onerror = (event: { error: string }) => {
+      if (recognitionRef.current !== recognition) return;
       clearSilenceTimer();
-      if (event.error === "not-allowed") {
-        setError("Permissão de microfone negada.");
-      } else if (event.error === "no-speech") {
-        setError("Nenhuma fala detectada.");
-      } else {
-        setError(`Erro: ${event.error}`);
+      if (event.error !== "aborted") {
+        const msg = getErrorMessage(event.error);
+        if (msg) setError(msg);
       }
+      recognitionRef.current = null;
       setIsListening(false);
     };
 
     recognition.onend = () => {
+      if (recognitionRef.current !== recognition) return;
       if (userRequestedStopRef.current) {
+        recognitionRef.current = null;
         setIsListening(false);
         return;
       }
@@ -192,9 +221,18 @@ export function useVoiceRecognition(options?: {
       setIsListening(false);
     };
 
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsListening(true);
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+      setIsListening(true);
+    } catch (err) {
+      recognitionRef.current = null;
+      const msg =
+        err instanceof Error && err.message?.includes("already started")
+          ? "Aguarde o reconhecimento anterior finalizar."
+          : "Erro ao iniciar o microfone. Tente novamente.";
+      setError(msg);
+    }
   }, [
     language,
     defaultSilenceTimeoutMs,
@@ -203,6 +241,7 @@ export function useVoiceRecognition(options?: {
     fireOnFinalSegmentRef,
     clearSilenceTimer,
     finalizeWithTranscript,
+    getErrorMessage,
   ]);
 
   const stopListening = useCallback((skipReport = false) => {
