@@ -19,6 +19,7 @@ import (
 const (
 	intentCadastrarFazenda = "cadastrar_fazenda"
 	intentListarFazendas   = "listar_fazendas"
+	intentBuscarFazenda    = "buscar_fazenda"
 	intentEditarFazenda    = "editar_fazenda"
 	intentExcluirFazenda   = "excluir_fazenda"
 )
@@ -97,12 +98,15 @@ A partir da frase do usuário abaixo, extraia a INTENÇÃO e os DADOS necessári
 Intenções possíveis:
 - cadastrar_fazenda: quando o usuário quer registrar uma nova fazenda
 - listar_fazendas: quando o usuário quer ver a lista de fazendas (ex: "listar fazendas", "quais minhas fazendas")
+- buscar_fazenda: quando o usuário quer buscar ou pesquisar uma fazenda específica por nome (ex: "buscar fazenda Sítio X", "pesquisar fazenda X", "mostrar a fazenda Y")
 - editar_fazenda: quando o usuário quer alterar dados de uma fazenda existente (identifique por id ou nome)
 - excluir_fazenda: quando o usuário quer excluir uma fazenda (identifique por id ou nome)
 
 Para cadastrar_fazenda, extraia: nome, quantidadeVacas (number, 0 se não mencionado), fundacao (string YYYY ou YYYY-MM-DD), localizacao (opcional).
 
 Para listar_fazendas, payload pode ser {} e resumo algo como "Listar fazendas cadastradas" ou "Você tem N fazendas: ..." usando a lista acima.
+
+Para buscar_fazenda, extraia: nome (string = parte do nome da fazenda para buscar). Resumo: "Buscar fazenda X" ou "Mostrar fazenda X."
 
 Para editar_fazenda, extraia: id (number) OU nome (string = nome ATUAL da fazenda para identificar/buscar); depois os campos a alterar: nomeNovo (string = novo nome quando o usuário quiser RENOMEAR, ex: "editar fazenda X para se chamar Y" -> nome:"X", nomeNovo:"Y"), quantidadeVacas (number), fundacao (string), localizacao (string). Use sempre nomeNovo quando o usuário pedir para mudar o nome; use nome apenas para identificar a fazenda quando não houver id.
 
@@ -111,6 +115,7 @@ Para excluir_fazenda, extraia: id (number) OU nome (string) para identificar a f
 Retorne APENAS um JSON válido, sem markdown, sem explicações. Exemplos de formato:
 - cadastrar: {"intent":"cadastrar_fazenda","payload":{"nome":"...","quantidadeVacas":0,"fundacao":"...","localizacao":"..."},"resumo":"Criar fazenda X com Y vacas, fundada em Z."}
 - listar: {"intent":"listar_fazendas","payload":{},"resumo":"Listar fazendas cadastradas."}
+- buscar: {"intent":"buscar_fazenda","payload":{"nome":"Sítio X"},"resumo":"Buscar fazenda Sítio X."}
 - editar (só quantidade): {"intent":"editar_fazenda","payload":{"nome":"Sítio X","quantidadeVacas":30},"resumo":"Alterar fazenda Sítio X para 30 vacas."}
 - editar (renomear): {"intent":"editar_fazenda","payload":{"nome":"Sítio X","nomeNovo":"Sítio Novo"},"resumo":"Renomear fazenda Sítio X para Sítio Novo."}
 - editar (por id): {"intent":"editar_fazenda","payload":{"id":1,"nome":"Nome Novo"} ou {"id":1,"quantidadeVacas":10},"resumo":"Alterar fazenda (id 1)."}
@@ -209,6 +214,8 @@ func (s *AssistenteService) Executar(ctx context.Context, intent string, payload
 		return s.executarCadastrarFazenda(ctx, payload)
 	case intentListarFazendas:
 		return s.executarListarFazendas(ctx)
+	case intentBuscarFazenda:
+		return s.executarBuscarFazenda(ctx, payload)
 	case intentEditarFazenda:
 		return s.executarEditarFazenda(ctx, payload)
 	case intentExcluirFazenda:
@@ -273,6 +280,26 @@ func (s *AssistenteService) executarListarFazendas(ctx context.Context) ([]*mode
 		return nil, fmt.Errorf("erro ao listar fazendas: %w", err)
 	}
 	slog.Info("Fazendas listadas via assistente", "count", len(list))
+	return list, nil
+}
+
+func (s *AssistenteService) executarBuscarFazenda(ctx context.Context, payload map[string]interface{}) (interface{}, error) {
+	nome, ok := payload["nome"].(string)
+	if !ok || strings.TrimSpace(nome) == "" {
+		return nil, fmt.Errorf("informe o nome ou parte do nome da fazenda para buscar")
+	}
+	list, err := s.fazendaSvc.SearchByNome(ctx, strings.TrimSpace(nome))
+	if err != nil {
+		observability.CaptureError(err, map[string]string{"action": "assistente_executar_buscar_fazenda"}, nil)
+		return nil, fmt.Errorf("erro ao buscar fazendas: %w", err)
+	}
+	if len(list) == 0 {
+		return nil, fmt.Errorf("nenhuma fazenda encontrada com o nome \"%s\"", nome)
+	}
+	slog.Info("Fazendas buscadas via assistente", "termo", nome, "count", len(list))
+	if len(list) == 1 {
+		return list[0], nil
+	}
 	return list, nil
 }
 

@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
+	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/repository"
 	"github.com/ceialmilk/api/internal/response"
 	"github.com/ceialmilk/api/internal/service"
@@ -11,7 +13,7 @@ import (
 )
 
 type AssistenteHandler struct {
-	svc     *service.AssistenteService
+	svc      *service.AssistenteService
 	userRepo *repository.UsuarioRepository
 }
 
@@ -71,9 +73,22 @@ func (h *AssistenteHandler) Executar(c *gin.Context) {
 		return
 	}
 
-	if req.Intent == "cadastrar_fazenda" {
+	switch req.Intent {
+	case "cadastrar_fazenda":
 		response.SuccessCreated(c, result, "Fazenda criada com sucesso")
-	} else {
+	case "buscar_fazenda":
+		msg := "Ação executada com sucesso"
+		if arr, ok := result.([]*models.Fazenda); ok {
+			if len(arr) == 1 {
+				msg = "Fazenda encontrada"
+			} else {
+				msg = fmt.Sprintf("%d fazendas encontradas", len(arr))
+			}
+		} else if _, ok := result.(*models.Fazenda); ok {
+			msg = "Fazenda encontrada"
+		}
+		response.SuccessOK(c, result, msg)
+	default:
 		response.SuccessOK(c, result, "Ação executada com sucesso")
 	}
 }

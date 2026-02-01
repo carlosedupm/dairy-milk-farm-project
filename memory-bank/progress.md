@@ -84,7 +84,7 @@
 - [x] Componentes Shadcn/UI (button, input, card, label, table, dialog)
 - [x] TanStack Query configurado
 - [x] Integração com API (auth + fazendas)
-- [x] **Assistente em linguagem natural**: **Botão Assistente no Header** (desktop e mobile) que abre Dialog com AssistenteInput — assistente acessível em qualquer página (solução antiga na página /fazendas removida). **Contexto do usuário e do sistema**: backend Interpretar recebe user_id, perfil e nome; AssistenteService carrega fazendas (GetAll) e injeta no prompt do Gemini (nome, perfil, lista de fazendas id+nome) para desambiguar e respostas naturais; intents por perfil (USER só fazendas; ADMIN/DEVELOPER futuros intents admin). Interpretar (Gemini) + executar (FazendaService), dialog de confirmação, entrada por voz (Web Speech API pt-BR). **Voz em modo contínuo**: reconhecimento contínuo, acúmulo de transcrição, finalização por clique no microfone ou timeout de silêncio (2,5 s). **Retorno em voz (TTS)** e **confirmação por voz** (sim/não). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog (error.details)
+- [x] **Assistente em linguagem natural**: **Botão Assistente no Header** (desktop e mobile) que abre Dialog com AssistenteInput — assistente acessível em qualquer página (solução antiga na página /fazendas removida). **Contexto do usuário e do sistema**: backend Interpretar recebe user_id, perfil e nome; AssistenteService carrega fazendas (GetAll) e injeta no prompt do Gemini (nome, perfil, lista de fazendas id+nome) para desambiguar e respostas naturais; intents por perfil (USER só fazendas; ADMIN/DEVELOPER futuros intents admin). **Intents**: cadastrar, listar, **buscar** (pesquisar fazenda por nome; redireciona para /fazendas/:id se 1 resultado), editar, excluir. Interpretar (Gemini) + executar (FazendaService), dialog de confirmação, entrada por voz (Web Speech API pt-BR). **Voz em modo contínuo**: reconhecimento contínuo, acúmulo de transcrição, finalização por clique no microfone ou timeout de silêncio (2,5 s). **Retorno em voz (TTS)** e **confirmação por voz** (sim/não). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog (error.details)
 - [x] **Layout e DRY**: PageContainer (variantes default, narrow, wide, centered) em todas as páginas; BackLink para "Voltar"; getApiErrorMessage (lib/errors.ts) centralizado; ApiResponse<T> em api.ts; Header responsivo com menu hamburger em mobile
 - [x] **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER); constraint unicidade DEVELOPER (migração 8); área admin `/admin/usuarios` (listagem, criar, editar, ativar/desativar); RequireAdmin; link Admin no Header para ADMIN/DEVELOPER
 - [x] **UX e Acessibilidade**: Paleta rural (modo claro e escuro) em globals.css; toggle tema no Header e menu mobile com persistência (ThemeContext, ThemeToggle); tipografia 16px e alvos de toque 44px; ícones no menu (Farm, Cow, Milk, Users, Code); formulários e listas padronizados (space-y-5, botão lg, tabelas overflow-x-auto); home com atalhos (Ver fazendas, Ver animais, Registrar produção)
@@ -317,6 +317,12 @@
 - ✅ **Persistência na edição**: Repositório de fazendas valida ID no Update e verifica RowsAffected (erro se nenhuma linha atualizada); queryList corrigido (cópia por linha). Assistente valida ID da fazenda resolvida e log de debug.
 - ✅ **Erro na confirmação**: Frontend exibe erro **dentro** do dialog de confirmação; getErrorMessage prioriza `error.details` (motivo real da API) sobre `error.message`; limpeza de erro ao cancelar e ao tentar confirmar novamente.
 
+### **2026-02-01 - Assistente: buscar fazenda**
+
+- ✅ **Intent buscar_fazenda**: Nova intent para pesquisar fazendas por nome via assistente (ex.: "buscar fazenda Sítio X", "pesquisar fazenda X")
+- ✅ **Backend**: Prompt do Gemini atualizado; `executarBuscarFazenda` usa `SearchByNome`; retorna 1 fazenda ou lista; mensagens específicas no handler
+- ✅ **Frontend**: `getRedirectPathFromResult` redireciona para `/fazendas/:id` quando 1 resultado; `lastRedirectPathRef` para fluxo de voz (Deseja mais? → não)
+
 ### **2026-01-31 - Sprint 2 Concluída**
 
 - ✅ **CRUD de Animais**: Model, repository, service, handler, migração + Frontend completo
@@ -328,6 +334,6 @@
 
 ---
 
-**Última atualização**: 2026-01-31
+**Última atualização**: 2026-02-01
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Testes unitários e E2E configurados
 **Próxima revisão**: 2026-02-07

@@ -29,6 +29,26 @@ import { MessageCircle, Mic, MicOff } from "lucide-react";
 const RETRY_REOPEN_DELAY_MS = 2000;
 /** Máximo de tentativas consecutivas desconhecido/erro antes de exigir clique no microfone. */
 const MAX_CONSECUTIVE_RETRIES = 2;
+/** Retorna o path para redirecionar após executar: /fazendas/:id se 1 fazenda, senão /fazendas. */
+function getRedirectPathFromResult(data: unknown): string {
+  if (!data) return "/fazendas";
+  if (Array.isArray(data)) {
+    if (
+      data.length === 1 &&
+      data[0] &&
+      typeof data[0] === "object" &&
+      "id" in data[0]
+    ) {
+      return `/fazendas/${(data[0] as { id: number }).id}`;
+    }
+    return "/fazendas";
+  }
+  if (typeof data === "object" && data !== null && "id" in data) {
+    return `/fazendas/${(data as { id: number }).id}`;
+  }
+  return "/fazendas";
+}
+
 /** Frases do sistema que podem ser eco do TTS — ignorar se transcritas. */
 const ECHO_PHRASES = [
   "pode repetir ou reformular",
@@ -71,6 +91,7 @@ export function AssistenteInput() {
     null
   );
   const unknownErrorCountRef = useRef(0);
+  const lastRedirectPathRef = useRef("/fazendas");
 
   const clearRetryReopenTimer = useCallback(() => {
     if (retryReopenDelayTimerRef.current !== null) {
@@ -243,7 +264,7 @@ export function AssistenteInput() {
               askingMoreListenTimerRef.current = null;
             }
             stopListening(true);
-            router.push("/fazendas");
+            router.push(lastRedirectPathRef.current);
             return;
           }
           if (result === "confirm") {
@@ -321,6 +342,8 @@ export function AssistenteInput() {
       );
       if (!isMountedRef.current) return;
       unknownErrorCountRef.current = 0;
+      const redirectPath = getRedirectPathFromResult(result.data);
+      lastRedirectPathRef.current = redirectPath;
       setDialogOpen(false);
       setInterpretado(null);
       setTexto("");
@@ -350,7 +373,7 @@ export function AssistenteInput() {
         });
         // router.push apenas quando o fluxo "Deseja mais?" terminar (em onResult cancel)
       } else {
-        router.push("/fazendas");
+        router.push(redirectPath);
       }
     } catch (err: unknown) {
       if (!isMountedRef.current) return;
