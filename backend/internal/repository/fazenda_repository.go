@@ -172,6 +172,45 @@ func (r *FazendaRepository) ExistsByNome(ctx context.Context, nome string) (bool
 	return exists, err
 }
 
+// ExistsByNomeAndLocalizacao retorna true se já existir fazenda com o mesmo nome e localização.
+// localizacao nil e string vazia são tratados como mesma "localização ausente".
+// Comparação case-insensitive (ignora maiúsculas/minúsculas).
+func (r *FazendaRepository) ExistsByNomeAndLocalizacao(ctx context.Context, nome string, localizacao *string) (bool, error) {
+	var exists bool
+	var err error
+	if localizacao == nil || *localizacao == "" {
+		err = r.db.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM fazendas WHERE LOWER(nome) = LOWER($1) AND (localizacao IS NULL OR localizacao = ''))`,
+			nome,
+		).Scan(&exists)
+	} else {
+		err = r.db.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM fazendas WHERE LOWER(nome) = LOWER($1) AND LOWER(localizacao) = LOWER($2))`,
+			nome, *localizacao,
+		).Scan(&exists)
+	}
+	return exists, err
+}
+
+// ExistsByNomeAndLocalizacaoExcluding igual a ExistsByNomeAndLocalizacao mas ignora a fazenda com id = excludeID (para Update).
+// Comparação case-insensitive (ignora maiúsculas/minúsculas).
+func (r *FazendaRepository) ExistsByNomeAndLocalizacaoExcluding(ctx context.Context, nome string, localizacao *string, excludeID int64) (bool, error) {
+	var exists bool
+	var err error
+	if localizacao == nil || *localizacao == "" {
+		err = r.db.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM fazendas WHERE LOWER(nome) = LOWER($1) AND (localizacao IS NULL OR localizacao = '') AND id != $2)`,
+			nome, excludeID,
+		).Scan(&exists)
+	} else {
+		err = r.db.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM fazendas WHERE LOWER(nome) = LOWER($1) AND LOWER(localizacao) = LOWER($2) AND id != $3)`,
+			nome, *localizacao, excludeID,
+		).Scan(&exists)
+	}
+	return exists, err
+}
+
 func (r *FazendaRepository) search(ctx context.Context, where string, arg interface{}) ([]*models.Fazenda, error) {
 	query := `
 		SELECT id, nome, localizacao, quantidade_vacas, fundacao, created_at, updated_at

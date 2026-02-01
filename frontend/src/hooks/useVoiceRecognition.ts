@@ -236,9 +236,7 @@ export function useVoiceRecognition(options?: {
   }, [
     language,
     defaultSilenceTimeoutMs,
-    defaultFireOnFinalSegment,
     silenceTimeoutMsRef,
-    fireOnFinalSegmentRef,
     clearSilenceTimer,
     finalizeWithTranscript,
     getErrorMessage,

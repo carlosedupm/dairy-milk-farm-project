@@ -10,6 +10,7 @@ import (
 )
 
 var ErrFazendaNotFound = errors.New("fazenda não encontrada")
+var ErrFazendaDuplicada = errors.New("já existe uma fazenda com esse nome e localização")
 
 type FazendaService struct {
 	repo *repository.FazendaRepository
@@ -22,6 +23,13 @@ func NewFazendaService(repo *repository.FazendaRepository) *FazendaService {
 func (s *FazendaService) Create(ctx context.Context, fazenda *models.Fazenda) error {
 	if fazenda.Nome == "" {
 		return errors.New("nome é obrigatório")
+	}
+	exists, err := s.repo.ExistsByNomeAndLocalizacao(ctx, fazenda.Nome, fazenda.Localizacao)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return ErrFazendaDuplicada
 	}
 	return s.repo.Create(ctx, fazenda)
 }
@@ -46,6 +54,15 @@ func (s *FazendaService) Update(ctx context.Context, fazenda *models.Fazenda) er
 			return ErrFazendaNotFound
 		}
 		return err
+	}
+
+	// Não permitir alterar para nome+localização que já existe em outra fazenda
+	exists, err := s.repo.ExistsByNomeAndLocalizacaoExcluding(ctx, fazenda.Nome, fazenda.Localizacao, fazenda.ID)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return ErrFazendaDuplicada
 	}
 
 	return s.repo.Update(ctx, fazenda)

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/ceialmilk/api/internal/repository"
@@ -62,6 +63,10 @@ func (h *AssistenteHandler) Executar(c *gin.Context) {
 
 	result, err := h.svc.Executar(c.Request.Context(), req.Intent, req.Payload, userID)
 	if err != nil {
+		if errors.Is(err, service.ErrFazendaDuplicada) {
+			response.ErrorConflict(c, "Já existe uma fazenda com esse nome e localização", nil)
+			return
+		}
 		response.ErrorInternal(c, "Erro ao executar ação", err.Error())
 		return
 	}

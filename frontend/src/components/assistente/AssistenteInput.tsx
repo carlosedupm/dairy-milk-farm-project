@@ -50,11 +50,19 @@ export function AssistenteInput() {
   const askingMoreRef = useRef(false);
   const startedViaPointerRef = useRef(false);
   const isMountedRef = useRef(true);
+  const askingMoreListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const startListeningRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      if (askingMoreListenTimerRef.current !== null) {
+        clearTimeout(askingMoreListenTimerRef.current);
+        askingMoreListenTimerRef.current = null;
+      }
       cancelSpeech();
     };
   }, []);
@@ -78,7 +86,19 @@ export function AssistenteInput() {
           lastInputWasVoiceRef.current &&
           isSpeechSynthesisSupported()
         ) {
-          speak(errorMsg);
+          speak(errorMsg, {
+            cancelPrevious: false,
+            onEnd: () => {
+              if (!isMountedRef.current) return;
+              // Reabrir microfone para o usuário repetir ou reformular sem clicar
+              speak("Pode repetir ou reformular.", {
+                cancelPrevious: false,
+                onEnd: () => {
+                  if (isMountedRef.current) startListeningRef.current?.();
+                },
+              });
+            },
+          });
         }
       } else {
         setError("");
@@ -111,7 +131,18 @@ export function AssistenteInput() {
         lastInputWasVoiceRef.current &&
         isSpeechSynthesisSupported()
       ) {
-        speak(errorMsg);
+        speak(errorMsg, {
+          cancelPrevious: false,
+          onEnd: () => {
+            if (!isMountedRef.current) return;
+            speak("Pode repetir ou reformular.", {
+              cancelPrevious: false,
+              onEnd: () => {
+                if (isMountedRef.current) startListeningRef.current?.();
+              },
+            });
+          },
+        });
       }
     } finally {
       if (isMountedRef.current) setLoading(false);
@@ -124,14 +155,7 @@ export function AssistenteInput() {
     runInterpretar(text);
   };
 
-  const {
-    isListening,
-    isSupported,
-    error: voiceError,
-    toggleListening,
-    startListening,
-    stopListening,
-  } = useVoiceRecognition({
+  const voice = useVoiceRecognition({
     language: "pt-BR",
     silenceTimeoutMs: 2500,
     silenceTimeoutMsRef,
@@ -147,17 +171,50 @@ export function AssistenteInput() {
         } else if (result === "cancel") {
           alreadyHandledConfirmRef.current = true;
           handleCancelarRef.current?.();
+        } else if (result === "correct") {
+          // Usuário quer corrigir/reformular — fechar dialog e reabrir microfone
+          alreadyHandledConfirmRef.current = true;
+          cancelSpeech();
+          setDialogOpen(false);
+          setInterpretado(null);
+          setError("");
+          if (isSpeechSynthesisSupported()) {
+            speak("Pode reformular.", {
+              cancelPrevious: false,
+              onEnd: () => {
+                if (isMountedRef.current) {
+                  lastInputWasVoiceRef.current = true;
+                  startListeningRef.current?.();
+                }
+              },
+            });
+          } else {
+            lastInputWasVoiceRef.current = true;
+            startListeningRef.current?.();
+          }
         }
       } else {
         if (askingMoreRef.current) {
           const result = interpretVoiceConfirm(text);
           if (result === "cancel") {
             askingMoreRef.current = false;
+            if (askingMoreListenTimerRef.current !== null) {
+              clearTimeout(askingMoreListenTimerRef.current);
+              askingMoreListenTimerRef.current = null;
+            }
             stopListening(true);
             router.push("/fazendas");
             return;
           }
-          if (result === "confirm") return;
+          if (result === "confirm") {
+            // Usuário disse "sim" — abrir microfone na hora para o próximo comando (sem esperar TTS)
+            askingMoreRef.current = false;
+            lastInputWasVoiceRef.current = true;
+            fireOnFinalSegmentRef.current = false;
+            silenceTimeoutMsRef.current = 2500;
+            startListening();
+            return;
+          }
           askingMoreRef.current = false;
           lastInputWasVoiceRef.current = true;
           voiceResultRef.current?.(text);
@@ -177,6 +234,16 @@ export function AssistenteInput() {
       }
     },
   });
+
+  const {
+    isListening,
+    isSupported,
+    error: voiceError,
+    toggleListening,
+    startListening,
+    stopListening,
+  } = voice;
+  startListeningRef.current = startListening;
 
   const handleInterpretar = () => {
     lastInputWasVoiceRef.current = false;
@@ -216,16 +283,21 @@ export function AssistenteInput() {
         speak(result.message, {
           onEnd: () => {
             if (!isMountedRef.current) return;
+            // Preparar escuta ANTES de falar a pergunta: microfone pronto quando a pergunta terminar
+            askingMoreRef.current = true;
+            confirmationModeRef.current = false;
+            silenceTimeoutMsRef.current = 2500;
+            fireOnFinalSegmentRef.current = true; // reagir rápido a "sim" / "não"
+            const phraseDurationMs = 3200; // duração aproximada de "Deseja efetuar mais alguma operação?"
+            if (askingMoreListenTimerRef.current !== null) {
+              clearTimeout(askingMoreListenTimerRef.current);
+            }
+            askingMoreListenTimerRef.current = setTimeout(() => {
+              askingMoreListenTimerRef.current = null;
+              if (isMountedRef.current) startListening();
+            }, phraseDurationMs);
             speak("Deseja efetuar mais alguma operação?", {
               cancelPrevious: false,
-              onEnd: () => {
-                if (!isMountedRef.current) return;
-                askingMoreRef.current = true;
-                confirmationModeRef.current = false;
-                silenceTimeoutMsRef.current = 2500;
-                fireOnFinalSegmentRef.current = false;
-                startListening();
-              },
             });
           },
         });
@@ -240,11 +312,27 @@ export function AssistenteInput() {
         "Erro ao executar. Tente novamente.",
       );
       setError(errorMsg);
-      if (
-        lastInputWasVoiceRef.current &&
-        isSpeechSynthesisSupported()
-      ) {
-        speak(errorMsg);
+      const fromVoice = lastInputWasVoiceRef.current;
+      if (fromVoice && isSpeechSynthesisSupported()) {
+        // Fechar dialog e reabrir microfone após informar o erro
+        setDialogOpen(false);
+        setInterpretado(null);
+        speak(errorMsg, {
+          cancelPrevious: false,
+          onEnd: () => {
+            if (!isMountedRef.current) return;
+            speak("Pode reformular ou tentar novamente.", {
+              cancelPrevious: false,
+              onEnd: () => {
+                if (isMountedRef.current) {
+                  setError("");
+                  lastInputWasVoiceRef.current = true;
+                  startListeningRef.current?.();
+                }
+              },
+            });
+          },
+        });
       }
     } finally {
       if (isMountedRef.current) setExecutando(false);
@@ -416,26 +504,51 @@ export function AssistenteInput() {
                 size="sm"
                 onClick={startConfirmationListening}
                 disabled={executando || isListening}
-                title="Abrir microfone e dizer sim ou não"
+                title="Abrir microfone e dizer sim, não ou corrigir"
               >
                 {isListening ? (
                   <MicOff className="h-4 w-4 mr-1" />
                 ) : (
                   <Mic className="h-4 w-4 mr-1" />
                 )}
-                {isListening ? "Escutando…" : "Dizer sim ou não"}
+                {isListening ? "Escutando…" : "Dizer sim, não ou corrigir"}
               </Button>
             </>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
               onClick={handleCancelar}
               disabled={executando}
+              className="sm:flex-1"
             >
               Cancelar
             </Button>
-            <Button onClick={handleConfirmar} disabled={executando}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                cancelSpeech();
+                setDialogOpen(false);
+                setInterpretado(null);
+                setError("");
+                lastInputWasVoiceRef.current = true;
+                if (isSpeechSynthesisSupported()) {
+                  speak("Pode reformular.", {
+                    cancelPrevious: false,
+                    onEnd: () => {
+                      if (isMountedRef.current) startListeningRef.current?.();
+                    },
+                  });
+                } else {
+                  startListeningRef.current?.();
+                }
+              }}
+              disabled={executando}
+              className="sm:flex-1"
+            >
+              Corrigir
+            </Button>
+            <Button onClick={handleConfirmar} disabled={executando} className="sm:flex-1">
               {executando ? "Executando…" : "Confirmar"}
             </Button>
           </DialogFooter>

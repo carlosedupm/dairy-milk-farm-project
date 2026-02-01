@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS idx_fazendas_nome_localizacao_unique;

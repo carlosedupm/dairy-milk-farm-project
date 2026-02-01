@@ -53,6 +53,10 @@ func (h *FazendaHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(c.Request.Context(), fazenda); err != nil {
+		if errors.Is(err, service.ErrFazendaDuplicada) {
+			response.ErrorConflict(c, "Já existe uma fazenda com esse nome e localização", nil)
+			return
+		}
 		response.ErrorInternal(c, "Erro ao criar fazenda", err.Error())
 		return
 	}
@@ -117,6 +121,10 @@ func (h *FazendaHandler) Update(c *gin.Context) {
 	if err := h.service.Update(c.Request.Context(), fazenda); err != nil {
 		if errors.Is(err, service.ErrFazendaNotFound) {
 			response.ErrorNotFound(c, "Fazenda não encontrada")
+			return
+		}
+		if errors.Is(err, service.ErrFazendaDuplicada) {
+			response.ErrorConflict(c, "Já existe uma fazenda com esse nome e localização", nil)
 			return
 		}
 		response.ErrorInternal(c, "Erro ao atualizar fazenda", err.Error())
