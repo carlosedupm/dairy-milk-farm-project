@@ -268,7 +268,7 @@ export function useVoiceRecognition(options?: {
     if (
       isMobile &&
       typeof navigator !== "undefined" &&
-      navigator.mediaDevices?.getUserMedia
+      navigator.mediaDevices
     ) {
       prewarmMicrophoneOnMobile()
         .then(doStart)
