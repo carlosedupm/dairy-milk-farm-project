@@ -533,6 +533,10 @@ export function AssistenteInput() {
           <p className="text-xs text-muted-foreground">
             Fale e clique no microfone para parar e enviar. Ou aguarde alguns
             segundos em silêncio para envio automático.
+            {typeof navigator !== "undefined" &&
+              /android|iphone|ipad/i.test(navigator.userAgent) && (
+                <> Em celular: fale de forma clara e pausada.</>
+              )}
           </p>
         )}
         {(error || voiceError) && (

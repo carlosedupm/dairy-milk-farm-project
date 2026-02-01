@@ -2,10 +2,33 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 
+/** Detecta mobile/Android para aplicar workarounds da Web Speech API (Chrome Android tem suporte limitado a continuous). */
+function isMobileOrAndroid(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent.toLowerCase();
+  return (
+    /android/.test(ua) ||
+    /iphone|ipad|ipod/.test(ua) ||
+    "ontouchstart" in window
+  );
+}
+
+/** Pré-aquece o pipeline de áudio no Android via getUserMedia antes do SpeechRecognition (workaround para falhas de detecção). */
+async function prewarmMicrophoneOnMobile(): Promise<void> {
+  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia)
+    return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop());
+  } catch {
+    // ignora; reconhecimento será tentado mesmo assim
+  }
+}
+
 // Web Speech API - SpeechRecognition is not in TypeScript DOM lib
 const SpeechRecognitionAPI =
   typeof window !== "undefined"
-    ? ((
+    ? (
         window as Window & {
           SpeechRecognition?: new () => SpeechRecognitionInstance;
           webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
@@ -15,7 +38,7 @@ const SpeechRecognitionAPI =
         window as Window & {
           webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
         }
-      ).webkitSpeechRecognition)
+      ).webkitSpeechRecognition
     : undefined;
 
 interface SpeechRecognitionInstance {
@@ -73,7 +96,9 @@ export function useVoiceRecognition(options?: {
   const onResultRef = useRef(options?.onResult);
   const accumulatedTranscriptRef = useRef("");
   const userRequestedStopRef = useRef(false);
-  const silenceTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const silenceTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   useEffect(() => {
     onResultRef.current = options?.onResult;
@@ -142,47 +167,36 @@ export function useVoiceRecognition(options?: {
     userRequestedStopRef.current = false;
     clearSilenceTimer();
 
-    const recognition = new SpeechRecognitionAPI() as SpeechRecognitionInstance;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = language;
+    const isMobile = isMobileOrAndroid();
+    const doStart = () => {
+      const recognition =
+        new SpeechRecognitionAPI() as SpeechRecognitionInstance;
+      // Chrome Android: continuous=true causa mic ligar/desligar, beeps e falhas.
+      // Usar continuous=false em mobile melhora estabilidade e interpretação.
+      recognition.continuous = !isMobile;
+      recognition.interimResults = true;
+      recognition.lang = language;
 
-    recognition.onresult = (event: SpeechRecognitionEventInstance) => {
-      const silenceTimeoutMs =
-        silenceTimeoutMsRef?.current ?? defaultSilenceTimeoutMs;
+      recognition.onresult = (event: SpeechRecognitionEventInstance) => {
+        const silenceTimeoutMs =
+          silenceTimeoutMsRef?.current ?? defaultSilenceTimeoutMs;
 
-      let fullText = "";
-      let lastIsFinal = false;
-      for (let i = 0; i < event.results.length; i++) {
-        const result = event.results[i];
-        fullText += result[0].transcript;
-        lastIsFinal = result.isFinal;
-      }
-      accumulatedTranscriptRef.current = fullText;
-      setTranscript(fullText);
-      setIsFinal(lastIsFinal);
-
-      // Sempre finalizar ao receber segmento final com texto (evita depender só do timeout/onend em modais)
-      if (lastIsFinal && fullText.trim()) {
-        clearSilenceTimer();
-        userRequestedStopRef.current = true;
-        onResultRef.current?.(fullText.trim(), true);
-        try {
-          recognitionRef.current?.stop();
-        } catch {
-          // ignore
+        let fullText = "";
+        let lastIsFinal = false;
+        for (let i = 0; i < event.results.length; i++) {
+          const result = event.results[i];
+          fullText += result[0].transcript;
+          lastIsFinal = result.isFinal;
         }
-        recognitionRef.current = null;
-        setIsListening(false);
-        return;
-      }
+        accumulatedTranscriptRef.current = fullText;
+        setTranscript(fullText);
+        setIsFinal(lastIsFinal);
 
-      if (silenceTimeoutMs > 0) {
-        clearSilenceTimer();
-        silenceTimeoutIdRef.current = setTimeout(() => {
-          silenceTimeoutIdRef.current = null;
-          finalizeWithTranscript();
+        // Sempre finalizar ao receber segmento final com texto (evita depender só do timeout/onend em modais)
+        if (lastIsFinal && fullText.trim()) {
+          clearSilenceTimer();
           userRequestedStopRef.current = true;
+          onResultRef.current?.(fullText.trim(), true);
           try {
             recognitionRef.current?.stop();
           } catch {
@@ -190,48 +204,77 @@ export function useVoiceRecognition(options?: {
           }
           recognitionRef.current = null;
           setIsListening(false);
-        }, silenceTimeoutMs);
-      }
-    };
+          return;
+        }
 
-    recognition.onerror = (event: { error: string }) => {
-      if (recognitionRef.current !== recognition) return;
-      clearSilenceTimer();
-      if (event.error !== "aborted") {
-        const msg = getErrorMessage(event.error);
-        if (msg) setError(msg);
-      }
-      recognitionRef.current = null;
-      setIsListening(false);
-    };
+        if (silenceTimeoutMs > 0) {
+          clearSilenceTimer();
+          silenceTimeoutIdRef.current = setTimeout(() => {
+            silenceTimeoutIdRef.current = null;
+            finalizeWithTranscript();
+            userRequestedStopRef.current = true;
+            try {
+              recognitionRef.current?.stop();
+            } catch {
+              // ignore
+            }
+            recognitionRef.current = null;
+            setIsListening(false);
+          }, silenceTimeoutMs);
+        }
+      };
 
-    recognition.onend = () => {
-      if (recognitionRef.current !== recognition) return;
-      if (userRequestedStopRef.current) {
+      recognition.onerror = (event: { error: string }) => {
+        if (recognitionRef.current !== recognition) return;
+        clearSilenceTimer();
+        if (event.error !== "aborted") {
+          const msg = getErrorMessage(event.error);
+          if (msg) setError(msg);
+        }
         recognitionRef.current = null;
         setIsListening(false);
-        return;
+      };
+
+      recognition.onend = () => {
+        if (recognitionRef.current !== recognition) return;
+        if (userRequestedStopRef.current) {
+          recognitionRef.current = null;
+          setIsListening(false);
+          return;
+        }
+        clearSilenceTimer();
+        const text = accumulatedTranscriptRef.current.trim();
+        if (text) {
+          onResultRef.current?.(text, true);
+        }
+        recognitionRef.current = null;
+        setIsListening(false);
+      };
+
+      try {
+        recognition.start();
+        recognitionRef.current = recognition;
+        setIsListening(true);
+      } catch (err) {
+        recognitionRef.current = null;
+        const msg =
+          err instanceof Error && err.message?.includes("already started")
+            ? "Aguarde o reconhecimento anterior finalizar."
+            : "Erro ao iniciar o microfone. Tente novamente.";
+        setError(msg);
       }
-      clearSilenceTimer();
-      const text = accumulatedTranscriptRef.current.trim();
-      if (text) {
-        onResultRef.current?.(text, true);
-      }
-      recognitionRef.current = null;
-      setIsListening(false);
     };
 
-    try {
-      recognition.start();
-      recognitionRef.current = recognition;
-      setIsListening(true);
-    } catch (err) {
-      recognitionRef.current = null;
-      const msg =
-        err instanceof Error && err.message?.includes("already started")
-          ? "Aguarde o reconhecimento anterior finalizar."
-          : "Erro ao iniciar o microfone. Tente novamente.";
-      setError(msg);
+    if (
+      isMobile &&
+      typeof navigator !== "undefined" &&
+      navigator.mediaDevices?.getUserMedia
+    ) {
+      prewarmMicrophoneOnMobile()
+        .then(doStart)
+        .catch(() => doStart());
+    } else {
+      doStart();
     }
   }, [
     language,
@@ -242,25 +285,28 @@ export function useVoiceRecognition(options?: {
     getErrorMessage,
   ]);
 
-  const stopListening = useCallback((skipReport = false) => {
-    userRequestedStopRef.current = true;
-    clearSilenceTimer();
-    if (!skipReport) {
-      const text = accumulatedTranscriptRef.current.trim();
-      if (text) {
-        onResultRef.current?.(text, true);
+  const stopListening = useCallback(
+    (skipReport = false) => {
+      userRequestedStopRef.current = true;
+      clearSilenceTimer();
+      if (!skipReport) {
+        const text = accumulatedTranscriptRef.current.trim();
+        if (text) {
+          onResultRef.current?.(text, true);
+        }
       }
-    }
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // ignore
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
       }
-      recognitionRef.current = null;
-    }
-    setIsListening(false);
-  }, [clearSilenceTimer]);
+      setIsListening(false);
+    },
+    [clearSilenceTimer]
+  );
 
   const toggleListening = useCallback(() => {
     if (isListening) {
