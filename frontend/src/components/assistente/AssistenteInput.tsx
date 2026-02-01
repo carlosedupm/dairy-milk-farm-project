@@ -25,6 +25,19 @@ import {
 import { interpretVoiceConfirm } from "@/lib/voiceConfirm";
 import { MessageCircle, Mic, MicOff } from "lucide-react";
 
+/** Delay em ms antes de reabrir o microfone após TTS (anti-eco em mobile/Samsung). */
+const RETRY_REOPEN_DELAY_MS = 2000;
+/** Máximo de tentativas consecutivas desconhecido/erro antes de exigir clique no microfone. */
+const MAX_CONSECUTIVE_RETRIES = 2;
+/** Frases do sistema que podem ser eco do TTS — ignorar se transcritas. */
+const ECHO_PHRASES = [
+  "pode repetir ou reformular",
+  "pode reformular",
+  "pode reformular ou tentar novamente",
+  "não foi possível entender",
+  "tente reformular",
+];
+
 export function AssistenteInput() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -32,7 +45,7 @@ export function AssistenteInput() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [interpretado, setInterpretado] = useState<InterpretResponse | null>(
-    null,
+    null
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [executando, setExecutando] = useState(false);
@@ -40,7 +53,7 @@ export function AssistenteInput() {
   const handleConfirmarRef = useRef<() => Promise<void>>(null);
   const handleCancelarRef = useRef<() => void>(null);
   const stopMainVoiceRef = useRef<((skipReport?: boolean) => void) | null>(
-    null,
+    null
   );
   const confirmationModeRef = useRef(false);
   const silenceTimeoutMsRef = useRef<number>(2500);
@@ -51,9 +64,42 @@ export function AssistenteInput() {
   const startedViaPointerRef = useRef(false);
   const isMountedRef = useRef(true);
   const askingMoreListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
+    null
   );
   const startListeningRef = useRef<(() => void) | null>(null);
+  const retryReopenDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const unknownErrorCountRef = useRef(0);
+
+  const clearRetryReopenTimer = useCallback(() => {
+    if (retryReopenDelayTimerRef.current !== null) {
+      clearTimeout(retryReopenDelayTimerRef.current);
+      retryReopenDelayTimerRef.current = null;
+    }
+  }, []);
+
+  /** Apenas delay + reopen (para Corrigir/reformular, sem checagem de contador). */
+  const scheduleDelayedReopen = useCallback(() => {
+    clearRetryReopenTimer();
+    retryReopenDelayTimerRef.current = setTimeout(() => {
+      retryReopenDelayTimerRef.current = null;
+      if (isMountedRef.current) startListeningRef.current?.();
+    }, RETRY_REOPEN_DELAY_MS);
+  }, [clearRetryReopenTimer]);
+
+  /** Agenda reabertura do microfone com delay anti-eco. Após MAX_CONSECUTIVE_RETRIES, não reabre automaticamente. */
+  const scheduleRetryReopen = useCallback(() => {
+    if (unknownErrorCountRef.current >= MAX_CONSECUTIVE_RETRIES) {
+      if (isSpeechSynthesisSupported()) {
+        speak("Para tentar novamente, toque no microfone.", {
+          cancelPrevious: false,
+        });
+      }
+      return;
+    }
+    scheduleDelayedReopen();
+  }, [scheduleDelayedReopen]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -63,91 +109,88 @@ export function AssistenteInput() {
         clearTimeout(askingMoreListenTimerRef.current);
         askingMoreListenTimerRef.current = null;
       }
+      clearRetryReopenTimer();
       cancelSpeech();
     };
-  }, []);
+  }, [clearRetryReopenTimer]);
 
-  const runInterpretar = useCallback(async (t: string) => {
-    const trimmed = t.trim();
-    if (!trimmed) return;
-    setError("");
-    setLoading(true);
-    try {
-      const resp = await assistenteService.interpretar(trimmed);
-      if (!isMountedRef.current) return;
-      setInterpretado(resp);
-      if (resp.intent === "desconhecido") {
-        const errorMsg =
-          resp.resumo ||
-          "Não foi possível entender o pedido. Tente reformular.";
+  const runInterpretar = useCallback(
+    async (t: string) => {
+      const trimmed = t.trim();
+      if (!trimmed) return;
+      setError("");
+      setLoading(true);
+      try {
+        const resp = await assistenteService.interpretar(trimmed);
+        if (!isMountedRef.current) return;
+        setInterpretado(resp);
+        if (resp.intent === "desconhecido") {
+          unknownErrorCountRef.current += 1;
+          const errorMsg =
+            resp.resumo ||
+            "Não foi possível entender o pedido. Tente reformular.";
+          setError(errorMsg);
+          setDialogOpen(false);
+          if (lastInputWasVoiceRef.current && isSpeechSynthesisSupported()) {
+            speak(errorMsg, {
+              cancelPrevious: false,
+              onEnd: () => {
+                if (!isMountedRef.current) return;
+                speak("Pode repetir ou reformular.", {
+                  cancelPrevious: false,
+                  onEnd: () => {
+                    if (isMountedRef.current) scheduleRetryReopen();
+                  },
+                });
+              },
+            });
+          }
+        } else {
+          unknownErrorCountRef.current = 0;
+          setError("");
+          // Parar o reconhecimento principal sem reportar de novo (evita duplicar runInterpretar).
+          stopMainVoiceRef.current?.(true);
+          setDialogOpen(true);
+          if (lastInputWasVoiceRef.current && isSpeechSynthesisSupported()) {
+            speak(resp.resumo, {
+              onEnd: () => {
+                if (isMountedRef.current && !alreadyHandledConfirmRef.current) {
+                  startConfirmationListeningRef.current?.();
+                }
+              },
+            });
+          }
+        }
+      } catch (err: unknown) {
+        if (!isMountedRef.current) return;
+        unknownErrorCountRef.current += 1;
+        const errorMsg = getApiErrorMessage(
+          err,
+          "Erro ao interpretar. Tente novamente."
+        );
         setError(errorMsg);
+        setInterpretado(null);
         setDialogOpen(false);
-        if (
-          lastInputWasVoiceRef.current &&
-          isSpeechSynthesisSupported()
-        ) {
+        if (lastInputWasVoiceRef.current && isSpeechSynthesisSupported()) {
           speak(errorMsg, {
             cancelPrevious: false,
             onEnd: () => {
               if (!isMountedRef.current) return;
-              // Reabrir microfone para o usuário repetir ou reformular sem clicar
               speak("Pode repetir ou reformular.", {
                 cancelPrevious: false,
                 onEnd: () => {
-                  if (isMountedRef.current) startListeningRef.current?.();
+                  if (isMountedRef.current) scheduleRetryReopen();
                 },
               });
             },
           });
         }
-      } else {
-        setError("");
-        // Parar o reconhecimento principal sem reportar de novo (evita duplicar runInterpretar).
-        stopMainVoiceRef.current?.(true);
-        setDialogOpen(true);
-        if (
-          lastInputWasVoiceRef.current &&
-          isSpeechSynthesisSupported()
-        ) {
-          speak(resp.resumo, {
-            onEnd: () => {
-              if (isMountedRef.current && !alreadyHandledConfirmRef.current) {
-                startConfirmationListeningRef.current?.();
-              }
-            },
-          });
-        }
+      } finally {
+        if (isMountedRef.current) setLoading(false);
       }
-    } catch (err: unknown) {
-      if (!isMountedRef.current) return;
-      const errorMsg = getApiErrorMessage(
-        err,
-        "Erro ao interpretar. Tente novamente.",
-      );
-      setError(errorMsg);
-      setInterpretado(null);
-      setDialogOpen(false);
-      if (
-        lastInputWasVoiceRef.current &&
-        isSpeechSynthesisSupported()
-      ) {
-        speak(errorMsg, {
-          cancelPrevious: false,
-          onEnd: () => {
-            if (!isMountedRef.current) return;
-            speak("Pode repetir ou reformular.", {
-              cancelPrevious: false,
-              onEnd: () => {
-                if (isMountedRef.current) startListeningRef.current?.();
-              },
-            });
-          },
-        });
-      }
-    } finally {
-      if (isMountedRef.current) setLoading(false);
-    }
-  }, []);
+    },
+    [scheduleRetryReopen]
+  );
 
   const voiceResultRef = useRef<((text: string) => void) | null>(null);
   voiceResultRef.current = (text: string) => {
@@ -178,18 +221,15 @@ export function AssistenteInput() {
           setDialogOpen(false);
           setInterpretado(null);
           setError("");
+          lastInputWasVoiceRef.current = true;
           if (isSpeechSynthesisSupported()) {
             speak("Pode reformular.", {
               cancelPrevious: false,
               onEnd: () => {
-                if (isMountedRef.current) {
-                  lastInputWasVoiceRef.current = true;
-                  startListeningRef.current?.();
-                }
+                if (isMountedRef.current) scheduleDelayedReopen();
               },
             });
           } else {
-            lastInputWasVoiceRef.current = true;
             startListeningRef.current?.();
           }
         }
@@ -216,6 +256,10 @@ export function AssistenteInput() {
             return;
           }
           askingMoreRef.current = false;
+          const trimmedAsk = text.trim();
+          if (trimmedAsk.length < 4) return;
+          const lowerAsk = trimmedAsk.toLowerCase();
+          if (ECHO_PHRASES.some((p) => lowerAsk.includes(p))) return;
           lastInputWasVoiceRef.current = true;
           voiceResultRef.current?.(text);
           return;
@@ -223,12 +267,13 @@ export function AssistenteInput() {
         // Ignorar só frases CURTAS de confirmação/cancelamento no modo principal (ex.: "sim", "não", "confirmar").
         // Frases longas como "listar fazendas" não devem ser filtradas (ex.: "fazendas" contém "faz").
         const trimmed = text.trim();
-        if (
-          trimmed.length <= 14 &&
-          interpretVoiceConfirm(text) !== "unknown"
-        ) {
+        if (trimmed.length <= 14 && interpretVoiceConfirm(text) !== "unknown") {
           return;
         }
+        // Ignorar eco do TTS e ruído curto (anti-loop em mobile/Samsung).
+        if (trimmed.length < 4) return;
+        const lower = trimmed.toLowerCase();
+        if (ECHO_PHRASES.some((p) => lower.includes(p))) return;
         lastInputWasVoiceRef.current = true;
         voiceResultRef.current?.(text);
       }
@@ -257,6 +302,7 @@ export function AssistenteInput() {
       startedViaPointerRef.current = false;
       return;
     }
+    unknownErrorCountRef.current = 0;
     askingMoreRef.current = false;
     confirmationModeRef.current = false;
     silenceTimeoutMsRef.current = 2500;
@@ -271,9 +317,10 @@ export function AssistenteInput() {
     try {
       const result = await assistenteService.executar(
         interpretado.intent,
-        interpretado.payload,
+        interpretado.payload
       );
       if (!isMountedRef.current) return;
+      unknownErrorCountRef.current = 0;
       setDialogOpen(false);
       setInterpretado(null);
       setTexto("");
@@ -307,14 +354,14 @@ export function AssistenteInput() {
       }
     } catch (err: unknown) {
       if (!isMountedRef.current) return;
+      unknownErrorCountRef.current += 1;
       const errorMsg = getApiErrorMessage(
         err,
-        "Erro ao executar. Tente novamente.",
+        "Erro ao executar. Tente novamente."
       );
       setError(errorMsg);
       const fromVoice = lastInputWasVoiceRef.current;
       if (fromVoice && isSpeechSynthesisSupported()) {
-        // Fechar dialog e reabrir microfone após informar o erro
         setDialogOpen(false);
         setInterpretado(null);
         speak(errorMsg, {
@@ -327,7 +374,7 @@ export function AssistenteInput() {
                 if (isMountedRef.current) {
                   setError("");
                   lastInputWasVoiceRef.current = true;
-                  startListeningRef.current?.();
+                  scheduleRetryReopen();
                 }
               },
             });
@@ -340,6 +387,7 @@ export function AssistenteInput() {
   };
 
   const handleCancelar = () => {
+    unknownErrorCountRef.current = 0;
     cancelSpeech();
     setDialogOpen(false);
     setInterpretado(null);
@@ -423,10 +471,9 @@ export function AssistenteInput() {
               variant={isListening ? "destructive" : "secondary"}
               onClick={handleMainMicClick}
               onPointerDown={() => {
-                // Iniciar reconhecimento no pointer down para garantir gesto do usuário
-                // (dentro de Dialog/modal o click pode perder o contexto de permissão do microfone)
                 if (!isListening && !loading) {
                   startedViaPointerRef.current = true;
+                  unknownErrorCountRef.current = 0;
                   askingMoreRef.current = false;
                   confirmationModeRef.current = false;
                   silenceTimeoutMsRef.current = 2500;
@@ -527,6 +574,7 @@ export function AssistenteInput() {
             <Button
               variant="secondary"
               onClick={() => {
+                unknownErrorCountRef.current = 0;
                 cancelSpeech();
                 setDialogOpen(false);
                 setInterpretado(null);
@@ -536,7 +584,7 @@ export function AssistenteInput() {
                   speak("Pode reformular.", {
                     cancelPrevious: false,
                     onEnd: () => {
-                      if (isMountedRef.current) startListeningRef.current?.();
+                      if (isMountedRef.current) scheduleDelayedReopen();
                     },
                   });
                 } else {
@@ -548,7 +596,11 @@ export function AssistenteInput() {
             >
               Corrigir
             </Button>
-            <Button onClick={handleConfirmar} disabled={executando} className="sm:flex-1">
+            <Button
+              onClick={handleConfirmar}
+              disabled={executando}
+              className="sm:flex-1"
+            >
               {executando ? "Executando…" : "Confirmar"}
             </Button>
           </DialogFooter>
