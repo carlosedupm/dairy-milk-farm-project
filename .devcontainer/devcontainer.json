@@ -4,6 +4,7 @@
   "service": "ceialmilk-dev",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
+  "mounts": ["source=${localEnv:SSH_AUTH_SOCK},target=/ssh-agent,type=bind"],
   "containerEnv": {
     "DATABASE_URL": "postgres://ceialmilk:password@db:5432/ceialmilk?sslmode=disable",
     "PORT": "8080"
@@ -11,7 +12,8 @@
   "remoteEnv": {
     "GEMINI_API_KEY": "${localEnv:GEMINI_API_KEY}",
     "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
-    "GITHUB_REPO": "${localEnv:GITHUB_REPO}"
+    "GITHUB_REPO": "${localEnv:GITHUB_REPO}",
+    "SSH_AUTH_SOCK": "/ssh-agent"
   },
   "customizations": {
     "vscode": {

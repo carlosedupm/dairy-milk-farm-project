@@ -89,4 +89,40 @@ docker compose ps   # confirmar que db e ceialmilk-dev estão Up
 
 ---
 
-**Última atualização**: 2026-01-24
+## Erro: `Permission denied (publickey)` ao usar Git (git pull / git push)
+
+O dev container encaminha o agente SSH do host. Se aparecer esse erro:
+
+### No host (fora do container)
+
+1. Garanta que o **ssh-agent** está rodando e que a chave está carregada:
+
+   ```bash
+   eval "$(ssh-agent -s)"
+   ssh-add ~/.ssh/id_ed25519   # ou id_rsa, conforme sua chave
+   ssh-add -l                  # deve listar a chave
+   ```
+
+2. Teste no host: `ssh -T git@github.com` deve responder com sucesso.
+
+### Depois de Reopen in Container
+
+Dentro do container, confira:
+
+```bash
+echo $SSH_AUTH_SOCK   # deve ser /ssh-agent
+ssh -T git@github.com
+git pull --tags origin main
+```
+
+Se `SSH_AUTH_SOCK` estiver vazio, o agente não estava ativo no host ao abrir o container. Feche o container, rode `ssh-add` no host e use **Reopen in Container** de novo.
+
+**Alternativa (HTTPS):** troque o remote para HTTPS e use token/PAT quando o Git pedir credenciais:
+
+```bash
+git remote set-url origin https://github.com/OWNER/REPO.git
+```
+
+---
+
+**Última atualização**: 2026-02-02
