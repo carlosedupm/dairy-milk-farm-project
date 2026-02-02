@@ -22,7 +22,8 @@
         "dbaeumer.vscode-eslint",
         "bradlc.vscode-tailwindcss",
         "esbenp.prettier-vscode",
-        "github.copilot"
+        "github.copilot",
+        "github.vscode-github-actions"
       ],
       "settings": {
         "editor.tabSize": 2,
