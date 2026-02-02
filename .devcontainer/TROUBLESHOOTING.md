@@ -91,36 +91,57 @@ docker compose ps   # confirmar que db e ceialmilk-dev estão Up
 
 ## Erro: `Permission denied (publickey)` ao usar Git (git pull / git push)
 
-O dev container encaminha o agente SSH do host. Se aparecer esse erro:
+O dev container monta duas coisas para SSH: (1) o socket do **ssh-agent** do host e (2) a pasta **~/.ssh** do host em `/home/vscode/.ssh`. O Git/SSH usam as chaves dessa pasta quando o agente não está disponível.
 
-### No host (fora do container)
+Se o erro continuar após Rebuild/Reopen:
 
-1. Garanta que o **ssh-agent** está rodando e que a chave está carregada:
+### 1. Conferir se as chaves estão montadas
 
-   ```bash
-   eval "$(ssh-agent -s)"
-   ssh-add ~/.ssh/id_ed25519   # ou id_rsa, conforme sua chave
-   ssh-add -l                  # deve listar a chave
-   ```
-
-2. Teste no host: `ssh -T git@github.com` deve responder com sucesso.
-
-### Depois de Reopen in Container
-
-Dentro do container, confira:
+Dentro do container:
 
 ```bash
-echo $SSH_AUTH_SOCK   # deve ser /ssh-agent
+ls -la /home/vscode/.ssh/
+# Deve listar id_ed25519 ou id_rsa (e .pub). Se estiver vazio, o mount de .ssh falhou.
+```
+
+### 2. Por que o mount de .ssh pode falhar (WSL2)
+
+O `devcontainer.json` usa `${localEnv:HOME}/.ssh`. O Cursor/VS Code usa o ambiente do **processo que abriu o projeto**. Se você abriu pelo ícone do Windows (e não pelo terminal WSL), `HOME` pode ser do Windows e o Docker (WSL2) não enxerga esse caminho.
+
+**Solução:** abra o projeto a partir do terminal WSL para que `HOME` seja o home do WSL (ex.: `/home/seu_usuario`):
+
+```bash
+cd /caminho/do/projeto
+cursor .   # ou code .
+```
+
+Depois use **Reopen in Container**. O mount `~/.ssh` passará a apontar para `/home/seu_usuario/.ssh` no WSL.
+
+### 3. Garantir chave e permissões no host (WSL)
+
+No host (terminal WSL, fora do container):
+
+```bash
+ls -la ~/.ssh/
+# A chave (id_ed25519 ou id_rsa) deve existir e ter permissão 600
+chmod 600 ~/.ssh/id_ed25519   # ou id_rsa
+ssh -T git@github.com        # deve autenticar
+```
+
+### 4. Testar dentro do container
+
+Depois do Rebuild/Reopen:
+
+```bash
 ssh -T git@github.com
 git pull --tags origin main
 ```
 
-Se `SSH_AUTH_SOCK` estiver vazio, o agente não estava ativo no host ao abrir o container. Feche o container, rode `ssh-add` no host e use **Reopen in Container** de novo.
-
-**Alternativa (HTTPS):** troque o remote para HTTPS e use token/PAT quando o Git pedir credenciais:
+Se ainda falhar, use **HTTPS** em vez de SSH:
 
 ```bash
 git remote set-url origin https://github.com/OWNER/REPO.git
+# No primeiro push/pull, use seu usuário GitHub e um Personal Access Token como senha.
 ```
 
 ---
