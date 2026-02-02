@@ -17,7 +17,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
   - Logging estruturado JSON com correlation IDs, método, path, status, latency
   - Sentry integrado para captura de erros e panics
   - Middleware de logging automático para todas as requisições
-- **Migrações**: golang-migrate no startup; seed do usuário admin (V3); refresh tokens (V4); Dev Studio (V5, V6); constraint unicidade DEVELOPER (V8)
+- **Migrações**: golang-migrate no startup; seed do usuário admin (V3); refresh tokens (V4); Dev Studio (V5, V6); constraint unicidade DEVELOPER (V8); vínculo usuário–fazenda (V11 – tabela usuarios_fazendas)
 - **Postman**: Rotas compatíveis com a collection (`/api/auth/*`, `/api/v1/fazendas/*`)
 - **Frontend + Backend**: Integração validada — login, listagem, criar/editar/excluir fazendas (dev e **produção** Vercel + Render)
 - **Devcontainer**: `DATABASE_URL` e `PORT` pré-configurados; backend via `go run ./cmd/api`
@@ -135,11 +135,11 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 - **Infraestrutura**: 95% ✅ (backend + frontend em produção + Dev Studio)
 - **Documentação**: 95% ✅ (incluindo Dev Studio)
-- **Implementação**: 95% ✅ (CRUD Animais, Produção, Registro, Prometheus)
+- **Implementação**: 95% ✅ (CRUD Animais, Produção, Registro, Prometheus, vínculo usuário–fazenda)
 - **Testes**: 70% ✅ (testes unitários backend + E2E frontend configurados)
 - **Deploy**: 90% ✅ (backend Render + frontend Vercel; login e CRUD validados no ar)
 
 ---
 
-**Última atualização**: 2026-02-01
+**Última atualização**: 2026-02-02
 **Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Vínculo usuário–fazenda (usuarios_fazendas, minhas fazendas, fazenda única automática, admin atribui fazendas, perfil não editável para ADMIN/DEVELOPER) | UX e Acessibilidade | Dev Studio Fase 0–3 | Assistente em linguagem natural | Módulo Administrador | Frontend responsivo e DRY

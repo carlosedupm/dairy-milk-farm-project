@@ -49,7 +49,7 @@
 - [x] **Dockerfile Backend**: Multi-stage build (Go 1.24), otimizado
 - [x] **render.yaml**: Ajustado para Render (JWT sync:false, PORT injetado, buildFilter, autoDeployTrigger)
 - [x] **CI/CD**: Build Docker do backend no pipeline
-- [x] **Migrações**: golang-migrate no startup; V3 seed admin, V4 refresh tokens
+- [x] **Migrações**: golang-migrate no startup; V3 seed admin, V4 refresh tokens, V11 usuarios_fazendas
 - [x] **Deploy Backend**: ✅ Funcionando em produção no Render (PostgreSQL, JWT, CORS)
 - [x] **Deploy Frontend**: ✅ Funcionando em produção na Vercel; login, validate e CRUD validados no ar
 
@@ -364,6 +364,6 @@
 
 ---
 
-**Última atualização**: 2026-02-01
+**Última atualização**: 2026-02-02
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Testes unitários e E2E configurados
 **Próxima revisão**: 2026-02-07

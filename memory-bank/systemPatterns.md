@@ -346,6 +346,16 @@ Usuario (N) ─── (N) Fazenda  // via tabela usuarios_fazendas (vínculo N:N
   - Incrementar `refreshTrigger` após ações que modificam dados (criar, atualizar, deletar, cancelar)
 - **Exemplo**: `HistoryPanel` atualiza automaticamente após cancelar requisição
 
+### **Estado derivado da query (evitar setState em useEffect)**
+
+- **Padrão**: Ao exibir dados vindos de TanStack Query e permitir edição local, **não** sincronizar com `setState` dentro de `useEffect` (viola a regra `react-hooks/set-state-in-effect` e pode causar renders em cascata).
+- **Abordagem**: Derivar o valor exibido da query e usar estado local apenas para alterações pendentes do usuário:
+  - Dados da query: `initialIds = useMemo(() => queryData.map(...), [queryData])`
+  - Estado local: `dirty` (boolean) + `pendingIds` (valores editados)
+  - Valor exibido: `selectedIds = dirty ? pendingIds : initialIds`
+  - Ao salvar com sucesso: invalidar a query e `setDirty(false)` para voltar a exibir os dados do servidor.
+- **Exemplo**: Admin editar usuário → seção "Fazendas vinculadas" (`frontend/src/app/admin/usuarios/[id]/editar/page.tsx`).
+
 ### **Layout de Página (PageContainer)**
 
 - **Padrão**: Usar o componente `PageContainer` para wrappers de `<main>` em todas as páginas
@@ -408,5 +418,5 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Última atualização**: 2026-01-31
-**Versão dos Padrões**: 2.3 (Go + Next.js) — Padrões de UX e Acessibilidade (paleta rural, modo claro/escuro, tipografia, toque 44px, formulários, home com atalhos); ThemeToggle; ícones no menu.
+**Última atualização**: 2026-02-02
+**Versão dos Padrões**: 2.4 (Go + Next.js) — Padrão estado derivado da query (evitar setState em useEffect); vínculo usuário–fazenda; perfil não editável para ADMIN/DEVELOPER.

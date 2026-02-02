@@ -18,12 +18,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 
 function AdminUsuarioEditarContent({ id }: { id: number }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [selectedFazendaIds, setSelectedFazendaIds] = useState<number[]>([]);
+  const [dirty, setDirty] = useState(false);
+  const [pendingIds, setPendingIds] = useState<number[]>([]);
   const [fazendasError, setFazendasError] = useState("");
 
   const { data, isLoading, error } = useQuery({
@@ -42,11 +43,11 @@ function AdminUsuarioEditarContent({ id }: { id: number }) {
     enabled: !!id,
   });
 
-  useEffect(() => {
-    if (fazendasDoUsuario.length >= 0) {
-      setSelectedFazendaIds(fazendasDoUsuario.map((f) => f.id));
-    }
-  }, [fazendasDoUsuario]);
+  const initialIds = useMemo(
+    () => fazendasDoUsuario.map((f) => f.id),
+    [fazendasDoUsuario]
+  );
+  const selectedFazendaIds = dirty ? pendingIds : initialIds;
 
   const usuario = data?.usuarios.find((u) => u.id === id) ?? null;
 
@@ -66,6 +67,7 @@ function AdminUsuarioEditarContent({ id }: { id: number }) {
       });
       queryClient.invalidateQueries({ queryKey: ["me", "fazendas"] });
       setFazendasError("");
+      setDirty(false);
     },
     onError: (err: unknown) => {
       setFazendasError(getApiErrorMessage(err, "Erro ao salvar vínculos."));
@@ -85,11 +87,12 @@ function AdminUsuarioEditarContent({ id }: { id: number }) {
   };
 
   const handleToggleFazenda = (fazendaId: number) => {
-    setSelectedFazendaIds((prev) =>
-      prev.includes(fazendaId)
-        ? prev.filter((x) => x !== fazendaId)
-        : [...prev, fazendaId]
-    );
+    const currentIds = dirty ? pendingIds : initialIds;
+    const nextIds = currentIds.includes(fazendaId)
+      ? currentIds.filter((x) => x !== fazendaId)
+      : [...currentIds, fazendaId];
+    setPendingIds(nextIds);
+    setDirty(true);
   };
 
   const handleSalvarVinculos = () => {
