@@ -40,9 +40,11 @@ func (r *FazendaRepository) Create(ctx context.Context, fazenda *models.Fazenda)
 
 func (r *FazendaRepository) GetByID(ctx context.Context, id int64) (*models.Fazenda, error) {
 	query := `
-		SELECT id, nome, localizacao, quantidade_vacas, fundacao, created_at, updated_at
-		FROM fazendas
-		WHERE id = $1
+		SELECT f.id, f.nome, f.localizacao,
+		       (SELECT COUNT(*)::int FROM animais WHERE fazenda_id = f.id) AS quantidade_vacas,
+		       f.fundacao, f.created_at, f.updated_at
+		FROM fazendas f
+		WHERE f.id = $1
 	`
 
 	var fazenda models.Fazenda
@@ -65,9 +67,11 @@ func (r *FazendaRepository) GetByID(ctx context.Context, id int64) (*models.Faze
 
 func (r *FazendaRepository) GetAll(ctx context.Context) ([]*models.Fazenda, error) {
 	query := `
-		SELECT id, nome, localizacao, quantidade_vacas, fundacao, created_at, updated_at
-		FROM fazendas
-		ORDER BY created_at DESC
+		SELECT f.id, f.nome, f.localizacao,
+		       (SELECT COUNT(*)::int FROM animais WHERE fazenda_id = f.id) AS quantidade_vacas,
+		       f.fundacao, f.created_at, f.updated_at
+		FROM fazendas f
+		ORDER BY f.created_at DESC
 	`
 
 	rows, err := r.db.Query(ctx, query)
@@ -103,8 +107,8 @@ func (r *FazendaRepository) Update(ctx context.Context, fazenda *models.Fazenda)
 	}
 	query := `
 		UPDATE fazendas
-		SET nome = $1, localizacao = $2, quantidade_vacas = $3, fundacao = $4, updated_at = $5
-		WHERE id = $6
+		SET nome = $1, localizacao = $2, fundacao = $3, updated_at = $4
+		WHERE id = $5
 	`
 
 	cmd, err := r.db.Exec(
@@ -112,7 +116,6 @@ func (r *FazendaRepository) Update(ctx context.Context, fazenda *models.Fazenda)
 		query,
 		fazenda.Nome,
 		fazenda.Localizacao,
-		fazenda.QuantidadeVacas,
 		fazenda.Fundacao,
 		time.Now(),
 		fazenda.ID,
@@ -133,29 +136,33 @@ func (r *FazendaRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *FazendaRepository) SearchByNome(ctx context.Context, nome string) ([]*models.Fazenda, error) {
-	return r.search(ctx, `nome ILIKE '%' || $1 || '%'`, nome)
+	return r.search(ctx, `f.nome ILIKE '%' || $1 || '%'`, nome)
 }
 
 func (r *FazendaRepository) SearchByLocalizacao(ctx context.Context, loc string) ([]*models.Fazenda, error) {
-	return r.search(ctx, `localizacao ILIKE '%' || $1 || '%'`, loc)
+	return r.search(ctx, `f.localizacao ILIKE '%' || $1 || '%'`, loc)
 }
 
 func (r *FazendaRepository) SearchByVacasMin(ctx context.Context, qty int) ([]*models.Fazenda, error) {
 	query := `
-		SELECT id, nome, localizacao, quantidade_vacas, fundacao, created_at, updated_at
-		FROM fazendas
-		WHERE quantidade_vacas >= $1
-		ORDER BY quantidade_vacas ASC, created_at DESC
+		SELECT f.id, f.nome, f.localizacao,
+		       (SELECT COUNT(*)::int FROM animais WHERE fazenda_id = f.id) AS quantidade_vacas,
+		       f.fundacao, f.created_at, f.updated_at
+		FROM fazendas f
+		WHERE (SELECT COUNT(*) FROM animais WHERE fazenda_id = f.id) >= $1
+		ORDER BY quantidade_vacas ASC, f.created_at DESC
 	`
 	return r.queryList(ctx, query, qty)
 }
 
 func (r *FazendaRepository) SearchByVacasRange(ctx context.Context, min, max int) ([]*models.Fazenda, error) {
 	query := `
-		SELECT id, nome, localizacao, quantidade_vacas, fundacao, created_at, updated_at
-		FROM fazendas
-		WHERE quantidade_vacas BETWEEN $1 AND $2
-		ORDER BY quantidade_vacas ASC, created_at DESC
+		SELECT f.id, f.nome, f.localizacao,
+		       (SELECT COUNT(*)::int FROM animais WHERE fazenda_id = f.id) AS quantidade_vacas,
+		       f.fundacao, f.created_at, f.updated_at
+		FROM fazendas f
+		WHERE (SELECT COUNT(*) FROM animais WHERE fazenda_id = f.id) BETWEEN $1 AND $2
+		ORDER BY quantidade_vacas ASC, f.created_at DESC
 	`
 	return r.queryList(ctx, query, min, max)
 }
@@ -213,10 +220,12 @@ func (r *FazendaRepository) ExistsByNomeAndLocalizacaoExcluding(ctx context.Cont
 
 func (r *FazendaRepository) search(ctx context.Context, where string, arg interface{}) ([]*models.Fazenda, error) {
 	query := `
-		SELECT id, nome, localizacao, quantidade_vacas, fundacao, created_at, updated_at
-		FROM fazendas
+		SELECT f.id, f.nome, f.localizacao,
+		       (SELECT COUNT(*)::int FROM animais WHERE fazenda_id = f.id) AS quantidade_vacas,
+		       f.fundacao, f.created_at, f.updated_at
+		FROM fazendas f
 		WHERE ` + where + `
-		ORDER BY created_at DESC
+		ORDER BY f.created_at DESC
 	`
 	return r.queryList(ctx, query, arg)
 }
@@ -247,4 +256,56 @@ func (r *FazendaRepository) queryList(ctx context.Context, query string, args ..
 		list = append(list, &fCopy)
 	}
 	return list, rows.Err()
+}
+
+// GetFazendasByUsuarioID retorna as fazendas vinculadas ao usuário (minhas fazendas).
+func (r *FazendaRepository) GetFazendasByUsuarioID(ctx context.Context, usuarioID int64) ([]*models.Fazenda, error) {
+	query := `
+		SELECT f.id, f.nome, f.localizacao,
+		       (SELECT COUNT(*)::int FROM animais WHERE fazenda_id = f.id) AS quantidade_vacas,
+		       f.fundacao, f.created_at, f.updated_at
+		FROM fazendas f
+		INNER JOIN usuarios_fazendas uf ON uf.fazenda_id = f.id
+		WHERE uf.usuario_id = $1
+		ORDER BY f.nome ASC
+	`
+	return r.queryList(ctx, query, usuarioID)
+}
+
+// GetFazendaIDsByUsuarioID retorna os IDs das fazendas vinculadas ao usuário (para admin).
+func (r *FazendaRepository) GetFazendaIDsByUsuarioID(ctx context.Context, usuarioID int64) ([]int64, error) {
+	query := `SELECT fazenda_id FROM usuarios_fazendas WHERE usuario_id = $1 ORDER BY fazenda_id ASC`
+	rows, err := r.db.Query(ctx, query, usuarioID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// SetFazendasForUsuario substitui as fazendas vinculadas ao usuário pelo conjunto informado.
+func (r *FazendaRepository) SetFazendasForUsuario(ctx context.Context, usuarioID int64, fazendaIDs []int64) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, `DELETE FROM usuarios_fazendas WHERE usuario_id = $1`, usuarioID); err != nil {
+		return err
+	}
+	for _, fid := range fazendaIDs {
+		if _, err := tx.Exec(ctx, `INSERT INTO usuarios_fazendas (usuario_id, fazenda_id) VALUES ($1, $2)`, usuarioID, fid); err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
 }

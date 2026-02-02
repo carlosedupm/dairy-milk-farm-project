@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/repository"
@@ -103,4 +104,28 @@ func (s *FazendaService) Count(ctx context.Context) (int64, error) {
 
 func (s *FazendaService) ExistsByNome(ctx context.Context, nome string) (bool, error) {
 	return s.repo.ExistsByNome(ctx, nome)
+}
+
+// GetByUsuarioID retorna as fazendas vinculadas ao usuário (minhas fazendas).
+func (s *FazendaService) GetByUsuarioID(ctx context.Context, usuarioID int64) ([]*models.Fazenda, error) {
+	return s.repo.GetFazendasByUsuarioID(ctx, usuarioID)
+}
+
+// GetFazendaIDsByUsuarioID retorna os IDs das fazendas vinculadas ao usuário (para admin).
+func (s *FazendaService) GetFazendaIDsByUsuarioID(ctx context.Context, usuarioID int64) ([]int64, error) {
+	return s.repo.GetFazendaIDsByUsuarioID(ctx, usuarioID)
+}
+
+// SetFazendasForUsuario substitui as fazendas vinculadas ao usuário (admin). Valida que todos os IDs existem.
+func (s *FazendaService) SetFazendasForUsuario(ctx context.Context, usuarioID int64, fazendaIDs []int64) error {
+	for _, fid := range fazendaIDs {
+		_, err := s.repo.GetByID(ctx, fid)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return fmt.Errorf("%w: id %d", ErrFazendaNotFound, fid)
+			}
+			return err
+		}
+	}
+	return s.repo.SetFazendasForUsuario(ctx, usuarioID, fazendaIDs)
 }

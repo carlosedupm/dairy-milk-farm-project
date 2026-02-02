@@ -88,12 +88,6 @@ func (s *UsuarioService) Create(ctx context.Context, u *models.Usuario) error {
 }
 
 func (s *UsuarioService) Update(ctx context.Context, u *models.Usuario) error {
-	if u.Perfil == models.PerfilDeveloper {
-		return ErrPerfilDeveloperViaAPI
-	}
-	if u.Perfil != models.PerfilUser && u.Perfil != models.PerfilAdmin {
-		u.Perfil = models.PerfilUser
-	}
 	if u.Nome == "" {
 		return errors.New("nome é obrigatório")
 	}
@@ -101,12 +95,23 @@ func (s *UsuarioService) Update(ctx context.Context, u *models.Usuario) error {
 		return errors.New("email é obrigatório")
 	}
 
-	_, err := s.repo.GetByID(ctx, u.ID)
+	atual, err := s.repo.GetByID(ctx, u.ID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrUsuarioNotFound
 		}
 		return err
+	}
+	// Não permitir alterar perfil de usuário que já é ADMIN ou DEVELOPER
+	if atual.Perfil == models.PerfilAdmin || atual.Perfil == models.PerfilDeveloper {
+		u.Perfil = atual.Perfil
+	} else {
+		if u.Perfil == models.PerfilDeveloper {
+			return ErrPerfilDeveloperViaAPI
+		}
+		if u.Perfil != models.PerfilUser && u.Perfil != models.PerfilAdmin {
+			u.Perfil = models.PerfilUser
+		}
 	}
 
 	exists, err := s.repo.ExistsByEmail(ctx, u.Email, u.ID)
@@ -117,8 +122,7 @@ func (s *UsuarioService) Update(ctx context.Context, u *models.Usuario) error {
 		return ErrEmailEmUso
 	}
 
-	// Buscar usuário atual para manter senha se não estiver alterando
-	atual, _ := s.repo.GetByID(ctx, u.ID)
+	// Manter senha se não estiver alterando
 	if u.Senha == "" {
 		u.Senha = atual.Senha
 		return s.repo.Update(ctx, u)

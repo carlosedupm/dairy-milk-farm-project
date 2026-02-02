@@ -17,11 +17,18 @@ import (
 )
 
 const (
-	intentCadastrarFazenda = "cadastrar_fazenda"
-	intentListarFazendas   = "listar_fazendas"
-	intentBuscarFazenda    = "buscar_fazenda"
-	intentEditarFazenda    = "editar_fazenda"
-	intentExcluirFazenda   = "excluir_fazenda"
+	intentCadastrarFazenda        = "cadastrar_fazenda"
+	intentListarFazendas          = "listar_fazendas"
+	intentBuscarFazenda           = "buscar_fazenda"
+	intentEditarFazenda           = "editar_fazenda"
+	intentExcluirFazenda          = "excluir_fazenda"
+	intentConsultarAnimaisFazenda = "consultar_animais_fazenda"
+	intentListarAnimaisFazenda    = "listar_animais_fazenda"
+	intentDetalharAnimal          = "detalhar_animal"
+	intentCadastrarAnimal         = "cadastrar_animal"
+	intentEditarAnimal            = "editar_animal"
+	intentExcluirAnimal           = "excluir_animal"
+	intentRegistrarProducaoAnimal = "registrar_producao_animal"
 )
 
 // InterpretRequest contém o texto digitado ou transcrito da voz.
@@ -45,12 +52,16 @@ type ExecutarRequest struct {
 type AssistenteService struct {
 	geminiAPIKey string
 	fazendaSvc   *FazendaService
+	animalSvc    *AnimalService
+	producaoSvc  *ProducaoService
 }
 
-func NewAssistenteService(geminiAPIKey string, fazendaSvc *FazendaService) *AssistenteService {
+func NewAssistenteService(geminiAPIKey string, fazendaSvc *FazendaService, animalSvc *AnimalService, producaoSvc *ProducaoService) *AssistenteService {
 	return &AssistenteService{
 		geminiAPIKey: geminiAPIKey,
 		fazendaSvc:   fazendaSvc,
+		animalSvc:    animalSvc,
+		producaoSvc:  producaoSvc,
 	}
 }
 
@@ -99,6 +110,13 @@ Intenções possíveis:
 - cadastrar_fazenda: quando o usuário quer registrar uma nova fazenda
 - listar_fazendas: quando o usuário quer ver a lista de fazendas (ex: "listar fazendas", "quais minhas fazendas")
 - buscar_fazenda: quando o usuário quer buscar ou pesquisar uma fazenda específica por nome (ex: "buscar fazenda Sítio X", "pesquisar fazenda X", "mostrar a fazenda Y")
+- consultar_animais_fazenda: quando o usuário quer saber quantos animais ou vacas tem em uma fazenda (ex: "quantas vacas tem na fazenda X", "quantos animais na fazenda Y", "quantas vacas tem na fazenda Larissa")
+- listar_animais_fazenda: quando o usuário quer listar ou ver os animais de uma fazenda (ex: "quais animais tem na fazenda X", "listar animais da fazenda Larissa", "me dá mais informações sobre os animais da fazenda Y")
+- detalhar_animal: quando o usuário quer ver detalhes de um animal específico (ex: "detalhes do animal X", "qual a raça do animal 123?", "informações sobre o animal identificação Y", "quero saber mais sobre o animal Z")
+- cadastrar_animal: quando o usuário quer cadastrar um novo animal em uma fazenda (ex: "cadastrar animal na fazenda X", "registrar vaca Vaca 01 na fazenda Larissa")
+- editar_animal: quando o usuário quer alterar dados de um animal existente (ex: "editar o animal X", "alterar raça do animal 123", "mudar status de saúde do animal identificação Y")
+- excluir_animal: quando o usuário quer excluir um animal (ex: "excluir o animal X", "remover animal 123")
+- registrar_producao_animal: quando o usuário quer registrar produção de leite de um animal (ex: "registrar produção do animal X", "anotar 10 litros do animal 123", "produção de leite do animal Vaca 01: 15 litros")
 - editar_fazenda: quando o usuário quer alterar dados de uma fazenda existente (identifique por id ou nome)
 - excluir_fazenda: quando o usuário quer excluir uma fazenda (identifique por id ou nome)
 
@@ -108,6 +126,20 @@ Para listar_fazendas, payload pode ser {} e resumo algo como "Listar fazendas ca
 
 Para buscar_fazenda, extraia: nome (string = parte do nome da fazenda para buscar). Resumo: "Buscar fazenda X" ou "Mostrar fazenda X."
 
+Para consultar_animais_fazenda, extraia: nome (string = nome da fazenda para consultar). Resumo: "Consultar quantidade de animais na fazenda X." ou "Quantas vacas tem na fazenda X."
+
+Para listar_animais_fazenda, extraia: nome (string = nome da fazenda) OU id (number = id da fazenda). Resumo: "Listar animais da fazenda X." ou "Quais animais tem na fazenda X."
+
+Para detalhar_animal, extraia: id (number = id do animal) OU identificacao (string = identificação ou parte do nome do animal para buscar). Resumo: "Ver detalhes do animal X." ou "Informações sobre o animal Y."
+
+Para cadastrar_animal, extraia: fazenda_id (number) OU nome_fazenda (string = nome da fazenda onde cadastrar), identificacao (string = identificação do animal), raca (string, opcional), data_nascimento (string YYYY-MM-DD ou YYYY, opcional), sexo (string M ou F, opcional), status_saude (string SAUDAVEL/DOENTE/EM_TRATAMENTO, opcional). Resumo: "Cadastrar animal X na fazenda Y."
+
+Para editar_animal, extraia: id (number) OU identificacao (string) para identificar o animal; depois os campos a alterar: identificacaoNovo (string = nova identificação quando renomear), raca, data_nascimento, sexo, status_saude, fazenda_id (para transferir de fazenda). Resumo: "Editar animal X." ou "Alterar raça do animal Y."
+
+Para excluir_animal, extraia: id (number) OU identificacao (string) para identificar o animal. Resumo: "Excluir o animal X."
+
+Para registrar_producao_animal, extraia: id (number) OU identificacao (string) do animal, quantidade (number = litros), data_hora (string ISO opcional), qualidade (number 1-10 opcional). Resumo: "Registrar X litros de produção do animal Y."
+
 Para editar_fazenda, extraia: id (number) OU nome (string = nome ATUAL da fazenda para identificar/buscar); depois os campos a alterar: nomeNovo (string = novo nome quando o usuário quiser RENOMEAR, ex: "editar fazenda X para se chamar Y" -> nome:"X", nomeNovo:"Y"), quantidadeVacas (number), fundacao (string), localizacao (string). Use sempre nomeNovo quando o usuário pedir para mudar o nome; use nome apenas para identificar a fazenda quando não houver id.
 
 Para excluir_fazenda, extraia: id (number) OU nome (string) para identificar a fazenda a excluir. Resumo: "Excluir a fazenda X." (deixe claro que é exclusão).
@@ -116,6 +148,13 @@ Retorne APENAS um JSON válido, sem markdown, sem explicações. Exemplos de for
 - cadastrar: {"intent":"cadastrar_fazenda","payload":{"nome":"...","quantidadeVacas":0,"fundacao":"...","localizacao":"..."},"resumo":"Criar fazenda X com Y vacas, fundada em Z."}
 - listar: {"intent":"listar_fazendas","payload":{},"resumo":"Listar fazendas cadastradas."}
 - buscar: {"intent":"buscar_fazenda","payload":{"nome":"Sítio X"},"resumo":"Buscar fazenda Sítio X."}
+- consultar animais: {"intent":"consultar_animais_fazenda","payload":{"nome":"Larissa"},"resumo":"Consultar quantidade de animais na fazenda Larissa."}
+- listar animais fazenda: {"intent":"listar_animais_fazenda","payload":{"nome":"Larissa"},"resumo":"Listar animais da fazenda Larissa."}
+- detalhar animal: {"intent":"detalhar_animal","payload":{"identificacao":"Vaca 01"} ou {"id":123},"resumo":"Ver detalhes do animal Vaca 01."}
+- cadastrar animal: {"intent":"cadastrar_animal","payload":{"nome_fazenda":"Larissa","identificacao":"Vaca 01","raca":"Holandesa","sexo":"F"},"resumo":"Cadastrar animal Vaca 01 na fazenda Larissa."}
+- editar animal: {"intent":"editar_animal","payload":{"identificacao":"Vaca 01","raca":"Girolando"} ou {"id":123,"status_saude":"SAUDAVEL"},"resumo":"Editar animal Vaca 01."}
+- excluir animal: {"intent":"excluir_animal","payload":{"identificacao":"Vaca 01"} ou {"id":123},"resumo":"Excluir o animal Vaca 01."}
+- registrar produção: {"intent":"registrar_producao_animal","payload":{"identificacao":"Vaca 01","quantidade":15} ou {"id":123,"quantidade":10},"resumo":"Registrar 15 litros de produção do animal Vaca 01."}
 - editar (só quantidade): {"intent":"editar_fazenda","payload":{"nome":"Sítio X","quantidadeVacas":30},"resumo":"Alterar fazenda Sítio X para 30 vacas."}
 - editar (renomear): {"intent":"editar_fazenda","payload":{"nome":"Sítio X","nomeNovo":"Sítio Novo"},"resumo":"Renomear fazenda Sítio X para Sítio Novo."}
 - editar (por id): {"intent":"editar_fazenda","payload":{"id":1,"nome":"Nome Novo"} ou {"id":1,"quantidadeVacas":10},"resumo":"Alterar fazenda (id 1)."}
@@ -216,6 +255,20 @@ func (s *AssistenteService) Executar(ctx context.Context, intent string, payload
 		return s.executarListarFazendas(ctx)
 	case intentBuscarFazenda:
 		return s.executarBuscarFazenda(ctx, payload)
+	case intentConsultarAnimaisFazenda:
+		return s.executarConsultarAnimaisFazenda(ctx, payload)
+	case intentListarAnimaisFazenda:
+		return s.executarListarAnimaisFazenda(ctx, payload)
+	case intentDetalharAnimal:
+		return s.executarDetalharAnimal(ctx, payload)
+	case intentCadastrarAnimal:
+		return s.executarCadastrarAnimal(ctx, payload)
+	case intentEditarAnimal:
+		return s.executarEditarAnimal(ctx, payload)
+	case intentExcluirAnimal:
+		return s.executarExcluirAnimal(ctx, payload)
+	case intentRegistrarProducaoAnimal:
+		return s.executarRegistrarProducaoAnimal(ctx, payload)
 	case intentEditarFazenda:
 		return s.executarEditarFazenda(ctx, payload)
 	case intentExcluirFazenda:
@@ -301,6 +354,332 @@ func (s *AssistenteService) executarBuscarFazenda(ctx context.Context, payload m
 		return list[0], nil
 	}
 	return list, nil
+}
+
+func (s *AssistenteService) executarConsultarAnimaisFazenda(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
+	fazenda, err := s.resolveFazendaByPayload(ctx, payload)
+	if err != nil {
+		return nil, err
+	}
+	count, err := s.animalSvc.CountByFazenda(ctx, fazenda.ID)
+	if err != nil {
+		observability.CaptureError(err, map[string]string{"action": "assistente_executar_consultar_animais_fazenda"}, nil)
+		return nil, fmt.Errorf("erro ao contar animais da fazenda: %w", err)
+	}
+	var msg string
+	switch count {
+	case 0:
+		msg = fmt.Sprintf("A fazenda %s não tem animais cadastrados.", fazenda.Nome)
+	case 1:
+		msg = fmt.Sprintf("A fazenda %s tem 1 animal (vaca).", fazenda.Nome)
+	default:
+		msg = fmt.Sprintf("A fazenda %s tem %d animais (vacas).", fazenda.Nome, count)
+	}
+	slog.Info("Animais consultados via assistente", "fazenda_id", fazenda.ID, "fazenda_nome", fazenda.Nome, "count", count)
+	return map[string]interface{}{
+		"message":      msg,
+		"count":        count,
+		"fazenda_nome": fazenda.Nome,
+	}, nil
+}
+
+func (s *AssistenteService) executarListarAnimaisFazenda(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
+	fazenda, err := s.resolveFazendaByPayload(ctx, payload)
+	if err != nil {
+		return nil, err
+	}
+	animais, err := s.animalSvc.GetByFazendaID(ctx, fazenda.ID)
+	if err != nil {
+		observability.CaptureError(err, map[string]string{"action": "assistente_executar_listar_animais_fazenda"}, nil)
+		return nil, fmt.Errorf("erro ao listar animais da fazenda: %w", err)
+	}
+	var msg string
+	if len(animais) == 0 {
+		msg = fmt.Sprintf("A fazenda %s não tem animais cadastrados.", fazenda.Nome)
+	} else if len(animais) == 1 {
+		a := animais[0]
+		msg = fmt.Sprintf("A fazenda %s tem 1 animal: %s (raça: %s, sexo: %s, status: %s).",
+			fazenda.Nome, a.Identificacao, strOrEmpty(a.Raca), strOrEmpty(a.Sexo), strOrEmpty(a.StatusSaude))
+	} else {
+		parts := make([]string, 0, len(animais))
+		for _, a := range animais {
+			parts = append(parts, fmt.Sprintf("%s (raça %s, %s)", a.Identificacao, strOrEmpty(a.Raca), strOrEmpty(a.Sexo)))
+		}
+		msg = fmt.Sprintf("A fazenda %s tem %d animais: %s.", fazenda.Nome, len(animais), strings.Join(parts, "; "))
+	}
+	slog.Info("Animais listados via assistente", "fazenda_id", fazenda.ID, "fazenda_nome", fazenda.Nome, "count", len(animais))
+	return map[string]interface{}{
+		"message":      msg,
+		"animais":      animais,
+		"fazenda_nome": fazenda.Nome,
+		"fazenda_id":   fazenda.ID,
+	}, nil
+}
+
+func strOrEmpty(s *string) string {
+	if s == nil || *s == "" {
+		return "—"
+	}
+	return *s
+}
+
+func (s *AssistenteService) executarDetalharAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
+	if idNum, ok := payload["id"].(float64); ok && idNum > 0 {
+		id := int64(idNum)
+		animal, err := s.animalSvc.GetByID(ctx, id)
+		if err != nil {
+			return nil, fmt.Errorf("animal com ID %d não encontrado", id)
+		}
+		msg := formatAnimalMessage(animal)
+		slog.Info("Animal detalhado via assistente", "animal_id", animal.ID, "identificacao", animal.Identificacao)
+		return map[string]interface{}{
+			"message": msg,
+			"animal":  animal,
+		}, nil
+	}
+	identificacao, ok := payload["identificacao"].(string)
+	if !ok || strings.TrimSpace(identificacao) == "" {
+		return nil, fmt.Errorf("informe o id ou a identificação do animal")
+	}
+	list, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(identificacao))
+	if err != nil {
+		observability.CaptureError(err, map[string]string{"action": "assistente_executar_detalhar_animal"}, nil)
+		return nil, fmt.Errorf("erro ao buscar animal: %w", err)
+	}
+	if len(list) == 0 {
+		return nil, fmt.Errorf("nenhum animal encontrado com a identificação \"%s\"", identificacao)
+	}
+	if len(list) > 1 {
+		return nil, fmt.Errorf("mais de um animal encontrado com \"%s\"; use o ID para identificar", identificacao)
+	}
+	animal := list[0]
+	msg := formatAnimalMessage(animal)
+	slog.Info("Animal detalhado via assistente", "animal_id", animal.ID, "identificacao", animal.Identificacao)
+	return map[string]interface{}{
+		"message": msg,
+		"animal":  animal,
+	}, nil
+}
+
+func formatAnimalMessage(a *models.Animal) string {
+	nasc := "—"
+	if a.DataNascimento != nil {
+		nasc = a.DataNascimento.Format("02/01/2006")
+	}
+	return fmt.Sprintf("Animal: identificação %s, raça %s, nascimento %s, sexo %s, status de saúde %s.",
+		a.Identificacao, strOrEmpty(a.Raca), nasc, strOrEmpty(a.Sexo), strOrEmpty(a.StatusSaude))
+}
+
+// resolveAnimalByPayload retorna o animal identificado por id ou identificacao no payload.
+func (s *AssistenteService) resolveAnimalByPayload(ctx context.Context, payload map[string]interface{}) (*models.Animal, error) {
+	if idNum, ok := payload["id"].(float64); ok && idNum > 0 {
+		id := int64(idNum)
+		a, err := s.animalSvc.GetByID(ctx, id)
+		if err != nil {
+			return nil, fmt.Errorf("animal com ID %d não encontrado", id)
+		}
+		return a, nil
+	}
+	if ident, ok := payload["identificacao"].(string); ok && strings.TrimSpace(ident) != "" {
+		list, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
+		if err != nil {
+			return nil, fmt.Errorf("erro ao buscar animal por identificação: %w", err)
+		}
+		if len(list) == 0 {
+			return nil, fmt.Errorf("nenhum animal encontrado com a identificação \"%s\"", ident)
+		}
+		if len(list) > 1 {
+			return nil, fmt.Errorf("mais de um animal encontrado com \"%s\"; use o ID para identificar", ident)
+		}
+		return list[0], nil
+	}
+	return nil, fmt.Errorf("informe o id ou a identificação do animal")
+}
+
+func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
+	fazendaID := int64(0)
+	if idNum, ok := payload["fazenda_id"].(float64); ok && idNum > 0 {
+		fazendaID = int64(idNum)
+	}
+	if fazendaID <= 0 {
+		if nomeFazenda, ok := payload["nome_fazenda"].(string); ok && strings.TrimSpace(nomeFazenda) != "" {
+			fazenda, err := s.resolveFazendaByPayload(ctx, map[string]interface{}{"nome": nomeFazenda})
+			if err != nil {
+				return nil, err
+			}
+			fazendaID = fazenda.ID
+		}
+	}
+	if fazendaID <= 0 {
+		return nil, fmt.Errorf("informe a fazenda (nome ou id) onde cadastrar o animal")
+	}
+	identificacao, _ := payload["identificacao"].(string)
+	identificacao = strings.TrimSpace(identificacao)
+	if identificacao == "" {
+		return nil, fmt.Errorf("identificação do animal é obrigatória")
+	}
+	animal := &models.Animal{
+		FazendaID:     fazendaID,
+		Identificacao: identificacao,
+	}
+	if v, ok := payload["raca"].(string); ok && strings.TrimSpace(v) != "" {
+		s := strings.TrimSpace(v)
+		animal.Raca = &s
+	}
+	if v, ok := payload["data_nascimento"].(string); ok && strings.TrimSpace(v) != "" {
+		t, err := parseFundacaoAssistente(strings.TrimSpace(v))
+		if err != nil {
+			slog.Warn("Data de nascimento inválida no assistente cadastrar animal", "value", v, "error", err)
+		} else if t != nil {
+			animal.DataNascimento = t
+		}
+	}
+	if v, ok := payload["sexo"].(string); ok && strings.TrimSpace(v) != "" {
+		s := strings.TrimSpace(strings.ToUpper(v))
+		if s == "M" || s == "F" {
+			animal.Sexo = &s
+		}
+	}
+	if v, ok := payload["status_saude"].(string); ok && strings.TrimSpace(v) != "" {
+		s := strings.TrimSpace(strings.ToUpper(v))
+		if models.IsValidStatusSaude(s) {
+			animal.StatusSaude = &s
+		}
+	}
+	if animal.StatusSaude == nil {
+		defaultStatus := models.StatusSaudavel
+		animal.StatusSaude = &defaultStatus
+	}
+	if err := s.animalSvc.Create(ctx, animal); err != nil {
+		observability.CaptureError(err, map[string]string{"action": "assistente_executar_cadastrar_animal"}, nil)
+		return nil, fmt.Errorf("erro ao cadastrar animal: %w", err)
+	}
+	slog.Info("Animal cadastrado via assistente", "animal_id", animal.ID, "identificacao", animal.Identificacao)
+	msg := fmt.Sprintf("Animal \"%s\" cadastrado com sucesso na fazenda.", animal.Identificacao)
+	return map[string]interface{}{"message": msg, "animal": animal}, nil
+}
+
+func (s *AssistenteService) executarEditarAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
+	animal, err := s.resolveAnimalByPayload(ctx, payload)
+	if err != nil {
+		return nil, err
+	}
+	if animal.ID <= 0 {
+		return nil, fmt.Errorf("animal resolvido sem ID válido")
+	}
+	if v, ok := payload["identificacaoNovo"].(string); ok && strings.TrimSpace(v) != "" {
+		animal.Identificacao = strings.TrimSpace(v)
+	}
+	if v, ok := payload["raca"].(string); ok {
+		s := strings.TrimSpace(v)
+		if s == "" {
+			animal.Raca = nil
+		} else {
+			animal.Raca = &s
+		}
+	}
+	if v, ok := payload["data_nascimento"].(string); ok && strings.TrimSpace(v) != "" {
+		t, err := parseFundacaoAssistente(strings.TrimSpace(v))
+		if err != nil {
+			slog.Warn("Data de nascimento inválida no assistente editar animal", "value", v, "error", err)
+		} else if t != nil {
+			animal.DataNascimento = t
+		}
+	}
+	if v, ok := payload["sexo"].(string); ok {
+		s := strings.TrimSpace(strings.ToUpper(v))
+		if s == "" {
+			animal.Sexo = nil
+		} else if s == "M" || s == "F" {
+			animal.Sexo = &s
+		}
+	}
+	if v, ok := payload["status_saude"].(string); ok {
+		s := strings.TrimSpace(strings.ToUpper(v))
+		if s == "" {
+			animal.StatusSaude = nil
+		} else if models.IsValidStatusSaude(s) {
+			animal.StatusSaude = &s
+		}
+	}
+	if animal.StatusSaude == nil {
+		defaultStatus := models.StatusSaudavel
+		animal.StatusSaude = &defaultStatus
+	}
+	if idNum, ok := payload["fazenda_id"].(float64); ok && idNum > 0 {
+		animal.FazendaID = int64(idNum)
+	}
+	if err := s.animalSvc.Update(ctx, animal); err != nil {
+		observability.CaptureError(err, map[string]string{"action": "assistente_executar_editar_animal"}, nil)
+		return nil, fmt.Errorf("erro ao atualizar animal: %w", err)
+	}
+	slog.Info("Animal editado via assistente", "animal_id", animal.ID, "identificacao", animal.Identificacao)
+	msg := fmt.Sprintf("Animal \"%s\" atualizado com sucesso.", animal.Identificacao)
+	return map[string]interface{}{"message": msg, "animal": animal}, nil
+}
+
+func (s *AssistenteService) executarExcluirAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
+	animal, err := s.resolveAnimalByPayload(ctx, payload)
+	if err != nil {
+		return nil, err
+	}
+	id := animal.ID
+	identificacao := animal.Identificacao
+	if err := s.animalSvc.Delete(ctx, id); err != nil {
+		observability.CaptureError(err, map[string]string{"action": "assistente_executar_excluir_animal"}, nil)
+		return nil, fmt.Errorf("erro ao excluir animal: %w", err)
+	}
+	slog.Info("Animal excluído via assistente", "animal_id", id, "identificacao", identificacao)
+	msg := fmt.Sprintf("Animal \"%s\" excluído com sucesso.", identificacao)
+	return map[string]interface{}{"message": msg, "id": id}, nil
+}
+
+func (s *AssistenteService) executarRegistrarProducaoAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
+	animal, err := s.resolveAnimalByPayload(ctx, payload)
+	if err != nil {
+		return nil, err
+	}
+	quantidade := 0.0
+	switch v := payload["quantidade"].(type) {
+	case float64:
+		quantidade = v
+	case int:
+		quantidade = float64(v)
+	}
+	if quantidade <= 0 {
+		return nil, fmt.Errorf("informe a quantidade de litros (maior que zero)")
+	}
+	producao := &models.ProducaoLeite{
+		AnimalID:   animal.ID,
+		Quantidade: quantidade,
+		DataHora:   time.Now(),
+	}
+	if v, ok := payload["data_hora"].(string); ok && strings.TrimSpace(v) != "" {
+		t, err := time.Parse(time.RFC3339, strings.TrimSpace(v))
+		if err != nil {
+			t, err = time.Parse("2006-01-02T15:04:05", strings.TrimSpace(v))
+		}
+		if err == nil {
+			producao.DataHora = t
+		}
+	}
+	if v, ok := payload["qualidade"].(float64); ok && v >= 1 && v <= 10 {
+		q := int(v)
+		producao.Qualidade = &q
+	} else if v, ok := payload["qualidade"].(int); ok && v >= 1 && v <= 10 {
+		producao.Qualidade = &v
+	}
+	if err := s.producaoSvc.Create(ctx, producao); err != nil {
+		observability.CaptureError(err, map[string]string{"action": "assistente_executar_registrar_producao_animal"}, nil)
+		return nil, fmt.Errorf("erro ao registrar produção: %w", err)
+	}
+	slog.Info("Produção registrada via assistente", "producao_id", producao.ID, "animal_id", animal.ID, "quantidade", quantidade)
+	msg := fmt.Sprintf("Produção de %.1f litros registrada para o animal \"%s\".", quantidade, animal.Identificacao)
+	return map[string]interface{}{
+		"message":   msg,
+		"animal_id": animal.ID,
+		"producao":  producao,
+	}, nil
 }
 
 // resolveFazendaByPayload retorna a fazenda identificada por id ou nome no payload.

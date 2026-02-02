@@ -12,10 +12,11 @@ import (
 
 type AdminHandler struct {
 	usuarioSvc *service.UsuarioService
+	fazendaSvc *service.FazendaService
 }
 
-func NewAdminHandler(usuarioSvc *service.UsuarioService) *AdminHandler {
-	return &AdminHandler{usuarioSvc: usuarioSvc}
+func NewAdminHandler(usuarioSvc *service.UsuarioService, fazendaSvc *service.FazendaService) *AdminHandler {
+	return &AdminHandler{usuarioSvc: usuarioSvc, fazendaSvc: fazendaSvc}
 }
 
 type CreateUsuarioRequest struct {
@@ -26,11 +27,11 @@ type CreateUsuarioRequest struct {
 }
 
 type UpdateUsuarioRequest struct {
-	Nome   string `json:"nome" binding:"required"`
-	Email  string `json:"email" binding:"required"`
-	Senha  string `json:"senha"` // opcional; se vazia, não altera
-	Perfil string `json:"perfil"`
-	Enabled *bool `json:"enabled"`
+	Nome    string `json:"nome" binding:"required"`
+	Email   string `json:"email" binding:"required"`
+	Senha   string `json:"senha"` // opcional; se vazia, não altera
+	Perfil  string `json:"perfil"`
+	Enabled *bool  `json:"enabled"`
 }
 
 func (h *AdminHandler) ListUsuarios(c *gin.Context) {
@@ -171,4 +172,65 @@ func (h *AdminHandler) ToggleEnabled(c *gin.Context) {
 
 	u, _ := h.usuarioSvc.GetByID(c.Request.Context(), id)
 	response.SuccessOK(c, u, "Status do usuário alterado com sucesso")
+}
+
+// GetUsuarioFazendas retorna as fazendas vinculadas ao usuário (admin).
+func (h *AdminHandler) GetUsuarioFazendas(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+	if _, err := h.usuarioSvc.GetByID(c.Request.Context(), id); err != nil {
+		if errors.Is(err, service.ErrUsuarioNotFound) {
+			response.ErrorNotFound(c, "Usuário não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar usuário", err.Error())
+		return
+	}
+	fazendas, err := h.fazendaSvc.GetByUsuarioID(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao buscar fazendas do usuário", err.Error())
+		return
+	}
+	response.SuccessOK(c, fazendas, "Fazendas do usuário listadas com sucesso")
+}
+
+type SetUsuarioFazendasRequest struct {
+	FazendaIDs []int64 `json:"fazenda_ids" binding:"required"`
+}
+
+// SetUsuarioFazendas atualiza as fazendas vinculadas ao usuário (admin).
+func (h *AdminHandler) SetUsuarioFazendas(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+	if _, err := h.usuarioSvc.GetByID(c.Request.Context(), id); err != nil {
+		if errors.Is(err, service.ErrUsuarioNotFound) {
+			response.ErrorNotFound(c, "Usuário não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar usuário", err.Error())
+		return
+	}
+	var req SetUsuarioFazendasRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorValidation(c, "Dados inválidos", err.Error())
+		return
+	}
+	if err := h.fazendaSvc.SetFazendasForUsuario(c.Request.Context(), id, req.FazendaIDs); err != nil {
+		if errors.Is(err, service.ErrFazendaNotFound) {
+			response.ErrorNotFound(c, "Uma ou mais fazendas não encontradas")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao atualizar fazendas do usuário", err.Error())
+		return
+	}
+	fazendas, _ := h.fazendaSvc.GetByUsuarioID(c.Request.Context(), id)
+	response.SuccessOK(c, fazendas, "Fazendas do usuário atualizadas com sucesso")
 }

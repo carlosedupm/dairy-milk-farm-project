@@ -1,31 +1,39 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
-import { PageContainer } from '@/components/layout/PageContainer'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Building2, List, Droplets } from 'lucide-react'
+import { useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
+import { PageContainer } from "@/components/layout/PageContainer";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Building2, List, Droplets } from "lucide-react";
 
 export default function Home() {
-  const { isAuthenticated, isReady } = useAuth()
-  const router = useRouter()
+  const { isAuthenticated, isReady } = useAuth();
+  const router = useRouter();
+  const { isSingleFazenda, fazendaUnica } = useMinhasFazendas();
 
   useEffect(() => {
-    if (!isReady) return
+    if (!isReady) return;
     if (!isAuthenticated) {
-      router.replace('/login')
+      router.replace("/login");
     }
-  }, [isReady, isAuthenticated, router])
+  }, [isReady, isAuthenticated, router]);
 
   if (!isReady) {
     return (
       <PageContainer variant="centered">
         <p className="text-muted-foreground">Carregando…</p>
       </PageContainer>
-    )
+    );
   }
 
   if (!isAuthenticated) {
@@ -33,29 +41,35 @@ export default function Home() {
       <PageContainer variant="centered">
         <p className="text-muted-foreground">Redirecionando…</p>
       </PageContainer>
-    )
+    );
   }
 
   const atalhos = [
     {
-      href: '/fazendas',
-      title: 'Ver fazendas',
-      description: 'Ver e gerenciar suas fazendas',
+      href:
+        isSingleFazenda && fazendaUnica
+          ? `/fazendas/${fazendaUnica.id}`
+          : "/fazendas",
+      title: "Ver fazendas",
+      description: "Ver e gerenciar suas fazendas",
       icon: Building2,
     },
     {
-      href: '/animais',
-      title: 'Ver animais',
-      description: 'Consultar e cadastrar animais do rebanho',
+      href:
+        isSingleFazenda && fazendaUnica
+          ? `/fazendas/${fazendaUnica.id}/animais`
+          : "/animais",
+      title: "Ver animais",
+      description: "Consultar e cadastrar animais do rebanho",
       icon: List,
     },
     {
-      href: '/producao/novo',
-      title: 'Registrar produção',
-      description: 'Registrar produção de leite',
+      href: "/producao/novo",
+      title: "Registrar produção",
+      description: "Registrar produção de leite",
       icon: Droplets,
     },
-  ]
+  ];
 
   return (
     <PageContainer variant="default">
@@ -93,5 +107,5 @@ export default function Home() {
         ))}
       </div>
     </PageContainer>
-  )
+  );
 }

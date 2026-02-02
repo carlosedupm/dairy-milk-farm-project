@@ -127,7 +127,7 @@ func main() {
 					animalHandler := handlers.NewAnimalHandler(animalSvc)
 					producaoHandler := handlers.NewProducaoHandler(producaoSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
-					adminHandler := handlers.NewAdminHandler(usuarioSvc)
+					adminHandler := handlers.NewAdminHandler(usuarioSvc, fazendaSvc)
 
 					api := router.Group("/api")
 					api.POST("/auth/register", authHandler.Register)
@@ -135,6 +135,12 @@ func main() {
 					api.POST("/auth/logout", authHandler.Logout)
 					api.POST("/auth/refresh", authHandler.Refresh)
 					api.POST("/auth/validate", authHandler.Validate)
+
+					// Minhas fazendas (usuário logado)
+					me := api.Group("/v1/me", auth.AuthMiddleware(jwtSvc))
+					{
+						me.GET("/fazendas", fazendaHandler.GetMinhasFazendas)
+					}
 
 					v1 := api.Group("/v1/fazendas", auth.AuthMiddleware(jwtSvc))
 					{
@@ -147,11 +153,11 @@ func main() {
 						v1.GET("/search/by-vacas-range", fazendaHandler.SearchByVacasRange)
 						v1.GET("/:id", fazendaHandler.GetByID)
 						v1.POST("", fazendaHandler.Create)
-					v1.PUT("/:id", fazendaHandler.Update)
-					v1.DELETE("/:id", fazendaHandler.Delete)
-					// Animais por fazenda
-					v1.GET("/:id/animais", animalHandler.GetByFazendaID)
-					v1.GET("/:id/animais/count", animalHandler.CountByFazenda)
+						v1.PUT("/:id", fazendaHandler.Update)
+						v1.DELETE("/:id", fazendaHandler.Delete)
+						// Animais por fazenda
+						v1.GET("/:id/animais", animalHandler.GetByFazendaID)
+						v1.GET("/:id/animais/count", animalHandler.CountByFazenda)
 					}
 
 					// Rotas de Animais
@@ -164,12 +170,12 @@ func main() {
 						animais.GET("/filter/by-sexo", animalHandler.GetBySexo)
 						animais.GET("/:id", animalHandler.GetByID)
 						animais.POST("", animalHandler.Create)
-					animais.PUT("/:id", animalHandler.Update)
-					animais.DELETE("/:id", animalHandler.Delete)
-					// Produção por animal
-					animais.GET("/:id/producao", producaoHandler.GetByAnimalID)
-					animais.GET("/:id/producao/count", producaoHandler.CountByAnimal)
-					animais.GET("/:id/producao/resumo", producaoHandler.GetResumoByAnimal)
+						animais.PUT("/:id", animalHandler.Update)
+						animais.DELETE("/:id", animalHandler.Delete)
+						// Produção por animal
+						animais.GET("/:id/producao", producaoHandler.GetByAnimalID)
+						animais.GET("/:id/producao/count", producaoHandler.CountByAnimal)
+						animais.GET("/:id/producao/resumo", producaoHandler.GetResumoByAnimal)
 					}
 					slog.Info("Rotas de Animais registradas")
 
@@ -193,6 +199,8 @@ func main() {
 						admin.POST("/usuarios", adminHandler.CreateUsuario)
 						admin.PUT("/usuarios/:id", adminHandler.UpdateUsuario)
 						admin.PATCH("/usuarios/:id/toggle-enabled", adminHandler.ToggleEnabled)
+						admin.GET("/usuarios/:id/fazendas", adminHandler.GetUsuarioFazendas)
+						admin.PUT("/usuarios/:id/fazendas", adminHandler.SetUsuarioFazendas)
 					}
 					slog.Info("Rotas de Admin registradas")
 
@@ -259,7 +267,7 @@ func main() {
 						slog.Info("Rotas do Dev Studio registradas")
 
 						// Assistente em linguagem natural (interpretar + executar; qualquer usuário autenticado)
-						assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, fazendaSvc)
+						assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, fazendaSvc, animalSvc, producaoSvc)
 						assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc, userRepo)
 						assistente := api.Group("/v1/assistente", auth.AuthMiddleware(jwtSvc))
 						{

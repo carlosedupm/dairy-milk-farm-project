@@ -69,6 +69,10 @@ func (h *AssistenteHandler) Executar(c *gin.Context) {
 			response.ErrorConflict(c, "Já existe uma fazenda com esse nome e localização", nil)
 			return
 		}
+		if errors.Is(err, service.ErrAnimalIdentificacaoDuplicada) {
+			response.ErrorConflict(c, "Já existe um animal com essa identificação", nil)
+			return
+		}
 		response.ErrorInternal(c, "Erro ao executar ação", err.Error())
 		return
 	}
@@ -76,6 +80,8 @@ func (h *AssistenteHandler) Executar(c *gin.Context) {
 	switch req.Intent {
 	case "cadastrar_fazenda":
 		response.SuccessCreated(c, result, "Fazenda criada com sucesso")
+	case "cadastrar_animal":
+		response.SuccessCreated(c, result, "Animal cadastrado com sucesso")
 	case "buscar_fazenda":
 		msg := "Ação executada com sucesso"
 		if arr, ok := result.([]*models.Fazenda); ok {
@@ -86,6 +92,22 @@ func (h *AssistenteHandler) Executar(c *gin.Context) {
 			}
 		} else if _, ok := result.(*models.Fazenda); ok {
 			msg = "Fazenda encontrada"
+		}
+		response.SuccessOK(c, result, msg)
+	case "consultar_animais_fazenda", "listar_animais_fazenda", "detalhar_animal", "excluir_animal", "registrar_producao_animal":
+		msg := "Ação executada com sucesso"
+		if m, ok := result.(map[string]interface{}); ok {
+			if s, _ := m["message"].(string); s != "" {
+				msg = s
+			}
+		}
+		response.SuccessOK(c, result, msg)
+	case "editar_animal":
+		msg := "Animal atualizado com sucesso"
+		if m, ok := result.(map[string]interface{}); ok {
+			if s, _ := m["message"].(string); s != "" {
+				msg = s
+			}
 		}
 		response.SuccessOK(c, result, msg)
 	default:

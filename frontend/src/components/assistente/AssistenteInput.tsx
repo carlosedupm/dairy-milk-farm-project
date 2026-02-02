@@ -29,9 +29,26 @@ import { MessageCircle, Mic, MicOff } from "lucide-react";
 const RETRY_REOPEN_DELAY_MS = 2000;
 /** Máximo de tentativas consecutivas desconhecido/erro antes de exigir clique no microfone. */
 const MAX_CONSECUTIVE_RETRIES = 2;
-/** Retorna o path para redirecionar após executar: /fazendas/:id se 1 fazenda, senão /fazendas. */
+/** Retorna o path para redirecionar após executar: animal → /animais/:id; lista de animais por fazenda → /fazendas/:id/animais; 1 fazenda → /fazendas/:id; senão /fazendas. */
 function getRedirectPathFromResult(data: unknown): string {
   if (!data) return "/fazendas";
+  if (typeof data === "object" && data !== null) {
+    const d = data as Record<string, unknown>;
+    if (
+      d.animal &&
+      typeof d.animal === "object" &&
+      d.animal !== null &&
+      "id" in (d.animal as object)
+    ) {
+      return `/animais/${(d.animal as { id: number }).id}`;
+    }
+    if (typeof d.fazenda_id === "number" && d.fazenda_id > 0) {
+      return `/fazendas/${d.fazenda_id}/animais`;
+    }
+    if (typeof d.animal_id === "number" && d.animal_id > 0) {
+      return `/animais/${d.animal_id}`;
+    }
+  }
   if (Array.isArray(data)) {
     if (
       data.length === 1 &&

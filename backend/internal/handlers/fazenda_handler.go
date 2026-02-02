@@ -20,17 +20,15 @@ func NewFazendaHandler(service *service.FazendaService) *FazendaHandler {
 }
 
 type CreateFazendaRequest struct {
-	Nome            string  `json:"nome" binding:"required"`
-	Localizacao     *string `json:"localizacao"`
-	QuantidadeVacas int     `json:"quantidadeVacas"`
-	Fundacao        *string `json:"fundacao"` // ISO date YYYY-MM-DD
+	Nome        string  `json:"nome" binding:"required"`
+	Localizacao *string `json:"localizacao"`
+	Fundacao    *string `json:"fundacao"` // ISO date YYYY-MM-DD
 }
 
 type UpdateFazendaRequest struct {
-	Nome            string  `json:"nome" binding:"required"`
-	Localizacao     *string `json:"localizacao"`
-	QuantidadeVacas int     `json:"quantidadeVacas"`
-	Fundacao        *string `json:"fundacao"` // ISO date YYYY-MM-DD
+	Nome        string  `json:"nome" binding:"required"`
+	Localizacao *string `json:"localizacao"`
+	Fundacao    *string `json:"fundacao"` // ISO date YYYY-MM-DD
 }
 
 func (h *FazendaHandler) Create(c *gin.Context) {
@@ -43,7 +41,7 @@ func (h *FazendaHandler) Create(c *gin.Context) {
 	fazenda := &models.Fazenda{
 		Nome:            req.Nome,
 		Localizacao:     req.Localizacao,
-		QuantidadeVacas: req.QuantidadeVacas,
+		QuantidadeVacas: 0,
 	}
 	if fundacao, err := parseFundacao(req.Fundacao); err != nil {
 		response.ErrorValidation(c, "Data de fundação inválida", err.Error())
@@ -109,7 +107,7 @@ func (h *FazendaHandler) Update(c *gin.Context) {
 		ID:              id,
 		Nome:            req.Nome,
 		Localizacao:     req.Localizacao,
-		QuantidadeVacas: req.QuantidadeVacas,
+		QuantidadeVacas: 0,
 	}
 	if fundacao, err := parseFundacao(req.Fundacao); err != nil {
 		response.ErrorValidation(c, "Data de fundação inválida", err.Error())
@@ -253,4 +251,24 @@ func (h *FazendaHandler) Exists(c *gin.Context) {
 		return
 	}
 	response.SuccessOK(c, gin.H{"exists": exists}, "Verificação realizada com sucesso")
+}
+
+// GetMinhasFazendas retorna as fazendas vinculadas ao usuário logado (minhas fazendas).
+func (h *FazendaHandler) GetMinhasFazendas(c *gin.Context) {
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		response.ErrorUnauthorized(c, "Usuário não identificado")
+		return
+	}
+	userID, ok := userIDVal.(int64)
+	if !ok {
+		response.ErrorInternal(c, "ID de usuário inválido", nil)
+		return
+	}
+	fazendas, err := h.service.GetByUsuarioID(c.Request.Context(), userID)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao buscar fazendas", err.Error())
+		return
+	}
+	response.SuccessOK(c, fazendas, "Fazendas listadas com sucesso")
 }

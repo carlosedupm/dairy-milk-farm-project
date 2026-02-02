@@ -1,90 +1,102 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import type { ProducaoLeite, ProducaoCreate, Qualidade } from '@/services/producao'
-import { QUALIDADES, QUALIDADE_LABELS } from '@/services/producao'
-import { list as listFazendas, type Fazenda } from '@/services/fazendas'
-import { listByFazenda as listAnimaisByFazenda, type Animal } from '@/services/animais'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type {
+  ProducaoLeite,
+  ProducaoCreate,
+  Qualidade,
+} from "@/services/producao";
+import { QUALIDADES, QUALIDADE_LABELS } from "@/services/producao";
+import { list as listFazendas, type Fazenda } from "@/services/fazendas";
+import {
+  listByFazenda as listAnimaisByFazenda,
+  type Animal,
+} from "@/services/animais";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { getApiErrorMessage } from '@/lib/errors'
+} from "@/components/ui/select";
+import { getApiErrorMessage } from "@/lib/errors";
 
 type Props = {
-  initial?: ProducaoLeite | null
-  onSubmit: (payload: ProducaoCreate) => Promise<void>
-  isPending?: boolean
-  submitLabel?: string
-  defaultFazendaId?: number
-  defaultAnimalId?: number
-}
+  initial?: ProducaoLeite | null;
+  onSubmit: (payload: ProducaoCreate) => Promise<void>;
+  isPending?: boolean;
+  submitLabel?: string;
+  defaultFazendaId?: number;
+  defaultAnimalId?: number;
+  /** Quando definido, usa esta fazenda e não exibe o seletor de fazenda (usuário com uma única fazenda). */
+  fazendaUnicaId?: number;
+};
 
 export function ProducaoForm({
   initial,
   onSubmit,
   isPending = false,
-  submitLabel = 'Salvar',
+  submitLabel = "Salvar",
   defaultFazendaId,
   defaultAnimalId,
+  fazendaUnicaId,
 }: Props) {
-  const [fazendaId, setFazendaId] = useState<number>(defaultFazendaId ?? 0)
+  const [fazendaId, setFazendaId] = useState<number>(
+    fazendaUnicaId ?? defaultFazendaId ?? 0
+  );
   const [animalId, setAnimalId] = useState<number>(
     initial?.animal_id ?? defaultAnimalId ?? 0
-  )
+  );
   const [dataHora, setDataHora] = useState(
-    initial?.data_hora 
+    initial?.data_hora
       ? initial.data_hora.slice(0, 16) // YYYY-MM-DDTHH:mm
       : new Date().toISOString().slice(0, 16)
-  )
+  );
   const [quantidade, setQuantidade] = useState<string>(
-    initial?.quantidade?.toString() ?? ''
-  )
+    initial?.quantidade?.toString() ?? ""
+  );
   const [qualidade, setQualidade] = useState<Qualidade | undefined>(
     (initial?.qualidade as Qualidade) ?? undefined
-  )
-  const [error, setError] = useState('')
+  );
+  const [error, setError] = useState("");
 
   const { data: fazendas = [] } = useQuery<Fazenda[]>({
-    queryKey: ['fazendas'],
+    queryKey: ["fazendas"],
     queryFn: listFazendas,
-  })
+  });
 
   // Buscar animais da fazenda selecionada
   const { data: animais = [] } = useQuery<Animal[]>({
-    queryKey: ['animais', 'fazenda', fazendaId],
+    queryKey: ["animais", "fazenda", fazendaId],
     queryFn: () => listAnimaisByFazenda(fazendaId),
     enabled: fazendaId > 0,
-  })
+  });
 
   const handleFazendaChange = (v: string) => {
-    const nextFazendaId = Number(v)
-    setFazendaId(nextFazendaId)
+    const nextFazendaId = Number(v);
+    setFazendaId(nextFazendaId);
     if (!initial && !defaultAnimalId) {
-      setAnimalId(0)
+      setAnimalId(0);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
     if (!animalId || animalId <= 0) {
-      setError('Selecione um animal.')
-      return
+      setError("Selecione um animal.");
+      return;
     }
-    const qtd = parseFloat(quantidade)
+    const qtd = parseFloat(quantidade);
     if (isNaN(qtd) || qtd <= 0) {
-      setError('Quantidade deve ser maior que zero.')
-      return
+      setError("Quantidade deve ser maior que zero.");
+      return;
     }
 
     const payload: ProducaoCreate = {
@@ -92,52 +104,69 @@ export function ProducaoForm({
       quantidade: qtd,
       data_hora: dataHora ? `${dataHora}:00` : undefined,
       qualidade: qualidade,
-    }
+    };
 
     try {
-      await onSubmit(payload)
+      await onSubmit(payload);
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Erro ao salvar. Tente novamente.'))
+      setError(getApiErrorMessage(err, "Erro ao salvar. Tente novamente."));
     }
-  }
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{initial ? 'Editar produção' : 'Registrar produção'}</CardTitle>
+        <CardTitle>
+          {initial ? "Editar produção" : "Registrar produção"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fazenda">Fazenda</Label>
-              <Select
-                value={fazendaId?.toString() ?? ''}
-                onValueChange={handleFazendaChange}
-                disabled={!!initial}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione para filtrar animais" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fazendas.map((f) => (
-                    <SelectItem key={f.id} value={f.id.toString()}>
-                      {f.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {fazendaUnicaId != null ? (
+              <div className="space-y-2">
+                <Label>Fazenda</Label>
+                <p className="text-sm text-muted-foreground py-2">
+                  Fazenda vinculada ao seu perfil (única)
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="fazenda">Fazenda</Label>
+                <Select
+                  value={fazendaId?.toString() ?? ""}
+                  onValueChange={handleFazendaChange}
+                  disabled={!!initial}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione para filtrar animais" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fazendas.map((f) => (
+                      <SelectItem key={f.id} value={f.id.toString()}>
+                        {f.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="animal">Animal *</Label>
               <Select
-                value={animalId?.toString() ?? ''}
+                value={animalId?.toString() ?? ""}
                 onValueChange={(v) => setAnimalId(Number(v))}
                 disabled={!fazendaId || fazendaId <= 0 || !!initial}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={fazendaId > 0 ? "Selecione um animal" : "Selecione uma fazenda primeiro"} />
+                  <SelectValue
+                    placeholder={
+                      fazendaId > 0
+                        ? "Selecione um animal"
+                        : "Selecione uma fazenda primeiro"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {animais.map((a) => (
@@ -177,9 +206,11 @@ export function ProducaoForm({
 
             <div className="space-y-2">
               <Label htmlFor="qualidade">Qualidade (1-10)</Label>
-              <Select 
-                value={qualidade?.toString() ?? ''} 
-                onValueChange={(v) => setQualidade(v ? Number(v) as Qualidade : undefined)}
+              <Select
+                value={qualidade?.toString() ?? ""}
+                onValueChange={(v) =>
+                  setQualidade(v ? (Number(v) as Qualidade) : undefined)
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Opcional" />
@@ -198,10 +229,10 @@ export function ProducaoForm({
           {error && <p className="text-base text-destructive">{error}</p>}
 
           <Button type="submit" size="lg" disabled={isPending}>
-            {isPending ? 'Salvando…' : submitLabel}
+            {isPending ? "Salvando…" : submitLabel}
           </Button>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

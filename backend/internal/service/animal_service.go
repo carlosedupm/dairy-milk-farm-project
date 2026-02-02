@@ -10,6 +10,7 @@ import (
 )
 
 var ErrAnimalNotFound = errors.New("animal não encontrado")
+var ErrAnimalIdentificacaoDuplicada = errors.New("identificação já existe")
 
 type AnimalService struct {
 	repo        *repository.AnimalRepository
@@ -44,7 +45,7 @@ func (s *AnimalService) Create(ctx context.Context, animal *models.Animal) error
 		return err
 	}
 	if exists {
-		return errors.New("identificação já existe")
+		return ErrAnimalIdentificacaoDuplicada
 	}
 
 	// Validar sexo se fornecido

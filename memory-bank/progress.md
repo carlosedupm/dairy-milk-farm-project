@@ -7,7 +7,7 @@
 ```bash
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 95% ✅
-💻  Implementação: 95% ✅ (CRUD Animais, Produção, Registro, Prometheus)
+💻  Implementação: 95% ✅ (CRUD Animais, Produção, Registro, Prometheus, vínculo usuário–fazenda)
 🧪  Testes: 70% ✅ (unitários backend + E2E frontend)
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
 ```
@@ -23,8 +23,9 @@
 
 ## ✅ O que foi concluído
 
-### **Migração Arquitetural (✅ 60%)**
+### **Migração Arquitetural (✅ 65%)**
 
+- [x] **Vínculo usuário–fazenda**: Tabela `usuarios_fazendas` (N:N); GET /api/v1/me/fazendas; GET/PUT /api/v1/admin/usuarios/:id/fazendas; fazenda única automática em formulários e home; admin atribui fazendas na edição de usuário; perfil não editável para ADMIN/DEVELOPER
 - [x] **Limpeza**: Remoção completa de código Java/Spring legado
 - [x] **Documentação**: Memory bank atualizado para nova stack
 - [x] **Estrutura Monorepo**: Pastas `/backend` e `/frontend` criadas
@@ -84,7 +85,7 @@
 - [x] Componentes Shadcn/UI (button, input, card, label, table, dialog)
 - [x] TanStack Query configurado
 - [x] Integração com API (auth + fazendas)
-- [x] **Assistente em linguagem natural**: **Botão Assistente no Header** (desktop e mobile) que abre Dialog com AssistenteInput — assistente acessível em qualquer página (solução antiga na página /fazendas removida). **Contexto do usuário e do sistema**: backend Interpretar recebe user_id, perfil e nome; AssistenteService carrega fazendas (GetAll) e injeta no prompt do Gemini (nome, perfil, lista de fazendas id+nome) para desambiguar e respostas naturais; intents por perfil (USER só fazendas; ADMIN/DEVELOPER futuros intents admin). **Intents**: cadastrar, listar, **buscar** (pesquisar fazenda por nome; redireciona para /fazendas/:id se 1 resultado), editar, excluir. Interpretar (Gemini) + executar (FazendaService), dialog de confirmação, entrada por voz (Web Speech API pt-BR). **Voz em modo contínuo**: reconhecimento contínuo, acúmulo de transcrição, finalização por clique no microfone ou timeout de silêncio (2,5 s). **Retorno em voz (TTS)** e **confirmação por voz** (sim/não). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog (error.details)
+- [x] **Assistente em linguagem natural**: **Botão Assistente no Header** (desktop e mobile) que abre Dialog com AssistenteInput — assistente acessível em qualquer página (solução antiga na página /fazendas removida). **Contexto do usuário e do sistema**: backend Interpretar recebe user_id, perfil e nome; AssistenteService carrega fazendas (GetAll) e injeta no prompt do Gemini (nome, perfil, lista de fazendas id+nome) para desambiguar e respostas naturais; intents por perfil (USER só fazendas; ADMIN/DEVELOPER futuros intents admin). **Intents**: Fazendas: cadastrar, listar, buscar, editar, excluir. **Animais**: consultar_animais_fazenda, listar_animais_fazenda, detalhar_animal, **cadastrar_animal** (fazenda + identificação + opcionais), **editar_animal** (id ou identificação + campos), **excluir_animal**, **registrar_producao_animal** (animal + quantidade litros). Redirect: animal → /animais/:id; animal_id → /animais/:id; fazenda_id → /fazendas/:id/animais. Interpretar (Gemini) + executar (FazendaService + AnimalService para consulta de animais), dialog de confirmação, entrada por voz (Web Speech API pt-BR). **Voz em modo contínuo**: reconhecimento contínuo, acúmulo de transcrição, finalização por clique no microfone ou timeout de silêncio (2,5 s). **Retorno em voz (TTS)** e **confirmação por voz** (sim/não). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog (error.details)
 - [x] **Layout e DRY**: PageContainer (variantes default, narrow, wide, centered) em todas as páginas; BackLink para "Voltar"; getApiErrorMessage (lib/errors.ts) centralizado; ApiResponse<T> em api.ts; Header responsivo com menu hamburger em mobile
 - [x] **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER); constraint unicidade DEVELOPER (migração 8); área admin `/admin/usuarios` (listagem, criar, editar, ativar/desativar); RequireAdmin; link Admin no Header para ADMIN/DEVELOPER
 - [x] **UX e Acessibilidade**: Paleta rural (modo claro e escuro) em globals.css; toggle tema no Header e menu mobile com persistência (ThemeContext, ThemeToggle); tipografia 16px e alvos de toque 44px; ícones no menu (Farm, Cow, Milk, Users, Code); formulários e listas padronizados (space-y-5, botão lg, tabelas overflow-x-auto); home com atalhos (Ver fazendas, Ver animais, Registrar produção)
@@ -322,6 +323,35 @@
 - ✅ **Intent buscar_fazenda**: Nova intent para pesquisar fazendas por nome via assistente (ex.: "buscar fazenda Sítio X", "pesquisar fazenda X")
 - ✅ **Backend**: Prompt do Gemini atualizado; `executarBuscarFazenda` usa `SearchByNome`; retorna 1 fazenda ou lista; mensagens específicas no handler
 - ✅ **Frontend**: `getRedirectPathFromResult` redireciona para `/fazendas/:id` quando 1 resultado; `lastRedirectPathRef` para fluxo de voz (Deseja mais? → não)
+
+### **2026-02-01 - Assistente: consultar animais por fazenda**
+
+- ✅ **Intent consultar_animais_fazenda**: Nova intent para perguntas como "quantas vacas tem na fazenda X" (ex.: "quantas vacas tem na fazenda Larissa")
+- ✅ **Backend**: AssistenteService com AnimalService; prompt com intent e exemplos; `executarConsultarAnimaisFazenda` usa `resolveFazendaByPayload` + `CountByFazenda`; retorna message, count, fazenda_nome; handler coloca message no envelope para TTS
+- ✅ **Frontend**: Sem alteração; getRedirectPathFromResult retorna /fazendas para objeto sem id; TTS usa message do envelope
+
+### **2026-02-01 - Assistente: listar animais e detalhar animal**
+
+- ✅ **Intent listar_animais_fazenda**: "quais animais tem na fazenda X", "me dá mais informações sobre os animais da fazenda Y"; retorna message + lista (identificação, raça, sexo, status) + fazenda_id; redireciona para /fazendas/:id/animais
+- ✅ **Intent detalhar_animal**: "detalhes do animal 123", "informações sobre o animal identificação Y"; por id ou identificacao; retorna message + animal; redireciona para /animais/:id
+- ✅ **Backend**: executarListarAnimaisFazenda, executarDetalharAnimal, formatAnimalMessage; handler coloca message no envelope
+- ✅ **Frontend**: getRedirectPathFromResult trata data.animal → /animais/:id e data.fazenda_id → /fazendas/:id/animais
+
+### **2026-02-01 - Página de detalhes do animal e operações**
+
+- ✅ **Página /animais/[id]**: Detalhes do animal (identificação, raça, nascimento, sexo, status), fazenda (nome + link para animais da fazenda), resumo de produção (total, média, nº registros), ações Editar, Excluir, Registrar produção
+- ✅ **Página /fazendas/[id]/animais**: Listagem de animais da fazenda; link "Novo Animal" com fazenda pré-selecionada
+- ✅ **AnimalTable**: Botão "Ver" que leva para /animais/:id
+- ✅ **animais/novo**: Invalidação de ['fazendas', fazenda_id, 'animais'] ao criar animal
+
+### **2026-02-01 - Assistente: operações completas para animais**
+
+- ✅ **cadastrar_animal**: Fazenda (nome ou id) + identificação + raça, data_nascimento, sexo, status_saude opcionais; retorna { message, animal }; redirect /animais/:id
+- ✅ **editar_animal**: id ou identificação + identificacaoNovo, raca, data_nascimento, sexo, status_saude, fazenda_id; retorna { message, animal }; redirect /animais/:id
+- ✅ **excluir_animal**: id ou identificação; retorna { message, id }; redirect /animais
+- ✅ **registrar_producao_animal**: animal (id ou identificação) + quantidade (litros) + data_hora/qualidade opcionais; retorna { message, animal_id, producao }; redirect /animais/:animal_id
+- ✅ **Backend**: ProducaoService no AssistenteService; resolveAnimalByPayload; ErrAnimalIdentificacaoDuplicada; handler com Conflict para identificação duplicada
+- ✅ **Frontend**: getRedirectPathFromResult trata data.animal_id → /animais/:id
 
 ### **2026-01-31 - Sprint 2 Concluída**
 
