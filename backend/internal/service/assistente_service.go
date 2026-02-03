@@ -127,11 +127,11 @@ Intenções possíveis:
 - buscar_fazenda: quando o usuário quer buscar ou pesquisar uma fazenda específica por nome (ex: "buscar fazenda Sítio X", "pesquisar fazenda X", "mostrar a fazenda Y")
 - consultar_animais_fazenda: quando o usuário quer saber quantos animais ou vacas tem em uma fazenda (ex: "quantas vacas tem na fazenda X", "quantos animais na fazenda Y", "quantas vacas tem na fazenda Larissa")
 - listar_animais_fazenda: quando o usuário quer listar ou ver os animais de uma fazenda (ex: "quais animais tem na fazenda X", "listar animais da fazenda Larissa", "me dá mais informações sobre os animais da fazenda Y")
-- detalhar_animal: quando o usuário quer ver detalhes de um animal específico (ex: "detalhes do animal X", "qual a raça do animal 123?", "informações sobre o animal identificação Y", "quero saber mais sobre o animal Z")
-- cadastrar_animal: quando o usuário quer cadastrar um novo animal em uma fazenda (ex: "cadastrar animal na fazenda X", "registrar vaca Vaca 01 na fazenda Larissa")
-- editar_animal: quando o usuário quer alterar dados de um animal existente (ex: "editar o animal X", "alterar raça do animal 123", "mudar status de saúde do animal identificação Y")
-- excluir_animal: quando o usuário quer excluir um animal (ex: "excluir o animal X", "remover animal 123")
-- registrar_producao_animal: quando o usuário quer registrar produção de leite de um animal (ex: "registrar produção do animal X", "anotar 10 litros do animal 123", "produção de leite do animal Vaca 01: 15 litros")
+- detalhar_animal: quando o usuário quer ver detalhes de um animal específico (ex: "detalhes do animal 30", "qual a raça do animal Vaca 01?"); use sempre identificacao
+- cadastrar_animal: quando o usuário quer cadastrar um novo animal em uma fazenda (ex: "cadastrar animal 30 na fazenda X", "registrar vaca Vaca 01 na fazenda Larissa"); identificacao é obrigatória
+- editar_animal: quando o usuário quer alterar dados de um animal existente (ex: "editar o animal 30", "alterar raça do animal Vaca 01"); use sempre identificacao
+- excluir_animal: quando o usuário quer excluir um animal (ex: "excluir o animal 30", "remover animal Vaca 01"); use sempre identificacao
+- registrar_producao_animal: quando o usuário quer registrar produção de leite de um animal (ex: "registrar produção do animal 30", "anotar 10 litros do animal Vaca 01"); use sempre identificacao
 - editar_fazenda: quando o usuário quer alterar dados de uma fazenda existente (identifique por id ou nome)
 - excluir_fazenda: quando o usuário quer excluir uma fazenda (identifique por id ou nome)
 
@@ -145,15 +145,17 @@ Para consultar_animais_fazenda, extraia: nome (string = nome da fazenda para con
 
 Para listar_animais_fazenda, extraia: nome (string = nome da fazenda) OU id (number = id da fazenda). Resumo: "Listar animais da fazenda X." ou "Quais animais tem na fazenda X."
 
-Para detalhar_animal, extraia: id (number = id do animal) OU identificacao (string = identificação ou parte do nome do animal para buscar). Resumo: "Ver detalhes do animal X." ou "Informações sobre o animal Y."
+IMPORTANTE - Animais: o usuário SEMPRE identifica animais pela IDENTIFICAÇÃO (nome ou número que foi cadastrado no animal, ex: "30", "Vaca 01"). O usuário NUNCA informa o ID interno da tabela. Para detalhar_animal, editar_animal, excluir_animal e registrar_producao_animal use SEMPRE identificacao (string), nunca id numérico.
 
-Para cadastrar_animal, extraia: fazenda_id (number) OU nome_fazenda (string = nome da fazenda onde cadastrar), identificacao (string = identificação do animal), raca (string, opcional), data_nascimento (string YYYY-MM-DD ou YYYY, opcional), sexo (string M ou F, opcional), status_saude (string SAUDAVEL/DOENTE/EM_TRATAMENTO, opcional). Resumo: "Cadastrar animal X na fazenda Y."
+Para detalhar_animal, extraia: identificacao (string = identificação do animal; se o usuário disser "animal 30" ou "animal 123", use identificacao "30" ou "123"). Resumo: "Ver detalhes do animal X."
 
-Para editar_animal, extraia: id (number) OU identificacao (string) para identificar o animal; depois os campos a alterar: identificacaoNovo (string = nova identificação quando renomear), raca, data_nascimento, sexo, status_saude, fazenda_id (para transferir de fazenda). Resumo: "Editar animal X." ou "Alterar raça do animal Y."
+Para cadastrar_animal, extraia: fazenda_id (number) OU nome_fazenda (string = nome da fazenda onde cadastrar), identificacao (string = identificação do animal, obrigatória), raca (string, opcional), data_nascimento (string YYYY-MM-DD ou YYYY, opcional), sexo (string M ou F, opcional), status_saude (string SAUDAVEL/DOENTE/EM_TRATAMENTO, opcional). Resumo: "Cadastrar animal X na fazenda Y."
 
-Para excluir_animal, extraia: id (number) OU identificacao (string) para identificar o animal. Resumo: "Excluir o animal X."
+Para editar_animal, extraia: identificacao (string = identificação do animal para identificar qual animal editar); depois os campos a alterar: identificacaoNovo (string = nova identificação quando renomear), raca, data_nascimento, sexo, status_saude, fazenda_id (para transferir de fazenda). Resumo: "Editar animal X."
 
-Para registrar_producao_animal, extraia: id (number) OU identificacao (string) do animal, quantidade (number = litros), data_hora (string ISO opcional), qualidade (number 1-10 opcional). Resumo: "Registrar X litros de produção do animal Y."
+Para excluir_animal, extraia: identificacao (string = identificação do animal). Resumo: "Excluir o animal X."
+
+Para registrar_producao_animal, extraia: identificacao (string = identificação do animal), quantidade (number = litros), data_hora (string ISO opcional), qualidade (number 1-10 opcional). Resumo: "Registrar X litros de produção do animal Y."
 
 Para editar_fazenda, extraia: id (number) OU nome (string = nome ATUAL da fazenda para identificar/buscar); depois os campos a alterar: nomeNovo (string = novo nome quando o usuário quiser RENOMEAR, ex: "editar fazenda X para se chamar Y" -> nome:"X", nomeNovo:"Y"), quantidadeVacas (number), fundacao (string), localizacao (string). Use sempre nomeNovo quando o usuário pedir para mudar o nome; use nome apenas para identificar a fazenda quando não houver id.
 
@@ -165,12 +167,13 @@ Retorne APENAS um JSON válido, sem markdown, sem explicações. Exemplos de for
 - buscar: {"intent":"buscar_fazenda","payload":{"nome":"Sítio X"},"resumo":"Buscar fazenda Sítio X."}
 - consultar animais: {"intent":"consultar_animais_fazenda","payload":{"nome":"Larissa"},"resumo":"Consultar quantidade de animais na fazenda Larissa."}
 - listar animais fazenda: {"intent":"listar_animais_fazenda","payload":{"nome":"Larissa"},"resumo":"Listar animais da fazenda Larissa."}
-- detalhar animal: {"intent":"detalhar_animal","payload":{"identificacao":"Vaca 01"} ou {"id":123},"resumo":"Ver detalhes do animal Vaca 01."}
+- detalhar animal: {"intent":"detalhar_animal","payload":{"identificacao":"Vaca 01"} ou {"identificacao":"30"},"resumo":"Ver detalhes do animal Vaca 01."}
 - cadastrar animal: {"intent":"cadastrar_animal","payload":{"nome_fazenda":"Larissa","identificacao":"Vaca 01","raca":"Holandesa","sexo":"F"},"resumo":"Cadastrar animal Vaca 01 na fazenda Larissa."}
+- cadastrar animal (número como identificação): {"intent":"cadastrar_animal","payload":{"identificacao":"30","raca":"Jersey","sexo":"M"},"resumo":"Cadastrar animal 30."}
 - cadastrar animal (usuário com 1 fazenda, sem citar fazenda): {"intent":"cadastrar_animal","payload":{"fazenda_id":1,"identificacao":"Vaca 01"},"resumo":"Cadastrar animal Vaca 01 na sua fazenda."}
-- editar animal: {"intent":"editar_animal","payload":{"identificacao":"Vaca 01","raca":"Girolando"} ou {"id":123,"status_saude":"SAUDAVEL"},"resumo":"Editar animal Vaca 01."}
-- excluir animal: {"intent":"excluir_animal","payload":{"identificacao":"Vaca 01"} ou {"id":123},"resumo":"Excluir o animal Vaca 01."}
-- registrar produção: {"intent":"registrar_producao_animal","payload":{"identificacao":"Vaca 01","quantidade":15} ou {"id":123,"quantidade":10},"resumo":"Registrar 15 litros de produção do animal Vaca 01."}
+- editar animal: {"intent":"editar_animal","payload":{"identificacao":"Vaca 01","raca":"Girolando"} ou {"identificacao":"30","status_saude":"SAUDAVEL"},"resumo":"Editar animal Vaca 01."}
+- excluir animal: {"intent":"excluir_animal","payload":{"identificacao":"Vaca 01"} ou {"identificacao":"30"},"resumo":"Excluir o animal Vaca 01."}
+- registrar produção: {"intent":"registrar_producao_animal","payload":{"identificacao":"Vaca 01","quantidade":15} ou {"identificacao":"30","quantidade":10},"resumo":"Registrar 15 litros de produção do animal 30."}
 - editar (só quantidade): {"intent":"editar_fazenda","payload":{"nome":"Sítio X","quantidadeVacas":30},"resumo":"Alterar fazenda Sítio X para 30 vacas."}
 - editar (renomear): {"intent":"editar_fazenda","payload":{"nome":"Sítio X","nomeNovo":"Sítio Novo"},"resumo":"Renomear fazenda Sítio X para Sítio Novo."}
 - editar (por id): {"intent":"editar_fazenda","payload":{"id":1,"nome":"Nome Novo"} ou {"id":1,"quantidadeVacas":10},"resumo":"Alterar fazenda (id 1)."}
@@ -444,7 +447,15 @@ func (s *AssistenteService) executarDetalharAnimal(ctx context.Context, payload 
 		id := int64(idNum)
 		animal, err := s.animalSvc.GetByID(ctx, id)
 		if err != nil {
-			return nil, fmt.Errorf("animal com ID %d não encontrado", id)
+			// Fallback: usuário pode ter dito "animal 30" referindo-se à identificação "30", não ao ID de banco
+			list, searchErr := s.animalSvc.SearchByIdentificacao(ctx, fmt.Sprintf("%d", id))
+			if searchErr == nil && len(list) == 1 {
+				animal = list[0]
+			} else if searchErr == nil && len(list) > 1 {
+				return nil, fmt.Errorf("mais de um animal encontrado com a identificação \"%d\"; use o ID para identificar", id)
+			} else {
+				return nil, fmt.Errorf("animal com ID %d não encontrado", id)
+			}
 		}
 		msg := formatAnimalMessage(animal)
 		slog.Info("Animal detalhado via assistente", "animal_id", animal.ID, "identificacao", animal.Identificacao)
@@ -492,6 +503,14 @@ func (s *AssistenteService) resolveAnimalByPayload(ctx context.Context, payload 
 		id := int64(idNum)
 		a, err := s.animalSvc.GetByID(ctx, id)
 		if err != nil {
+			// Fallback: "animal 30" pode ser identificação "30", não ID de banco
+			list, searchErr := s.animalSvc.SearchByIdentificacao(ctx, fmt.Sprintf("%d", id))
+			if searchErr == nil && len(list) == 1 {
+				return list[0], nil
+			}
+			if searchErr == nil && len(list) > 1 {
+				return nil, fmt.Errorf("mais de um animal encontrado com a identificação \"%d\"; use o ID para identificar", id)
+			}
 			return nil, fmt.Errorf("animal com ID %d não encontrado", id)
 		}
 		return a, nil
