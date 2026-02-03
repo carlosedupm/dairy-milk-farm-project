@@ -85,7 +85,7 @@
 - [x] Componentes Shadcn/UI (button, input, card, label, table, dialog)
 - [x] TanStack Query configurado
 - [x] Integração com API (auth + fazendas)
-- [x] **Assistente em linguagem natural**: **Botão Assistente no Header** (desktop e mobile) que abre Dialog com AssistenteInput — assistente acessível em qualquer página (solução antiga na página /fazendas removida). **Contexto do usuário e do sistema**: backend Interpretar recebe user_id, perfil e nome; AssistenteService carrega fazendas (GetAll) e injeta no prompt do Gemini (nome, perfil, lista de fazendas id+nome) para desambiguar e respostas naturais; intents por perfil (USER só fazendas; ADMIN/DEVELOPER futuros intents admin). **Intents**: Fazendas: cadastrar, listar, buscar, editar, excluir. **Animais**: consultar_animais_fazenda, listar_animais_fazenda, detalhar_animal, **cadastrar_animal** (fazenda + identificação + opcionais), **editar_animal** (id ou identificação + campos), **excluir_animal**, **registrar_producao_animal** (animal + quantidade litros). Redirect: animal → /animais/:id; animal_id → /animais/:id; fazenda_id → /fazendas/:id/animais. Interpretar (Gemini) + executar (FazendaService + AnimalService para consulta de animais), dialog de confirmação, entrada por voz (Web Speech API pt-BR). **Voz em modo contínuo**: reconhecimento contínuo, acúmulo de transcrição, finalização por clique no microfone ou timeout de silêncio (2,5 s). **Retorno em voz (TTS)** e **confirmação por voz** (sim/não). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog (error.details)
+- [x] **Assistente em linguagem natural**: **Botão Assistente no Header** (desktop e mobile) que abre Dialog com AssistenteInput — assistente acessível em qualquer página (solução antiga na página /fazendas removida). **Contexto do usuário e do sistema**: backend Interpretar recebe user_id, perfil e nome; AssistenteService carrega **fazendas vinculadas ao usuário** (GetByUsuarioID) e injeta no prompt do Gemini (nome, perfil, lista de fazendas id+nome); quando o usuário tem apenas uma fazenda e não menciona fazenda em cadastrar_animal, listar_animais_fazenda ou consultar_animais_fazenda, o LLM inclui fazenda_id e o backend usa resolveFazendaForUser (fallback uma fazenda + validação de acesso); intents por perfil (USER só fazendas; ADMIN/DEVELOPER futuros intents admin). **Intents**: Fazendas: cadastrar, listar, buscar, editar, excluir. **Animais**: consultar_animais_fazenda, listar_animais_fazenda, detalhar_animal, **cadastrar_animal** (fazenda + identificação + opcionais), **editar_animal** (id ou identificação + campos), **excluir_animal**, **registrar_producao_animal** (animal + quantidade litros). Redirect: animal → /animais/:id; animal_id → /animais/:id; fazenda_id → /fazendas/:id/animais. Interpretar (Gemini) + executar (FazendaService + AnimalService para consulta de animais), dialog de confirmação, entrada por voz (Web Speech API pt-BR). **Voz em modo contínuo**: reconhecimento contínuo, acúmulo de transcrição, finalização por clique no microfone ou timeout de silêncio (2,5 s). **Retorno em voz (TTS)** e **confirmação por voz** (sim/não). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog (error.details)
 - [x] **Layout e DRY**: PageContainer (variantes default, narrow, wide, centered) em todas as páginas; BackLink para "Voltar"; getApiErrorMessage (lib/errors.ts) centralizado; ApiResponse<T> em api.ts; Header responsivo com menu hamburger em mobile
 - [x] **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER); constraint unicidade DEVELOPER (migração 8); área admin `/admin/usuarios` (listagem, criar, editar, ativar/desativar); RequireAdmin; link Admin no Header para ADMIN/DEVELOPER
 - [x] **UX e Acessibilidade**: Paleta rural (modo claro e escuro) em globals.css; toggle tema no Header e menu mobile com persistência (ThemeContext, ThemeToggle); tipografia 16px e alvos de toque 44px; ícones no menu (Farm, Cow, Milk, Users, Code); formulários e listas padronizados (space-y-5, botão lg, tabelas overflow-x-auto); home com atalhos (Ver fazendas, Ver animais, Registrar produção)
@@ -353,6 +353,13 @@
 - ✅ **Backend**: ProducaoService no AssistenteService; resolveAnimalByPayload; ErrAnimalIdentificacaoDuplicada; handler com Conflict para identificação duplicada
 - ✅ **Frontend**: getRedirectPathFromResult trata data.animal_id → /animais/:id
 
+### **2026-02-03 - Assistente: contexto fazendas do usuário e fallback uma fazenda**
+
+- ✅ **Interpretar**: Fazendas vinculadas ao usuário (GetByUsuarioID) em vez de GetAll; prompt com regra para cadastrar_animal, listar_animais_fazenda e consultar_animais_fazenda: quando o usuário tem apenas UMA fazenda e não menciona fazenda, incluir fazenda_id no payload
+- ✅ **Executar**: userID passado a executarCadastrarAnimal, executarConsultarAnimaisFazenda, executarListarAnimaisFazenda
+- ✅ **resolveFazendaForUser**: Nova função (keyID/keyNome) para resolver fazenda validando que pertence ao usuário; fallback quando o usuário tem exatamente uma fazenda; validação de acesso (erro "fazenda não encontrada ou você não tem acesso a ela")
+- ✅ Cadastrar animal sem informar fazenda passa a funcionar para usuário com uma fazenda vinculada
+
 ### **2026-01-31 - Sprint 2 Concluída**
 
 - ✅ **CRUD de Animais**: Model, repository, service, handler, migração + Frontend completo
@@ -364,6 +371,6 @@
 
 ---
 
-**Última atualização**: 2026-02-02
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Testes unitários e E2E configurados
+**Última atualização**: 2026-02-03
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Assistente com fazendas vinculadas ao usuário e fallback uma fazenda (cadastrar animal, listar/consultar animais) | Testes unitários e E2E configurados
 **Próxima revisão**: 2026-02-07

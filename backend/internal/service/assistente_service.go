@@ -72,19 +72,11 @@ func (s *AssistenteService) Interpretar(ctx context.Context, texto string, userI
 		return nil, fmt.Errorf("texto é obrigatório")
 	}
 
-	// Contexto do sistema: fazendas visíveis ao usuário (hoje todas; no futuro filtrar por ownership)
-	fazendas, err := s.fazendaSvc.GetAll(ctx)
+	// Contexto do sistema: fazendas vinculadas ao usuário (às quais ele tem acesso)
+	fazendas, err := s.fazendaSvc.GetByUsuarioID(ctx, userID)
 	if err != nil {
-		slog.Warn("Assistente: falha ao carregar fazendas para contexto", "error", err)
+		slog.Warn("Assistente: falha ao carregar fazendas do usuário para contexto", "error", err)
 		fazendas = nil
-	}
-	ctxoFazendas := "Nenhuma fazenda cadastrada."
-	if len(fazendas) > 0 {
-		parts := make([]string, 0, len(fazendas))
-		for _, f := range fazendas {
-			parts = append(parts, fmt.Sprintf("[id: %d, nome: %s]", f.ID, f.Nome))
-		}
-		ctxoFazendas = strings.Join(parts, ", ")
 	}
 
 	if nomeUsuario == "" {
@@ -94,12 +86,35 @@ func (s *AssistenteService) Interpretar(ctx context.Context, texto string, userI
 		perfil = "USER"
 	}
 
-	contextoSection := fmt.Sprintf(`Contexto do usuário: nome "%s", perfil %s.
-Fazendas no sistema: %s.
+	// Contexto condicional para reduzir tokens: só envia lista de fazendas quando há 2+ (desambiguar)
+	var contextoSection string
+	switch len(fazendas) {
+	case 0:
+		contextoSection = fmt.Sprintf(`Contexto do usuário: nome "%s", perfil %s.
+Fazendas vinculadas ao usuário: nenhuma.
+Se o perfil for USER, ofereça apenas intents de fazendas. Se ADMIN ou DEVELOPER, pode incluir intents administrativos quando implementados.
+
+`, nomeUsuario, perfil)
+	case 1:
+		contextoSection = fmt.Sprintf(`Contexto do usuário: nome "%s", perfil %s.
+O usuário tem apenas uma fazenda vinculada. Para cadastrar_animal, listar_animais_fazenda e consultar_animais_fazenda, não exija fazenda no payload se o usuário não mencionar (o sistema preenche automaticamente).
+Se o perfil for USER, ofereça apenas intents de fazendas. Se ADMIN ou DEVELOPER, pode incluir intents administrativos quando implementados.
+
+`, nomeUsuario, perfil)
+	default:
+		parts := make([]string, 0, len(fazendas))
+		for _, f := range fazendas {
+			parts = append(parts, fmt.Sprintf("[id: %d, nome: %s]", f.ID, f.Nome))
+		}
+		ctxoFazendas := strings.Join(parts, ", ")
+		contextoSection = fmt.Sprintf(`Contexto do usuário: nome "%s", perfil %s.
+Fazendas vinculadas ao usuário (às quais ele tem acesso): %s.
 Use essa lista para desambiguar (ex.: "editar a fazenda X" quando há várias) e para respostas naturais ("você tem N fazendas: ...").
+Para cadastrar_animal, listar_animais_fazenda e consultar_animais_fazenda: se o usuário NÃO mencionou fazenda na frase, inclua no payload fazenda_id (number) com o id da fazenda correspondente quando houver apenas uma, ou peça que especifique quando houver várias.
 Se o perfil for USER, ofereça apenas intents de fazendas. Se ADMIN ou DEVELOPER, pode incluir intents administrativos quando implementados.
 
 `, nomeUsuario, perfil, ctxoFazendas)
+	}
 
 	prompt := fmt.Sprintf(`Você é um assistente do sistema CeialMilk (gestão de fazendas leiteiras).
 
@@ -152,6 +167,7 @@ Retorne APENAS um JSON válido, sem markdown, sem explicações. Exemplos de for
 - listar animais fazenda: {"intent":"listar_animais_fazenda","payload":{"nome":"Larissa"},"resumo":"Listar animais da fazenda Larissa."}
 - detalhar animal: {"intent":"detalhar_animal","payload":{"identificacao":"Vaca 01"} ou {"id":123},"resumo":"Ver detalhes do animal Vaca 01."}
 - cadastrar animal: {"intent":"cadastrar_animal","payload":{"nome_fazenda":"Larissa","identificacao":"Vaca 01","raca":"Holandesa","sexo":"F"},"resumo":"Cadastrar animal Vaca 01 na fazenda Larissa."}
+- cadastrar animal (usuário com 1 fazenda, sem citar fazenda): {"intent":"cadastrar_animal","payload":{"fazenda_id":1,"identificacao":"Vaca 01"},"resumo":"Cadastrar animal Vaca 01 na sua fazenda."}
 - editar animal: {"intent":"editar_animal","payload":{"identificacao":"Vaca 01","raca":"Girolando"} ou {"id":123,"status_saude":"SAUDAVEL"},"resumo":"Editar animal Vaca 01."}
 - excluir animal: {"intent":"excluir_animal","payload":{"identificacao":"Vaca 01"} ou {"id":123},"resumo":"Excluir o animal Vaca 01."}
 - registrar produção: {"intent":"registrar_producao_animal","payload":{"identificacao":"Vaca 01","quantidade":15} ou {"id":123,"quantidade":10},"resumo":"Registrar 15 litros de produção do animal Vaca 01."}
@@ -256,13 +272,13 @@ func (s *AssistenteService) Executar(ctx context.Context, intent string, payload
 	case intentBuscarFazenda:
 		return s.executarBuscarFazenda(ctx, payload)
 	case intentConsultarAnimaisFazenda:
-		return s.executarConsultarAnimaisFazenda(ctx, payload)
+		return s.executarConsultarAnimaisFazenda(ctx, payload, userID)
 	case intentListarAnimaisFazenda:
-		return s.executarListarAnimaisFazenda(ctx, payload)
+		return s.executarListarAnimaisFazenda(ctx, payload, userID)
 	case intentDetalharAnimal:
 		return s.executarDetalharAnimal(ctx, payload)
 	case intentCadastrarAnimal:
-		return s.executarCadastrarAnimal(ctx, payload)
+		return s.executarCadastrarAnimal(ctx, payload, userID)
 	case intentEditarAnimal:
 		return s.executarEditarAnimal(ctx, payload)
 	case intentExcluirAnimal:
@@ -356,8 +372,8 @@ func (s *AssistenteService) executarBuscarFazenda(ctx context.Context, payload m
 	return list, nil
 }
 
-func (s *AssistenteService) executarConsultarAnimaisFazenda(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
-	fazenda, err := s.resolveFazendaByPayload(ctx, payload)
+func (s *AssistenteService) executarConsultarAnimaisFazenda(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
+	fazenda, err := s.resolveFazendaForUser(ctx, payload, userID, "id", "nome")
 	if err != nil {
 		return nil, err
 	}
@@ -383,8 +399,8 @@ func (s *AssistenteService) executarConsultarAnimaisFazenda(ctx context.Context,
 	}, nil
 }
 
-func (s *AssistenteService) executarListarAnimaisFazenda(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
-	fazenda, err := s.resolveFazendaByPayload(ctx, payload)
+func (s *AssistenteService) executarListarAnimaisFazenda(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
+	fazenda, err := s.resolveFazendaForUser(ctx, payload, userID, "id", "nome")
 	if err != nil {
 		return nil, err
 	}
@@ -496,23 +512,12 @@ func (s *AssistenteService) resolveAnimalByPayload(ctx context.Context, payload 
 	return nil, fmt.Errorf("informe o id ou a identificação do animal")
 }
 
-func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
-	fazendaID := int64(0)
-	if idNum, ok := payload["fazenda_id"].(float64); ok && idNum > 0 {
-		fazendaID = int64(idNum)
+func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
+	fazenda, err := s.resolveFazendaForUser(ctx, payload, userID, "fazenda_id", "nome_fazenda")
+	if err != nil {
+		return nil, err
 	}
-	if fazendaID <= 0 {
-		if nomeFazenda, ok := payload["nome_fazenda"].(string); ok && strings.TrimSpace(nomeFazenda) != "" {
-			fazenda, err := s.resolveFazendaByPayload(ctx, map[string]interface{}{"nome": nomeFazenda})
-			if err != nil {
-				return nil, err
-			}
-			fazendaID = fazenda.ID
-		}
-	}
-	if fazendaID <= 0 {
-		return nil, fmt.Errorf("informe a fazenda (nome ou id) onde cadastrar o animal")
-	}
+	fazendaID := fazenda.ID
 	identificacao, _ := payload["identificacao"].(string)
 	identificacao = strings.TrimSpace(identificacao)
 	if identificacao == "" {
@@ -680,6 +685,60 @@ func (s *AssistenteService) executarRegistrarProducaoAnimal(ctx context.Context,
 		"animal_id": animal.ID,
 		"producao":  producao,
 	}, nil
+}
+
+// resolveFazendaForUser retorna a fazenda identificada por id ou nome no payload, validando que pertence ao usuário.
+// keyID e keyNome são as chaves do payload (ex.: "fazenda_id"/"nome_fazenda" para cadastrar_animal, "id"/"nome" para listar/consultar).
+// Se o payload não tiver id nem nome e o usuário tiver exatamente uma fazenda vinculada, retorna essa fazenda.
+func (s *AssistenteService) resolveFazendaForUser(ctx context.Context, payload map[string]interface{}, userID int64, keyID, keyNome string) (*models.Fazenda, error) {
+	userFazendas, err := s.fazendaSvc.GetByUsuarioID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao carregar fazendas do usuário: %w", err)
+	}
+
+	var payloadID int64
+	if v, ok := payload[keyID].(float64); ok && v > 0 {
+		payloadID = int64(v)
+	}
+	nomeVal, _ := payload[keyNome].(string)
+	nomeVal = strings.TrimSpace(nomeVal)
+
+	if payloadID > 0 {
+		for _, f := range userFazendas {
+			if f.ID == payloadID {
+				return f, nil
+			}
+		}
+		return nil, fmt.Errorf("fazenda não encontrada ou você não tem acesso a ela")
+	}
+
+	if nomeVal != "" {
+		list, err := s.fazendaSvc.SearchByNome(ctx, nomeVal)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao buscar fazenda por nome: %w", err)
+		}
+		var match *models.Fazenda
+		for _, f := range list {
+			for _, uf := range userFazendas {
+				if uf.ID == f.ID {
+					if match != nil {
+						return nil, fmt.Errorf("mais de uma fazenda com nome parecido; use o ID para identificar")
+					}
+					match = f
+					break
+				}
+			}
+		}
+		if match != nil {
+			return match, nil
+		}
+		return nil, fmt.Errorf("nenhuma fazenda encontrada com o nome \"%s\" ou você não tem acesso a ela", nomeVal)
+	}
+
+	if len(userFazendas) == 1 {
+		return userFazendas[0], nil
+	}
+	return nil, fmt.Errorf("informe o id ou o nome da fazenda")
 }
 
 // resolveFazendaByPayload retorna a fazenda identificada por id ou nome no payload.

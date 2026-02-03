@@ -79,6 +79,7 @@ func main() {
 		})
 	})
 
+	var apiRoutesRegistered bool
 	if cfg.DatabaseURL == "" {
 		slog.Warn("DATABASE_URL não definida: apenas /health disponível")
 	} else {
@@ -279,10 +280,24 @@ func main() {
 						slog.Warn("GEMINI_API_KEY não configurada: Dev Studio e Assistente desabilitados")
 					}
 
+					apiRoutesRegistered = true
 					slog.Info("Rotas de API registradas")
 				}
 			}
 		}
+	}
+
+	// Quando a API está em modo degradado (DB/JWT não configurados), /api/* retorna 503 em vez de 404
+	if !apiRoutesRegistered {
+		apiFallback := router.Group("/api")
+		apiFallback.Any("/*path", func(c *gin.Context) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error":     "service_unavailable",
+				"message":   "API temporariamente indisponível. Verifique DATABASE_URL, conexão com o banco e chaves JWT. Consulte os logs do servidor.",
+				"timestamp": time.Now().UTC().Format(time.RFC3339),
+			})
+		})
+		slog.Info("Rotas /api em modo degradado: requisições retornam 503 até configuração completa")
 	}
 
 	srv := &http.Server{
