@@ -3,6 +3,7 @@
 ## Stack Tecnológica
 
 ### Backend
+
 - **Linguagem**: Go 1.24+
 - **Framework Web**: Gin (HTTP router e middleware)
 - **Banco de Dados**: PostgreSQL 15
@@ -15,6 +16,7 @@
 - **Container**: Docker (multi-stage build com imagem Alpine final)
 
 ### Frontend
+
 - **Framework**: Next.js 16.1.4 (App Router, Turbopack como bundler padrão)
 - **React**: 19.2.3 (compatível com Next.js 16)
 - **Linguagem**: TypeScript 5.7.2
@@ -25,6 +27,7 @@
 - **Logging**: Pino (server-side)
 
 ### Infraestrutura
+
 - **Backend Deploy**: Render (Docker)
 - **Frontend Deploy**: Vercel (otimizado para Next.js)
 - **Banco de Dados**: PostgreSQL (Render Managed ou Neon.tech)
@@ -33,6 +36,7 @@
 ## Configurações de Produção
 
 ### Backend (Render)
+
 - **Imagem Base**: `golang:1.24-alpine` (build) → `alpine:latest` (runtime)
 - **Porta**: 8080 (configurável via `PORT` env var)
 - **Health Check**: `/health` endpoint
@@ -44,15 +48,17 @@
   - `SENTRY_DSN`: DSN do Sentry para captura de erros (opcional)
   - `LOG_LEVEL`: Nível de log (DEBUG, INFO, WARN, ERROR) - padrão: INFO
   - `ENV`: Ambiente (development, production) - padrão: development
-  - **Dev Studio** (opcional): `GEMINI_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_CONTEXT_BRANCH` (default `main`). Com GitHub configurado, contexto da IA (exemplos + arquivos-alvo) vem da branch de produção via `GitHubService.GetFileContent`. Ver `docs/dev-studio/SETUP.md`.
+  - **Dev Studio e Assistente** (opcional): `GEMINI_API_KEY`; `GEMINI_MODEL` (default `gemini-2.0-flash`) para Dev Studio; `GEMINI_MODEL_ASSISTENTE` (opcional, se vazio usa `GEMINI_MODEL`; recomendado `gemini-2.5-flash-lite` para custo menor). GitHub: `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_CONTEXT_BRANCH` (default `main`). Ver `docs/dev-studio/SETUP.md`.
 
 ### Frontend (Vercel)
+
 - **Framework**: Next.js (detectado automaticamente)
 - **Build Command**: `npm run build` (automático)
 - **Variáveis de Ambiente**:
   - `NEXT_PUBLIC_API_URL`: URL do backend no Render
 
 ### Banco de Dados
+
 - **Tipo**: PostgreSQL 15
 - **SSL**: Obrigatório (`sslmode=require`)
 - **Connection Pooling**: Gerenciado pelo driver pgx
@@ -60,6 +66,7 @@
 ## Dependências Principais (Backend Go)
 
 ### go.mod (exemplo)
+
 ```go
 module github.com/ceialmilk/api
 
@@ -79,11 +86,13 @@ require (
 ## Estratégia de Deploy
 
 ### Backend (Go)
+
 1. **Build**: `go build -o bin/api ./cmd/api` (multi-stage Docker)
 2. **Migrações**: `golang-migrate` executa antes do servidor iniciar
 3. **Startup**: `./bin/api` (binário único, startup instantâneo)
 
 ### Frontend (Next.js)
+
 1. **Build**: Vercel detecta Next.js 16 e faz build automático com Turbopack
 2. **Deploy**: Distribuição global via CDN da Vercel
 3. **SSR/SSG**: Next.js gerencia renderização server-side
@@ -115,11 +124,11 @@ O projeto inclui um **Dev Container** (`.devcontainer/`) alinhado à stack Go + 
 
 ### Portas encaminhadas
 
-| Porta | Serviço        |
-|-------|----------------|
-| 8080  | Backend Go     |
-| 3000  | Next.js (dev)  |
-| 5432  | PostgreSQL     |
+| Porta | Serviço       |
+| ----- | ------------- |
+| 8080  | Backend Go    |
+| 3000  | Next.js (dev) |
+| 5432  | PostgreSQL    |
 
 ### Comandos no container
 
@@ -146,16 +155,19 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 ## Vantagens da Nova Stack
 
 ### Performance
+
 - **Memória**: Go consome ~30MB vs ~300MB do Java
 - **Startup**: < 1 segundo vs 15-30 segundos do Java
 - **Binário**: Único arquivo executável vs JAR + JVM
 
 ### Desenvolvimento
+
 - **Simplicidade**: Código Go mais direto que Spring WebFlux
 - **Type Safety**: TypeScript no frontend garante tipos seguros
 - **Hot Reload**: Desenvolvimento rápido com ferramentas modernas
 
 ### Deploy
+
 - **Simplicidade**: Binário único, sem necessidade de JVM
 - **Tamanho**: Imagem Docker final ~20MB vs ~200MB do Java
 - **Conectividade**: Driver pgx mais robusto que R2DBC em ambientes cloud

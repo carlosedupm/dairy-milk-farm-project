@@ -18,27 +18,36 @@ A variável `GEMINI_API_KEY` deve ser configurada no seu ambiente. O devcontaine
 1. **No DevContainer**: Configure a variável `GEMINI_API_KEY` no seu ambiente local antes de abrir o container, ou use o arquivo `.env` na raiz do projeto.
 
 2. **Manualmente**:
+
 ```bash
 export GEMINI_API_KEY="sua-chave-gemini-aqui"
 ```
 
 **Obtenha sua chave em**: https://ai.google.dev/
 
+### Modelos Gemini (Opcional)
+
+- **GEMINI_MODEL**: modelo usado no Dev Studio (default: `gemini-2.0-flash`). Ex.: `gemini-2.5-flash`.
+- **GEMINI_MODEL_ASSISTENTE**: modelo usado no Assistente em linguagem natural. Se não definido, usa `GEMINI_MODEL`. Recomendado para custo menor: `gemini-2.5-flash-lite`.
+
 ### GitHub API (Opcional - Para PRs Automáticos - Fase 1)
 
 Para habilitar a criação automática de Pull Requests, configure:
 
 1. **GITHUB_TOKEN**: Personal Access Token do GitHub com permissão `repo`
+
    - Crie em: https://github.com/settings/tokens
    - Permissões necessárias: `repo` (acesso completo ao repositório)
 
 2. **GITHUB_REPO**: Repositório no formato `owner/repo`
+
    - Exemplo: `usuario/ceialmilk`
 
 3. **GITHUB_CONTEXT_BRANCH** (opcional): Branch de produção usada como referência para o contexto da IA. Padrão: `main`.
    - Quando `GITHUB_TOKEN` e `GITHUB_REPO` estão configurados, **exemplos de código** e **arquivos-alvo** (menu, Header, etc.) são sempre buscados dessa branch no GitHub, pois o resultado aprovado pelo usuário irá para lá (PR → merge).
 
 **Configurar:**
+
 ```bash
 export GITHUB_TOKEN="ghp_seu-token-aqui"
 export GITHUB_REPO="usuario/ceialmilk"
@@ -65,6 +74,7 @@ go run ./cmd/api
 ```
 
 Você deve ver a mensagem:
+
 ```
 Rotas do Dev Studio registradas
 ```
@@ -99,6 +109,7 @@ Execute o script de verificação:
 ### ❌ "GEMINI_API_KEY não configurada: Dev Studio desabilitado"
 
 **Solução**: Configure a variável de ambiente:
+
 ```bash
 export GEMINI_API_KEY="sua-chave-aqui"
 ```
@@ -106,11 +117,13 @@ export GEMINI_API_KEY="sua-chave-aqui"
 ### ❌ "Acesso negado. Perfil DEVELOPER necessário."
 
 **Solução**: Atualize o perfil do usuário:
+
 ```sql
 UPDATE usuarios SET perfil = 'DEVELOPER' WHERE email = 'admin@ceialmilk.com';
 ```
 
 Ou execute a migração:
+
 ```bash
 cd backend
 go run ./cmd/api  # As migrações são executadas automaticamente
@@ -127,6 +140,7 @@ go run ./cmd/api  # As migrações são executadas automaticamente
 ### ❌ Erro ao gerar código
 
 **Possíveis causas**:
+
 - Chave da API Gemini inválida ou expirada
 - Limite de requests do free tier atingido (1.500/dia)
 - Problema de conectividade com a API Gemini
@@ -136,12 +150,14 @@ go run ./cmd/api  # As migrações são executadas automaticamente
 ### ❌ Erro ao criar PR
 
 **Possíveis causas**:
+
 - `GITHUB_TOKEN` não configurado ou inválido
 - `GITHUB_REPO` não configurado ou formato inválido (deve ser `owner/repo`)
 - Token sem permissão `repo`
 - Repositório não existe ou não tem acesso
 
-**Solução**: 
+**Solução**:
+
 1. Verifique se `GITHUB_TOKEN` e `GITHUB_REPO` estão configurados
 2. Verifique se o token tem permissão `repo`
 3. Verifique se o formato do repositório está correto (`owner/repo`)

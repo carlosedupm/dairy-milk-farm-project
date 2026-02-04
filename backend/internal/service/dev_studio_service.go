@@ -22,39 +22,44 @@ import (
 	"github.com/ceialmilk/api/internal/repository"
 )
 
-const codeExampleMaxLines   = 150
-const targetFileMaxLines    = 200
+const codeExampleMaxLines = 150
+const targetFileMaxLines = 200
 
 type DevStudioService struct {
-	repo                 *repository.DevStudioRepository
-	geminiAPIKey         string
-	memoryBankPath       string
-	githubService        *GitHubService
-	githubContextBranch  string // branch de produção para contexto (ex.: main). Usado quando githubService != nil.
-	linterService        *LinterService
+	repo                *repository.DevStudioRepository
+	geminiAPIKey        string
+	geminiModel         string // ex.: gemini-2.0-flash (default), gemini-2.5-flash
+	memoryBankPath      string
+	githubService       *GitHubService
+	githubContextBranch string // branch de produção para contexto (ex.: main). Usado quando githubService != nil.
+	linterService       *LinterService
 }
 
 type CodeGenerationResponse struct {
-	RequestID   int64                  `json:"request_id"`
-	Files       map[string]string      `json:"files"`
-	Explanation string                 `json:"explanation"`
-	Status      string                 `json:"status"`
+	RequestID   int64             `json:"request_id"`
+	Files       map[string]string `json:"files"`
+	Explanation string            `json:"explanation"`
+	Status      string            `json:"status"`
 }
 
 // UsageStats contém métricas de uso do Dev Studio para exibição no frontend.
 type UsageStats struct {
-	UsedLastHour  int `json:"used_last_hour"`
-	LimitPerHour  int `json:"limit_per_hour"`
-	UsedToday     int `json:"used_today"`
+	UsedLastHour int `json:"used_last_hour"`
+	LimitPerHour int `json:"limit_per_hour"`
+	UsedToday    int `json:"used_today"`
 }
 
-func NewDevStudioService(repo *repository.DevStudioRepository, geminiAPIKey, memoryBankPath string, githubService *GitHubService, githubContextBranch string) *DevStudioService {
+func NewDevStudioService(repo *repository.DevStudioRepository, geminiAPIKey, geminiModel, memoryBankPath string, githubService *GitHubService, githubContextBranch string) *DevStudioService {
 	if githubContextBranch == "" {
 		githubContextBranch = "main"
+	}
+	if geminiModel == "" {
+		geminiModel = "gemini-2.0-flash"
 	}
 	return &DevStudioService{
 		repo:                repo,
 		geminiAPIKey:        geminiAPIKey,
+		geminiModel:         geminiModel,
 		memoryBankPath:      memoryBankPath,
 		githubService:       githubService,
 		githubContextBranch: githubContextBranch,
@@ -122,9 +127,9 @@ func (s *DevStudioService) GenerateCode(ctx context.Context, prompt string, user
 		UserID:    userID,
 		Action:    "chat",
 		Details: map[string]interface{}{
-			"prompt":       prompt,
-			"files_count":  len(codeResponse.Files),
-			"request_id":   request.ID,
+			"prompt":      prompt,
+			"files_count": len(codeResponse.Files),
+			"request_id":  request.ID,
 		},
 	}
 	if err := s.repo.CreateAudit(ctx, audit); err != nil {
@@ -445,11 +450,8 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown, sem código blocks, sem explica
 		return nil, fmt.Errorf("erro ao serializar payload: %w", err)
 	}
 
-	// Usar v1 (estável) em vez de v1beta para melhor compatibilidade
-	// Modelos disponíveis: gemini-2.0-flash, gemini-2.5-flash, gemini-2.5-flash-lite
-	// Para free tier, usar gemini-2.0-flash que tem melhor suporte
-	model := "gemini-2.0-flash"
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1/models/%s:generateContent?key=%s", model, s.geminiAPIKey)
+	// Usar v1 (estável). Modelo configurável via GEMINI_MODEL (ex.: gemini-2.0-flash, gemini-2.5-flash)
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1/models/%s:generateContent?key=%s", s.geminiModel, s.geminiAPIKey)
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("erro ao criar request: %w", err)
@@ -469,7 +471,7 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown, sem código blocks, sem explica
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		
+
 		// Tratamento específico para erro 403 (chave vazada)
 		if resp.StatusCode == http.StatusForbidden {
 			var geminiError struct {
@@ -486,7 +488,7 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown, sem código blocks, sem explica
 				}
 			}
 		}
-		
+
 		// Tratamento específico para erro 429 (quota excedida)
 		if resp.StatusCode == http.StatusTooManyRequests {
 			var geminiError struct {
@@ -499,7 +501,7 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown, sem código blocks, sem explica
 				return nil, fmt.Errorf("quota da API Gemini excedida: %s. Verifique sua conta no Google Cloud Console", geminiError.Error.Message)
 			}
 		}
-		
+
 		return nil, fmt.Errorf("erro na API Gemini: status %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
@@ -674,10 +676,10 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown, sem blocos de código, sem text
 
 // ValidationResult contém resultados da validação incluindo linter
 type ValidationResult struct {
-	SyntaxValid   bool                      `json:"syntax_valid"`
-	LinterResults map[string]*LinterResult  `json:"linter_results"`
-	HasErrors     bool                      `json:"has_errors"`
-	HasWarnings   bool                      `json:"has_warnings"`
+	SyntaxValid   bool                     `json:"syntax_valid"`
+	LinterResults map[string]*LinterResult `json:"linter_results"`
+	HasErrors     bool                     `json:"has_errors"`
+	HasWarnings   bool                     `json:"has_warnings"`
 }
 
 // ValidateCode valida código sintaticamente e com linter, retornando ValidationResult
@@ -787,11 +789,11 @@ func (s *DevStudioService) ValidateCode(ctx context.Context, requestID int64) (*
 		UserID:    request.UserID,
 		Action:    "validate",
 		Details: map[string]interface{}{
-			"request_id":     requestID,
-			"files_count":     len(files),
-			"syntax_valid":    result.SyntaxValid,
-			"has_errors":      result.HasErrors,
-			"has_warnings":    result.HasWarnings,
+			"request_id":   requestID,
+			"files_count":  len(files),
+			"syntax_valid": result.SyntaxValid,
+			"has_errors":   result.HasErrors,
+			"has_warnings": result.HasWarnings,
 		},
 	}
 	if err := s.repo.CreateAudit(ctx, audit); err != nil {
@@ -873,7 +875,7 @@ func (s *DevStudioService) CancelRequest(ctx context.Context, requestID int64, u
 		UserID:    userID,
 		Action:    "cancel",
 		Details: map[string]interface{}{
-			"request_id":     requestID,
+			"request_id":      requestID,
 			"previous_status": previousStatus,
 		},
 	}
@@ -888,7 +890,7 @@ func (s *DevStudioService) CancelRequest(ctx context.Context, requestID int64, u
 type FileDiff struct {
 	Path    string `json:"path"`
 	OldCode string `json:"old_code"` // código atual do repositório
-	NewCode string `json:"new_code"`  // código gerado
+	NewCode string `json:"new_code"` // código gerado
 	IsNew   bool   `json:"is_new"`   // true se arquivo não existe ainda
 }
 
@@ -1005,7 +1007,7 @@ func (s *DevStudioService) Implement(ctx context.Context, requestID int64) error
 		prTitle = prTitle[:97] + "..."
 	}
 
-	prBody := fmt.Sprintf("Código gerado via Dev Studio\n\n**Prompt:** %s\n\n**Explicação:** %s\n\n**Request ID:** %d", 
+	prBody := fmt.Sprintf("Código gerado via Dev Studio\n\n**Prompt:** %s\n\n**Explicação:** %s\n\n**Request ID:** %d",
 		request.Prompt, explanation, requestID)
 
 	// 7. Chamar GitHubService.CreatePR()
@@ -1015,8 +1017,8 @@ func (s *DevStudioService) Implement(ctx context.Context, requestID int64) error
 			"action":     "create_pr",
 			"request_id": fmt.Sprintf("%d", requestID),
 		}, map[string]interface{}{
-			"request_id": requestID,
-			"branch":     branchName,
+			"request_id":  requestID,
+			"branch":      branchName,
 			"files_count": len(files),
 		})
 		return fmt.Errorf("erro ao criar Pull Request: %w", err)
@@ -1039,10 +1041,10 @@ func (s *DevStudioService) Implement(ctx context.Context, requestID int64) error
 		UserID:    request.UserID,
 		Action:    "implement",
 		Details: map[string]interface{}{
-			"request_id": requestID,
-			"pr_number":  pr.Number,
-			"pr_url":     pr.URL,
-			"branch":     branchName,
+			"request_id":  requestID,
+			"pr_number":   pr.Number,
+			"pr_url":      pr.URL,
+			"branch":      branchName,
 			"files_count": len(files),
 		},
 	}

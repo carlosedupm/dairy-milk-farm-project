@@ -32,12 +32,14 @@ GEMINI_API_VERSION="v1" \
 - ⚠️ `gemini-2.0-flash-exp` - Experimental, pode ter problemas
 - ⚠️ `gemini-3-flash-preview` - Preview, pode mudar
 
-## Configuração Atual
+## Configuração no CeialMilk
 
-O código está configurado para usar:
-- **Versão**: `v1` (estável)
-- **Modelo**: `gemini-2.0-flash`
-- **Endpoint**: `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent`
+O backend usa modelo configurável por variáveis de ambiente:
+
+- **Dev Studio**: `GEMINI_MODEL` (default: `gemini-2.0-flash`)
+- **Assistente**: `GEMINI_MODEL_ASSISTENTE` (se vazio usa `GEMINI_MODEL`; recomendado: `gemini-2.5-flash-lite`)
+- **Versão da API**: `v1` (estável)
+- **Endpoint**: `https://generativelanguage.googleapis.com/v1/models/{modelo}:generateContent`
 
 ## Teste Manual
 
@@ -66,7 +68,8 @@ curl "https://generativelanguage.googleapis.com/v1/models?key=SUA_CHAVE" | jq '.
 
 **Causa**: Modelo não disponível na versão da API usada
 
-**Solução**: 
+**Solução**:
+
 - Use `v1` em vez de `v1beta`
 - Use modelos estáveis: `gemini-2.0-flash`, `gemini-2.5-flash`
 
@@ -80,7 +83,8 @@ curl "https://generativelanguage.googleapis.com/v1/models?key=SUA_CHAVE" | jq '.
 
 **Causa**: Chave da API inválida ou expirada
 
-**Solução**: 
+**Solução**:
+
 - Gere nova chave em [Google AI Studio](https://aistudio.google.com/)
 - Atualize `GEMINI_API_KEY` no `devcontainer.json` e `launch.json`
 

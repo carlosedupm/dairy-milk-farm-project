@@ -51,14 +51,19 @@ type ExecutarRequest struct {
 
 type AssistenteService struct {
 	geminiAPIKey string
+	geminiModel  string // ex.: gemini-2.5-flash-lite (recomendado), gemini-2.0-flash
 	fazendaSvc   *FazendaService
 	animalSvc    *AnimalService
 	producaoSvc  *ProducaoService
 }
 
-func NewAssistenteService(geminiAPIKey string, fazendaSvc *FazendaService, animalSvc *AnimalService, producaoSvc *ProducaoService) *AssistenteService {
+func NewAssistenteService(geminiAPIKey, geminiModel string, fazendaSvc *FazendaService, animalSvc *AnimalService, producaoSvc *ProducaoService) *AssistenteService {
+	if geminiModel == "" {
+		geminiModel = "gemini-2.5-flash-lite"
+	}
 	return &AssistenteService{
 		geminiAPIKey: geminiAPIKey,
+		geminiModel:  geminiModel,
 		fazendaSvc:   fazendaSvc,
 		animalSvc:    animalSvc,
 		producaoSvc:  producaoSvc,
@@ -198,8 +203,7 @@ Frase do usuário:
 		return nil, fmt.Errorf("erro ao serializar payload: %w", err)
 	}
 
-	model := "gemini-2.0-flash"
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1/models/%s:generateContent?key=%s", model, s.geminiAPIKey)
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1/models/%s:generateContent?key=%s", s.geminiModel, s.geminiAPIKey)
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("erro ao criar request: %w", err)

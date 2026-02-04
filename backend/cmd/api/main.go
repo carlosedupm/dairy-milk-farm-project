@@ -242,7 +242,7 @@ func main() {
 							slog.Warn("GitHub não configurado (GITHUB_TOKEN ou GITHUB_REPO não definidos). Funcionalidade de PRs desabilitada.")
 						}
 
-						devStudioSvc := service.NewDevStudioService(devStudioRepo, cfg.GeminiAPIKey, memoryBankPath, githubSvc, cfg.GitHubContextBranch)
+						devStudioSvc := service.NewDevStudioService(devStudioRepo, cfg.GeminiAPIKey, cfg.GeminiModel, memoryBankPath, githubSvc, cfg.GitHubContextBranch)
 						devStudioHandler := handlers.NewDevStudioHandler(devStudioSvc)
 
 						devStudio := api.Group("/v1/dev-studio",
@@ -268,7 +268,11 @@ func main() {
 						slog.Info("Rotas do Dev Studio registradas")
 
 						// Assistente em linguagem natural (interpretar + executar; qualquer usuário autenticado)
-						assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, fazendaSvc, animalSvc, producaoSvc)
+						modelAssistente := cfg.GeminiModelAssistente
+						if modelAssistente == "" {
+							modelAssistente = cfg.GeminiModel
+						}
+						assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, modelAssistente, fazendaSvc, animalSvc, producaoSvc)
 						assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc, userRepo)
 						assistente := api.Group("/v1/assistente", auth.AuthMiddleware(jwtSvc))
 						{
@@ -423,6 +427,12 @@ func logEnvStatus(cfg *config.Config) {
 	if cfg.GeminiAPIKey != "" {
 		maskedKey := cfg.GeminiAPIKey[:min(8, len(cfg.GeminiAPIKey))] + "..." + cfg.GeminiAPIKey[max(0, len(cfg.GeminiAPIKey)-4):]
 		status["gemini_api_key"] = "✅ Configurada (" + maskedKey + ")"
+		status["gemini_model"] = cfg.GeminiModel
+		if cfg.GeminiModelAssistente != "" {
+			status["gemini_model_assistente"] = cfg.GeminiModelAssistente
+		} else {
+			status["gemini_model_assistente"] = "(usa " + cfg.GeminiModel + ")"
+		}
 	} else {
 		status["gemini_api_key"] = "⚠️  Não configurada (Dev Studio desabilitado)"
 	}

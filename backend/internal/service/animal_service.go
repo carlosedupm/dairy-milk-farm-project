@@ -3,11 +3,28 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/repository"
 	"github.com/jackc/pgx/v5"
 )
+
+// equivalência número ↔ por extenso (pt-BR) para busca de identificação (ex.: "1" encontra "um", "dois" encontra "2")
+var numeroParaExtenso = map[string]string{
+	"0": "zero", "1": "um", "2": "dois", "3": "três", "4": "quatro", "5": "cinco",
+	"6": "seis", "7": "sete", "8": "oito", "9": "nove", "10": "dez",
+	"11": "onze", "12": "doze", "13": "treze", "14": "catorze", "15": "quinze",
+	"16": "dezesseis", "17": "dezessete", "18": "dezoito", "19": "dezenove", "20": "vinte",
+}
+var extensoParaNumero map[string]string
+
+func init() {
+	extensoParaNumero = make(map[string]string, len(numeroParaExtenso))
+	for n, ext := range numeroParaExtenso {
+		extensoParaNumero[strings.ToLower(ext)] = n
+	}
+}
 
 var ErrAnimalNotFound = errors.New("animal não encontrado")
 var ErrAnimalIdentificacaoDuplicada = errors.New("identificação já existe")
@@ -138,8 +155,38 @@ func (s *AnimalService) Delete(ctx context.Context, id int64) error {
 	return s.repo.Delete(ctx, id)
 }
 
+// equivalenteIdentificacao retorna a forma alternativa (número ↔ por extenso) para busca; "" se não houver.
+func equivalenteIdentificacao(ident string) string {
+	ident = strings.TrimSpace(ident)
+	if ident == "" {
+		return ""
+	}
+	if eq, ok := numeroParaExtenso[ident]; ok {
+		return eq
+	}
+	if eq, ok := extensoParaNumero[strings.ToLower(ident)]; ok {
+		return eq
+	}
+	return ""
+}
+
 func (s *AnimalService) SearchByIdentificacao(ctx context.Context, identificacao string) ([]*models.Animal, error) {
-	return s.repo.SearchByIdentificacao(ctx, identificacao)
+	list, err := s.repo.SearchByIdentificacao(ctx, identificacao)
+	if err != nil {
+		return nil, err
+	}
+	if len(list) > 0 {
+		return list, nil
+	}
+	// Nenhum resultado: tentar equivalente número ↔ por extenso (ex.: "1" ↔ "um")
+	equiv := equivalenteIdentificacao(identificacao)
+	if equiv != "" {
+		list, err = s.repo.SearchByIdentificacao(ctx, equiv)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return list, nil
 }
 
 func (s *AnimalService) GetByStatusSaude(ctx context.Context, statusSaude string) ([]*models.Animal, error) {

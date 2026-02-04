@@ -9,18 +9,20 @@ import (
 )
 
 type Config struct {
-	Port          string
-	Env           string
-	LogLevel      string
-	DatabaseURL   string
-	JWTPrivateKey string
-	JWTPublicKey  string
-	CORSOrigin    string
-	SentryDSN     string
-	GeminiAPIKey  string
-	GitHubToken        string
-	GitHubRepo         string
-	GitHubContextBranch string // branch de produção para contexto Dev Studio (default: main)
+	Port                  string
+	Env                   string
+	LogLevel              string
+	DatabaseURL           string
+	JWTPrivateKey         string
+	JWTPublicKey          string
+	CORSOrigin            string
+	SentryDSN             string
+	GeminiAPIKey          string
+	GeminiModel           string // modelo para Dev Studio (default: gemini-2.0-flash)
+	GeminiModelAssistente string // modelo para Assistente; se vazio usa GeminiModel (ex.: gemini-2.5-flash-lite)
+	GitHubToken           string
+	GitHubRepo            string
+	GitHubContextBranch   string // branch de produção para contexto Dev Studio (default: main)
 }
 
 func Load() *Config {
@@ -32,10 +34,10 @@ func Load() *Config {
 
 	// Tentar múltiplos caminhos para encontrar o .env
 	envPaths := []string{
-		filepath.Join(wd, "..", ".env"),        // /workspace/backend -> /workspace/.env
-		filepath.Join(wd, ".env"),              // /workspace -> /workspace/.env
-		filepath.Join("/workspace", ".env"),     // Caminho absoluto (devcontainer)
-		".env",                                  // Diretório atual
+		filepath.Join(wd, "..", ".env"),     // /workspace/backend -> /workspace/.env
+		filepath.Join(wd, ".env"),           // /workspace -> /workspace/.env
+		filepath.Join("/workspace", ".env"), // Caminho absoluto (devcontainer)
+		".env",                              // Diretório atual
 	}
 
 	var loadedPath string
@@ -59,18 +61,20 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Port:          getEnv("PORT", "8080"),
-		Env:           getEnv("ENV", "development"),
-		LogLevel:      getEnv("LOG_LEVEL", "INFO"),
-		DatabaseURL:   getEnv("DATABASE_URL", ""),
-		JWTPrivateKey: getEnv("JWT_PRIVATE_KEY", ""),
-		JWTPublicKey:  getEnv("JWT_PUBLIC_KEY", ""),
-		CORSOrigin:    getEnv("CORS_ORIGIN", "http://localhost:3000"),
-		SentryDSN:     getEnv("SENTRY_DSN", ""),
-		GeminiAPIKey:  getEnv("GEMINI_API_KEY", ""),
-		GitHubToken:         getEnv("GITHUB_TOKEN", ""),
-		GitHubRepo:          getEnv("GITHUB_REPO", ""),
-		GitHubContextBranch: getEnv("GITHUB_CONTEXT_BRANCH", "main"),
+		Port:                  getEnv("PORT", "8080"),
+		Env:                   getEnv("ENV", "development"),
+		LogLevel:              getEnv("LOG_LEVEL", "INFO"),
+		DatabaseURL:           getEnv("DATABASE_URL", ""),
+		JWTPrivateKey:         getEnv("JWT_PRIVATE_KEY", ""),
+		JWTPublicKey:          getEnv("JWT_PUBLIC_KEY", ""),
+		CORSOrigin:            getEnv("CORS_ORIGIN", "http://localhost:3000"),
+		SentryDSN:             getEnv("SENTRY_DSN", ""),
+		GeminiAPIKey:          getEnv("GEMINI_API_KEY", ""),
+		GeminiModel:           getEnv("GEMINI_MODEL", "gemini-2.0-flash"),
+		GeminiModelAssistente: getEnv("GEMINI_MODEL_ASSISTENTE", ""),
+		GitHubToken:           getEnv("GITHUB_TOKEN", ""),
+		GitHubRepo:            getEnv("GITHUB_REPO", ""),
+		GitHubContextBranch:   getEnv("GITHUB_CONTEXT_BRANCH", "main"),
 	}
 }
 
