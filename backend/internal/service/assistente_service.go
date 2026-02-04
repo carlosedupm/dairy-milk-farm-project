@@ -156,7 +156,7 @@ Para detalhar_animal, extraia: identificacao (string = identificação do animal
 
 Para cadastrar_animal, extraia: fazenda_id (number) OU nome_fazenda (string = nome da fazenda onde cadastrar), identificacao (string = identificação do animal, obrigatória), raca (string, opcional), data_nascimento (string YYYY-MM-DD ou YYYY, opcional), sexo (string M ou F, opcional), status_saude (string SAUDAVEL/DOENTE/EM_TRATAMENTO, opcional). Resumo: "Cadastrar animal X na fazenda Y."
 
-Para editar_animal, extraia: identificacao (string = identificação do animal para identificar qual animal editar); depois os campos a alterar: identificacaoNovo (string = nova identificação quando renomear), raca, data_nascimento, sexo, status_saude, fazenda_id (para transferir de fazenda). Resumo: "Editar animal X."
+Para editar_animal, extraia: identificacao (string = identificação do animal para identificar qual animal editar); depois os campos a alterar: identificacaoNovo (string = nova identificação quando renomear), raca, data_nascimento, sexo (M ou F ou Macho ou Fêmea), status_saude, fazenda_id (para transferir de fazenda). Resumo: descreva claramente O QUE será alterado, ex.: "Atualizar animal X: sexo para Fêmea." ou "Atualizar animal Vaca 01: raça para Girolando; sexo para Macho."
 
 Para excluir_animal, extraia: identificacao (string = identificação do animal). Resumo: "Excluir o animal X."
 
@@ -176,7 +176,7 @@ Retorne APENAS um JSON válido, sem markdown, sem explicações. Exemplos de for
 - cadastrar animal: {"intent":"cadastrar_animal","payload":{"nome_fazenda":"Larissa","identificacao":"Vaca 01","raca":"Holandesa","sexo":"F"},"resumo":"Cadastrar animal Vaca 01 na fazenda Larissa."}
 - cadastrar animal (número como identificação): {"intent":"cadastrar_animal","payload":{"identificacao":"30","raca":"Jersey","sexo":"M"},"resumo":"Cadastrar animal 30."}
 - cadastrar animal (usuário com 1 fazenda, sem citar fazenda): {"intent":"cadastrar_animal","payload":{"fazenda_id":1,"identificacao":"Vaca 01"},"resumo":"Cadastrar animal Vaca 01 na sua fazenda."}
-- editar animal: {"intent":"editar_animal","payload":{"identificacao":"Vaca 01","raca":"Girolando"} ou {"identificacao":"30","status_saude":"SAUDAVEL"},"resumo":"Editar animal Vaca 01."}
+- editar animal: {"intent":"editar_animal","payload":{"identificacao":"Vaca 01","raca":"Girolando"},"resumo":"Atualizar animal Vaca 01: raça para Girolando."} ou {"intent":"editar_animal","payload":{"identificacao":"30","sexo":"F"},"resumo":"Atualizar animal 30: sexo para Fêmea."} ou {"intent":"editar_animal","payload":{"identificacao":"X","status_saude":"SAUDAVEL"},"resumo":"Atualizar animal X: status de saúde para Saudável."}
 - excluir animal: {"intent":"excluir_animal","payload":{"identificacao":"Vaca 01"} ou {"identificacao":"30"},"resumo":"Excluir o animal Vaca 01."}
 - registrar produção: {"intent":"registrar_producao_animal","payload":{"identificacao":"Vaca 01","quantidade":15} ou {"identificacao":"30","quantidade":10},"resumo":"Registrar 15 litros de produção do animal 30."}
 - editar (só quantidade): {"intent":"editar_fazenda","payload":{"nome":"Sítio X","quantidadeVacas":30},"resumo":"Alterar fazenda Sítio X para 30 vacas."}
@@ -264,6 +264,18 @@ Frase do usuário:
 	}
 	if out.Resumo == "" {
 		out.Resumo = "Não foi possível entender o pedido."
+	}
+
+	// Resumo detalhado para edição: listar o que será alterado para o usuário confirmar com segurança
+	if out.Intent == intentEditarAnimal {
+		if resumo := buildResumoEditarAnimal(out.Payload); resumo != "" {
+			out.Resumo = resumo
+		}
+	}
+	if out.Intent == intentEditarFazenda {
+		if resumo := buildResumoEditarFazenda(out.Payload); resumo != "" {
+			out.Resumo = resumo
+		}
 	}
 
 	return &out, nil
@@ -422,11 +434,11 @@ func (s *AssistenteService) executarListarAnimaisFazenda(ctx context.Context, pa
 	} else if len(animais) == 1 {
 		a := animais[0]
 		msg = fmt.Sprintf("A fazenda %s tem 1 animal: %s (raça: %s, sexo: %s, status: %s).",
-			fazenda.Nome, a.Identificacao, strOrEmpty(a.Raca), strOrEmpty(a.Sexo), strOrEmpty(a.StatusSaude))
+			fazenda.Nome, a.Identificacao, strOrEmpty(a.Raca), sexoParaExibicao(a.Sexo), strOrEmpty(a.StatusSaude))
 	} else {
 		parts := make([]string, 0, len(animais))
 		for _, a := range animais {
-			parts = append(parts, fmt.Sprintf("%s (raça %s, %s)", a.Identificacao, strOrEmpty(a.Raca), strOrEmpty(a.Sexo)))
+			parts = append(parts, fmt.Sprintf("%s (raça %s, %s)", a.Identificacao, strOrEmpty(a.Raca), sexoParaExibicao(a.Sexo)))
 		}
 		msg = fmt.Sprintf("A fazenda %s tem %d animais: %s.", fazenda.Nome, len(animais), strings.Join(parts, "; "))
 	}
@@ -444,6 +456,120 @@ func strOrEmpty(s *string) string {
 		return "—"
 	}
 	return *s
+}
+
+// sexoParaExibicao retorna o sexo em forma legível para o usuário (mensagem e TTS): M → Macho, F → Fêmea.
+func sexoParaExibicao(s *string) string {
+	if s == nil || *s == "" {
+		return "—"
+	}
+	switch strings.ToUpper(*s) {
+	case "M":
+		return "Macho"
+	case "F":
+		return "Fêmea"
+	default:
+		return *s
+	}
+}
+
+// normalizarSexoPayload aceita "M", "F", "Macho", "Fêmea" (e variações) e retorna "M" ou "F" para persistência; "" se inválido.
+func normalizarSexoPayload(v string) string {
+	v = strings.TrimSpace(strings.ToLower(v))
+	switch v {
+	case "m", "macho":
+		return "M"
+	case "f", "fêmea", "femea":
+		return "F"
+	default:
+		return ""
+	}
+}
+
+// statusSaudeParaExibicao retorna o status de saúde em forma legível para confirmação.
+func statusSaudeParaExibicao(s string) string {
+	switch strings.ToUpper(s) {
+	case "SAUDAVEL":
+		return "Saudável"
+	case "DOENTE":
+		return "Doente"
+	case "EM_TRATAMENTO":
+		return "Em tratamento"
+	default:
+		return s
+	}
+}
+
+// buildResumoEditarAnimal monta mensagem de confirmação detalhada: "Atualizar animal X: sexo para Fêmea; raça para Y."
+func buildResumoEditarAnimal(payload map[string]interface{}) string {
+	ident, _ := payload["identificacao"].(string)
+	ident = strings.TrimSpace(ident)
+	if ident == "" {
+		if id, ok := payload["id"].(float64); ok && id > 0 {
+			ident = fmt.Sprintf("id %d", int64(id))
+		} else {
+			ident = "?"
+		}
+	}
+	var partes []string
+	if v, ok := payload["identificacaoNovo"].(string); ok && strings.TrimSpace(v) != "" {
+		partes = append(partes, "identificação para \""+strings.TrimSpace(v)+"\"")
+	}
+	if v, ok := payload["raca"].(string); ok && strings.TrimSpace(v) != "" {
+		partes = append(partes, "raça para \""+strings.TrimSpace(v)+"\"")
+	}
+	if v, ok := payload["data_nascimento"].(string); ok && strings.TrimSpace(v) != "" {
+		partes = append(partes, "data de nascimento para "+strings.TrimSpace(v))
+	}
+	if v, ok := payload["sexo"].(string); ok && strings.TrimSpace(v) != "" {
+		norm := normalizarSexoPayload(v)
+		exib := v
+		if norm != "" {
+			exib = sexoParaExibicao(ptr(norm))
+		}
+		partes = append(partes, "sexo para "+exib)
+	}
+	if v, ok := payload["status_saude"].(string); ok && strings.TrimSpace(v) != "" {
+		partes = append(partes, "status de saúde para "+statusSaudeParaExibicao(strings.TrimSpace(v)))
+	}
+	if _, ok := payload["fazenda_id"]; ok {
+		partes = append(partes, "transferir para outra fazenda")
+	}
+	if len(partes) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("Atualizar animal %s: %s.", ident, strings.Join(partes, "; "))
+}
+
+func ptr(s string) *string { return &s }
+
+// buildResumoEditarFazenda monta mensagem de confirmação detalhada para edição de fazenda.
+func buildResumoEditarFazenda(payload map[string]interface{}) string {
+	var alvo string
+	if id, ok := payload["id"].(float64); ok && id > 0 {
+		alvo = fmt.Sprintf("fazenda (id %d)", int64(id))
+	} else if n, ok := payload["nome"].(string); ok && strings.TrimSpace(n) != "" {
+		alvo = "fazenda \"" + strings.TrimSpace(n) + "\""
+	} else {
+		alvo = "fazenda"
+	}
+	var partes []string
+	if v, ok := payload["nomeNovo"].(string); ok && strings.TrimSpace(v) != "" {
+		partes = append(partes, "nome para \""+strings.TrimSpace(v)+"\"")
+	}
+	if v, ok := payload["quantidadeVacas"].(float64); ok {
+		partes = append(partes, fmt.Sprintf("quantidade de vacas para %.0f", v))
+	}
+	if v, ok := payload["fundacao"].(string); ok && strings.TrimSpace(v) != "" {
+		partes = append(partes, "fundação para "+strings.TrimSpace(v))
+	}
+	if v, ok := payload["localizacao"].(string); ok && strings.TrimSpace(v) != "" {
+		partes = append(partes, "localização para \""+strings.TrimSpace(v)+"\"")
+	}
+	if len(partes) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("Atualizar %s: %s.", alvo, strings.Join(partes, "; "))
 }
 
 func (s *AssistenteService) executarDetalharAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
@@ -498,7 +624,7 @@ func formatAnimalMessage(a *models.Animal) string {
 		nasc = a.DataNascimento.Format("02/01/2006")
 	}
 	return fmt.Sprintf("Animal: identificação %s, raça %s, nascimento %s, sexo %s, status de saúde %s.",
-		a.Identificacao, strOrEmpty(a.Raca), nasc, strOrEmpty(a.Sexo), strOrEmpty(a.StatusSaude))
+		a.Identificacao, strOrEmpty(a.Raca), nasc, sexoParaExibicao(a.Sexo), strOrEmpty(a.StatusSaude))
 }
 
 // resolveAnimalByPayload retorna o animal identificado por id ou identificacao no payload.
@@ -563,8 +689,8 @@ func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload
 		}
 	}
 	if v, ok := payload["sexo"].(string); ok && strings.TrimSpace(v) != "" {
-		s := strings.TrimSpace(strings.ToUpper(v))
-		if s == "M" || s == "F" {
+		s := normalizarSexoPayload(strings.TrimSpace(v))
+		if s != "" {
 			animal.Sexo = &s
 		}
 	}
@@ -615,11 +741,11 @@ func (s *AssistenteService) executarEditarAnimal(ctx context.Context, payload ma
 		}
 	}
 	if v, ok := payload["sexo"].(string); ok {
-		s := strings.TrimSpace(strings.ToUpper(v))
+		s := strings.TrimSpace(v)
 		if s == "" {
 			animal.Sexo = nil
-		} else if s == "M" || s == "F" {
-			animal.Sexo = &s
+		} else if norm := normalizarSexoPayload(s); norm != "" {
+			animal.Sexo = &norm
 		}
 	}
 	if v, ok := payload["status_saude"].(string); ok {

@@ -86,6 +86,16 @@ export function AssistenteInput() {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [executando, setExecutando] = useState(false);
+  /** True no fluxo "Deseja efetuar mais alguma operação?" (aguardando sim/não ou próximo comando). */
+  const [aguardandoMaisOperacao, setAguardandoMaisOperacao] = useState(false);
+  /** True enquanto o timer de 3,2 s está rodando (mic abrirá em breve após o TTS). */
+  const [micAbreEmBreve, setMicAbreEmBreve] = useState(false);
+  /** True nos primeiros 500 ms após abrir o dialog de confirmação (quando comando veio por digitação). */
+  const [preparandoOuvirConfirmacao, setPreparandoOuvirConfirmacao] =
+    useState(false);
+  /** True após o timer de lembrete (usuário demorou a confirmar). */
+  const [mostrarLembreteConfirmacao, setMostrarLembreteConfirmacao] =
+    useState(false);
   const lastInputWasVoiceRef = useRef(false);
   const handleConfirmarRef = useRef<() => Promise<void>>(null);
   const handleCancelarRef = useRef<() => void>(null);
@@ -107,8 +117,14 @@ export function AssistenteInput() {
   const retryReopenDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const confirmationReminderTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const unknownErrorCountRef = useRef(0);
   const lastRedirectPathRef = useRef("/fazendas");
+
+  /** Delay em ms antes de lembrar o usuário de confirmar (dialog de confirmação). */
+  const CONFIRMATION_REMINDER_MS = 10000;
 
   const clearRetryReopenTimer = useCallback(() => {
     if (retryReopenDelayTimerRef.current !== null) {
@@ -147,6 +163,14 @@ export function AssistenteInput() {
         clearTimeout(askingMoreListenTimerRef.current);
         askingMoreListenTimerRef.current = null;
       }
+      if (confirmationReminderTimerRef.current !== null) {
+        clearTimeout(confirmationReminderTimerRef.current);
+        confirmationReminderTimerRef.current = null;
+      }
+      setAguardandoMaisOperacao(false);
+      setMicAbreEmBreve(false);
+      setPreparandoOuvirConfirmacao(false);
+      setMostrarLembreteConfirmacao(false);
       clearRetryReopenTimer();
       cancelSpeech();
     };
@@ -276,6 +300,8 @@ export function AssistenteInput() {
           const result = interpretVoiceConfirm(text);
           if (result === "cancel") {
             askingMoreRef.current = false;
+            setAguardandoMaisOperacao(false);
+            setMicAbreEmBreve(false);
             if (askingMoreListenTimerRef.current !== null) {
               clearTimeout(askingMoreListenTimerRef.current);
               askingMoreListenTimerRef.current = null;
@@ -287,6 +313,7 @@ export function AssistenteInput() {
           if (result === "confirm") {
             // Usuário disse "sim" — abrir microfone na hora para o próximo comando (sem esperar TTS)
             askingMoreRef.current = false;
+            setAguardandoMaisOperacao(false);
             lastInputWasVoiceRef.current = true;
             fireOnFinalSegmentRef.current = false;
             silenceTimeoutMsRef.current = 2500;
@@ -294,6 +321,7 @@ export function AssistenteInput() {
             return;
           }
           askingMoreRef.current = false;
+          setAguardandoMaisOperacao(false);
           const trimmedAsk = text.trim();
           if (trimmedAsk.length < 4) return;
           const lowerAsk = trimmedAsk.toLowerCase();
@@ -342,6 +370,8 @@ export function AssistenteInput() {
     }
     unknownErrorCountRef.current = 0;
     askingMoreRef.current = false;
+    setAguardandoMaisOperacao(false);
+    setMicAbreEmBreve(false);
     confirmationModeRef.current = false;
     silenceTimeoutMsRef.current = 2500;
     fireOnFinalSegmentRef.current = false;
@@ -372,6 +402,8 @@ export function AssistenteInput() {
             if (!isMountedRef.current) return;
             // Preparar escuta ANTES de falar a pergunta: microfone pronto quando a pergunta terminar
             askingMoreRef.current = true;
+            setAguardandoMaisOperacao(true);
+            setMicAbreEmBreve(true);
             confirmationModeRef.current = false;
             silenceTimeoutMsRef.current = 2500;
             fireOnFinalSegmentRef.current = true; // reagir rápido a "sim" / "não"
@@ -381,10 +413,16 @@ export function AssistenteInput() {
             }
             askingMoreListenTimerRef.current = setTimeout(() => {
               askingMoreListenTimerRef.current = null;
+              setMicAbreEmBreve(false);
               if (isMountedRef.current) startListening();
             }, phraseDurationMs);
             speak("Deseja efetuar mais alguma operação?", {
               cancelPrevious: false,
+              onEnd: () => {
+                if (isMountedRef.current && isSpeechSynthesisSupported()) {
+                  speak("Pode falar.", { cancelPrevious: false });
+                }
+              },
             });
           },
         });
@@ -428,6 +466,8 @@ export function AssistenteInput() {
 
   const handleCancelar = () => {
     unknownErrorCountRef.current = 0;
+    setAguardandoMaisOperacao(false);
+    setMicAbreEmBreve(false);
     cancelSpeech();
     setDialogOpen(false);
     setInterpretado(null);
@@ -453,20 +493,51 @@ export function AssistenteInput() {
 
   // Iniciar escuta de confirmação por voz quando o dialog abre.
   // Só auto-inicia se o comando veio por digitação (evita TTS interferir no microfone).
+  // Timer de lembrete: após CONFIRMATION_REMINDER_MS avisa o usuário por TTS e mensagem visual.
   useEffect(() => {
     if (!dialogOpen || !interpretado || executando || !isSupported) return;
     alreadyHandledConfirmRef.current = false;
     confirmationModeRef.current = true;
     silenceTimeoutMsRef.current = 1000;
     fireOnFinalSegmentRef.current = true;
+    setMostrarLembreteConfirmacao(false);
+
+    if (confirmationReminderTimerRef.current !== null) {
+      clearTimeout(confirmationReminderTimerRef.current);
+      confirmationReminderTimerRef.current = null;
+    }
+    confirmationReminderTimerRef.current = setTimeout(() => {
+      confirmationReminderTimerRef.current = null;
+      if (!isMountedRef.current || alreadyHandledConfirmRef.current) return;
+      setMostrarLembreteConfirmacao(true);
+      if (isSpeechSynthesisSupported()) {
+        speak(
+          "Aguardando sua confirmação. Diga sim para confirmar ou não para cancelar.",
+          { cancelPrevious: false }
+        );
+      }
+    }, CONFIRMATION_REMINDER_MS);
+
+    const clearReminderTimer = () => {
+      if (confirmationReminderTimerRef.current !== null) {
+        clearTimeout(confirmationReminderTimerRef.current);
+        confirmationReminderTimerRef.current = null;
+      }
+    };
+
     const fromVoice = lastInputWasVoiceRef.current;
     if (!fromVoice) {
+      setPreparandoOuvirConfirmacao(true);
       const delayMs = 500;
       const t = setTimeout(() => {
+        setPreparandoOuvirConfirmacao(false);
         if (isMountedRef.current) startListening();
       }, delayMs);
       return () => {
         clearTimeout(t);
+        clearReminderTimer();
+        setPreparandoOuvirConfirmacao(false);
+        setMostrarLembreteConfirmacao(false);
         confirmationModeRef.current = false;
         silenceTimeoutMsRef.current = 2500;
         fireOnFinalSegmentRef.current = false;
@@ -474,6 +545,8 @@ export function AssistenteInput() {
       };
     }
     return () => {
+      clearReminderTimer();
+      setMostrarLembreteConfirmacao(false);
       confirmationModeRef.current = false;
       silenceTimeoutMsRef.current = 2500;
       fireOnFinalSegmentRef.current = false;
@@ -546,6 +619,30 @@ export function AssistenteInput() {
             <MessageCircle className="h-4 w-4" />
           </Button>
         </div>
+        {(aguardandoMaisOperacao || isListening) && (
+          <div
+            className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-sm"
+            role="status"
+            aria-live="polite"
+            aria-label={
+              micAbreEmBreve
+                ? "Em instantes você poderá falar."
+                : "Pode falar agora."
+            }
+          >
+            <Mic
+              className={`h-4 w-4 shrink-0 text-primary ${
+                isListening ? "animate-pulse" : ""
+              }`}
+              aria-hidden
+            />
+            <span className="text-foreground">
+              {micAbreEmBreve
+                ? "Em instantes você poderá falar."
+                : "Pode falar agora."}
+            </span>
+          </div>
+        )}
         {isListening && (
           <p className="text-xs text-muted-foreground">
             Fale e clique no microfone para parar e enviar. Ou aguarde alguns
@@ -579,32 +676,62 @@ export function AssistenteInput() {
               {error}
             </p>
           )}
+          {mostrarLembreteConfirmacao && (
+            <p
+              className="mt-2 rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-1.5 text-sm text-foreground"
+              role="status"
+              aria-live="polite"
+            >
+              Aguardando sua confirmação. Diga sim ou não por voz.
+            </p>
+          )}
           <p className="text-xs text-muted-foreground mt-1">
             Recurso em linguagem natural; melhor experiência online.
           </p>
           {isSupported && (
-            <>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isListening
-                  ? "Diga “sim” para confirmar ou “não” para cancelar."
-                  : "Clique no microfone e diga “sim” ou “não” por voz."}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={startConfirmationListening}
-                disabled={executando || isListening}
-                title="Abrir microfone e dizer sim, não ou corrigir"
-              >
-                {isListening ? (
-                  <MicOff className="h-4 w-4 mr-1" />
-                ) : (
-                  <Mic className="h-4 w-4 mr-1" />
-                )}
-                {isListening ? "Escutando…" : "Dizer sim, não ou corrigir"}
-              </Button>
-            </>
+            <div
+              className="mt-3 rounded-lg border border-primary/30 bg-muted/50 p-3"
+              role="status"
+              aria-live="polite"
+              aria-label={
+                preparandoOuvirConfirmacao
+                  ? "Preparando para ouvir."
+                  : isListening
+                  ? "Escutando. Diga sim para confirmar ou não para cancelar."
+                  : "Clique no microfone e diga sim ou não por voz."
+              }
+            >
+              {preparandoOuvirConfirmacao ? (
+                <p className="flex items-center gap-2 text-sm text-foreground">
+                  <Mic className="h-4 w-4 shrink-0 animate-pulse" aria-hidden />
+                  Preparando para ouvir…
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-foreground">
+                    {isListening
+                      ? "Diga “sim” para confirmar ou “não” para cancelar."
+                      : "Clique no microfone e diga “sim” ou “não” por voz."}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={startConfirmationListening}
+                    disabled={executando || isListening}
+                    title="Abrir microfone e dizer sim, não ou corrigir"
+                  >
+                    {isListening ? (
+                      <MicOff className="h-4 w-4 mr-1 shrink-0" aria-hidden />
+                    ) : (
+                      <Mic className="h-4 w-4 mr-1 shrink-0" aria-hidden />
+                    )}
+                    {isListening ? "Escutando…" : "Dizer sim, não ou corrigir"}
+                  </Button>
+                </>
+              )}
+            </div>
           )}
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
