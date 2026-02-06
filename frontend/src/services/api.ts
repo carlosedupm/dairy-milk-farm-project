@@ -1,4 +1,8 @@
-import axios, { AxiosError, AxiosResponse } from "axios";
+import axios, {
+  type AxiosError,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 export type ApiResponse<T> = { data: T };
 
@@ -36,9 +40,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean; _silent401?: boolean })
+      | undefined;
     const requestUrl = originalRequest?.url ?? "";
-    const isSilent401 = (originalRequest as any)?._silent401;
+    const isSilent401 = originalRequest?._silent401;
 
     // Para o endpoint /api/auth/validate com 401, transformar em resposta válida
     // Isso evita que o erro seja logado no console (é um comportamento esperado)
