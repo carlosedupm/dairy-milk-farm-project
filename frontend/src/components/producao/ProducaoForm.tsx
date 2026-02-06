@@ -47,6 +47,12 @@ export function ProducaoForm({
   defaultAnimalId,
   fazendaUnicaId,
 }: Props) {
+  const { fazendaAtiva } = useFazendaAtiva();
+
+  // Usar fazenda ativa como fallback se não tiver defaultFazendaId
+  const initialFazendaId =
+    fazendaUnicaId ?? defaultFazendaId ?? fazendaAtiva?.id ?? 0;
+
   const [fazendaId, setFazendaId] = useState<number>(initialFazendaId);
   const [animalId, setAnimalId] = useState<number>(
     initial?.animal_id ?? defaultAnimalId ?? 0
@@ -63,17 +69,12 @@ export function ProducaoForm({
     (initial?.qualidade as Qualidade) ?? undefined
   );
   const [error, setError] = useState("");
-  const { fazendaAtiva } = useFazendaAtiva();
 
   // Usar fazendas vinculadas ao usuário (não todas)
   const { data: fazendas = [] } = useQuery<Fazenda[]>({
     queryKey: ["me", "fazendas"],
     queryFn: getMinhasFazendas,
   });
-
-  // Usar fazenda ativa como fallback se não tiver defaultFazendaId
-  const initialFazendaId =
-    fazendaUnicaId ?? defaultFazendaId ?? fazendaAtiva?.id ?? 0;
 
   // Buscar animais da fazenda selecionada
   const { data: animais = [] } = useQuery<Animal[]>({
