@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { AssistenteInput } from "@/components/assistente/AssistenteInput";
+import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { cn } from "@/lib/utils";
 import { Building2, List, Droplets, Menu, Users, Code, X, MessageCircle } from "lucide-react";
 
@@ -22,6 +24,12 @@ export function Header() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isAdmin = user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER";
+  const { fazendas, isLoading: fazendasLoading } = useMinhasFazendas({
+    enabled: !!user && !isAdmin,
+  });
+  const showNavLinks =
+    !!user && (isAdmin || (!fazendasLoading && fazendas.length > 0));
 
   const isActive = (path: string) =>
     pathname === path || pathname?.startsWith(path + "/");
@@ -42,36 +50,41 @@ export function Header() {
             CeialMilk
           </Link>
           {/* Desktop nav - hidden on mobile */}
-          <nav className="hidden lg:flex items-center gap-1">
-            <Link href="/fazendas" className={navLinkClass("/fazendas")}>
-              <Building2 className="h-5 w-5 shrink-0" aria-hidden />
-              Fazendas
-            </Link>
-            <Link href="/animais" className={navLinkClass("/animais")}>
-              <List className="h-5 w-5 shrink-0" aria-hidden />
-              Animais
-            </Link>
-            <Link href="/producao" className={navLinkClass("/producao")}>
-              <Droplets className="h-5 w-5 shrink-0" aria-hidden />
-              Produção
-            </Link>
-            {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
-              <Link href="/admin/usuarios" className={navLinkClass("/admin")}>
-                <Users className="h-5 w-5 shrink-0" aria-hidden />
-                Admin
+          {showNavLinks && (
+            <nav className="hidden lg:flex items-center gap-1">
+              {isAdmin && (
+                <Link href="/fazendas" className={navLinkClass("/fazendas")}>
+                  <Building2 className="h-5 w-5 shrink-0" aria-hidden />
+                  Fazendas
+                </Link>
+              )}
+              <Link href="/animais" className={navLinkClass("/animais")}>
+                <List className="h-5 w-5 shrink-0" aria-hidden />
+                Animais
               </Link>
-            )}
-            {user && user.perfil === "DEVELOPER" && (
-              <Link href="/dev-studio" className={navLinkClass("/dev-studio")}>
-                <Code className="h-5 w-5 shrink-0" aria-hidden />
-                Dev Studio
+              <Link href="/producao" className={navLinkClass("/producao")}>
+                <Droplets className="h-5 w-5 shrink-0" aria-hidden />
+                Produção
               </Link>
-            )}
-          </nav>
+              {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
+                <Link href="/admin/usuarios" className={navLinkClass("/admin")}>
+                  <Users className="h-5 w-5 shrink-0" aria-hidden />
+                  Admin
+                </Link>
+              )}
+              {user && user.perfil === "DEVELOPER" && (
+                <Link href="/dev-studio" className={navLinkClass("/dev-studio")}>
+                  <Code className="h-5 w-5 shrink-0" aria-hidden />
+                  Dev Studio
+                </Link>
+              )}
+            </nav>
+          )}
         </div>
 
         {/* Desktop right block - hidden on mobile */}
         <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1 justify-end">
+          <FazendaSelector />
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" title="Assistente em linguagem natural">
@@ -141,6 +154,9 @@ export function Header() {
               </Button>
             </div>
             <nav className="flex flex-col gap-1 p-4 overflow-auto">
+              <div className="py-2">
+                <FazendaSelector />
+              </div>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="justify-center gap-2 min-h-[44px]" title="Assistente">
@@ -167,64 +183,70 @@ export function Header() {
                   Alternar tema
                 </span>
               </div>
-              <Link
-                href="/fazendas"
-                className={cn(
-                  "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                  navLinkClass("/fazendas")
-                )}
-                onClick={closeMobileMenu}
-              >
-                <Building2 className="h-5 w-5 shrink-0" aria-hidden />
-                Fazendas
-              </Link>
-              <Link
-                href="/animais"
-                className={cn(
-                  "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                  navLinkClass("/animais")
-                )}
-                onClick={closeMobileMenu}
-              >
-                <List className="h-5 w-5 shrink-0" aria-hidden />
-                Animais
-              </Link>
-              <Link
-                href="/producao"
-                className={cn(
-                  "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                  navLinkClass("/producao")
-                )}
-                onClick={closeMobileMenu}
-              >
-                <Droplets className="h-5 w-5 shrink-0" aria-hidden />
-                Produção
-              </Link>
-              {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
-                <Link
-                  href="/admin/usuarios"
-                  className={cn(
-                    "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                    navLinkClass("/admin")
+              {showNavLinks && (
+                <>
+                  {isAdmin && (
+                    <Link
+                      href="/fazendas"
+                      className={cn(
+                        "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                        navLinkClass("/fazendas")
+                      )}
+                      onClick={closeMobileMenu}
+                    >
+                      <Building2 className="h-5 w-5 shrink-0" aria-hidden />
+                      Fazendas
+                    </Link>
                   )}
-                  onClick={closeMobileMenu}
-                >
-                  <Users className="h-5 w-5 shrink-0" aria-hidden />
-                  Admin
-                </Link>
-              )}
-              {user && user.perfil === "DEVELOPER" && (
-                <Link
-                  href="/dev-studio"
-                  className={cn(
-                    "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                    navLinkClass("/dev-studio")
+                  <Link
+                    href="/animais"
+                    className={cn(
+                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                      navLinkClass("/animais")
+                    )}
+                    onClick={closeMobileMenu}
+                  >
+                    <List className="h-5 w-5 shrink-0" aria-hidden />
+                    Animais
+                  </Link>
+                  <Link
+                    href="/producao"
+                    className={cn(
+                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                      navLinkClass("/producao")
+                    )}
+                    onClick={closeMobileMenu}
+                  >
+                    <Droplets className="h-5 w-5 shrink-0" aria-hidden />
+                    Produção
+                  </Link>
+                  {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
+                    <Link
+                      href="/admin/usuarios"
+                      className={cn(
+                        "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                        navLinkClass("/admin")
+                      )}
+                      onClick={closeMobileMenu}
+                    >
+                      <Users className="h-5 w-5 shrink-0" aria-hidden />
+                      Admin
+                    </Link>
                   )}
-                  onClick={closeMobileMenu}
-                >
-                  <Code className="h-5 w-5 shrink-0" aria-hidden />
-                  Dev Studio
-                </Link>
+                  {user && user.perfil === "DEVELOPER" && (
+                    <Link
+                      href="/dev-studio"
+                      className={cn(
+                        "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                        navLinkClass("/dev-studio")
+                      )}
+                      onClick={closeMobileMenu}
+                    >
+                      <Code className="h-5 w-5 shrink-0" aria-hidden />
+                      Dev Studio
+                    </Link>
+                  )}
+                </>
               )}
               {user && (
                 <p className="py-2 px-3 text-sm text-muted-foreground truncate">

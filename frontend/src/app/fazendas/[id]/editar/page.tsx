@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, update } from '@/services/fazendas'
 import type { FazendaUpdate } from '@/services/fazendas'
-import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
+import { RequireAdminRoute } from '@/components/layout/RequireAdminRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { BackLink } from '@/components/layout/BackLink'
 import { FazendaForm } from '@/components/fazendas/FazendaForm'
@@ -25,6 +25,7 @@ function EditarFazendaContent() {
     mutationFn: (p: FazendaUpdate) => update(id, p),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fazendas'] })
+      queryClient.invalidateQueries({ queryKey: ['me', 'fazendas'] })
       router.push('/fazendas')
     },
   })
@@ -73,8 +74,8 @@ function EditarFazendaContent() {
 
 export default function EditarFazendaPage() {
   return (
-    <ProtectedRoute>
+    <RequireAdminRoute>
       <EditarFazendaContent />
-    </ProtectedRoute>
+    </RequireAdminRoute>
   )
 }

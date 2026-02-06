@@ -153,9 +153,10 @@ func main() {
 						v1.GET("/search/by-vacas-min", fazendaHandler.SearchByVacasMin)
 						v1.GET("/search/by-vacas-range", fazendaHandler.SearchByVacasRange)
 						v1.GET("/:id", fazendaHandler.GetByID)
-						v1.POST("", fazendaHandler.Create)
-						v1.PUT("/:id", fazendaHandler.Update)
-						v1.DELETE("/:id", fazendaHandler.Delete)
+						// Criar, editar e excluir fazendas requerem perfil ADMIN ou DEVELOPER
+						v1.POST("", auth.RequireAdmin(), fazendaHandler.Create)
+						v1.PUT("/:id", auth.RequireAdmin(), fazendaHandler.Update)
+						v1.DELETE("/:id", auth.RequireAdmin(), fazendaHandler.Delete)
 						// Animais por fazenda
 						v1.GET("/:id/animais", animalHandler.GetByFazendaID)
 						v1.GET("/:id/animais/count", animalHandler.CountByFazenda)

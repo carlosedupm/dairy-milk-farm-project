@@ -6,8 +6,8 @@ import { Header } from './Header'
 export function ConditionalHeader() {
   const pathname = usePathname()
   
-  // Não mostrar header na página de login
-  if (pathname === '/login') {
+  // Não mostrar header nas páginas de autenticação
+  if (pathname === '/login' || pathname === '/registro') {
     return null
   }
   

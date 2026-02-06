@@ -14,7 +14,8 @@ import {
   SEXO_LABELS,
   STATUS_SAUDE_LABELS,
 } from "@/services/animais";
-import { list as listFazendas, type Fazenda } from "@/services/fazendas";
+import { getMinhasFazendas, type Fazenda } from "@/services/fazendas";
+import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,9 +47,17 @@ export function AnimalForm({
   defaultFazendaId,
   fazendaUnicaId,
 }: Props) {
-  const [fazendaId, setFazendaId] = useState<number>(
-    fazendaUnicaId ?? defaultFazendaId ?? initial?.fazenda_id ?? 0
-  );
+  const { fazendaAtiva } = useFazendaAtiva();
+
+  // Usar fazenda ativa como fallback se não tiver defaultFazendaId
+  const initialFazendaId =
+    fazendaUnicaId ??
+    defaultFazendaId ??
+    initial?.fazenda_id ??
+    fazendaAtiva?.id ??
+    0;
+
+  const [fazendaId, setFazendaId] = useState<number>(initialFazendaId);
   const [identificacao, setIdentificacao] = useState(
     initial?.identificacao ?? ""
   );
@@ -62,9 +71,10 @@ export function AnimalForm({
   );
   const [error, setError] = useState("");
 
+  // Usar fazendas vinculadas ao usuário (não todas)
   const { data: fazendas = [] } = useQuery<Fazenda[]>({
-    queryKey: ["fazendas"],
-    queryFn: listFazendas,
+    queryKey: ["me", "fazendas"],
+    queryFn: getMinhasFazendas,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {

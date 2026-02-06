@@ -231,6 +231,9 @@ Usuario (N) ─── (N) Fazenda  // via tabela usuarios_fazendas (vínculo N:N
 - **DEVELOPER**: Perfil único no sistema (constraint no banco garante 1 apenas); acesso ao Dev Studio (`/api/v1/dev-studio/*`) e área Admin; requer `auth.RequireDeveloper()` para Dev Studio, `auth.RequireAdmin()` para Admin.
 - **Resource Ownership**: Verificação de propriedade de recursos
 - **Middleware de Autenticação**: Verificação de token em todas as rotas protegidas
+- **Frontend (controle por perfil)**:
+  - **USER**: não acessa manutenção de fazendas; `/fazendas` funciona como gateway de redirecionamento (onboarding/seleção/animais).
+  - **ADMIN/DEVELOPER**: acesso completo às páginas de fazendas (listar/detalhar/criar/editar).
 
 ### **Proteção**
 
@@ -375,6 +378,7 @@ Usuario (N) ─── (N) Fazenda  // via tabela usuarios_fazendas (vínculo N:N
 - **Implementação**: `Header.tsx` — estado `mobileMenuOpen`, ícone Menu (lucide-react), overlay + painel fixo com links, email e Sair; fechar ao clicar no overlay ou no link. O assistente em linguagem natural (AssistenteInput) aparece apenas na página de listagem de fazendas (`/fazendas`), não no Header.
 - **Ícones no menu**: Cada link de navegação exibe ícone + texto (Farm/Fazendas, Cow/Animais, Milk/Produção, Users/Admin, Code/Dev Studio) para reforço visual e reconhecimento rápido.
 - **Toggle de tema**: Botão de alternar modo claro/escuro (ThemeToggle) no Header (desktop) e no menu mobile; alvo de toque mínimo 44px; ver seção "Padrões de UX e Acessibilidade".
+- **Controle por perfil**: Menu de **Fazendas** aparece apenas para ADMIN/DEVELOPER; USER sem fazendas não vê itens de manutenção.
 
 ### **Padrões de UX e Acessibilidade**
 
@@ -418,5 +422,5 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Última atualização**: 2026-02-02
-**Versão dos Padrões**: 2.4 (Go + Next.js) — Padrão estado derivado da query (evitar setState em useEffect); vínculo usuário–fazenda; perfil não editável para ADMIN/DEVELOPER.
+**Última atualização**: 2026-02-06
+**Versão dos Padrões**: 2.5 (Go + Next.js) — Controle de acesso frontend por perfil (gateway de fazendas e visibilidade do menu).

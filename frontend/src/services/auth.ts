@@ -51,9 +51,32 @@ export async function logout(): Promise<void> {
 export async function validate(): Promise<ValidateResponse['data'] | null> {
   try {
     // Valida o token via cookie HttpOnly
-    const { data } = await api.post<ValidateResponse>('/api/auth/validate', {})
-    return data.data
-  } catch {
+    // Usar fetch diretamente para ter controle total sobre o tratamento de erros
+    // e evitar logs desnecessários no console para 401 esperados
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    const response = await fetch(`${baseURL}/api/auth/validate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Importante: permite envio de cookies HttpOnly
+    })
+
+    // Se retornou 401, o usuário não está autenticado (comportamento esperado)
+    if (response.status === 401) {
+      return null
+    }
+
+    // Se retornou erro diferente de 401, também retornar null
+    if (!response.ok) {
+      return null
+    }
+
+    // Se retornou sucesso, parsear e retornar os dados
+    const data: ValidateResponse = await response.json()
+    return data.data || null
+  } catch (error: unknown) {
+    // Qualquer erro também retorna null (usuário não autenticado)
     return null
   }
 }

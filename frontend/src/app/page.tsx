@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,13 +20,18 @@ export default function Home() {
   const { isAuthenticated, isReady } = useAuth();
   const router = useRouter();
   const { isSingleFazenda, fazendaUnica } = useMinhasFazendas();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
+    if (hasRedirected.current) return;
     if (!isReady) return;
     if (!isAuthenticated) {
-      router.replace("/login");
+      hasRedirected.current = true;
+      // Usar window.location para evitar loops do Next.js router
+      window.location.href = "/login";
     }
-  }, [isReady, isAuthenticated, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, isAuthenticated]);
 
   if (!isReady) {
     return (

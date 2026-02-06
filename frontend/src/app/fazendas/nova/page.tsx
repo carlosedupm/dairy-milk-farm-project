@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { create } from "@/services/fazendas";
 import type { FazendaCreate } from "@/services/fazendas";
-import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import { RequireAdminRoute } from "@/components/layout/RequireAdminRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { FazendaForm } from "@/components/fazendas/FazendaForm";
@@ -16,6 +16,7 @@ function NovaFazendaContent() {
     mutationFn: (p: FazendaCreate) => create(p),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["fazendas"] });
+      await queryClient.invalidateQueries({ queryKey: ["me", "fazendas"] });
       router.push("/fazendas");
     },
   });
@@ -38,8 +39,8 @@ function NovaFazendaContent() {
 
 export default function NovaFazendaPage() {
   return (
-    <ProtectedRoute>
+    <RequireAdminRoute>
       <NovaFazendaContent />
-    </ProtectedRoute>
+    </RequireAdminRoute>
   );
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useState, useEffect, useRef } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,23 @@ import {
 import { PageContainer } from '@/components/layout/PageContainer'
 import { getApiErrorMessage } from '@/lib/errors'
 
+function getPostLoginRedirect(
+  fazendasCount: number,
+  primeiraFazendaId: number | null,
+  fazendaAtivaId: number | null
+): string {
+  if (fazendasCount === 0) {
+    return '/onboarding'
+  }
+  if (fazendasCount === 1 && primeiraFazendaId) {
+    return `/fazendas/${primeiraFazendaId}`
+  }
+  if (fazendaAtivaId) {
+    return `/fazendas/${fazendaAtivaId}`
+  }
+  return '/fazendas/selecionar'
+}
+
 function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,15 +41,25 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const { login, isAuthenticated, isReady } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') ?? '/fazendas'
+  const explicitRedirect = searchParams.get('redirect')
+  const hasRedirected = useRef(false)
 
-  // Redirecionar se já estiver autenticado (usando useEffect para evitar erro no React 19)
+  // Redirecionar usuário já autenticado que acessa /login (apenas uma vez)
   useEffect(() => {
-    if (isReady && isAuthenticated) {
-      router.replace(redirect)
+    if (hasRedirected.current) return
+    if (!isReady || !isAuthenticated) return
+    if (pathname !== '/login') return
+
+    hasRedirected.current = true
+    const target = explicitRedirect || '/fazendas'
+    if (target !== '/login') {
+      // Usar window.location para evitar loops do Next.js router
+      window.location.href = target
     }
-  }, [isReady, isAuthenticated, router, redirect])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, isAuthenticated])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,12 +67,15 @@ function LoginForm() {
     setLoading(true)
     try {
       await login(email, password)
-      router.replace(redirect)
+      // Reset flag para permitir redirecionamento após login
+      hasRedirected.current = false
+      // Redirecionar para /fazendas - a página de fazendas fará o redirecionamento inteligente
+      const target = explicitRedirect || '/fazendas'
+      router.replace(target)
     } catch (err: unknown) {
       setError(
         getApiErrorMessage(err, 'Erro ao fazer login. Verifique email e senha.')
       )
-    } finally {
       setLoading(false)
     }
   }
