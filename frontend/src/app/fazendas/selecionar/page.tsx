@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMinhasFazendas } from '@/hooks/useMinhasFazendas'
@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Building2, MapPin, Cow } from 'lucide-react'
+import { Beef, Building2, MapPin } from 'lucide-react'
 import { getApiErrorMessage } from '@/lib/errors'
 
 function SelecionarFazendaContent() {
@@ -24,6 +24,31 @@ function SelecionarFazendaContent() {
   const router = useRouter()
   const [error, setError] = useState('')
   const [selecting, setSelecting] = useState<number | null>(null)
+
+  const handleSelect = useCallback(
+    async (fazendaId: number) => {
+      setError('')
+      setSelecting(fazendaId)
+      try {
+        const fazenda = fazendas.find((f) => f.id === fazendaId)
+        if (!fazenda) {
+          throw new Error('Fazenda não encontrada')
+        }
+        await setFazendaAtiva(fazenda)
+        router.push(`/fazendas/${fazendaId}/animais`)
+      } catch (err: unknown) {
+        setError(
+          getApiErrorMessage(
+            err,
+            'Erro ao selecionar fazenda. Tente novamente.'
+          )
+        )
+      } finally {
+        setSelecting(null)
+      }
+    },
+    [fazendas, router, setFazendaAtiva]
+  )
 
   useEffect(() => {
     if (!isReady) return
@@ -39,29 +64,14 @@ function SelecionarFazendaContent() {
     if (!isLoading && fazendas.length === 0) {
       router.replace('/onboarding')
     }
-  }, [isReady, isAuthenticated, isLoading, fazendas.length, router])
-
-  const handleSelect = async (fazendaId: number) => {
-    setError('')
-    setSelecting(fazendaId)
-    try {
-      const fazenda = fazendas.find((f) => f.id === fazendaId)
-      if (!fazenda) {
-        throw new Error('Fazenda não encontrada')
-      }
-      await setFazendaAtiva(fazenda)
-      router.push(`/fazendas/${fazendaId}/animais`)
-    } catch (err: unknown) {
-      setError(
-        getApiErrorMessage(
-          err,
-          'Erro ao selecionar fazenda. Tente novamente.'
-        )
-      )
-    } finally {
-      setSelecting(null)
-    }
-  }
+  }, [
+    isReady,
+    isAuthenticated,
+    isLoading,
+    fazendas,
+    handleSelect,
+    router,
+  ])
 
   if (!isReady || isLoading) {
     return (
@@ -134,7 +144,7 @@ function SelecionarFazendaContent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Cow className="h-4 w-4" />
+                  <Beef className="h-4 w-4" />
                   <span>{fazenda.quantidade_vacas} animais</span>
                 </div>
                 <Button

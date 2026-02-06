@@ -30,7 +30,6 @@ export default function Home() {
       // Usar window.location para evitar loops do Next.js router
       window.location.href = "/login";
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady, isAuthenticated]);
 
   if (!isReady) {
