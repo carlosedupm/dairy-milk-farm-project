@@ -12,11 +12,13 @@ import (
 )
 
 type ProducaoHandler struct {
-	service *service.ProducaoService
+	service    *service.ProducaoService
+	animalSvc  *service.AnimalService
+	fazendaSvc *service.FazendaService
 }
 
-func NewProducaoHandler(service *service.ProducaoService) *ProducaoHandler {
-	return &ProducaoHandler{service: service}
+func NewProducaoHandler(service *service.ProducaoService, animalSvc *service.AnimalService, fazendaSvc *service.FazendaService) *ProducaoHandler {
+	return &ProducaoHandler{service: service, animalSvc: animalSvc, fazendaSvc: fazendaSvc}
 }
 
 type CreateProducaoRequest struct {
@@ -37,6 +39,21 @@ func (h *ProducaoHandler) Create(c *gin.Context) {
 	var req CreateProducaoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorValidation(c, "Dados inválidos", err.Error())
+		return
+	}
+
+	// Buscar animal para validar acesso à fazenda
+	animal, err := h.animalSvc.GetByID(c.Request.Context(), req.AnimalID)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
 		return
 	}
 
@@ -86,6 +103,17 @@ func (h *ProducaoHandler) GetByID(c *gin.Context) {
 		return
 	}
 
+	// Buscar animal para validar acesso à fazenda
+	animal, err := h.animalSvc.GetByID(c.Request.Context(), producao.AnimalID)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao validar acesso à produção", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
+		return
+	}
+
 	response.SuccessOK(c, producao, "Produção encontrada")
 }
 
@@ -104,6 +132,21 @@ func (h *ProducaoHandler) GetByAnimalID(c *gin.Context) {
 	animalID, err := strconv.ParseInt(animalIDStr, 10, 64)
 	if err != nil {
 		response.ErrorBadRequest(c, "ID do animal inválido", nil)
+		return
+	}
+
+	// Buscar animal para validar acesso à fazenda
+	animal, err := h.animalSvc.GetByID(c.Request.Context(), animalID)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
 		return
 	}
 
@@ -160,10 +203,47 @@ func (h *ProducaoHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Buscar produção para validar acesso
+	producaoExistente, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrProducaoNotFound) {
+			response.ErrorNotFound(c, "Registro de produção não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar produção", err.Error())
+		return
+	}
+
+	animalExistente, err := h.animalSvc.GetByID(c.Request.Context(), producaoExistente.AnimalID)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao validar acesso", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animalExistente.FazendaID) {
+		return
+	}
+
 	var req UpdateProducaoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorValidation(c, "Dados inválidos", err.Error())
 		return
+	}
+
+	// Se estiver mudando de animal, validar acesso ao novo animal
+	if req.AnimalID != producaoExistente.AnimalID {
+		animalNovo, err := h.animalSvc.GetByID(c.Request.Context(), req.AnimalID)
+		if err != nil {
+			if errors.Is(err, service.ErrAnimalNotFound) {
+				response.ErrorNotFound(c, "Novo animal não encontrado")
+				return
+			}
+			response.ErrorInternal(c, "Erro ao buscar novo animal", err.Error())
+			return
+		}
+		if !ValidateFazendaAccess(c, h.fazendaSvc, animalNovo.FazendaID) {
+			return
+		}
 	}
 
 	producao := &models.ProducaoLeite{
@@ -205,6 +285,27 @@ func (h *ProducaoHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	// Buscar produção para validar acesso
+	producao, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrProducaoNotFound) {
+			response.ErrorNotFound(c, "Registro de produção não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar produção", err.Error())
+		return
+	}
+
+	animal, err := h.animalSvc.GetByID(c.Request.Context(), producao.AnimalID)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao validar acesso", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
+		return
+	}
+
 	if err := h.service.Delete(c.Request.Context(), id); err != nil {
 		if errors.Is(err, service.ErrProducaoNotFound) {
 			response.ErrorNotFound(c, "Registro de produção não encontrado")
@@ -234,6 +335,21 @@ func (h *ProducaoHandler) CountByAnimal(c *gin.Context) {
 		return
 	}
 
+	// Validar acesso
+	animal, err := h.animalSvc.GetByID(c.Request.Context(), animalID)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
+		return
+	}
+
 	n, err := h.service.CountByAnimal(c.Request.Context(), animalID)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao contar", err.Error())
@@ -247,6 +363,21 @@ func (h *ProducaoHandler) GetResumoByAnimal(c *gin.Context) {
 	animalID, err := strconv.ParseInt(animalIDStr, 10, 64)
 	if err != nil {
 		response.ErrorBadRequest(c, "ID do animal inválido", nil)
+		return
+	}
+
+	// Validar acesso
+	animal, err := h.animalSvc.GetByID(c.Request.Context(), animalID)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
 		return
 	}
 

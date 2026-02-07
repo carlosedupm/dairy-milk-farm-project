@@ -70,6 +70,11 @@ func (h *FazendaHandler) GetByID(c *gin.Context) {
 		return
 	}
 
+	// Validar acesso
+	if !ValidateFazendaAccess(c, h.service, id) {
+		return
+	}
+
 	fazenda, err := h.service.GetByID(c.Request.Context(), id)
 	if err != nil {
 		response.ErrorNotFound(c, "Fazenda não encontrada")
@@ -94,6 +99,11 @@ func (h *FazendaHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+
+	// Validar acesso
+	if !ValidateFazendaAccess(c, h.service, id) {
 		return
 	}
 
@@ -137,6 +147,11 @@ func (h *FazendaHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+
+	// Validar acesso
+	if !ValidateFazendaAccess(c, h.service, id) {
 		return
 	}
 

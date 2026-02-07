@@ -125,8 +125,8 @@ func main() {
 					}
 					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
-					animalHandler := handlers.NewAnimalHandler(animalSvc)
-					producaoHandler := handlers.NewProducaoHandler(producaoSvc)
+					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc)
+					producaoHandler := handlers.NewProducaoHandler(producaoSvc, animalSvc, fazendaSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
 					adminHandler := handlers.NewAdminHandler(usuarioSvc, fazendaSvc)
 

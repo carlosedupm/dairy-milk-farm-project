@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import * as assistenteService from "@/services/assistente";
 import type { InterpretResponse } from "@/services/assistente";
+import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import { getApiErrorMessage } from "@/lib/errors";
 import {
@@ -78,6 +79,7 @@ const ECHO_PHRASES = [
 export function AssistenteInput() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { fazendaAtiva } = useFazendaAtiva();
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -183,7 +185,10 @@ export function AssistenteInput() {
       setError("");
       setLoading(true);
       try {
-        const resp = await assistenteService.interpretar(trimmed);
+        const resp = await assistenteService.interpretar(
+          trimmed,
+          fazendaAtiva?.id
+        );
         if (!isMountedRef.current) return;
         setInterpretado(resp);
         if (resp.intent === "desconhecido") {
@@ -385,7 +390,8 @@ export function AssistenteInput() {
     try {
       const result = await assistenteService.executar(
         interpretado.intent,
-        interpretado.payload
+        interpretado.payload,
+        fazendaAtiva?.id
       );
       if (!isMountedRef.current) return;
       unknownErrorCountRef.current = 0;

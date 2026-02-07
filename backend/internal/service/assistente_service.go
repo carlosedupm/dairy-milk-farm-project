@@ -31,9 +31,10 @@ const (
 	intentRegistrarProducaoAnimal = "registrar_producao_animal"
 )
 
-// InterpretRequest contém o texto digitado ou transcrito da voz.
+// InterpretRequest contém o texto digitado ou transcrito da voz e a fazenda ativa opcional.
 type InterpretRequest struct {
-	Texto string `json:"texto"`
+	Texto     string `json:"texto"`
+	FazendaID int64  `json:"fazenda_id,omitempty"`
 }
 
 // InterpretResponse é a resposta do endpoint interpretar (intent + payload + resumo para confirmação).
@@ -45,8 +46,9 @@ type InterpretResponse struct {
 
 // ExecutarRequest contém intent e payload já confirmados pelo usuário.
 type ExecutarRequest struct {
-	Intent  string                 `json:"intent"`
-	Payload map[string]interface{} `json:"payload"`
+	Intent    string                 `json:"intent"`
+	Payload   map[string]interface{} `json:"payload"`
+	FazendaID int64                  `json:"fazenda_id,omitempty"`
 }
 
 type AssistenteService struct {
@@ -71,7 +73,7 @@ func NewAssistenteService(geminiAPIKey, geminiModel string, fazendaSvc *FazendaS
 }
 
 // Interpretar envia o texto ao LLM (Gemini) com contexto do usuário e do sistema, e retorna intent, payload e resumo para confirmação.
-func (s *AssistenteService) Interpretar(ctx context.Context, texto string, userID int64, perfil string, nomeUsuario string) (*InterpretResponse, error) {
+func (s *AssistenteService) Interpretar(ctx context.Context, texto string, fazendaAtivaID int64, userID int64, perfil string, nomeUsuario string) (*InterpretResponse, error) {
 	texto = strings.TrimSpace(texto)
 	if texto == "" {
 		return nil, fmt.Errorf("texto é obrigatório")
@@ -108,17 +110,27 @@ Se o perfil for USER, ofereça apenas intents de fazendas. Se ADMIN ou DEVELOPER
 `, nomeUsuario, perfil)
 	default:
 		parts := make([]string, 0, len(fazendas))
+		var fazendaAtivaNome string
 		for _, f := range fazendas {
 			parts = append(parts, fmt.Sprintf("[id: %d, nome: %s]", f.ID, f.Nome))
+			if f.ID == fazendaAtivaID {
+				fazendaAtivaNome = f.Nome
+			}
 		}
 		ctxoFazendas := strings.Join(parts, ", ")
+
+		fazendaAtivaMsg := ""
+		if fazendaAtivaID > 0 && fazendaAtivaNome != "" {
+			fazendaAtivaMsg = fmt.Sprintf("\nA fazenda ativa (selecionada no momento) é: [id: %d, nome: %s]. Use-a como padrão se o usuário não especificar outra.", fazendaAtivaID, fazendaAtivaNome)
+		}
+
 		contextoSection = fmt.Sprintf(`Contexto do usuário: nome "%s", perfil %s.
-Fazendas vinculadas ao usuário (às quais ele tem acesso): %s.
+Fazendas vinculadas ao usuário (às quais ele tem acesso): %s.%s
 Use essa lista para desambiguar (ex.: "editar a fazenda X" quando há várias) e para respostas naturais ("você tem N fazendas: ...").
-Para cadastrar_animal, listar_animais_fazenda e consultar_animais_fazenda: se o usuário NÃO mencionou fazenda na frase, inclua no payload fazenda_id (number) com o id da fazenda correspondente quando houver apenas uma, ou peça que especifique quando houver várias.
+Para cadastrar_animal, listar_animais_fazenda e consultar_animais_fazenda: se o usuário NÃO mencionou fazenda na frase, inclua no payload fazenda_id (number) com o id da fazenda correspondente quando houver apenas uma ou quando houver uma fazenda ativa, ou peça que especifique quando houver várias e nenhuma ativa.
 Se o perfil for USER, ofereça apenas intents de fazendas. Se ADMIN ou DEVELOPER, pode incluir intents administrativos quando implementados.
 
-`, nomeUsuario, perfil, ctxoFazendas)
+`, nomeUsuario, perfil, ctxoFazendas, fazendaAtivaMsg)
 	}
 
 	prompt := fmt.Sprintf(`Você é um assistente do sistema CeialMilk (gestão de fazendas leiteiras).
@@ -282,7 +294,7 @@ Frase do usuário:
 }
 
 // Executar executa a ação conforme intent e payload (já confirmados pelo usuário).
-func (s *AssistenteService) Executar(ctx context.Context, intent string, payload map[string]interface{}, userID int64) (interface{}, error) {
+func (s *AssistenteService) Executar(ctx context.Context, intent string, payload map[string]interface{}, fazendaAtivaID int64, userID int64) (interface{}, error) {
 	switch intent {
 	case intentCadastrarFazenda:
 		return s.executarCadastrarFazenda(ctx, payload)
@@ -291,13 +303,13 @@ func (s *AssistenteService) Executar(ctx context.Context, intent string, payload
 	case intentBuscarFazenda:
 		return s.executarBuscarFazenda(ctx, payload)
 	case intentConsultarAnimaisFazenda:
-		return s.executarConsultarAnimaisFazenda(ctx, payload, userID)
+		return s.executarConsultarAnimaisFazenda(ctx, payload, fazendaAtivaID, userID)
 	case intentListarAnimaisFazenda:
-		return s.executarListarAnimaisFazenda(ctx, payload, userID)
+		return s.executarListarAnimaisFazenda(ctx, payload, fazendaAtivaID, userID)
 	case intentDetalharAnimal:
 		return s.executarDetalharAnimal(ctx, payload)
 	case intentCadastrarAnimal:
-		return s.executarCadastrarAnimal(ctx, payload, userID)
+		return s.executarCadastrarAnimal(ctx, payload, fazendaAtivaID, userID)
 	case intentEditarAnimal:
 		return s.executarEditarAnimal(ctx, payload)
 	case intentExcluirAnimal:
@@ -391,8 +403,8 @@ func (s *AssistenteService) executarBuscarFazenda(ctx context.Context, payload m
 	return list, nil
 }
 
-func (s *AssistenteService) executarConsultarAnimaisFazenda(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
-	fazenda, err := s.resolveFazendaForUser(ctx, payload, userID, "id", "nome")
+func (s *AssistenteService) executarConsultarAnimaisFazenda(ctx context.Context, payload map[string]interface{}, fazendaAtivaID int64, userID int64) (map[string]interface{}, error) {
+	fazenda, err := s.resolveFazendaForUser(ctx, payload, fazendaAtivaID, userID, "id", "nome")
 	if err != nil {
 		return nil, err
 	}
@@ -418,8 +430,8 @@ func (s *AssistenteService) executarConsultarAnimaisFazenda(ctx context.Context,
 	}, nil
 }
 
-func (s *AssistenteService) executarListarAnimaisFazenda(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
-	fazenda, err := s.resolveFazendaForUser(ctx, payload, userID, "id", "nome")
+func (s *AssistenteService) executarListarAnimaisFazenda(ctx context.Context, payload map[string]interface{}, fazendaAtivaID int64, userID int64) (map[string]interface{}, error) {
+	fazenda, err := s.resolveFazendaForUser(ctx, payload, fazendaAtivaID, userID, "id", "nome")
 	if err != nil {
 		return nil, err
 	}
@@ -661,8 +673,8 @@ func (s *AssistenteService) resolveAnimalByPayload(ctx context.Context, payload 
 	return nil, fmt.Errorf("informe o id ou a identificação do animal")
 }
 
-func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
-	fazenda, err := s.resolveFazendaForUser(ctx, payload, userID, "fazenda_id", "nome_fazenda")
+func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload map[string]interface{}, fazendaAtivaID int64, userID int64) (map[string]interface{}, error) {
+	fazenda, err := s.resolveFazendaForUser(ctx, payload, fazendaAtivaID, userID, "fazenda_id", "nome_fazenda")
 	if err != nil {
 		return nil, err
 	}
@@ -838,8 +850,8 @@ func (s *AssistenteService) executarRegistrarProducaoAnimal(ctx context.Context,
 
 // resolveFazendaForUser retorna a fazenda identificada por id ou nome no payload, validando que pertence ao usuário.
 // keyID e keyNome são as chaves do payload (ex.: "fazenda_id"/"nome_fazenda" para cadastrar_animal, "id"/"nome" para listar/consultar).
-// Se o payload não tiver id nem nome e o usuário tiver exatamente uma fazenda vinculada, retorna essa fazenda.
-func (s *AssistenteService) resolveFazendaForUser(ctx context.Context, payload map[string]interface{}, userID int64, keyID, keyNome string) (*models.Fazenda, error) {
+// Se o payload não tiver id nem nome, tenta usar a fazendaAtivaID (se informada e válida), ou se o usuário tiver exatamente uma fazenda vinculada, retorna essa fazenda.
+func (s *AssistenteService) resolveFazendaForUser(ctx context.Context, payload map[string]interface{}, fazendaAtivaID int64, userID int64, keyID, keyNome string) (*models.Fazenda, error) {
 	userFazendas, err := s.fazendaSvc.GetByUsuarioID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao carregar fazendas do usuário: %w", err)
@@ -882,6 +894,15 @@ func (s *AssistenteService) resolveFazendaForUser(ctx context.Context, payload m
 			return match, nil
 		}
 		return nil, fmt.Errorf("nenhuma fazenda encontrada com o nome \"%s\" ou você não tem acesso a ela", nomeVal)
+	}
+
+	// Se não especificou no payload, tentar usar a fazenda ativa do frontend
+	if fazendaAtivaID > 0 {
+		for _, f := range userFazendas {
+			if f.ID == fazendaAtivaID {
+				return f, nil
+			}
+		}
 	}
 
 	if len(userFazendas) == 1 {

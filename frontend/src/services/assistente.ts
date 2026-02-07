@@ -14,11 +14,15 @@ export type ExecutarResult = {
   message: string;
 };
 
-export async function interpretar(texto: string): Promise<InterpretResponse> {
+export async function interpretar(
+  texto: string,
+  fazendaId?: number,
+): Promise<InterpretResponse> {
   const { data } = await api.post<ApiResponse<InterpretResponse>>(
     "/api/v1/assistente/interpretar",
     {
       texto: texto.trim(),
+      fazenda_id: fazendaId,
     },
   );
   if (!data.data) throw new Error("Resposta inválida");
@@ -35,12 +39,14 @@ interface ExecutarApiBody {
 export async function executar(
   intent: string,
   payload: Record<string, unknown>,
+  fazendaId?: number,
 ): Promise<ExecutarResult> {
   const { data } = await api.post<ExecutarApiBody>(
     "/api/v1/assistente/executar",
     {
       intent,
       payload,
+      fazenda_id: fazendaId,
     },
   );
   return {

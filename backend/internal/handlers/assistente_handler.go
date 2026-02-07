@@ -40,7 +40,7 @@ func (h *AssistenteHandler) Interpretar(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.svc.Interpretar(c.Request.Context(), req.Texto, userID, perfil, nomeUsuario)
+	resp, err := h.svc.Interpretar(c.Request.Context(), req.Texto, req.FazendaID, userID, perfil, nomeUsuario)
 	if err != nil {
 		if strings.Contains(err.Error(), "quota da API Gemini") {
 			response.ErrorQuotaExceeded(c, "Limite de uso da API excedido. Tente novamente mais tarde.", nil)
@@ -63,7 +63,7 @@ func (h *AssistenteHandler) Executar(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.Executar(c.Request.Context(), req.Intent, req.Payload, userID)
+	result, err := h.svc.Executar(c.Request.Context(), req.Intent, req.Payload, req.FazendaID, userID)
 	if err != nil {
 		if errors.Is(err, service.ErrFazendaDuplicada) {
 			response.ErrorConflict(c, "Já existe uma fazenda com esse nome e localização", nil)

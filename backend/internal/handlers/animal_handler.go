@@ -12,11 +12,12 @@ import (
 )
 
 type AnimalHandler struct {
-	service *service.AnimalService
+	service    *service.AnimalService
+	fazendaSvc *service.FazendaService
 }
 
-func NewAnimalHandler(service *service.AnimalService) *AnimalHandler {
-	return &AnimalHandler{service: service}
+func NewAnimalHandler(service *service.AnimalService, fazendaSvc *service.FazendaService) *AnimalHandler {
+	return &AnimalHandler{service: service, fazendaSvc: fazendaSvc}
 }
 
 type CreateAnimalRequest struct {
@@ -41,6 +42,11 @@ func (h *AnimalHandler) Create(c *gin.Context) {
 	var req CreateAnimalRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorValidation(c, "Dados inválidos", err.Error())
+		return
+	}
+
+	// Validar acesso à fazenda
+	if !ValidateFazendaAccess(c, h.fazendaSvc, req.FazendaID) {
 		return
 	}
 
@@ -85,6 +91,11 @@ func (h *AnimalHandler) GetByID(c *gin.Context) {
 		return
 	}
 
+	// Validar acesso à fazenda do animal
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
+		return
+	}
+
 	response.SuccessOK(c, animal, "Animal encontrado")
 }
 
@@ -103,6 +114,11 @@ func (h *AnimalHandler) GetByFazendaID(c *gin.Context) {
 	fazendaID, err := strconv.ParseInt(fazendaIDStr, 10, 64)
 	if err != nil {
 		response.ErrorBadRequest(c, "ID da fazenda inválido", nil)
+		return
+	}
+
+	// Validar acesso à fazenda
+	if !ValidateFazendaAccess(c, h.fazendaSvc, fazendaID) {
 		return
 	}
 
@@ -127,10 +143,32 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Buscar animal para validar acesso à fazenda atual
+	animalExistente, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animalExistente.FazendaID) {
+		return
+	}
+
 	var req UpdateAnimalRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorValidation(c, "Dados inválidos", err.Error())
 		return
+	}
+
+	// Se estiver mudando de fazenda, validar acesso à nova fazenda
+	if req.FazendaID != animalExistente.FazendaID {
+		if !ValidateFazendaAccess(c, h.fazendaSvc, req.FazendaID) {
+			return
+		}
 	}
 
 	animal := &models.Animal{
@@ -166,6 +204,21 @@ func (h *AnimalHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+
+	// Buscar animal para validar acesso à fazenda
+	animal, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
 		return
 	}
 
@@ -237,6 +290,11 @@ func (h *AnimalHandler) CountByFazenda(c *gin.Context) {
 	fazendaID, err := strconv.ParseInt(fazendaIDStr, 10, 64)
 	if err != nil {
 		response.ErrorBadRequest(c, "ID da fazenda inválido", nil)
+		return
+	}
+
+	// Validar acesso à fazenda
+	if !ValidateFazendaAccess(c, h.fazendaSvc, fazendaID) {
 		return
 	}
 
