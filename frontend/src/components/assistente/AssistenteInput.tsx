@@ -256,7 +256,7 @@ export function AssistenteInput() {
         if (isMountedRef.current) setLoading(false);
       }
     },
-    [scheduleRetryReopen]
+    [scheduleRetryReopen, fazendaAtiva?.id]
   );
 
   const voiceResultRef = useRef<((text: string) => void) | null>(null);
