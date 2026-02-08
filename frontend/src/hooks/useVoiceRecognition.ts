@@ -192,8 +192,10 @@ export function useVoiceRecognition(options?: {
         setTranscript(fullText);
         setIsFinal(lastIsFinal);
 
-        // Sempre finalizar ao receber segmento final com texto (evita depender só do timeout/onend em modais)
-        if (lastIsFinal && fullText.trim()) {
+        // No desktop: finalizar ao receber segmento final (resposta rápida em modais).
+        // No mobile/Android: não finalizar no primeiro "final" — deixar onend reportar com todo o texto
+        // acumulado, evitando cortar a frase (engine pode emitir primeiro final cedo).
+        if (!isMobile && lastIsFinal && fullText.trim()) {
           clearSilenceTimer();
           userRequestedStopRef.current = true;
           onResultRef.current?.(fullText.trim(), true);

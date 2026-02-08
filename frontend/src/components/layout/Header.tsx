@@ -93,13 +93,13 @@ export function Header() {
               </Button>
             </DialogTrigger>
             <DialogContent
-              className="sm:max-w-md"
+              className="sm:max-w-lg"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
               <DialogHeader>
                 <DialogTitle>Assistente</DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground">
-                  Digite ou fale o que você precisa. O assistente usa o contexto do seu perfil e dos dados do sistema.
+                  Digite ou fale o que você precisa. Ex: &quot;quantos animais tenho?&quot;, &quot;ver produção da fazenda&quot;, &quot;abrir fazenda X&quot;. Usa o contexto da sua fazenda ativa.
                 </DialogDescription>
               </DialogHeader>
               <AssistenteInput />
@@ -165,13 +165,13 @@ export function Header() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent
-                  className="sm:max-w-md"
+                  className="sm:max-w-lg"
                   onOpenAutoFocus={(e) => e.preventDefault()}
                 >
                   <DialogHeader>
                     <DialogTitle>Assistente</DialogTitle>
                     <DialogDescription className="text-sm text-muted-foreground">
-                      Digite ou fale o que você precisa. O assistente usa o contexto do seu perfil e dos dados do sistema.
+                      Digite ou fale o que você precisa. Ex: &quot;quantos animais tenho?&quot;, &quot;ver produção da fazenda&quot;. Usa o contexto da sua fazenda ativa.
                     </DialogDescription>
                   </DialogHeader>
                   <AssistenteInput />

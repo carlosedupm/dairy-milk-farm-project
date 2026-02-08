@@ -26,10 +26,18 @@ import {
   speak,
 } from "@/lib/speechSynthesis";
 import { interpretVoiceConfirm } from "@/lib/voiceConfirm";
-import { MessageCircle, Mic, MicOff } from "lucide-react";
+import { Loader2, MessageCircle, Mic, MicOff } from "lucide-react";
 
 /** Delay em ms antes de reabrir o microfone após TTS (anti-eco em mobile/Samsung). */
 const RETRY_REOPEN_DELAY_MS = 2000;
+/** No mobile, delay menor para não parecer que travou. */
+const RETRY_REOPEN_DELAY_MOBILE_MS = 1000;
+
+function isMobileOrAndroid(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent.toLowerCase();
+  return /android|iphone|ipad|ipod/.test(ua) || "ontouchstart" in window;
+}
 /** Máximo de tentativas consecutivas desconhecido/erro antes de exigir clique no microfone. */
 const MAX_CONSECUTIVE_RETRIES = 2;
 /** Retorna o path para redirecionar após executar: animal → /animais/:id; lista de animais por fazenda → /fazendas/:id/animais; 1 fazenda → /fazendas/:id; senão /fazendas. */
@@ -68,6 +76,13 @@ function getRedirectPathFromResult(data: unknown): string {
   }
   return "/fazendas";
 }
+
+/** Sugestões rápidas para o usuário (clicáveis). */
+const SUGESTOES_RAPIDAS = [
+  "Quantos animais eu tenho?",
+  "Ver produção da fazenda",
+  "Listar animais da fazenda ativa",
+];
 
 /** Frases do sistema que podem ser eco do TTS — ignorar se transcritas. */
 const ECHO_PHRASES = [
@@ -126,8 +141,22 @@ export function AssistenteInput() {
   const confirmationReminderTimerRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
+  /** Timeout de fallback quando TTS onEnd não dispara (ex.: Android). */
+  const confirmationTtsFallbackTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const unknownErrorCountRef = useRef(0);
   const lastRedirectPathRef = useRef("/fazendas");
+  /** True enquanto runInterpretar está em execução (evita dupla chamada por race onresult/onend no Android). */
+  const interpretarInFlightRef = useRef(false);
+  /** Refs para Page Visibility: re-sincronizar escuta de confirmação ao voltar à aba. */
+  const dialogOpenRef = useRef(false);
+  const interpretadoRef = useRef<InterpretResponse | null>(null);
+  const executandoRef = useRef(false);
+  /** True enquanto o timer de reabertura do microfone está ativo (feedback visual no mobile). */
+  const [reopeningMicInProgress, setReopeningMicInProgress] = useState(false);
+  const reopenMicStateSetterRef = useRef<(() => void) | null>(null);
+  reopenMicStateSetterRef.current = () => setReopeningMicInProgress(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -213,15 +242,21 @@ export function AssistenteInput() {
       clearTimeout(retryReopenDelayTimerRef.current);
       retryReopenDelayTimerRef.current = null;
     }
+    reopenMicStateSetterRef.current?.();
   }, []);
 
   /** Apenas delay + reopen (para Corrigir/reformular, sem checagem de contador). */
   const scheduleDelayedReopen = useCallback(() => {
     clearRetryReopenTimer();
+    const delayMs = isMobileOrAndroid()
+      ? RETRY_REOPEN_DELAY_MOBILE_MS
+      : RETRY_REOPEN_DELAY_MS;
+    setReopeningMicInProgress(true);
     retryReopenDelayTimerRef.current = setTimeout(() => {
       retryReopenDelayTimerRef.current = null;
+      reopenMicStateSetterRef.current?.();
       if (isMountedRef.current) startListeningRef.current?.();
-    }, RETRY_REOPEN_DELAY_MS);
+    }, delayMs);
   }, [clearRetryReopenTimer]);
 
   /** Agenda reabertura do microfone com delay anti-eco. Após MAX_CONSECUTIVE_RETRIES, não reabre automaticamente. */
@@ -249,6 +284,10 @@ export function AssistenteInput() {
         clearTimeout(confirmationReminderTimerRef.current);
         confirmationReminderTimerRef.current = null;
       }
+      if (confirmationTtsFallbackTimerRef.current !== null) {
+        clearTimeout(confirmationTtsFallbackTimerRef.current);
+        confirmationTtsFallbackTimerRef.current = null;
+      }
       setAguardandoMaisOperacao(false);
       setMicAbreEmBreve(false);
       setPreparandoOuvirConfirmacao(false);
@@ -262,6 +301,8 @@ export function AssistenteInput() {
     async (t: string) => {
       const trimmed = t.trim();
       if (!trimmed) return;
+      if (interpretarInFlightRef.current) return;
+      interpretarInFlightRef.current = true;
       setError("");
       setLoading(true);
       try {
@@ -299,8 +340,27 @@ export function AssistenteInput() {
           stopMainVoiceRef.current?.(true);
           setDialogOpen(true);
           if (lastInputWasVoiceRef.current && isSpeechSynthesisSupported()) {
+            if (confirmationTtsFallbackTimerRef.current !== null) {
+              clearTimeout(confirmationTtsFallbackTimerRef.current);
+              confirmationTtsFallbackTimerRef.current = null;
+            }
+            const fallbackMs = 4000;
+            confirmationTtsFallbackTimerRef.current = setTimeout(() => {
+              confirmationTtsFallbackTimerRef.current = null;
+              if (
+                isMountedRef.current &&
+                !alreadyHandledConfirmRef.current &&
+                startConfirmationListeningRef.current
+              ) {
+                startConfirmationListeningRef.current();
+              }
+            }, fallbackMs);
             speak(resp.resumo, {
               onEnd: () => {
+                if (confirmationTtsFallbackTimerRef.current !== null) {
+                  clearTimeout(confirmationTtsFallbackTimerRef.current);
+                  confirmationTtsFallbackTimerRef.current = null;
+                }
                 if (isMountedRef.current && !alreadyHandledConfirmRef.current) {
                   startConfirmationListeningRef.current?.();
                 }
@@ -333,6 +393,7 @@ export function AssistenteInput() {
           });
         }
       } finally {
+        interpretarInFlightRef.current = false;
         if (isMountedRef.current) setLoading(false);
       }
     },
@@ -411,6 +472,7 @@ export function AssistenteInput() {
           if (trimmedAsk.length < 4) return;
           const lowerAsk = trimmedAsk.toLowerCase();
           if (ECHO_PHRASES.some((p) => lowerAsk.includes(p))) return;
+          if (interpretarInFlightRef.current) return;
           lastInputWasVoiceRef.current = true;
           voiceResultRef.current?.(text);
           return;
@@ -425,6 +487,7 @@ export function AssistenteInput() {
         if (trimmed.length < 4) return;
         const lower = trimmed.toLowerCase();
         if (ECHO_PHRASES.some((p) => lower.includes(p))) return;
+        if (interpretarInFlightRef.current) return;
         lastInputWasVoiceRef.current = true;
         voiceResultRef.current?.(text);
       }
@@ -440,6 +503,11 @@ export function AssistenteInput() {
     stopListening,
   } = voice;
   startListeningRef.current = startListening;
+  dialogOpenRef.current = dialogOpen;
+  interpretadoRef.current = interpretado;
+  executandoRef.current = executando;
+  const isListeningRef = useRef(false);
+  isListeningRef.current = isListening;
 
   const handleInterpretar = () => {
     lastInputWasVoiceRef.current = false;
@@ -562,6 +630,10 @@ export function AssistenteInput() {
   };
 
   const handleCancelar = () => {
+    if (confirmationTtsFallbackTimerRef.current !== null) {
+      clearTimeout(confirmationTtsFallbackTimerRef.current);
+      confirmationTtsFallbackTimerRef.current = null;
+    }
     unknownErrorCountRef.current = 0;
     setAguardandoMaisOperacao(false);
     setMicAbreEmBreve(false);
@@ -586,6 +658,28 @@ export function AssistenteInput() {
   const [showVoiceButton, setShowVoiceButton] = useState(false);
   useEffect(() => {
     setShowVoiceButton(true);
+  }, []);
+
+  // Page Visibility: ao voltar à aba, re-sincronizar escuta de confirmação se o dialog está aberto e o reconhecimento abortou.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+      if (
+        !dialogOpenRef.current ||
+        !interpretadoRef.current ||
+        executandoRef.current ||
+        !confirmationModeRef.current ||
+        isListeningRef.current ||
+        alreadyHandledConfirmRef.current ||
+        !startConfirmationListeningRef.current
+      )
+        return;
+      startConfirmationListeningRef.current();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
   // Iniciar escuta de confirmação por voz quando o dialog abre.
@@ -658,10 +752,28 @@ export function AssistenteInput() {
     stopListening,
   ]);
 
+  const handleSugestaoClick = useCallback(
+    (sugestao: string) => {
+      if (loading || liveMode) return;
+      lastInputWasVoiceRef.current = false;
+      setTexto(sugestao);
+      runInterpretar(sugestao);
+    },
+    [loading, liveMode, runInterpretar]
+  );
+
   return (
     <>
-      <div className="flex flex-col gap-1 min-w-[200px] max-w-[320px]">
-          <div className="flex gap-2">
+      <div className="flex flex-col gap-3 w-full min-w-0">
+          <div className="flex gap-2 items-center">
+            {liveMode && (
+              <span
+                className="shrink-0 rounded-full bg-primary/20 text-primary px-2 py-0.5 text-xs font-medium"
+                title="Conversa em tempo real ativa"
+              >
+                Live
+              </span>
+            )}
             <Input
               value={texto}
               onChange={(e) => {
@@ -681,11 +793,11 @@ export function AssistenteInput() {
               }}
               placeholder={liveMode ? "Fale ou digite aqui..." : "O que você precisa?"}
               disabled={loading}
-              className="flex-1"
+              className="flex-1 min-w-0"
               title="Recurso opcional; melhor experiência com internet."
             />
           {showVoiceButton && isSupported && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 type="button"
                 size="icon"
@@ -715,11 +827,36 @@ export function AssistenteInput() {
             disabled={loading || !texto.trim()}
             title="Enviar pedido em linguagem natural"
           >
-            <MessageCircle className="h-4 w-4" />
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <MessageCircle className="h-4 w-4" />
+            )}
           </Button>
         </div>
+        {!liveMode && !loading && (
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-xs text-muted-foreground self-center mr-1">Sugestões:</span>
+            {SUGESTOES_RAPIDAS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => handleSugestaoClick(s)}
+                className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs text-foreground hover:bg-muted hover:border-primary/30 transition-colors"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+        {loading && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5" role="status" aria-live="polite">
+            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" aria-hidden />
+            Interpretando…
+          </p>
+        )}
         {liveMode && liveText && (
-          <div className="mt-2 p-2 rounded-md bg-primary/10 border border-primary/20 text-sm animate-in fade-in slide-in-from-top-1">
+          <div className="p-2 rounded-md bg-primary/10 border border-primary/20 text-sm animate-in fade-in slide-in-from-top-1 min-h-[2.5rem]">
             <p className="font-medium text-primary text-xs mb-1">Assistente Live:</p>
             {liveText}
           </div>
@@ -728,6 +865,18 @@ export function AssistenteInput() {
           <div className="mt-1 p-2 rounded-md bg-muted border border-border text-sm italic">
             <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Você disse:</p>
             {liveTranscript}
+          </div>
+        )}
+        {reopeningMicInProgress && (
+          <div
+            className="flex items-center gap-2 rounded-md border border-muted-foreground/30 bg-muted/50 px-2 py-1.5 text-sm"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+            <span className="text-muted-foreground">
+              Aguarde… reabrindo microfone.
+            </span>
           </div>
         )}
         {(aguardandoMaisOperacao || isListening || (liveMode && isVoiceListening)) && (
@@ -778,8 +927,10 @@ export function AssistenteInput() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmar ação</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              {interpretado?.resumo ?? ""}
+            <DialogDescription asChild>
+              <div className="rounded-lg border border-border bg-muted/50 p-3 mt-1 text-sm text-foreground">
+                {interpretado?.resumo ?? ""}
+              </div>
             </DialogDescription>
           </DialogHeader>
           {error && (
