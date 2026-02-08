@@ -418,7 +418,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			"raca":            strOrEmpty(a.Raca),
 			"sexo":            sexoParaExibicao(a.Sexo),
 			"status_saude":    strOrEmpty(a.StatusSaude),
-			"data_nascimento": a.DataNascimento,
+			"data_nascimento": timeToStr(a.DataNascimento),
 		}, nil
 
 	case "excluir_animal":
@@ -497,4 +497,12 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 	default:
 		return nil, fmt.Errorf("função não implementada: %s", call.Name)
 	}
+}
+
+// timeToStr converte *time.Time em valor serializável para o Gemini (proto Struct não aceita time.Time).
+func timeToStr(t *time.Time) interface{} {
+	if t == nil {
+		return nil
+	}
+	return t.Format(time.RFC3339)
 }

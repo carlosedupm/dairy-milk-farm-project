@@ -93,6 +93,31 @@ const ECHO_PHRASES = [
   "tente reformular",
 ];
 
+/** Normaliza texto para comparação (lowercase, trim, colapsa espaços). */
+function normalizeForEcho(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Verifica se a transcrição parece ser eco da fala do assistente (TTS capturado pelo microfone). */
+function isEchoTranscript(transcript: string, lastAssistantText: string | null): boolean {
+  if (!transcript.trim()) return true;
+  const t = normalizeForEcho(transcript);
+  if (ECHO_PHRASES.some((phrase) => t.includes(phrase) || phrase.includes(t))) return true;
+  if (!lastAssistantText?.trim()) return false;
+  const a = normalizeForEcho(lastAssistantText);
+  const tWords = t.split(/\s+/).filter(Boolean);
+  // Frases curtas do usuário (ex.: "sim", "não", "listar animais") não tratar como eco — permitir interromper
+  if (tWords.length <= 2 && a.length > 30) return false;
+  // Eco: transcrição é substring da resposta do assistente ou muito parecida
+  if (a.length >= 10 && (a.includes(t) || t.includes(a))) return true;
+  const aWords = new Set(a.split(/\s+/).filter(Boolean));
+  if (tWords.length >= 3) {
+    const matchCount = tWords.filter((w) => aWords.has(w)).length;
+    if (matchCount >= 0.8 * tWords.length) return true;
+  }
+  return false;
+}
+
 export function AssistenteInput() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -159,10 +184,14 @@ export function AssistenteInput() {
   reopenMicStateSetterRef.current = () => setReopeningMicInProgress(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
+  /** Última resposta de texto do assistente no Live (para filtrar eco). */
+  const lastLiveTextRef = useRef<string | null>(null);
+  const stopLiveVoiceRef = useRef<((skipReport?: boolean) => void) | null>(null);
 
   const geminiLive = useGeminiLive({
     fazendaId: fazendaAtiva?.id,
     onTextResponse: (text) => {
+      lastLiveTextRef.current = text;
       setLiveText(text);
       if (isSpeechSynthesisSupported()) {
         speak(text, { cancelPrevious: true });
@@ -196,15 +225,15 @@ export function AssistenteInput() {
     isSupported: isVoiceSupported,
   } = useVoiceRecognition({
     onResult: (text, isFinal) => {
-      console.log("Evento onResult disparado:", { text, isFinal, liveMode });
-      if (liveMode && isFinal && text.trim()) {
-        console.log(">>> Enviando texto via WebSocket:", text);
-        geminiLive.sendText(text);
-      }
+      if (!liveMode || !isFinal || !text.trim()) return;
+      if (isEchoTranscript(text, lastLiveTextRef.current)) return;
+      cancelSpeech();
+      geminiLive.sendText(text);
     },
     language: "pt-BR",
   });
   const isSupported = isVoiceSupported;
+  stopLiveVoiceRef.current = stopLiveVoice;
 
   // Debug do estado de voz
   useEffect(() => {
@@ -222,12 +251,11 @@ export function AssistenteInput() {
     }
   }, [liveMode, isVoiceSupported, startLiveVoice, stopLiveVoice]);
 
-  // Auto-religar o microfone no modo Live para manter a conversa contínua (apenas se voz suportada)
+  // Auto-religar o microfone no modo Live para manter a conversa contínua
   useEffect(() => {
     if (liveMode && isVoiceSupported && !isVoiceListening) {
       const timer = setTimeout(() => {
         if (liveMode && isVoiceSupported && !isVoiceListening) {
-          console.log("Religando microfone para manter conversa fluida...");
           startLiveVoice();
         }
       }, 500);
