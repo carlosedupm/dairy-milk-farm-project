@@ -232,15 +232,17 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 		},
 		{
 			Name:        "editar_animal",
-			Description: "Altera dados de um animal existente (nome/identificação, raça, sexo, status).",
+			Description: "Altera dados de um animal existente: identificação/nome, raça, data de nascimento, sexo, status de saúde ou transferir para outra fazenda.",
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
 					"identificacao":      {Type: genai.TypeString, Description: "Identificação ATUAL do animal para localizá-lo"},
 					"identificacaoNovo":  {Type: genai.TypeString, Description: "Nova identificação/nome (se desejar renomear)"},
 					"raca":               {Type: genai.TypeString, Description: "Nova raça"},
+					"data_nascimento":    {Type: genai.TypeString, Description: "Nova data de nascimento (YYYY-MM-DD ou apenas YYYY)"},
 					"sexo":               {Type: genai.TypeString, Description: "Novo sexo (M ou F)"},
 					"status_saude":       {Type: genai.TypeString, Description: "Novo status (SAUDAVEL, DOENTE, EM_TRATAMENTO)"},
+					"fazenda_id":         {Type: genai.TypeInteger, Description: "ID da fazenda para transferir o animal (trocar de fazenda)"},
 				},
 				Required: []string{"identificacao"},
 			},
@@ -441,23 +443,43 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		}
 		a := animais[0]
 
-		if v, ok := call.Args["identificacaoNovo"].(string); ok && v != "" {
-			a.Identificacao = v
+		if v, ok := call.Args["identificacaoNovo"].(string); ok && strings.TrimSpace(v) != "" {
+			a.Identificacao = strings.TrimSpace(v)
 		}
 		if v, ok := call.Args["raca"].(string); ok {
-			a.Raca = &v
+			s := strings.TrimSpace(v)
+			if s == "" {
+				a.Raca = nil
+			} else {
+				a.Raca = &s
+			}
+		}
+		if v, ok := call.Args["data_nascimento"].(string); ok && strings.TrimSpace(v) != "" {
+			t, errParse := parseFundacaoAssistente(strings.TrimSpace(v))
+			if errParse != nil {
+				slog.Warn("Data de nascimento inválida no assistente Live editar animal", "value", v, "error", errParse)
+			} else if t != nil {
+				a.DataNascimento = t
+			}
 		}
 		if v, ok := call.Args["sexo"].(string); ok {
-			norm := normalizarSexoPayload(v)
-			if norm != "" {
+			s := strings.TrimSpace(v)
+			if s == "" {
+				a.Sexo = nil
+			} else if norm := normalizarSexoPayload(s); norm != "" {
 				a.Sexo = &norm
 			}
 		}
 		if v, ok := call.Args["status_saude"].(string); ok {
-			upper := strings.ToUpper(v)
-			if models.IsValidStatusSaude(upper) {
-				a.StatusSaude = &upper
+			s := strings.TrimSpace(strings.ToUpper(v))
+			if s == "" {
+				a.StatusSaude = nil
+			} else if models.IsValidStatusSaude(s) {
+				a.StatusSaude = &s
 			}
+		}
+		if idNum, ok := call.Args["fazenda_id"].(float64); ok && idNum > 0 {
+			a.FazendaID = int64(idNum)
 		}
 
 		errUpdateAnimal := s.animalSvc.Update(ctx, a)
