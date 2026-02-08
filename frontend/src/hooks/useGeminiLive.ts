@@ -18,6 +18,12 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
   const streamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
 
+  // Usar ref para as opções para evitar disparar o useCallback[start] desnecessariamente
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
+
   const stop = useCallback(() => {
     setIsActive(false);
     setIsConnecting(false);
@@ -57,8 +63,9 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
       const wsBase = baseUrl.replace(/^http/, 'ws');
       let wsUrl = `${wsBase}/api/v1/assistente/live`;
       
-      if (options.fazendaId) {
-        wsUrl += `?fazenda_id=${options.fazendaId}`;
+      const currentOptions = optionsRef.current;
+      if (currentOptions.fazendaId) {
+        wsUrl += `?fazenda_id=${currentOptions.fazendaId}`;
       }
       
       const socket = new WebSocket(wsUrl);
@@ -114,30 +121,28 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
           try {
             const data = JSON.parse(event.data);
             console.log("JSON parseado com sucesso:", data);
-            if (data.type === "text") {
-              console.log("Chamando onTextResponse com:", data.content);
-              options.onTextResponse?.(data.content);
-            } else if (data.type === "close") {
-              console.log("Pedido de fechamento recebido:", data.content);
-              options.onCloseRequest?.(data.content);
-            }
-          } catch (e) {
-            console.error("Erro ao fazer parse do JSON:", e, "String recebida:", event.data);
-          }
-        } else if (event.data instanceof Blob) {
-          console.log("Processando áudio (Blob) de tamanho:", event.data.size);
-          const arrayBuffer = await event.data.arrayBuffer();
-          options.onAudioResponse?.(arrayBuffer);
-        } else {
-          console.log("Tipo de mensagem WebSocket não reconhecido:", typeof event.data);
+          optionsRef.current.onTextResponse?.(data.content);
+        } else if (data.type === "close") {
+          console.log("Pedido de fechamento recebido:", data.content);
+          optionsRef.current.onCloseRequest?.(data.content);
         }
-      };
+      } catch (e) {
+        console.error("Erro ao fazer parse do JSON:", e, "String recebida:", event.data);
+      }
+    } else if (event.data instanceof Blob) {
+      console.log("Processando áudio (Blob) de tamanho:", event.data.size);
+      const arrayBuffer = await event.data.arrayBuffer();
+      optionsRef.current.onAudioResponse?.(arrayBuffer);
+    } else {
+      console.log("Tipo de mensagem WebSocket não reconhecido:", typeof event.data);
+    }
+  };
 
-      socket.onerror = (err) => {
-        console.error("Erro no WebSocket:", err);
-        options.onError?.("Erro na conexão com o assistente.");
-        stop();
-      };
+  socket.onerror = (err) => {
+    console.error("Erro no WebSocket:", err);
+    optionsRef.current.onError?.("Erro na conexão com o assistente.");
+    stop();
+  };
 
       socket.onclose = () => {
         stop();
@@ -146,9 +151,9 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
     } catch (err) {
       console.error("Erro ao iniciar Gemini Live:", err);
       setIsConnecting(false);
-      options.onError?.("Falha ao iniciar o assistente.");
+      optionsRef.current.onError?.("Falha ao iniciar o assistente.");
     }
-  }, [isActive, isConnecting, options, stop]);
+  }, [isActive, isConnecting, stop]);
 
   useEffect(() => {
     return () => stop();

@@ -9,7 +9,7 @@ interface VoiceWaveformProps {
 
 export function VoiceWaveform({ isActive, color = "hsl(var(--primary))" }: VoiceWaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(undefined);
 
   useEffect(() => {
     if (!isActive) {
