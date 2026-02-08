@@ -102,14 +102,11 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
               }
               // Enviar áudio como binário
               socket.send(pcmData.buffer);
-              
-              // Fallback para teste: se o áudio não estiver sendo processado pelo Gemini Live no backend,
-              // podemos enviar o texto via socket.send(JSON.stringify({text: "..."}))
             }
           };
         } catch (err) {
           console.error("Erro ao acessar microfone:", err);
-          options.onError?.("Não foi possível acessar o microfone.");
+          optionsRef.current.onError?.("Não foi possível acessar o microfone.");
           stop();
         }
       };
@@ -121,28 +118,30 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
           try {
             const data = JSON.parse(event.data);
             console.log("JSON parseado com sucesso:", data);
-          optionsRef.current.onTextResponse?.(data.content);
-        } else if (data.type === "close") {
-          console.log("Pedido de fechamento recebido:", data.content);
-          optionsRef.current.onCloseRequest?.(data.content);
+            if (data.type === "text") {
+              console.log("Chamando onTextResponse com:", data.content);
+              optionsRef.current.onTextResponse?.(data.content);
+            } else if (data.type === "close") {
+              console.log("Pedido de fechamento recebido:", data.content);
+              optionsRef.current.onCloseRequest?.(data.content);
+            }
+          } catch (e) {
+            console.error("Erro ao fazer parse do JSON:", e, "String recebida:", event.data);
+          }
+        } else if (event.data instanceof Blob) {
+          console.log("Processando áudio (Blob) de tamanho:", event.data.size);
+          const arrayBuffer = await event.data.arrayBuffer();
+          optionsRef.current.onAudioResponse?.(arrayBuffer);
+        } else {
+          console.log("Tipo de mensagem WebSocket não reconhecido:", typeof event.data);
         }
-      } catch (e) {
-        console.error("Erro ao fazer parse do JSON:", e, "String recebida:", event.data);
-      }
-    } else if (event.data instanceof Blob) {
-      console.log("Processando áudio (Blob) de tamanho:", event.data.size);
-      const arrayBuffer = await event.data.arrayBuffer();
-      optionsRef.current.onAudioResponse?.(arrayBuffer);
-    } else {
-      console.log("Tipo de mensagem WebSocket não reconhecido:", typeof event.data);
-    }
-  };
+      };
 
-  socket.onerror = (err) => {
-    console.error("Erro no WebSocket:", err);
-    optionsRef.current.onError?.("Erro na conexão com o assistente.");
-    stop();
-  };
+      socket.onerror = (err) => {
+        console.error("Erro no WebSocket:", err);
+        optionsRef.current.onError?.("Erro na conexão com o assistente.");
+        stop();
+      };
 
       socket.onclose = () => {
         stop();
