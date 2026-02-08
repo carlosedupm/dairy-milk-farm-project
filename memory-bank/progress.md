@@ -177,6 +177,22 @@
 
 ## 🔄 Histórico de Progresso
 
+### **2026-02-08 - Assistente Virtual Multimodal Live**
+
+- ✅ **Implementação Completa**: Substituição da solução antiga por uma interface de voz em tempo real via WebSockets.
+- ✅ **Function Calling**: Integração direta com os serviços de Fazenda, Animal e Produção.
+- ✅ **Contexto Inteligente**: Suporte a usuário logado e fazenda ativa selecionada no sistema.
+- ✅ **UI/UX**: Visualizador de ondas sonoras e transcrição em tempo real.
+- ✅ **Correção de Erros**: Resolvidos problemas de compilação e tipos no Protocol Buffers.
+
+### **2026-02-08 - Correção Assistente Live**
+
+- ✅ **Correção de Erros de Compilação**: Resolvidos problemas no `assistente_live_handler.go` e `assistente_live_service.go` que impediam o build do backend.
+  - Removido import `encoding/base64` não utilizado.
+  - Exportados campos `UserID`, `Perfil`, `NomeUsuario` e `FazendaAtiva` na struct `Session` para acesso pelo handler.
+  - Corrigida asserção de tipo em `processFunctionResponse` para garantir que o resultado seja `map[string]any` antes de enviar ao Gemini.
+  - Ajustado `ExecuteFunction` para retornar `map[string]any` em vez de `map[string]string`.
+
 ### **2025-09-07 - Dia 1**
 
 - ✅ **Setup inicial**: Estrutura do projeto criada (Java/Spring)
@@ -373,6 +389,6 @@
 
 ---
 
-**Última atualização**: 2026-02-06
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Assistente com fazendas vinculadas ao usuário e fallback uma fazenda (cadastrar animal, listar/consultar animais) | Testes unitários e E2E configurados
+**Última atualização**: 2026-02-08
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Assistente Live (correção de compilação) | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Assistente com fazendas vinculadas ao usuário e fallback uma fazenda (cadastrar animal, listar/consultar animais) | Testes unitários e E2E configurados
 **Próxima revisão**: 2026-02-07

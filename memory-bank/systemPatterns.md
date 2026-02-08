@@ -105,6 +105,12 @@ lib/utils.ts
 - **Contexto tipo Cursor**: `loadTargetFilesForPrompt` infere arquivos-alvo (menu, Header, rota, link, dev-studio) e inclui o **estado atual** no contexto. Instruções no prompt: usar como base, preservar o resto; trabalhar como IDE.
 - **Contexto do repositório**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo vêm sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via `GitHubService.GetFileContent`. Fallback para disco local quando GitHub não está configurado.
 
+**Assistente Virtual Multimodal Live**:
+- **Arquitetura**: Streaming bidirecional via WebSocket (`/api/v1/assistente/live`).
+- **Backend**: Proxy entre Frontend e Gemini API; orquestração de goroutines para processamento paralelo; Function Calling para acesso ao banco.
+- **Frontend**: Hook `useGeminiLive` para captura de áudio (PCM 16-bit) e reprodução; componente `VoiceWaveform` para feedback visual.
+- **Contexto**: Injeção automática de `user_id` e `fazenda_id` (ativa) na inicialização da sessão.
+
 **Padrão Handler (referência: fazenda_handler)**:
 
 - Struct do handler com `service *service.XxxService`; `NewXxxHandler(svc)`.

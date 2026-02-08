@@ -17,6 +17,8 @@ import * as assistenteService from "@/services/assistente";
 import type { InterpretResponse } from "@/services/assistente";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
+import { useGeminiLive } from "@/hooks/useGeminiLive";
+import { VoiceWaveform } from "./VoiceWaveform";
 import { getApiErrorMessage } from "@/lib/errors";
 import {
   cancelSpeech,
@@ -83,6 +85,8 @@ export function AssistenteInput() {
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [liveMode, setLiveMode] = useState(false);
+  const [liveText, setLiveText] = useState("");
   const [interpretado, setInterpretado] = useState<InterpretResponse | null>(
     null
   );
@@ -124,6 +128,82 @@ export function AssistenteInput() {
   > | null>(null);
   const unknownErrorCountRef = useRef(0);
   const lastRedirectPathRef = useRef("/fazendas");
+
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const geminiLive = useGeminiLive({
+    fazendaId: fazendaAtiva?.id,
+    onTextResponse: (text) => {
+      setLiveText(text);
+      if (isSpeechSynthesisSupported()) {
+        speak(text, { cancelPrevious: true });
+      }
+    },
+    onCloseRequest: (message) => {
+      if (isSpeechSynthesisSupported()) {
+        speak(message, { 
+          cancelPrevious: true,
+          onEnd: () => handleCancelar()
+        });
+      } else {
+        handleCancelar();
+      }
+    },
+    onAudioResponse: async (audioData) => {
+      // ... (reprodução de áudio)
+    },
+    onError: (err) => {
+      setError(err);
+      setLiveMode(false);
+    }
+  });
+
+  // Hook de voz para o modo Live (transcreve e envia via WebSocket)
+  const { 
+    startListening: startLiveVoice, 
+    stopListening: stopLiveVoice,
+    isListening: isVoiceListening,
+    transcript: liveTranscript 
+  } = useVoiceRecognition({
+    onResult: (text, isFinal) => {
+      console.log("Evento onResult disparado:", { text, isFinal, liveMode });
+      if (liveMode && isFinal && text.trim()) {
+        console.log(">>> Enviando texto via WebSocket:", text);
+        geminiLive.sendText(text);
+      }
+    },
+    language: "pt-BR",
+  });
+
+  // Debug do estado de voz
+  useEffect(() => {
+    if (liveMode) {
+      console.log("Modo Live ativo, estado do microfone:", isVoiceListening);
+    }
+  }, [liveMode, isVoiceListening]);
+
+  // Sincronizar o reconhecimento de voz com o modo Live
+  useEffect(() => {
+    if (liveMode) {
+      startLiveVoice();
+    } else {
+      stopLiveVoice(true);
+    }
+  }, [liveMode, startLiveVoice, stopLiveVoice]);
+
+  // Auto-religar o microfone no modo Live para manter a conversa contínua
+  useEffect(() => {
+    if (liveMode && !isVoiceListening) {
+      // Pequeno delay para evitar loops e dar tempo do navegador processar o fechamento anterior
+      const timer = setTimeout(() => {
+        if (liveMode && !isVoiceListening) {
+          console.log("Religando microfone para manter conversa fluida...");
+          startLiveVoice();
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [liveMode, isVoiceListening, startLiveVoice]);
 
   /** Delay em ms antes de lembrar o usuário de confirmar (dialog de confirmação). */
   const CONFIRMATION_REMINDER_MS = 10000;
@@ -373,6 +453,18 @@ export function AssistenteInput() {
       startedViaPointerRef.current = false;
       return;
     }
+
+    // Toggle entre modo Live e modo normal
+    if (liveMode) {
+      geminiLive.stop();
+      setLiveMode(false);
+      return;
+    }
+
+    // Se o usuário clicar no microfone, ativamos o modo Live por padrão para uma experiência mais natural
+    setLiveMode(true);
+    geminiLive.start();
+    
     unknownErrorCountRef.current = 0;
     askingMoreRef.current = false;
     setAguardandoMaisOperacao(false);
@@ -380,7 +472,6 @@ export function AssistenteInput() {
     confirmationModeRef.current = false;
     silenceTimeoutMsRef.current = 2500;
     fireOnFinalSegmentRef.current = false;
-    toggleListening();
   };
 
   const handleConfirmar = async () => {
@@ -570,49 +661,51 @@ export function AssistenteInput() {
   return (
     <>
       <div className="flex flex-col gap-1 min-w-[200px] max-w-[320px]">
-        <div className="flex gap-2">
-          <Input
-            value={texto}
-            onChange={(e) => {
-              lastInputWasVoiceRef.current = false;
-              setTexto(e.target.value);
-            }}
-            onKeyDown={(e) => e.key === "Enter" && handleInterpretar()}
-            placeholder="O que você precisa?"
-            disabled={loading}
-            className="flex-1"
-            title="Recurso opcional; melhor experiência com internet."
-          />
-          {showVoiceButton && isSupported && (
-            <Button
-              type="button"
-              size="icon"
-              variant={isListening ? "destructive" : "secondary"}
-              onClick={handleMainMicClick}
-              onPointerDown={() => {
-                if (!isListening && !loading) {
-                  startedViaPointerRef.current = true;
-                  unknownErrorCountRef.current = 0;
-                  askingMoreRef.current = false;
-                  confirmationModeRef.current = false;
-                  silenceTimeoutMsRef.current = 2500;
-                  fireOnFinalSegmentRef.current = false;
-                  startListening();
+          <div className="flex gap-2">
+            <Input
+              value={texto}
+              onChange={(e) => {
+                lastInputWasVoiceRef.current = false;
+                setTexto(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (liveMode) {
+                    // No modo Live, enviar via WebSocket
+                    geminiLive.sendText?.(texto);
+                    setTexto("");
+                  } else {
+                    handleInterpretar();
+                  }
                 }
               }}
+              placeholder={liveMode ? "Fale ou digite aqui..." : "O que você precisa?"}
               disabled={loading}
-              title={
-                isListening
-                  ? "Clique para parar e enviar"
-                  : "Falar (melhor experiência com internet)"
-              }
-            >
-              {isListening ? (
-                <MicOff className="h-4 w-4" />
-              ) : (
-                <Mic className="h-4 w-4" />
-              )}
-            </Button>
+              className="flex-1"
+              title="Recurso opcional; melhor experiência com internet."
+            />
+          {showVoiceButton && isSupported && (
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="icon"
+                variant={liveMode ? "destructive" : "secondary"}
+                onClick={handleMainMicClick}
+                disabled={loading}
+                title={
+                  liveMode
+                    ? "Parar Assistente Live"
+                    : "Conversar em tempo real (Gemini Live)"
+                }
+              >
+                {liveMode ? (
+                  <MicOff className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </Button>
+              {liveMode && <VoiceWaveform isActive={liveMode} />}
+            </div>
           )}
           <Button
             type="button"
@@ -625,7 +718,19 @@ export function AssistenteInput() {
             <MessageCircle className="h-4 w-4" />
           </Button>
         </div>
-        {(aguardandoMaisOperacao || isListening) && (
+        {liveMode && liveText && (
+          <div className="mt-2 p-2 rounded-md bg-primary/10 border border-primary/20 text-sm animate-in fade-in slide-in-from-top-1">
+            <p className="font-medium text-primary text-xs mb-1">Assistente Live:</p>
+            {liveText}
+          </div>
+        )}
+        {liveMode && liveTranscript && (
+          <div className="mt-1 p-2 rounded-md bg-muted border border-border text-sm italic">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Você disse:</p>
+            {liveTranscript}
+          </div>
+        )}
+        {(aguardandoMaisOperacao || isListening || (liveMode && isVoiceListening)) && (
           <div
             className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-sm"
             role="status"

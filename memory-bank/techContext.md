@@ -78,6 +78,8 @@ require (
     github.com/golang-jwt/jwt/v5 v5.2.0
     github.com/golang-migrate/migrate/v4 v4.19.1
     github.com/google/uuid v1.6.0
+    github.com/google/generative-ai-go v0.20.1
+    github.com/gorilla/websocket v1.5.3
     github.com/jackc/pgx/v5 v5.5.4
     golang.org/x/crypto v0.45.0
 )

@@ -273,14 +273,26 @@ func main() {
 						if modelAssistente == "" {
 							modelAssistente = cfg.GeminiModel
 						}
-						assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, modelAssistente, fazendaSvc, animalSvc, producaoSvc)
-						assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc, userRepo)
-						assistente := api.Group("/v1/assistente", auth.AuthMiddleware(jwtSvc))
-						{
-							assistente.POST("/interpretar", assistenteHandler.Interpretar)
-							assistente.POST("/executar", assistenteHandler.Executar)
-						}
-						slog.Info("Rotas do Assistente (linguagem natural) registradas")
+					assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, modelAssistente, fazendaSvc, animalSvc, producaoSvc)
+					assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc, userRepo)
+					
+					// Assistente Live (Multimodal)
+					assistenteLiveSvc, err := service.NewAssistenteLiveService(cfg.GeminiAPIKey, cfg.GeminiModel, fazendaSvc, animalSvc, producaoSvc)
+					if err != nil {
+						slog.Warn("Falha ao inicializar Assistente Live", "error", err)
+					}
+					assistenteLiveHandler := handlers.NewAssistenteLiveHandler(assistenteLiveSvc, userRepo)
+
+					assistente := api.Group("/v1/assistente")
+					{
+						// Rotas HTTP normais continuam com AuthMiddleware padrão
+						assistente.POST("/interpretar", auth.AuthMiddleware(jwtSvc), assistenteHandler.Interpretar)
+						assistente.POST("/executar", auth.AuthMiddleware(jwtSvc), assistenteHandler.Executar)
+						
+						// Rota WebSocket Live (AuthMiddleware injetado manualmente ou via sub-grupo se necessário)
+						assistente.GET("/live", auth.AuthMiddleware(jwtSvc), assistenteLiveHandler.LiveSession)
+					}
+					slog.Info("Rotas do Assistente (linguagem natural e live) registradas")
 					} else {
 						slog.Warn("GEMINI_API_KEY não configurada: Dev Studio e Assistente desabilitados")
 					}
