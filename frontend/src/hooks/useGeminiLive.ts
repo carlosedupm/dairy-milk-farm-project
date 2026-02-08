@@ -14,9 +14,6 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
   const [isActive, setIsActive] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
 
   // Usar ref para as opções para evitar disparar o useCallback[start] desnecessariamente
   const optionsRef = useRef(options);
@@ -31,21 +28,6 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
     if (socketRef.current) {
       socketRef.current.close();
       socketRef.current = null;
-    }
-
-    if (processorRef.current) {
-      processorRef.current.disconnect();
-      processorRef.current = null;
-    }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
     }
   }, []);
 
@@ -71,44 +53,13 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
-      socket.onopen = async () => {
+      socket.onopen = () => {
         console.log("WebSocket conectado com sucesso");
         setIsConnecting(false);
         setIsActive(true);
-
-        // 2. Iniciar captura de áudio após conexão aberta
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          streamRef.current = stream;
-
-          const audioContext = new AudioContext({ sampleRate: 16000 });
-          audioContextRef.current = audioContext;
-
-          const source = audioContext.createMediaStreamSource(stream);
-          // Usando ScriptProcessorNode por simplicidade, embora AudioWorklet seja preferível para baixa latência real
-          const processor = audioContext.createScriptProcessor(4096, 1, 1);
-          processorRef.current = processor;
-
-          source.connect(processor);
-          processor.connect(audioContext.destination);
-
-          processor.onaudioprocess = (e) => {
-            if (socket.readyState === WebSocket.OPEN) {
-              const inputData = e.inputBuffer.getChannelData(0);
-              // Converter para Int16 (PCM)
-              const pcmData = new Int16Array(inputData.length);
-              for (let i = 0; i < inputData.length; i++) {
-                pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
-              }
-              // Enviar áudio como binário
-              socket.send(pcmData.buffer);
-            }
-          };
-        } catch (err) {
-          console.error("Erro ao acessar microfone:", err);
-          optionsRef.current.onError?.("Não foi possível acessar o microfone.");
-          stop();
-        }
+        // Entrada por voz é feita via useVoiceRecognition (transcrição no cliente → sendText).
+        // Não usamos áudio bruto aqui: ScriptProcessorNode é deprecated e falha em Safari/iOS;
+        // o backend atualmente processa apenas mensagens de texto no Live.
       };
 
       socket.onmessage = async (event) => {

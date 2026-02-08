@@ -191,6 +191,14 @@
   - Removido import `encoding/base64` não utilizado.
   - Exportados campos `UserID`, `Perfil`, `NomeUsuario` e `FazendaAtiva` na struct `Session` para acesso pelo handler.
   - Corrigida asserção de tipo em `processFunctionResponse` para garantir que o resultado seja `map[string]any` antes de enviar ao Gemini.
+
+### **2026-02-08 - Assistente em qualquer navegador (incl. mobile)**
+
+- ✅ **Compatibilidade cross-browser**: Assistente Live passa a funcionar em qualquer navegador, inclusive mobile (Safari iOS, Chrome Android, Firefox Android, etc.).
+  - **Frontend**: Removida a captura de áudio bruto em `useGeminiLive` (ScriptProcessorNode/AudioContext falhavam em Safari e vários mobile). Entrada por voz continua via Web Speech API (transcrição no cliente → `sendText()`).
+  - **Fallback texto**: Quando o navegador não suporta reconhecimento de voz, o modo Live permanece disponível em **apenas texto** (digitar e enviar com Enter ou botão Enviar); mensagem orienta o usuário.
+  - **UI**: Botão do Assistente Live visível mesmo sem suporte a voz; no Live, botão Enviar envia o texto digitado via WebSocket quando em modo Live.
+  - **Documentação**: `systemPatterns.md` e `activeContext.md` atualizados com o padrão de compatibilidade.
   - Ajustado `ExecuteFunction` para retornar `map[string]any` em vez de `map[string]string`.
 
 ### **2025-09-07 - Dia 1**

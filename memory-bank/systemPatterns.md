@@ -107,8 +107,9 @@ lib/utils.ts
 
 **Assistente Virtual Multimodal Live**:
 - **Arquitetura**: Streaming bidirecional via WebSocket (`/api/v1/assistente/live`).
-- **Backend**: Proxy entre Frontend e Gemini API; orquestração de goroutines para processamento paralelo; Function Calling para acesso ao banco.
-- **Frontend**: Hook `useGeminiLive` para captura de áudio (PCM 16-bit) e reprodução; componente `VoiceWaveform` para feedback visual.
+- **Backend**: Proxy entre Frontend e Gemini API; orquestração de goroutines para processamento paralelo; Function Calling para acesso ao banco. Processa apenas mensagens de **texto** (JSON `{ "text": "..." }`); áudio bruto não é utilizado.
+- **Frontend**: Hook `useGeminiLive` abre apenas o WebSocket (sem captura de áudio bruto, para compatibilidade com Safari e mobile). Entrada por voz via **Web Speech API** (`useVoiceRecognition`): transcrição no cliente → `sendText()`. Quando o navegador não suporta reconhecimento de voz (ex.: Firefox Android, alguns iOS), o modo Live funciona em **apenas texto**: usuário digita e envia com Enter ou botão Enviar.
+- **Compatibilidade**: Funciona em qualquer navegador com WebSocket (incluindo mobile). Voz quando há `SpeechRecognition`/`webkitSpeechRecognition`; TTS quando há `speechSynthesis`. Fallback gracioso para texto quando voz não está disponível.
 - **Contexto**: Injeção automática de `user_id` e `fazenda_id` (ativa) na inicialização da sessão.
 
 **Padrão Handler (referência: fazenda_handler)**:

@@ -192,7 +192,8 @@ export function AssistenteInput() {
     startListening: startLiveVoice, 
     stopListening: stopLiveVoice,
     isListening: isVoiceListening,
-    transcript: liveTranscript 
+    transcript: liveTranscript,
+    isSupported: isVoiceSupported,
   } = useVoiceRecognition({
     onResult: (text, isFinal) => {
       console.log("Evento onResult disparado:", { text, isFinal, liveMode });
@@ -203,6 +204,7 @@ export function AssistenteInput() {
     },
     language: "pt-BR",
   });
+  const isSupported = isVoiceSupported;
 
   // Debug do estado de voz
   useEffect(() => {
@@ -211,28 +213,27 @@ export function AssistenteInput() {
     }
   }, [liveMode, isVoiceListening]);
 
-  // Sincronizar o reconhecimento de voz com o modo Live
+  // Sincronizar o reconhecimento de voz com o modo Live (apenas se o navegador suportar)
   useEffect(() => {
-    if (liveMode) {
+    if (liveMode && isVoiceSupported) {
       startLiveVoice();
     } else {
       stopLiveVoice(true);
     }
-  }, [liveMode, startLiveVoice, stopLiveVoice]);
+  }, [liveMode, isVoiceSupported, startLiveVoice, stopLiveVoice]);
 
-  // Auto-religar o microfone no modo Live para manter a conversa contínua
+  // Auto-religar o microfone no modo Live para manter a conversa contínua (apenas se voz suportada)
   useEffect(() => {
-    if (liveMode && !isVoiceListening) {
-      // Pequeno delay para evitar loops e dar tempo do navegador processar o fechamento anterior
+    if (liveMode && isVoiceSupported && !isVoiceListening) {
       const timer = setTimeout(() => {
-        if (liveMode && !isVoiceListening) {
+        if (liveMode && isVoiceSupported && !isVoiceListening) {
           console.log("Religando microfone para manter conversa fluida...");
           startLiveVoice();
         }
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [liveMode, isVoiceListening, startLiveVoice]);
+  }, [liveMode, isVoiceSupported, isVoiceListening, startLiveVoice]);
 
   /** Delay em ms antes de lembrar o usuário de confirmar (dialog de confirmação). */
   const CONFIRMATION_REMINDER_MS = 10000;
@@ -496,7 +497,6 @@ export function AssistenteInput() {
 
   const {
     isListening,
-    isSupported,
     error: voiceError,
     toggleListening,
     startListening,
@@ -511,6 +511,11 @@ export function AssistenteInput() {
 
   const handleInterpretar = () => {
     lastInputWasVoiceRef.current = false;
+    if (liveMode && texto.trim()) {
+      geminiLive.sendText(texto.trim());
+      setTexto("");
+      return;
+    }
     runInterpretar(texto);
   };
 
@@ -791,12 +796,18 @@ export function AssistenteInput() {
                   }
                 }
               }}
-              placeholder={liveMode ? "Fale ou digite aqui..." : "O que você precisa?"}
+              placeholder={
+                liveMode
+                  ? isSupported
+                    ? "Fale ou digite aqui..."
+                    : "Digite sua mensagem e pressione Enter ou clique em Enviar"
+                  : "O que você precisa?"
+              }
               disabled={loading}
               className="flex-1 min-w-0"
               title="Recurso opcional; melhor experiência com internet."
             />
-          {showVoiceButton && isSupported && (
+          {showVoiceButton && (
             <div className="flex items-center gap-2 shrink-0">
               <Button
                 type="button"
@@ -807,7 +818,9 @@ export function AssistenteInput() {
                 title={
                   liveMode
                     ? "Parar Assistente Live"
-                    : "Conversar em tempo real (Gemini Live)"
+                    : isSupported
+                      ? "Conversar em tempo real (voz ou texto)"
+                      : "Conversar em tempo real (digite sua mensagem)"
                 }
               >
                 {liveMode ? (
@@ -816,7 +829,7 @@ export function AssistenteInput() {
                   <Mic className="h-4 w-4" />
                 )}
               </Button>
-              {liveMode && <VoiceWaveform isActive={liveMode} />}
+              {liveMode && isSupported && <VoiceWaveform isActive={liveMode} />}
             </div>
           )}
           <Button
@@ -860,6 +873,11 @@ export function AssistenteInput() {
             <p className="font-medium text-primary text-xs mb-1">Assistente Live:</p>
             {liveText}
           </div>
+        )}
+        {liveMode && !isSupported && (
+          <p className="text-xs text-muted-foreground" role="status">
+            Voz não disponível neste navegador. Digite sua mensagem acima e clique em Enviar ou pressione Enter.
+          </p>
         )}
         {liveMode && liveTranscript && (
           <div className="mt-1 p-2 rounded-md bg-muted border border-border text-sm italic">
