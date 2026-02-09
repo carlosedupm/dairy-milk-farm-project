@@ -207,6 +207,11 @@ export function AssistenteInput() {
   /** Timestamp (Date.now()) em que o TTS terminou; ignorar transcrições por GRACE_MS após. */
   const ttsEndedAtRef = useRef<number>(0);
   const TTS_ECHO_GRACE_MS = 1800;
+  /** Delay em ms para reabrir o microfone após o TTS terminar (evitar capturar eco). */
+  const TTS_REOPEN_MIC_DELAY_MS = 1500;
+  const startLiveVoiceRef = useRef<(() => void) | null>(null);
+  const isLiveModeRef = useRef(false);
+  const isVoiceSupportedRef = useRef(false);
 
   const cancelSpeechAndClearTtsRef = useCallback(() => {
     isTtsPlayingRef.current = false;
@@ -219,6 +224,7 @@ export function AssistenteInput() {
       setLiveThinking(false);
       lastLiveTextRef.current = text;
       setLiveText(text);
+      stopLiveVoiceRef.current?.(true);
       if (isSpeechSynthesisSupported()) {
         isTtsPlayingRef.current = true;
         speak(text, {
@@ -226,12 +232,21 @@ export function AssistenteInput() {
           onEnd: () => {
             isTtsPlayingRef.current = false;
             ttsEndedAtRef.current = Date.now();
+            const delay = TTS_REOPEN_MIC_DELAY_MS;
+            setTimeout(() => {
+              if (isLiveModeRef.current && isVoiceSupportedRef.current) {
+                startLiveVoiceRef.current?.();
+              }
+            }, delay);
           },
         });
+      } else if (isLiveModeRef.current && isVoiceSupportedRef.current) {
+        startLiveVoiceRef.current?.();
       }
     },
     onCloseRequest: (message) => {
       setLiveThinking(false);
+      stopLiveVoiceRef.current?.(true);
       if (isSpeechSynthesisSupported()) {
         isTtsPlayingRef.current = true;
         speak(message, {
@@ -254,6 +269,7 @@ export function AssistenteInput() {
       setLiveReconnectStatus("");
       setError(err);
       setLiveMode(false);
+      stopLiveVoiceRef.current?.(true);
       if (isSpeechSynthesisSupported()) {
         isTtsPlayingRef.current = true;
         speak(err, {
@@ -270,6 +286,7 @@ export function AssistenteInput() {
     },
     onReconnected: (msg) => {
       setLiveReconnectStatus(msg);
+      stopLiveVoiceRef.current?.(true);
       if (isSpeechSynthesisSupported()) {
         isTtsPlayingRef.current = true;
         speak(msg, {
@@ -277,8 +294,15 @@ export function AssistenteInput() {
           onEnd: () => {
             isTtsPlayingRef.current = false;
             ttsEndedAtRef.current = Date.now();
+            setTimeout(() => {
+              if (isLiveModeRef.current && isVoiceSupportedRef.current) {
+                startLiveVoiceRef.current?.();
+              }
+            }, TTS_REOPEN_MIC_DELAY_MS);
           },
         });
+      } else if (isLiveModeRef.current && isVoiceSupportedRef.current) {
+        startLiveVoiceRef.current?.();
       }
       setTimeout(() => setLiveReconnectStatus(""), 3000);
     }
@@ -304,6 +328,9 @@ export function AssistenteInput() {
   });
   const isSupported = isVoiceSupported;
   stopLiveVoiceRef.current = stopLiveVoice;
+  startLiveVoiceRef.current = startLiveVoice;
+  isLiveModeRef.current = liveMode;
+  isVoiceSupportedRef.current = isVoiceSupported;
 
   // Debug do estado de voz
   useEffect(() => {

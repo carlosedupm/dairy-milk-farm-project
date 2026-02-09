@@ -2,9 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Download } from "lucide-react";
 
 const PWA_DISMISSED_KEY = "ceialmilk_pwa_dismissed";
+
+function registerServiceWorker() {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -21,7 +34,12 @@ export function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [dismissed, setDismissed] = useState(true); // inicia true para não piscar; effect ajusta
+  const [dismissed, setDismissed] = useState(true);
+  const [showInstallInstructions, setShowInstallInstructions] = useState(false);
+
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -60,22 +78,7 @@ export function PWAInstallPrompt() {
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
-      // Fallback: instruções manuais (Safari iOS, ou Chrome em produção sem evento)
-      const isIOS =
-        typeof navigator !== "undefined" &&
-        /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-        !(window as Window & { MSStream?: unknown }).MSStream;
-      const msg = isIOS
-        ? "No Safari: toque em Compartilhar e depois em \"Adicionar à Tela de Início\"."
-        : "No menu do navegador (⋮ ou ⋯), procure por \"Instalar aplicativo\" ou \"Adicionar à tela inicial\".";
-      window.alert(msg);
-      setShowPrompt(false);
-      setDismissed(true);
-      try {
-        sessionStorage.setItem(PWA_DISMISSED_KEY, "1");
-      } catch {
-        // ignore
-      }
+      setShowInstallInstructions(true);
       return;
     }
     await deferredPrompt.prompt();
@@ -102,9 +105,61 @@ export function PWAInstallPrompt() {
     }
   };
 
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+    !(window as Window & { MSStream?: unknown }).MSStream;
+  const isChromeAndroid =
+    typeof navigator !== "undefined" &&
+    /Android/.test(navigator.userAgent) &&
+    /Chrome/.test(navigator.userAgent);
+
   if (!showBanner) return null;
 
   return (
+    <>
+    <Dialog open={showInstallInstructions} onOpenChange={setShowInstallInstructions}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Como instalar o CeialMilk</DialogTitle>
+          <DialogDescription asChild>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              {isIOS ? (
+                <>
+                  <p>No Safari (iPhone/iPad):</p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Toque no ícone de <strong>Compartilhar</strong> (quadrado com seta para cima), na barra inferior.</li>
+                    <li>Role e toque em <strong>&quot;Adicionar à Tela de Início&quot;</strong>.</li>
+                    <li>Toque em <strong>Adicionar</strong>.</li>
+                  </ol>
+                </>
+              ) : isChromeAndroid ? (
+                <>
+                  <p>No Chrome (Android):</p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Toque no menu <strong>⋮</strong> (três pontos), no canto superior direito.</li>
+                    <li>Toque em <strong>&quot;Instalar aplicativo&quot;</strong> ou <strong>&quot;Adicionar à tela inicial&quot;</strong>.</li>
+                    <li>Confirme em <strong>Instalar</strong>.</li>
+                  </ol>
+                </>
+              ) : (
+                <>
+                  <p>No computador (Chrome, Edge):</p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Clique no ícone de <strong>instalar</strong> (⊕ ou computador com seta) na barra de endereço, <strong>ou</strong></li>
+                    <li>Menu <strong>⋮</strong> → <strong>Instalar CeialMilk...</strong> ou <strong>Apps</strong> → <strong>Instalar site como aplicativo</strong>.</li>
+                  </ol>
+                  <p className="pt-1">Se o ícone não aparecer, use o site normalmente no navegador ou tente em um dispositivo móvel.</p>
+                </>
+              )}
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button onClick={() => setShowInstallInstructions(false)}>Entendi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <div
       className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm"
       role="region"
@@ -135,5 +190,6 @@ export function PWAInstallPrompt() {
         </Button>
       </div>
     </div>
+    </>
   );
 }
