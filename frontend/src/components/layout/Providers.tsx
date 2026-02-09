@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { FazendaProvider } from '@/contexts/FazendaContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { ServiceWorkerRegistration } from './ServiceWorkerRegistration'
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -18,6 +19,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ServiceWorkerRegistration />
       <ThemeProvider>
         <AuthProvider>
           <FazendaProvider>{children}</FazendaProvider>
