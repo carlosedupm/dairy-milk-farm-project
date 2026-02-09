@@ -142,6 +142,8 @@ export function AssistenteInput() {
   const [liveThinking, setLiveThinking] = useState(false);
   /** Mensagem de status da reconexão (Reconectando… / Reconectado.) — sempre em texto para mobile. */
   const [liveReconnectStatus, setLiveReconnectStatus] = useState("");
+  /** True enquanto o assistente está falando (TTS); usado para mostrar dica de interrupção. */
+  const [isTtsPlaying, setIsTtsPlaying] = useState(false);
   const [interpretado, setInterpretado] = useState<InterpretResponse | null>(
     null
   );
@@ -202,13 +204,16 @@ export function AssistenteInput() {
   /** Última resposta de texto do assistente no Live (para filtrar eco). */
   const lastLiveTextRef = useRef<string | null>(null);
   const stopLiveVoiceRef = useRef<((skipReport?: boolean) => void) | null>(null);
-  /** True enquanto o TTS está falando; ignorar transcrições nesse período (evitar eco). */
+  /** True enquanto o TTS está falando (para UI e grace inicial). */
   const isTtsPlayingRef = useRef(false);
-  /** Timestamp (Date.now()) em que o TTS terminou; ignorar transcrições por GRACE_MS após. */
+  /** Timestamp em que o TTS começou; nos primeiros BARGE_IN_GRACE_MS ignoramos transcrições (evitar eco inicial). */
+  const ttsStartedAtRef = useRef<number>(0);
+  /** Timestamp em que o TTS terminou; transcrições que parecem eco são ignoradas por ECHO_GRACE_MS após. */
   const ttsEndedAtRef = useRef<number>(0);
-  const TTS_ECHO_GRACE_MS = 1800;
-  /** Delay em ms para reabrir o microfone após o TTS terminar (evitar capturar eco). */
-  const TTS_REOPEN_MIC_DELAY_MS = 1500;
+  /** Nos primeiros N ms após o TTS começar, ignorar transcrições (evitar eco da primeira sílaba). */
+  const TTS_BARGE_IN_GRACE_MS = 700;
+  /** Após o TTS terminar, ignorar por N ms apenas se a transcrição parecer eco (isEchoTranscript). */
+  const TTS_ECHO_GRACE_MS = 1500;
   const startLiveVoiceRef = useRef<(() => void) | null>(null);
   const isLiveModeRef = useRef(false);
   const isVoiceSupportedRef = useRef(false);
@@ -224,36 +229,33 @@ export function AssistenteInput() {
       setLiveThinking(false);
       lastLiveTextRef.current = text;
       setLiveText(text);
-      stopLiveVoiceRef.current?.(true);
+      // Microfone permanece ligado; usuário pode interromper a qualquer momento (barge-in).
       if (isSpeechSynthesisSupported()) {
         isTtsPlayingRef.current = true;
+        ttsStartedAtRef.current = Date.now();
+        setIsTtsPlaying(true);
         speak(text, {
           cancelPrevious: true,
           onEnd: () => {
             isTtsPlayingRef.current = false;
             ttsEndedAtRef.current = Date.now();
-            const delay = TTS_REOPEN_MIC_DELAY_MS;
-            setTimeout(() => {
-              if (isLiveModeRef.current && isVoiceSupportedRef.current) {
-                startLiveVoiceRef.current?.();
-              }
-            }, delay);
+            setIsTtsPlaying(false);
           },
         });
-      } else if (isLiveModeRef.current && isVoiceSupportedRef.current) {
-        startLiveVoiceRef.current?.();
       }
     },
     onCloseRequest: (message) => {
       setLiveThinking(false);
-      stopLiveVoiceRef.current?.(true);
       if (isSpeechSynthesisSupported()) {
         isTtsPlayingRef.current = true;
+        ttsStartedAtRef.current = Date.now();
+        setIsTtsPlaying(true);
         speak(message, {
           cancelPrevious: true,
           onEnd: () => {
             isTtsPlayingRef.current = false;
             ttsEndedAtRef.current = Date.now();
+            setIsTtsPlaying(false);
             handleCancelar();
           },
         });
@@ -269,14 +271,16 @@ export function AssistenteInput() {
       setLiveReconnectStatus("");
       setError(err);
       setLiveMode(false);
-      stopLiveVoiceRef.current?.(true);
       if (isSpeechSynthesisSupported()) {
         isTtsPlayingRef.current = true;
+        ttsStartedAtRef.current = Date.now();
+        setIsTtsPlaying(true);
         speak(err, {
           cancelPrevious: true,
           onEnd: () => {
             isTtsPlayingRef.current = false;
             ttsEndedAtRef.current = Date.now();
+            setIsTtsPlaying(false);
           },
         });
       }
@@ -286,23 +290,18 @@ export function AssistenteInput() {
     },
     onReconnected: (msg) => {
       setLiveReconnectStatus(msg);
-      stopLiveVoiceRef.current?.(true);
       if (isSpeechSynthesisSupported()) {
         isTtsPlayingRef.current = true;
+        ttsStartedAtRef.current = Date.now();
+        setIsTtsPlaying(true);
         speak(msg, {
           cancelPrevious: false,
           onEnd: () => {
             isTtsPlayingRef.current = false;
             ttsEndedAtRef.current = Date.now();
-            setTimeout(() => {
-              if (isLiveModeRef.current && isVoiceSupportedRef.current) {
-                startLiveVoiceRef.current?.();
-              }
-            }, TTS_REOPEN_MIC_DELAY_MS);
+            setIsTtsPlaying(false);
           },
         });
-      } else if (isLiveModeRef.current && isVoiceSupportedRef.current) {
-        startLiveVoiceRef.current?.();
       }
       setTimeout(() => setLiveReconnectStatus(""), 3000);
     }
@@ -318,10 +317,14 @@ export function AssistenteInput() {
   } = useVoiceRecognition({
     onResult: (text, isFinal) => {
       if (!liveMode || !isFinal || !text.trim()) return;
-      if (isTtsPlayingRef.current) return;
-      if (Date.now() - ttsEndedAtRef.current < TTS_ECHO_GRACE_MS) return;
+      const now = Date.now();
+      // Grace inicial: nos primeiros ms após o TTS começar, ignorar (evitar eco da primeira sílaba).
+      if (now - ttsStartedAtRef.current < TTS_BARGE_IN_GRACE_MS) return;
+      // Fala do usuário tem prioridade: se for eco do assistente, ignorar; senão, interromper TTS e processar.
       if (isEchoTranscript(text, lastLiveTextRef.current)) return;
+      // Usuário falou: encerrar fala do assistente imediatamente e enviar o que o usuário disse.
       cancelSpeechAndClearTtsRef();
+      setIsTtsPlaying(false);
       geminiLive.sendText(text);
     },
     language: "pt-BR",
@@ -348,7 +351,7 @@ export function AssistenteInput() {
     }
   }, [liveMode, isVoiceSupported, startLiveVoice, stopLiveVoice]);
 
-  // Auto-religar o microfone no modo Live para manter a conversa contínua
+  // Auto-religar o microfone no modo Live quando ficar fechado (ex.: após erro)
   useEffect(() => {
     if (liveMode && isVoiceSupported && !isVoiceListening) {
       const timer = setTimeout(() => {
@@ -1025,6 +1028,11 @@ export function AssistenteInput() {
           <p className="text-xs text-muted-foreground flex items-center gap-1.5" role="status" aria-live="polite">
             <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" aria-hidden />
             Interpretando…
+          </p>
+        )}
+        {liveMode && isTtsPlaying && (
+          <p className="text-xs text-muted-foreground" role="status">
+            Você pode falar a qualquer momento para interromper.
           </p>
         )}
         {liveMode && liveText && (
