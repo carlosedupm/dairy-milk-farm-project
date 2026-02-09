@@ -184,8 +184,8 @@ curl https://ceialmilk-api.onrender.com/api/v1/fazendas
 
 Para o banner "Instale o CeialMilk" e a opção de instalação funcionarem em produção (Chrome/Edge):
 
-- **Headers**: `next.config.js` define `Content-Type` e `Cache-Control` para `/sw.js` e `/manifest.json`, para o Chrome reconhecer o PWA.
-- **Service worker**: Registrado cedo via `ServiceWorkerRegistration` (em `Providers`) e também no `PWAInstallPrompt`. O SW em `public/sw.js` precisa estar acessível na raiz (ex.: `https://dairy-milk-farm-project.vercel.app/sw.js`).
+- **Manifest, SW e ícones via Route Handlers**: Na Vercel com Root Directory `frontend`, arquivos em `public/` podem retornar 404. Por isso o manifest, o service worker e os ícones são servidos por **Route Handlers** do App Router (`/manifest.json`, `/sw.js`, `/icons/icon-192.svg`, `/icons/icon-512.svg`), garantindo resposta 200 em produção.
+- **Service worker**: Registrado cedo via `ServiceWorkerRegistration` (em `Providers`) e também no `PWAInstallPrompt`.
 - Se o botão "Instalar" não disparar o prompt nativo, o dialog mostra instruções manuais (menu do navegador → "Instalar aplicativo" / "Adicionar à tela inicial"). A opção no menu só aparece quando os [critérios de instalabilidade](https://developer.chrome.com/blog/update-install-criteria) do Chrome são atendidos (HTTPS, manifest válido, SW registrado com fetch).
 
 ## Segurança
