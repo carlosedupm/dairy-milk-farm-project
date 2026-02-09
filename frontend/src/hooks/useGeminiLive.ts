@@ -39,6 +39,7 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wantToBeConnectedRef = useRef(false);
+  const tryConnectRef = useRef<(isReconnect: boolean) => void>(() => {});
 
   useEffect(() => {
     optionsRef.current = options;
@@ -123,7 +124,7 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
         reconnectAttemptsRef.current += 1;
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectTimeoutRef.current = null;
-          tryConnect(true);
+          tryConnectRef.current(true);
         }, delay);
       };
 
@@ -132,6 +133,10 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
     },
     [stop]
   );
+
+  useEffect(() => {
+    tryConnectRef.current = tryConnect;
+  }, [tryConnect]);
 
   // Ao voltar à aba (ex.: mobile trocou de app), reconectar uma vez se o WebSocket estiver fechado
   useEffect(() => {
@@ -149,11 +154,11 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
       socketRef.current = null;
       setIsReconnecting(true);
       optionsRef.current.onReconnecting?.("Conexão caiu. Reconectando…");
-      tryConnect(true);
+      tryConnectRef.current(true);
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [tryConnect]);
+  }, []);
 
   const start = useCallback(() => {
     if (isActive || isConnecting || isReconnecting) return;

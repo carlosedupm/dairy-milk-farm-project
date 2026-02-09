@@ -25,8 +25,11 @@ export function PWAInstallPrompt() {
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    setIsStandalone(standalone);
-    if (standalone) return;
+    // Defer setState to avoid synchronous setState in effect (react-hooks/set-state-in-effect)
+    const id = setTimeout(() => setIsStandalone(standalone), 0);
+    if (standalone) {
+      return () => clearTimeout(id);
+    }
 
     const handler = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
@@ -35,7 +38,10 @@ export function PWAInstallPrompt() {
     };
 
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener("beforeinstallprompt", handler);
+    };
   }, []);
 
   const handleInstall = async () => {
