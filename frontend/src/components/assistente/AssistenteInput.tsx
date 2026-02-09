@@ -84,13 +84,24 @@ const SUGESTOES_RAPIDAS = [
   "Listar animais da fazenda ativa",
 ];
 
-/** Frases do sistema que podem ser eco do TTS — ignorar se transcritas. */
+/** Frases do sistema que podem ser eco do TTS — ignorar se transcritas (frases completas do assistente). */
 const ECHO_PHRASES = [
   "pode repetir ou reformular",
   "pode reformular",
   "pode reformular ou tentar novamente",
   "não foi possível entender",
   "tente reformular",
+  "como posso ajudar você hoje",
+  "sou o assistente do ceialmilk",
+  "até logo",
+  "o assistente será fechado",
+  "deseja efetuar mais alguma operação",
+  "pode falar",
+  "aguardando sua confirmação",
+  "diga sim para confirmar ou não para cancelar",
+  "reconectado",
+  "conexão caiu",
+  "reconectando",
 ];
 
 /** Normaliza texto para comparação (lowercase, trim, colapsa espaços). */
@@ -191,6 +202,16 @@ export function AssistenteInput() {
   /** Última resposta de texto do assistente no Live (para filtrar eco). */
   const lastLiveTextRef = useRef<string | null>(null);
   const stopLiveVoiceRef = useRef<((skipReport?: boolean) => void) | null>(null);
+  /** True enquanto o TTS está falando; ignorar transcrições nesse período (evitar eco). */
+  const isTtsPlayingRef = useRef(false);
+  /** Timestamp (Date.now()) em que o TTS terminou; ignorar transcrições por GRACE_MS após. */
+  const ttsEndedAtRef = useRef<number>(0);
+  const TTS_ECHO_GRACE_MS = 1800;
+
+  const cancelSpeechAndClearTtsRef = useCallback(() => {
+    isTtsPlayingRef.current = false;
+    cancelSpeech();
+  }, []);
 
   const geminiLive = useGeminiLive({
     fazendaId: fazendaAtiva?.id,
@@ -199,15 +220,27 @@ export function AssistenteInput() {
       lastLiveTextRef.current = text;
       setLiveText(text);
       if (isSpeechSynthesisSupported()) {
-        speak(text, { cancelPrevious: true });
+        isTtsPlayingRef.current = true;
+        speak(text, {
+          cancelPrevious: true,
+          onEnd: () => {
+            isTtsPlayingRef.current = false;
+            ttsEndedAtRef.current = Date.now();
+          },
+        });
       }
     },
     onCloseRequest: (message) => {
       setLiveThinking(false);
       if (isSpeechSynthesisSupported()) {
+        isTtsPlayingRef.current = true;
         speak(message, {
           cancelPrevious: true,
-          onEnd: () => handleCancelar()
+          onEnd: () => {
+            isTtsPlayingRef.current = false;
+            ttsEndedAtRef.current = Date.now();
+            handleCancelar();
+          },
         });
       } else {
         handleCancelar();
@@ -222,7 +255,14 @@ export function AssistenteInput() {
       setError(err);
       setLiveMode(false);
       if (isSpeechSynthesisSupported()) {
-        speak(err, { cancelPrevious: true });
+        isTtsPlayingRef.current = true;
+        speak(err, {
+          cancelPrevious: true,
+          onEnd: () => {
+            isTtsPlayingRef.current = false;
+            ttsEndedAtRef.current = Date.now();
+          },
+        });
       }
     },
     onReconnecting: (msg) => {
@@ -231,9 +271,15 @@ export function AssistenteInput() {
     onReconnected: (msg) => {
       setLiveReconnectStatus(msg);
       if (isSpeechSynthesisSupported()) {
-        speak(msg, { cancelPrevious: false });
+        isTtsPlayingRef.current = true;
+        speak(msg, {
+          cancelPrevious: false,
+          onEnd: () => {
+            isTtsPlayingRef.current = false;
+            ttsEndedAtRef.current = Date.now();
+          },
+        });
       }
-      // Limpar mensagem após alguns segundos
       setTimeout(() => setLiveReconnectStatus(""), 3000);
     }
   });
@@ -248,8 +294,10 @@ export function AssistenteInput() {
   } = useVoiceRecognition({
     onResult: (text, isFinal) => {
       if (!liveMode || !isFinal || !text.trim()) return;
+      if (isTtsPlayingRef.current) return;
+      if (Date.now() - ttsEndedAtRef.current < TTS_ECHO_GRACE_MS) return;
       if (isEchoTranscript(text, lastLiveTextRef.current)) return;
-      cancelSpeech();
+      cancelSpeechAndClearTtsRef();
       geminiLive.sendText(text);
     },
     language: "pt-BR",
@@ -344,9 +392,9 @@ export function AssistenteInput() {
       setPreparandoOuvirConfirmacao(false);
       setMostrarLembreteConfirmacao(false);
       clearRetryReopenTimer();
-      cancelSpeech();
+      cancelSpeechAndClearTtsRef();
     };
-  }, [clearRetryReopenTimer]);
+  }, [clearRetryReopenTimer, cancelSpeechAndClearTtsRef]);
 
   const runInterpretar = useCallback(
     async (t: string) => {
@@ -476,7 +524,7 @@ export function AssistenteInput() {
         } else if (result === "correct") {
           // Usuário quer corrigir/reformular — fechar dialog e reabrir microfone
           alreadyHandledConfirmRef.current = true;
-          cancelSpeech();
+          cancelSpeechAndClearTtsRef();
           setDialogOpen(false);
           setInterpretado(null);
           setError("");
@@ -694,7 +742,7 @@ export function AssistenteInput() {
     unknownErrorCountRef.current = 0;
     setAguardandoMaisOperacao(false);
     setMicAbreEmBreve(false);
-    cancelSpeech();
+    cancelSpeechAndClearTtsRef();
     setDialogOpen(false);
     setInterpretado(null);
     setError("");
@@ -1119,15 +1167,18 @@ export function AssistenteInput() {
               aria-label="Corrigir ou reformular"
               onClick={() => {
                 unknownErrorCountRef.current = 0;
-                cancelSpeech();
+                cancelSpeechAndClearTtsRef();
                 setDialogOpen(false);
                 setInterpretado(null);
                 setError("");
                 lastInputWasVoiceRef.current = true;
                 if (isSpeechSynthesisSupported()) {
+                  isTtsPlayingRef.current = true;
                   speak("Pode reformular.", {
                     cancelPrevious: false,
                     onEnd: () => {
+                      isTtsPlayingRef.current = false;
+                      ttsEndedAtRef.current = Date.now();
                       if (isMountedRef.current) scheduleDelayedReopen();
                     },
                   });

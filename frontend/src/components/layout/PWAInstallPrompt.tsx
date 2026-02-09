@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 
+const PWA_DISMISSED_KEY = "ceialmilk_pwa_dismissed";
+
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
@@ -19,14 +21,23 @@ export function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [dismissed, setDismissed] = useState(true); // inicia true para não piscar; effect ajusta
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    // Defer setState to avoid synchronous setState in effect (react-hooks/set-state-in-effect)
-    const id = setTimeout(() => setIsStandalone(standalone), 0);
+    const id = setTimeout(() => {
+      setIsStandalone(standalone);
+      if (!standalone) {
+        try {
+          setDismissed(sessionStorage.getItem(PWA_DISMISSED_KEY) === "1");
+        } catch {
+          setDismissed(false);
+        }
+      }
+    }, 0);
     if (standalone) {
       return () => clearTimeout(id);
     }
@@ -44,10 +55,27 @@ export function PWAInstallPrompt() {
     };
   }, []);
 
+  // Em produção o beforeinstallprompt pode não disparar; mostrar banner quando não está em standalone e não dispensou (fallback)
+  const showBanner = !isStandalone && !dismissed;
+
   const handleInstall = async () => {
     if (!deferredPrompt) {
-      // Fallback: orientar usuário a adicionar manualmente (ex.: Safari iOS)
+      // Fallback: instruções manuais (Safari iOS, ou Chrome em produção sem evento)
+      const isIOS =
+        typeof navigator !== "undefined" &&
+        /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+        !(window as Window & { MSStream?: unknown }).MSStream;
+      const msg = isIOS
+        ? "No Safari: toque em Compartilhar e depois em \"Adicionar à Tela de Início\"."
+        : "No menu do navegador (⋮ ou ⋯), procure por \"Instalar aplicativo\" ou \"Adicionar à tela inicial\".";
+      window.alert(msg);
       setShowPrompt(false);
+      setDismissed(true);
+      try {
+        sessionStorage.setItem(PWA_DISMISSED_KEY, "1");
+      } catch {
+        // ignore
+      }
       return;
     }
     await deferredPrompt.prompt();
@@ -55,13 +83,26 @@ export function PWAInstallPrompt() {
     setDeferredPrompt(null);
     setShowPrompt(false);
     if (outcome === "accepted") {
-      // PWA foi instalado
+      setDismissed(true);
+      try {
+        sessionStorage.setItem(PWA_DISMISSED_KEY, "1");
+      } catch {
+        // ignore
+      }
     }
   };
 
-  const dismiss = () => setShowPrompt(false);
+  const dismiss = () => {
+    setShowPrompt(false);
+    setDismissed(true);
+    try {
+      sessionStorage.setItem(PWA_DISMISSED_KEY, "1");
+    } catch {
+      // ignore
+    }
+  };
 
-  if (!showPrompt || isStandalone) return null;
+  if (!showBanner) return null;
 
   return (
     <div
