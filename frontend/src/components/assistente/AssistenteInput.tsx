@@ -127,6 +127,10 @@ export function AssistenteInput() {
   const [error, setError] = useState("");
   const [liveMode, setLiveMode] = useState(false);
   const [liveText, setLiveText] = useState("");
+  /** True enquanto aguarda resposta do Gemini no modo Live (entre sendText e type: text/error). */
+  const [liveThinking, setLiveThinking] = useState(false);
+  /** Mensagem de status da reconexão (Reconectando… / Reconectado.) — sempre em texto para mobile. */
+  const [liveReconnectStatus, setLiveReconnectStatus] = useState("");
   const [interpretado, setInterpretado] = useState<InterpretResponse | null>(
     null
   );
@@ -191,6 +195,7 @@ export function AssistenteInput() {
   const geminiLive = useGeminiLive({
     fazendaId: fazendaAtiva?.id,
     onTextResponse: (text) => {
+      setLiveThinking(false);
       lastLiveTextRef.current = text;
       setLiveText(text);
       if (isSpeechSynthesisSupported()) {
@@ -198,8 +203,9 @@ export function AssistenteInput() {
       }
     },
     onCloseRequest: (message) => {
+      setLiveThinking(false);
       if (isSpeechSynthesisSupported()) {
-        speak(message, { 
+        speak(message, {
           cancelPrevious: true,
           onEnd: () => handleCancelar()
         });
@@ -211,8 +217,24 @@ export function AssistenteInput() {
       // ... (reprodução de áudio)
     },
     onError: (err) => {
+      setLiveThinking(false);
+      setLiveReconnectStatus("");
       setError(err);
       setLiveMode(false);
+      if (isSpeechSynthesisSupported()) {
+        speak(err, { cancelPrevious: true });
+      }
+    },
+    onReconnecting: (msg) => {
+      setLiveReconnectStatus(msg);
+    },
+    onReconnected: (msg) => {
+      setLiveReconnectStatus(msg);
+      if (isSpeechSynthesisSupported()) {
+        speak(msg, { cancelPrevious: false });
+      }
+      // Limpar mensagem após alguns segundos
+      setTimeout(() => setLiveReconnectStatus(""), 3000);
     }
   });
 
@@ -558,6 +580,8 @@ export function AssistenteInput() {
     // Toggle entre modo Live e modo normal
     if (liveMode) {
       geminiLive.stop();
+      setLiveThinking(false);
+      setLiveReconnectStatus("");
       setLiveMode(false);
       return;
     }
@@ -787,12 +811,17 @@ export function AssistenteInput() {
 
   const handleSugestaoClick = useCallback(
     (sugestao: string) => {
-      if (loading || liveMode) return;
+      if (loading) return;
       lastInputWasVoiceRef.current = false;
-      setTexto(sugestao);
-      runInterpretar(sugestao);
+      if (liveMode) {
+        geminiLive.sendText?.(sugestao);
+        setLiveThinking(true);
+      } else {
+        setTexto(sugestao);
+        runInterpretar(sugestao);
+      }
     },
-    [loading, liveMode, runInterpretar]
+    [loading, liveMode, runInterpretar, geminiLive]
   );
 
   return (
@@ -815,11 +844,11 @@ export function AssistenteInput() {
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  if (liveMode) {
-                    // No modo Live, enviar via WebSocket
-                    geminiLive.sendText?.(texto);
+                  if (liveMode && texto.trim()) {
+                    geminiLive.sendText?.(texto.trim());
                     setTexto("");
-                  } else {
+                    setLiveThinking(true);
+                  } else if (!liveMode) {
                     handleInterpretar();
                   }
                 }
@@ -843,6 +872,8 @@ export function AssistenteInput() {
                 variant={liveMode ? "destructive" : "secondary"}
                 onClick={handleMainMicClick}
                 disabled={loading}
+                className="min-h-[44px] min-w-[44px] touch-manipulation"
+                aria-label={liveMode ? "Parar Assistente Live" : "Conversar em tempo real (voz ou texto)"}
                 title={
                   liveMode
                     ? "Parar Assistente Live"
@@ -864,8 +895,18 @@ export function AssistenteInput() {
             type="button"
             size="icon"
             variant="secondary"
-            onClick={handleInterpretar}
-            disabled={loading || !texto.trim()}
+            className="min-h-[44px] min-w-[44px] touch-manipulation"
+            aria-label="Enviar pedido em linguagem natural"
+            onClick={() => {
+              if (liveMode && texto.trim()) {
+                geminiLive.sendText?.(texto.trim());
+                setTexto("");
+                setLiveThinking(true);
+              } else {
+                handleInterpretar();
+              }
+            }}
+            disabled={loading || (!liveMode && !texto.trim())}
             title="Enviar pedido em linguagem natural"
           >
             {loading ? (
@@ -875,7 +916,7 @@ export function AssistenteInput() {
             )}
           </Button>
         </div>
-        {!liveMode && !loading && (
+        {!loading && (
           <div className="flex flex-wrap gap-1.5">
             <span className="text-xs text-muted-foreground self-center mr-1">Sugestões:</span>
             {SUGESTOES_RAPIDAS.map((s) => (
@@ -883,12 +924,27 @@ export function AssistenteInput() {
                 key={s}
                 type="button"
                 onClick={() => handleSugestaoClick(s)}
-                className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs text-foreground hover:bg-muted hover:border-primary/30 transition-colors"
+                className="min-h-[44px] rounded-full border border-border bg-muted/50 px-3 py-2 text-xs text-foreground hover:bg-muted hover:border-primary/30 transition-colors touch-manipulation"
+                aria-label={`Sugestão: ${s}`}
               >
                 {s}
               </button>
             ))}
           </div>
+        )}
+        {liveMode && liveThinking && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5" role="status" aria-live="polite">
+            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" aria-hidden />
+            Assistente está pensando…
+          </p>
+        )}
+        {liveMode && liveReconnectStatus && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5" role="status" aria-live="polite">
+            {liveReconnectStatus.includes("Reconectando") ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" aria-hidden />
+            ) : null}
+            {liveReconnectStatus}
+          </p>
         )}
         {loading && (
           <p className="text-xs text-muted-foreground flex items-center gap-1.5" role="status" aria-live="polite">
@@ -901,6 +957,11 @@ export function AssistenteInput() {
             <p className="font-medium text-primary text-xs mb-1">Assistente Live:</p>
             {liveText}
           </div>
+        )}
+        {geminiLive.isOffline && (
+          <p className="text-xs text-amber-600 dark:text-amber-500" role="alert">
+            O assistente precisa de internet. Verifique sua conexão e tente novamente.
+          </p>
         )}
         {liveMode && !isSupported && (
           <p className="text-xs text-muted-foreground" role="status">
@@ -1025,10 +1086,11 @@ export function AssistenteInput() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="mt-2"
+                    className="mt-2 min-h-[44px] touch-manipulation"
                     onClick={startConfirmationListening}
                     disabled={executando || isListening}
                     title="Abrir microfone e dizer sim, não ou corrigir"
+                    aria-label="Abrir microfone e dizer sim, não ou corrigir"
                   >
                     {isListening ? (
                       <MicOff className="h-4 w-4 mr-1 shrink-0" aria-hidden />
@@ -1046,12 +1108,15 @@ export function AssistenteInput() {
               variant="outline"
               onClick={handleCancelar}
               disabled={executando}
-              className="sm:flex-1"
+              className="sm:flex-1 min-h-[44px] touch-manipulation"
+              aria-label="Cancelar"
             >
               Cancelar
             </Button>
             <Button
               variant="secondary"
+              className="sm:flex-1 min-h-[44px] touch-manipulation"
+              aria-label="Corrigir ou reformular"
               onClick={() => {
                 unknownErrorCountRef.current = 0;
                 cancelSpeech();
@@ -1071,14 +1136,14 @@ export function AssistenteInput() {
                 }
               }}
               disabled={executando}
-              className="sm:flex-1"
             >
               Corrigir
             </Button>
             <Button
               onClick={handleConfirmar}
               disabled={executando}
-              className="sm:flex-1"
+              className="sm:flex-1 min-h-[44px] touch-manipulation"
+              aria-label="Confirmar ação"
             >
               {executando ? "Executando…" : "Confirmar"}
             </Button>

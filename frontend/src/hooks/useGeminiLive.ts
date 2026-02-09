@@ -2,108 +2,175 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 
+const BACKOFF_MS = [1000, 2000, 4000];
+const MAX_RECONNECT_ATTEMPTS = 3;
+const RECONNECT_FAIL_MESSAGE =
+  "Não foi possível reconectar. Verifique a internet e tente abrir o assistente de novo.";
+
 interface GeminiLiveOptions {
   onTextResponse?: (text: string) => void;
   onAudioResponse?: (audioData: ArrayBuffer) => void;
   onCloseRequest?: (message: string) => void;
   onError?: (error: string) => void;
+  onReconnecting?: (message: string) => void;
+  onReconnected?: (message: string) => void;
   fazendaId?: number;
+}
+
+const OFFLINE_MESSAGE = "O assistente precisa de internet. Verifique sua conexão e tente novamente.";
+
+function buildWsUrl(fazendaId?: number): string {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+  const wsBase = baseUrl.replace(/^http/, "ws");
+  let wsUrl = `${wsBase}/api/v1/assistente/live`;
+  if (fazendaId) wsUrl += `?fazenda_id=${fazendaId}`;
+  return wsUrl;
 }
 
 export function useGeminiLive(options: GeminiLiveOptions = {}) {
   const [isActive, setIsActive] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [isOffline, setIsOffline] = useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false
+  );
   const socketRef = useRef<WebSocket | null>(null);
-
-  // Usar ref para as opções para evitar disparar o useCallback[start] desnecessariamente
   const optionsRef = useRef(options);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wantToBeConnectedRef = useRef(false);
+
   useEffect(() => {
     optionsRef.current = options;
   }, [options]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onOnline = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
   const stop = useCallback(() => {
+    wantToBeConnectedRef.current = false;
     setIsActive(false);
     setIsConnecting(false);
-
+    setIsReconnecting(false);
+    if (reconnectTimeoutRef.current !== null) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    reconnectAttemptsRef.current = 0;
     if (socketRef.current) {
       socketRef.current.close();
       socketRef.current = null;
     }
   }, []);
 
-  const start = useCallback(async () => {
-    if (isActive || isConnecting) return;
-
-    setIsConnecting(true);
-    try {
-      // 1. Configurar WebSocket
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      
-      // Em desenvolvimento, o backend pode estar em porta diferente ou acessível via proxy.
-      // Usamos a URL base da API se disponível, ou o host atual.
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || window.location.origin;
-      const wsBase = baseUrl.replace(/^http/, 'ws');
-      let wsUrl = `${wsBase}/api/v1/assistente/live`;
-      
-      const currentOptions = optionsRef.current;
-      if (currentOptions.fazendaId) {
-        wsUrl += `?fazenda_id=${currentOptions.fazendaId}`;
-      }
-      
+  const tryConnect = useCallback(
+    (isReconnect: boolean) => {
+      if (typeof window === "undefined") return;
+      const wsUrl = buildWsUrl(optionsRef.current.fazendaId);
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log("WebSocket conectado com sucesso");
-        setIsConnecting(false);
+        if (!isReconnect) setIsConnecting(false);
+        setIsReconnecting(false);
         setIsActive(true);
-        // Entrada por voz é feita via useVoiceRecognition (transcrição no cliente → sendText).
-        // Não usamos áudio bruto aqui: ScriptProcessorNode é deprecated e falha em Safari/iOS;
-        // o backend atualmente processa apenas mensagens de texto no Live.
+        reconnectAttemptsRef.current = 0;
+        if (isReconnect) optionsRef.current.onReconnected?.("Reconectado.");
       };
 
       socket.onmessage = async (event) => {
-        console.log("Mensagem bruta recebida do WebSocket:", event.data);
         if (typeof event.data === "string") {
-          console.log("Processando mensagem de texto:", event.data);
           try {
             const data = JSON.parse(event.data);
-            console.log("JSON parseado com sucesso:", data);
-            if (data.type === "text") {
-              console.log("Chamando onTextResponse com:", data.content);
-              optionsRef.current.onTextResponse?.(data.content);
-            } else if (data.type === "close") {
-              console.log("Pedido de fechamento recebido:", data.content);
-              optionsRef.current.onCloseRequest?.(data.content);
-            }
-          } catch (e) {
-            console.error("Erro ao fazer parse do JSON:", e, "String recebida:", event.data);
+            if (data.type === "text") optionsRef.current.onTextResponse?.(data.content);
+            else if (data.type === "error")
+              optionsRef.current.onError?.(data.content ?? "Algo deu errado. Tente de novo.");
+            else if (data.type === "close") optionsRef.current.onCloseRequest?.(data.content);
+          } catch {
+            // ignore parse errors
           }
         } else if (event.data instanceof Blob) {
-          console.log("Processando áudio (Blob) de tamanho:", event.data.size);
           const arrayBuffer = await event.data.arrayBuffer();
           optionsRef.current.onAudioResponse?.(arrayBuffer);
-        } else {
-          console.log("Tipo de mensagem WebSocket não reconhecido:", typeof event.data);
         }
       };
 
-      socket.onerror = (err) => {
-        console.error("Erro no WebSocket:", err);
-        optionsRef.current.onError?.("Erro na conexão com o assistente.");
-        stop();
+      const handleCloseOrError = () => {
+        socketRef.current = null;
+        if (!wantToBeConnectedRef.current) {
+          stop();
+          return;
+        }
+        if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+          wantToBeConnectedRef.current = false;
+          stop();
+          optionsRef.current.onError?.(RECONNECT_FAIL_MESSAGE);
+          return;
+        }
+        setIsReconnecting(true);
+        setIsActive(false);
+        optionsRef.current.onReconnecting?.("Conexão caiu. Reconectando…");
+        const delay = BACKOFF_MS[reconnectAttemptsRef.current] ?? 4000;
+        reconnectAttemptsRef.current += 1;
+        reconnectTimeoutRef.current = setTimeout(() => {
+          reconnectTimeoutRef.current = null;
+          tryConnect(true);
+        }, delay);
       };
 
-      socket.onclose = () => {
-        stop();
-      };
+      socket.onerror = () => handleCloseOrError();
+      socket.onclose = () => handleCloseOrError();
+    },
+    [stop]
+  );
 
+  // Ao voltar à aba (ex.: mobile trocou de app), reconectar uma vez se o WebSocket estiver fechado
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!wantToBeConnectedRef.current) return;
+      const sock = socketRef.current;
+      if (sock?.readyState === WebSocket.OPEN) return;
+      if (reconnectTimeoutRef.current !== null) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      reconnectAttemptsRef.current = 0;
+      socketRef.current = null;
+      setIsReconnecting(true);
+      optionsRef.current.onReconnecting?.("Conexão caiu. Reconectando…");
+      tryConnect(true);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [tryConnect]);
+
+  const start = useCallback(() => {
+    if (isActive || isConnecting || isReconnecting) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      optionsRef.current.onError?.(OFFLINE_MESSAGE);
+      return;
+    }
+    wantToBeConnectedRef.current = true;
+    reconnectAttemptsRef.current = 0;
+    setIsConnecting(true);
+    try {
+      tryConnect(false);
     } catch (err) {
-      console.error("Erro ao iniciar Gemini Live:", err);
       setIsConnecting(false);
       optionsRef.current.onError?.("Falha ao iniciar o assistente.");
     }
-  }, [isActive, isConnecting, stop]);
+  }, [isActive, isConnecting, isReconnecting, tryConnect]);
 
   useEffect(() => {
     return () => stop();
@@ -121,5 +188,7 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
     sendText,
     isActive,
     isConnecting,
+    isReconnecting,
+    isOffline,
   };
 }

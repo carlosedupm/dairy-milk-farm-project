@@ -107,8 +107,8 @@ lib/utils.ts
 
 **Assistente Virtual Multimodal Live**:
 - **Arquitetura**: Streaming bidirecional via WebSocket (`/api/v1/assistente/live`).
-- **Backend**: Proxy entre Frontend e Gemini API; orquestração de goroutines para processamento paralelo; Function Calling para acesso ao banco. Processa apenas mensagens de **texto** (JSON `{ "text": "..." }`); áudio bruto não é utilizado.
-- **Frontend**: Hook `useGeminiLive` abre apenas o WebSocket (sem captura de áudio bruto, para compatibilidade com Safari e mobile). Entrada por voz via **Web Speech API** (`useVoiceRecognition`): transcrição no cliente → `sendText()`. Quando o navegador não suporta reconhecimento de voz (ex.: Firefox Android, alguns iOS), o modo Live funciona em **apenas texto**: usuário digita e envia com Enter ou botão Enviar.
+- **Backend**: Proxy entre Frontend e Gemini API; orquestração de goroutines para processamento paralelo; Function Calling para acesso ao banco. Processa apenas mensagens de **texto** (JSON `{ "text": "..." }`); áudio bruto não é utilizado. Em falha (Gemini ou rede), envia ao cliente `{"type": "error", "content": "<mensagem amigável>"}`. **CheckOrigin**: em produção usa `CORS_ORIGIN` para restringir a origem do WebSocket; em dev (localhost) aceita qualquer origem.
+- **Frontend**: Hook `useGeminiLive` abre o WebSocket; reconexão com backoff (1s, 2s, 4s, máx. 3 tentativas); detecção de offline (`navigator.onLine` + eventos `online`/`offline`); ao voltar à aba (`visibilitychange`) reconecta uma vez se o socket estiver fechado. Callbacks `onReconnecting`/`onReconnected` para feedback em texto. Tratamento de `type: "error"` para exibir e falar mensagem amigável.
 - **Compatibilidade**: Funciona em qualquer navegador com WebSocket (incluindo mobile). Voz quando há `SpeechRecognition`/`webkitSpeechRecognition`; TTS quando há `speechSynthesis`. Fallback gracioso para texto quando voz não está disponível.
 - **Contexto**: Injeção automática de `user_id` e `fazenda_id` (ativa) na inicialização da sessão.
 
@@ -429,5 +429,5 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Última atualização**: 2026-02-06
-**Versão dos Padrões**: 2.5 (Go + Next.js) — Controle de acesso frontend por perfil (gateway de fazendas e visibilidade do menu).
+**Última atualização**: 2026-02-08
+**Versão dos Padrões**: 2.6 (Go + Next.js) — Assistente Live: erros via WebSocket, reconexão com backoff, CheckOrigin em produção.

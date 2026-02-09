@@ -30,7 +30,7 @@ O arquivo `render.yaml` define:
 - `DATABASE_URL` - Proveniente de `fromDatabase` (Postgres `ceialmilk-db`). URL no formato `postgresql://user:pass@host:port/db`.
 - `ENV` - `production`
 - `LOG_LEVEL` - `INFO` (ou DEBUG, WARN, ERROR)
-- `CORS_ORIGIN` - URL do frontend na Vercel (ex.: `https://ceialmilk.vercel.app`). Quando **não** for localhost, os cookies de auth usam `SameSite=None` para requisições cross-origin (frontend Vercel ↔ backend Render).
+- `CORS_ORIGIN` - URL do frontend na Vercel (ex.: `https://ceialmilk.vercel.app`). Quando **não** for localhost, os cookies de auth usam `SameSite=None` para requisições cross-origin (frontend Vercel ↔ backend Render). **Também usada** pelo WebSocket do Assistente Live (`/api/v1/assistente/live`): o upgrade do WebSocket valida o header `Origin` contra `CORS_ORIGIN`; em produção defina o domínio exato do frontend para evitar conexões de origens não autorizadas.
 
 #### Obrigatórias e definidas manualmente (`sync: false`)
 
@@ -346,7 +346,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 ---
 
-**Última atualização**: 2026-01-26 (Dev Studio: GITHUB_CONTEXT_BRANCH e contexto do repositório)
+**Última atualização**: 2026-02-08 (CORS_ORIGIN usada no WebSocket do Assistente Live)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

@@ -281,7 +281,7 @@ func main() {
 					if err != nil {
 						slog.Warn("Falha ao inicializar Assistente Live", "error", err)
 					}
-					assistenteLiveHandler := handlers.NewAssistenteLiveHandler(assistenteLiveSvc, userRepo)
+					assistenteLiveHandler := handlers.NewAssistenteLiveHandler(assistenteLiveSvc, userRepo, cfg.CORSOrigin)
 
 					assistente := api.Group("/v1/assistente")
 					{

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/ceialmilk/api/internal/repository"
 	"github.com/ceialmilk/api/internal/service"
@@ -14,19 +15,28 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Em produção, restringir ao domínio do frontend
-	},
-}
-
 type AssistenteLiveHandler struct {
-	svc      *service.AssistenteLiveService
-	userRepo *repository.UsuarioRepository
+	svc           *service.AssistenteLiveService
+	userRepo      *repository.UsuarioRepository
+	allowedOrigin string // CORS_ORIGIN ou FRONTEND_ORIGIN; em dev (localhost) aceita qualquer origem
 }
 
-func NewAssistenteLiveHandler(svc *service.AssistenteLiveService, userRepo *repository.UsuarioRepository) *AssistenteLiveHandler {
-	return &AssistenteLiveHandler{svc: svc, userRepo: userRepo}
+func NewAssistenteLiveHandler(svc *service.AssistenteLiveService, userRepo *repository.UsuarioRepository, allowedOrigin string) *AssistenteLiveHandler {
+	return &AssistenteLiveHandler{svc: svc, userRepo: userRepo, allowedOrigin: allowedOrigin}
+}
+
+func (h *AssistenteLiveHandler) upgrader() websocket.Upgrader {
+	allowed := strings.TrimSpace(h.allowedOrigin)
+	return websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			// Em desenvolvimento (localhost) aceita qualquer origem
+			if allowed == "" || strings.Contains(allowed, "localhost") {
+				return true
+			}
+			origin := r.Header.Get("Origin")
+			return origin == allowed
+		},
+	}
 }
 
 // LiveSession gerencia a conexão WebSocket bidirecional.
@@ -44,7 +54,8 @@ func (h *AssistenteLiveHandler) LiveSession(c *gin.Context) {
 	}
 
 	// Upgrade para WebSocket
-	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	upg := h.upgrader()
+	ws, err := upg.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		slog.Error("Erro ao fazer upgrade para WebSocket", "error", err)
 		return
@@ -104,10 +115,32 @@ func (h *AssistenteLiveHandler) LiveSession(c *gin.Context) {
 	}
 }
 
+// friendlyErrorMessage mapeia erros do Gemini/rede para mensagens amigáveis ao usuário.
+func friendlyErrorMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	s := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(s, "429") || strings.Contains(s, "quota") || strings.Contains(s, "resource exhausted"):
+		return "Muitas conversas agora. Tente em alguns minutos."
+	case strings.Contains(s, "503") || strings.Contains(s, "unavailable") || strings.Contains(s, "deadline"):
+		return "Serviço temporariamente indisponível. Tente novamente em instantes."
+	case strings.Contains(s, "network") || strings.Contains(s, "connection") || strings.Contains(s, "timeout"):
+		return "Sem conexão. Tente de novo quando tiver internet."
+	case strings.Contains(s, "api key") || strings.Contains(s, "invalid") || strings.Contains(s, "401"):
+		return "Erro de configuração do assistente. Tente mais tarde."
+	default:
+		return "Algo deu errado. Tente de novo ou use o menu para fazer a ação."
+	}
+}
+
 func (h *AssistenteLiveHandler) processTextInteraction(ctx context.Context, session *service.Session, ws *websocket.Conn, text string) {
 	resp, err := session.SendMessage(ctx, genai.Text(text))
 	if err != nil {
 		slog.Error("Erro ao enviar mensagem para Gemini", "error", err)
+		msg := friendlyErrorMessage(err)
+		_ = session.WriteWSJSON(ws, gin.H{"type": "error", "content": msg})
 		return
 	}
 
@@ -171,8 +204,10 @@ func (h *AssistenteLiveHandler) processFunctionResponse(ctx context.Context, ses
 	})
 	if err != nil {
 		slog.Error("Erro ao enviar resposta de função para Gemini", "error", err)
+		msg := friendlyErrorMessage(err)
+		_ = session.WriteWSJSON(ws, gin.H{"type": "error", "content": msg})
 		return
 	}
-	
+
 	h.handleGeminiResponse(ctx, session, ws, resp)
 }

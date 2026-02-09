@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
 import { AssistenteInput } from "@/components/assistente/AssistenteInput";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { cn } from "@/lib/utils";
@@ -44,89 +45,93 @@ export function Header() {
 
   return (
     <header className="border-b bg-card sticky top-0 z-50">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="font-semibold shrink-0">
-            CeialMilk
-          </Link>
-          {/* Desktop nav - hidden on mobile */}
-          {showNavLinks && (
-            <nav className="hidden lg:flex items-center gap-1">
-              {isAdmin && (
-                <Link href="/fazendas" className={navLinkClass("/fazendas")}>
-                  <Building2 className="h-5 w-5 shrink-0" aria-hidden />
-                  Fazendas
+      <div className="mx-auto max-w-5xl px-4">
+        <div className="flex h-14 items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="font-semibold shrink-0">
+              CeialMilk
+            </Link>
+            {/* Desktop nav - hidden on mobile */}
+            {showNavLinks && (
+              <nav className="hidden lg:flex items-center gap-1">
+                {isAdmin && (
+                  <Link href="/fazendas" className={navLinkClass("/fazendas")}>
+                    <Building2 className="h-5 w-5 shrink-0" aria-hidden />
+                    Fazendas
+                  </Link>
+                )}
+                <Link href="/animais" className={navLinkClass("/animais")}>
+                  <List className="h-5 w-5 shrink-0" aria-hidden />
+                  Animais
                 </Link>
-              )}
-              <Link href="/animais" className={navLinkClass("/animais")}>
-                <List className="h-5 w-5 shrink-0" aria-hidden />
-                Animais
-              </Link>
-              <Link href="/producao" className={navLinkClass("/producao")}>
-                <Droplets className="h-5 w-5 shrink-0" aria-hidden />
-                Produção
-              </Link>
-              {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
-                <Link href="/admin/usuarios" className={navLinkClass("/admin")}>
-                  <Users className="h-5 w-5 shrink-0" aria-hidden />
-                  Admin
+                <Link href="/producao" className={navLinkClass("/producao")}>
+                  <Droplets className="h-5 w-5 shrink-0" aria-hidden />
+                  Produção
                 </Link>
-              )}
-              {user && user.perfil === "DEVELOPER" && (
-                <Link href="/dev-studio" className={navLinkClass("/dev-studio")}>
-                  <Code className="h-5 w-5 shrink-0" aria-hidden />
-                  Dev Studio
-                </Link>
-              )}
-            </nav>
-          )}
-        </div>
+                {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
+                  <Link href="/admin/usuarios" className={navLinkClass("/admin")}>
+                    <Users className="h-5 w-5 shrink-0" aria-hidden />
+                    Admin
+                  </Link>
+                )}
+                {user && user.perfil === "DEVELOPER" && (
+                  <Link href="/dev-studio" className={navLinkClass("/dev-studio")}>
+                    <Code className="h-5 w-5 shrink-0" aria-hidden />
+                    Dev Studio
+                  </Link>
+                )}
+              </nav>
+            )}
+          </div>
 
-        {/* Desktop right block - hidden on mobile */}
-        <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1 justify-end">
-          <FazendaSelector />
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" title="Assistente em linguagem natural">
-                <MessageCircle className="h-4 w-4 mr-1.5" aria-hidden />
-                Assistente
-              </Button>
-            </DialogTrigger>
-            <DialogContent
-              className="sm:max-w-lg"
-              onOpenAutoFocus={(e) => e.preventDefault()}
+          {/* Desktop right block - hidden on mobile */}
+          <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1 justify-end">
+            <FazendaSelector />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" title="Assistente em linguagem natural">
+                  <MessageCircle className="h-4 w-4 mr-1.5" aria-hidden />
+                  Assistente
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                className="sm:max-w-lg max-h-[100dvh] overflow-y-auto"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <DialogHeader>
+                  <DialogTitle>Assistente</DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground">
+                    Digite ou fale o que você precisa. Ex: &quot;quantos animais tenho?&quot;, &quot;ver produção da fazenda&quot;, &quot;abrir fazenda X&quot;. Usa o contexto da sua fazenda ativa.
+                  </DialogDescription>
+                </DialogHeader>
+                <AssistenteInput />
+              </DialogContent>
+            </Dialog>
+            <ThemeToggle />
+            {user && (
+              <span className="text-sm text-muted-foreground truncate">
+                {user.nome?.trim() || user.email}
+              </span>
+            )}
+            <Button variant="outline" size="sm" onClick={logout}>
+              Sair
+            </Button>
+          </div>
+
+          {/* Mobile: hamburger button */}
+          <div className="flex lg:hidden items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Abrir menu"
+              onClick={() => setMobileMenuOpen(true)}
             >
-              <DialogHeader>
-                <DialogTitle>Assistente</DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground">
-                  Digite ou fale o que você precisa. Ex: &quot;quantos animais tenho?&quot;, &quot;ver produção da fazenda&quot;, &quot;abrir fazenda X&quot;. Usa o contexto da sua fazenda ativa.
-                </DialogDescription>
-              </DialogHeader>
-              <AssistenteInput />
-            </DialogContent>
-          </Dialog>
-          <ThemeToggle />
-          {user && (
-            <span className="text-sm text-muted-foreground truncate">
-              {user.nome?.trim() || user.email}
-            </span>
-          )}
-          <Button variant="outline" size="sm" onClick={logout}>
-            Sair
-          </Button>
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
-        {/* Mobile: hamburger button */}
-        <div className="flex lg:hidden items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Abrir menu"
-            onClick={() => setMobileMenuOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        </div>
+        <PWAInstallPrompt />
       </div>
 
       {/* Mobile menu overlay */}
@@ -165,7 +170,7 @@ export function Header() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent
-                  className="sm:max-w-lg"
+                  className="sm:max-w-lg max-h-[100dvh] overflow-y-auto"
                   onOpenAutoFocus={(e) => e.preventDefault()}
                 >
                   <DialogHeader>
