@@ -89,6 +89,7 @@ func (s *AssistenteLiveService) StartSession(ctx context.Context, userID int64, 
 DIRETRIZ CRÍTICA: Você não tem acesso direto ao banco de dados, exceto através das funções fornecidas.
 Sempre que o usuário perguntar sobre fazendas, animais ou produção, você DEVE OBRIGATORIAMENTE chamar a função correspondente antes de responder.
 NUNCA diga que o usuário não tem dados sem antes tentar listar_fazendas().
+A função listar_animais retorna, para cada animal, identificação, raça e data de nascimento (Nascimento: YYYY-MM-DD ou "não informada"). Use esses dados para responder perguntas como "qual o animal mais novo", "qual o mais velho" ou "idade dos animais".
 
 Contexto do Usuário:
 - Nome: %s
@@ -158,7 +159,7 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 		},
 		{
 			Name:        "listar_animais",
-			Description: "Lista os animais de uma fazenda específica.",
+			Description: "Lista os animais de uma fazenda específica, com identificação, raça e data de nascimento. Use para perguntas como 'qual o animal mais novo', 'qual o mais velho', 'quantos animais', 'listar animais da fazenda'.",
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
@@ -336,7 +337,11 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			if i > 0 {
 				resumo.WriteString("; ")
 			}
-			resumo.WriteString(fmt.Sprintf("%s (Raça: %s)", a.Identificacao, strOrEmpty(a.Raca)))
+			nasc := "não informada"
+			if a.DataNascimento != nil {
+				nasc = a.DataNascimento.Format("2006-01-02")
+			}
+			resumo.WriteString(fmt.Sprintf("%s (Raça: %s, Nascimento: %s)", a.Identificacao, strOrEmpty(a.Raca), nasc))
 		}
 		return map[string]any{"lista_animais": resumo.String()}, nil
 
