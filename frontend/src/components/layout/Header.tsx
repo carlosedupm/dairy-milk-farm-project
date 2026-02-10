@@ -6,20 +6,11 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
-import { AssistenteInput } from "@/components/assistente/AssistenteInput";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { cn } from "@/lib/utils";
-import { Building2, List, Droplets, Menu, Users, Code, X, MessageCircle } from "lucide-react";
+import { Building2, List, Droplets, Menu, Users, Code, X } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -87,26 +78,6 @@ export function Header() {
           {/* Desktop right block - hidden on mobile */}
           <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1 justify-end">
             <FazendaSelector />
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" title="Assistente em linguagem natural">
-                  <MessageCircle className="h-4 w-4 mr-1.5" aria-hidden />
-                  Assistente
-                </Button>
-              </DialogTrigger>
-              <DialogContent
-                className="sm:max-w-lg max-h-[100dvh] overflow-y-auto"
-                onOpenAutoFocus={(e) => e.preventDefault()}
-              >
-                <DialogHeader>
-                  <DialogTitle>Assistente</DialogTitle>
-                  <DialogDescription className="text-sm text-muted-foreground">
-                    Digite ou fale o que você precisa. Ex: &quot;quantos animais tenho?&quot;, &quot;ver produção da fazenda&quot;, &quot;abrir fazenda X&quot;. Usa o contexto da sua fazenda ativa.
-                  </DialogDescription>
-                </DialogHeader>
-                <AssistenteInput />
-              </DialogContent>
-            </Dialog>
             <ThemeToggle />
             {user && (
               <span className="text-sm text-muted-foreground truncate">
@@ -162,26 +133,6 @@ export function Header() {
               <div className="py-2">
                 <FazendaSelector />
               </div>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="justify-center gap-2 min-h-[44px]" title="Assistente">
-                    <MessageCircle className="h-5 w-5 shrink-0" aria-hidden />
-                    Assistente
-                  </Button>
-                </DialogTrigger>
-                <DialogContent
-                  className="sm:max-w-lg max-h-[100dvh] overflow-y-auto"
-                  onOpenAutoFocus={(e) => e.preventDefault()}
-                >
-                  <DialogHeader>
-                    <DialogTitle>Assistente</DialogTitle>
-                    <DialogDescription className="text-sm text-muted-foreground">
-                      Digite ou fale o que você precisa. Ex: &quot;quantos animais tenho?&quot;, &quot;ver produção da fazenda&quot;. Usa o contexto da sua fazenda ativa.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <AssistenteInput />
-                </DialogContent>
-              </Dialog>
               <div className="flex items-center gap-2 py-2 px-3">
                 <ThemeToggle />
                 <span className="text-sm text-muted-foreground">

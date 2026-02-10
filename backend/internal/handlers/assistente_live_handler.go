@@ -164,10 +164,21 @@ func (h *AssistenteLiveHandler) handleGeminiResponse(ctx context.Context, sessio
 					h.processFunctionResponse(ctx, session, ws, v.Name, map[string]interface{}{"error": err.Error()})
 					continue
 				}
-				
-				// Se for finalizar a conversa, avisar o frontend antes de enviar para o Gemini
-				if m, ok := result.(map[string]any); ok && m["status"] == "encerrar" {
-					session.WriteWSJSON(ws, gin.H{"type": "close", "content": m["mensagem"]})
+
+				// Guardar redirect_path da resposta (para usar ao fechar) e remover do resultado enviado ao Gemini
+				if m, ok := result.(map[string]any); ok {
+					if path, _ := m["redirect_path"].(string); path != "" {
+						session.RedirectPath = path
+						delete(m, "redirect_path")
+					}
+					// Se for finalizar a conversa, avisar o frontend antes de enviar para o Gemini
+					if m["status"] == "encerrar" {
+						closePayload := gin.H{"type": "close", "content": m["mensagem"]}
+						if session.RedirectPath != "" {
+							closePayload["redirect"] = session.RedirectPath
+						}
+						session.WriteWSJSON(ws, closePayload)
+					}
 				}
 
 				h.processFunctionResponse(ctx, session, ws, v.Name, result)

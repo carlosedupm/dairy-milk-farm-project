@@ -44,6 +44,6 @@
     }
   },
   "forwardPorts": [8080, 3000, 5432],
-  "postCreateCommand": "go mod download -C backend && npm install --prefix frontend && chmod +x /workspace/scripts/devcontainer-post-start.sh",
+  "postCreateCommand": "go mod download -C backend && npm install --prefix frontend && chmod +x /workspace/scripts/devcontainer-post-start.sh && go install github.com/go-delve/delve/cmd/dlv@latest",
   "remoteUser": "vscode"
 }

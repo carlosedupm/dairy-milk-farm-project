@@ -25,6 +25,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 - **Postgres no compose**: `scripts/db/init-pg-hba.sh` + `ssl=off` para aceitar conexões do devcontainer (após recriar o volume)
 - **Dev Studio (Fase 0 + Fase 1 + Fase 2 + Fase 3)**: Área de desenvolvimento interativa com IA integrada — geração de código via Gemini API, validação sintática, preview, histórico, criação automática de PRs via GitHub API, **RAG dinâmico** (seleção de contexto por palavras-chave), **monitoramento** (GET /usage, alertas de limite, tratamento 429), **Refinar** (feedback para corrigir divergências) e **exemplos de código** (handler/service/repository/model/response de Fazenda) sempre incluídos no contexto da IA. **Contexto tipo Cursor**: quando o prompt indica edição de menu/UI (ex.: "menu", "Header", "rota", "link", "dev-studio"), o backend inclui o **estado atual** dos arquivos-alvo (ex.: `Header.tsx`, `layout.tsx`) e instruções para **editar em cima do existente** e **preservar** o que não foi pedido para alterar. **Contexto sempre do repositório**: quando `GITHUB_TOKEN` e `GITHUB_REPO` estão configurados, **exemplos** e **arquivos-alvo** são sempre buscados da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) no GitHub, pois o resultado aprovado irá para lá (PR → merge). **Diff Viewer**: visualização de diferenças entre código gerado e código atual no repositório (comparação linha por linha). **Linter Automático**: validação sintática e de lint para Go e TypeScript com exibição de erros e avisos. **Cancelamento de Requisições**: funcionalidade para cancelar requisições geradas (status "cancelled"), com dialog de confirmação moderno (Shadcn/UI) e atualização automática do histórico.
 - **Assistente Virtual Multimodal Live (Gemini 2.0 Flash)**: 
+  - **Acesso via FAB**: Botão flutuante (FAB) fixo no canto inferior direito, visível em todas as telas autenticadas; um toque abre o modal do assistente. O assistente **não fica mais no Header** — estado compartilhado via `AssistenteContext`; modal renderizado no layout (`AssistenteDialog`) junto com o FAB (`AssistenteFab`).
   - **Interface em Tempo Real**: Conversação via WebSockets (`/api/v1/assistente/live`). **Funciona em qualquer navegador**, inclusive mobile: com suporte a voz (Web Speech API) usa microfone + TTS; sem suporte a voz, usa apenas digitação (Enter ou botão Enviar).
   - **Voz-para-Voz (quando disponível)**: Transcrição STT no navegador e envio de texto; resposta da IA em texto + TTS. Sem captura de áudio bruto no frontend (evita falhas em Safari/iOS).
   - **Function Calling Completo**: IA integrada aos serviços de Fazenda, Animal e Produção. Capaz de listar, buscar, cadastrar, editar e excluir dados reais.
@@ -45,11 +46,12 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ### ✅ Concluído desde a última atualização:
 
-1. ✅ **Assistente Virtual Multimodal Live**: Interface em tempo real via WebSockets (Gemini 2.0 Flash), Function Calling para Fazendas, Animais, Produção e fechamento automático por voz.
-2. ✅ **Compatibilidade do Assistente com qualquer navegador (incl. mobile)**: Removida a captura de áudio bruto no frontend (ScriptProcessorNode falhava em Safari/iOS). Modo Live usa apenas texto no WebSocket; voz quando o navegador oferece Web Speech API. Em navegadores sem reconhecimento de voz (ex.: Firefox Android), o Assistente Live permanece disponível em modo texto (digitar e Enviar/Enter).
-3. ✅ **Contexto Inteligente no Assistente**: Integração automática com o usuário logado e a fazenda ativa selecionada no sistema.
-4. ✅ **Correção de Erros de Compilação e Tipos**: Resolvidos conflitos em Go e incompatibilidades nos Protocol Buffers do Google.
-5. ✅ **Interatividade Contínua**: Auto-religamento do microfone quando voz está disponível; fallback gracioso para texto quando não está.
+1. ✅ **Assistente flutuante (FAB)**: Acesso ao assistente via botão flutuante (FAB) no canto inferior direito em todas as telas autenticadas; estado compartilhado em `AssistenteContext`; modal em `AssistenteDialog` no layout; assistente removido do Header (desktop e mobile).
+2. ✅ **Assistente Virtual Multimodal Live**: Interface em tempo real via WebSockets (Gemini 2.0 Flash), Function Calling para Fazendas, Animais, Produção e fechamento automático por voz.
+3. ✅ **Compatibilidade do Assistente com qualquer navegador (incl. mobile)**: Removida a captura de áudio bruto no frontend (ScriptProcessorNode falhava em Safari/iOS). Modo Live usa apenas texto no WebSocket; voz quando o navegador oferece Web Speech API. Em navegadores sem reconhecimento de voz (ex.: Firefox Android), o Assistente Live permanece disponível em modo texto (digitar e Enviar/Enter).
+4. ✅ **Contexto Inteligente no Assistente**: Integração automática com o usuário logado e a fazenda ativa selecionada no sistema.
+5. ✅ **Correção de Erros de Compilação e Tipos**: Resolvidos conflitos em Go e incompatibilidades nos Protocol Buffers do Google.
+6. ✅ **Interatividade Contínua**: Auto-religamento do microfone quando voz está disponível; fallback gracioso para texto quando não está.
 
 ### 📋 Próximos passos imediatos:
 
@@ -114,5 +116,5 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ---
 
-**Última atualização**: 2026-02-08
-**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Assistente Virtual Multimodal Live (Gemini 2.0 Flash) funcional | Vínculo usuário–fazenda | Dev Studio Fase 0–3
+**Última atualização**: 2026-02-10
+**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Assistente Virtual via FAB (flutuante) + Live (Gemini 2.0 Flash) | Vínculo usuário–fazenda | Dev Studio Fase 0–3

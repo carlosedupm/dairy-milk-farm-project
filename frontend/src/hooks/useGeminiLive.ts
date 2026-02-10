@@ -7,10 +7,13 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 const RECONNECT_FAIL_MESSAGE =
   "Não foi possível reconectar. Verifique a internet e tente abrir o assistente de novo.";
 
+export type CloseRequestPayload = { message: string; redirect?: string };
+
 interface GeminiLiveOptions {
   onTextResponse?: (text: string) => void;
   onAudioResponse?: (audioData: ArrayBuffer) => void;
-  onCloseRequest?: (message: string) => void;
+  /** Chamado quando o assistente deve fechar (ex.: despedida). Se o backend enviar redirect, a tela correspondente será carregada após fechar. */
+  onCloseRequest?: (payload: CloseRequestPayload) => void;
   onError?: (error: string) => void;
   onReconnecting?: (message: string) => void;
   onReconnected?: (message: string) => void;
@@ -95,7 +98,13 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
             if (data.type === "text") optionsRef.current.onTextResponse?.(data.content);
             else if (data.type === "error")
               optionsRef.current.onError?.(data.content ?? "Algo deu errado. Tente de novo.");
-            else if (data.type === "close") optionsRef.current.onCloseRequest?.(data.content);
+            else if (data.type === "close") {
+              const payload: CloseRequestPayload = {
+                message: data.content ?? "",
+                redirect: data.redirect,
+              };
+              optionsRef.current.onCloseRequest?.(payload);
+            }
           } catch {
             // ignore parse errors
           }

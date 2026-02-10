@@ -48,16 +48,17 @@ func NewAssistenteLiveService(geminiAPIKey, geminiModel string, fazendaSvc *Faze
 
 // Session representa uma sessão ativa de conversação live.
 type Session struct {
-	ctx          context.Context
-	cancel       context.CancelFunc
-	model        *genai.GenerativeModel
-	session      *genai.ChatSession
-	UserID       int64
-	Perfil       string
-	NomeUsuario  string
-	FazendaAtiva int64
-	mu           sync.Mutex
-	wsMu         sync.Mutex // Mutex para proteger a escrita no WebSocket
+	ctx           context.Context
+	cancel        context.CancelFunc
+	model         *genai.GenerativeModel
+	session       *genai.ChatSession
+	UserID        int64
+	Perfil        string
+	NomeUsuario   string
+	FazendaAtiva  int64
+	RedirectPath  string // Tela sugerida ao fechar o assistente (ex.: /animais/5, /fazendas/1/animais)
+	mu            sync.Mutex
+	wsMu          sync.Mutex // Mutex para proteger a escrita no WebSocket
 }
 
 // StartSession inicia uma nova sessão de chat com o Gemini.
@@ -174,12 +175,14 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
-					"identificacao": {Type: genai.TypeString, Description: "Identificação única do animal (brinco, nome)"},
-					"fazenda_id":    {Type: genai.TypeInteger, Description: "ID da fazenda"},
-					"raca":          {Type: genai.TypeString, Description: "Raça do animal"},
-					"sexo":          {Type: genai.TypeString, Description: "Sexo (M ou F)"},
+					"identificacao":   {Type: genai.TypeString, Description: "Identificação única do animal (brinco, nome)"},
+					"fazenda_id":      {Type: genai.TypeInteger, Description: "ID da fazenda (se não informado, usa a ativa)"},
+					"raca":            {Type: genai.TypeString, Description: "Raça do animal"},
+					"data_nascimento": {Type: genai.TypeString, Description: "Data de nascimento no formato YYYY-MM-DD ou apenas YYYY"},
+					"sexo":            {Type: genai.TypeString, Description: "Sexo (M ou F)"},
+					"status_saude":    {Type: genai.TypeString, Description: "Status de saúde: SAUDAVEL, DOENTE ou EM_TRATAMENTO"},
 				},
-				Required: []string{"identificacao", "fazenda_id"},
+				Required: []string{"identificacao"},
 			},
 		},
 		{
@@ -292,7 +295,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			resumo.WriteString(fmt.Sprintf("%s (ID: %d)", f.Nome, f.ID))
 		}
 
-		return map[string]any{"lista_fazendas": resumo.String()}, nil
+		return map[string]any{"lista_fazendas": resumo.String(), "redirect_path": "/fazendas"}, nil
 
 	case "cadastrar_fazenda":
 		var f models.Fazenda
@@ -343,23 +346,57 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			}
 			resumo.WriteString(fmt.Sprintf("%s (Raça: %s, Nascimento: %s)", a.Identificacao, strOrEmpty(a.Raca), nasc))
 		}
-		return map[string]any{"lista_animais": resumo.String()}, nil
+		return map[string]any{"lista_animais": resumo.String(), "redirect_path": fmt.Sprintf("/fazendas/%d/animais", fID)}, nil
 
 	case "cadastrar_animal":
-		var a models.Animal
-		data, _ := json.Marshal(call.Args)
-		json.Unmarshal(data, &a)
-
-		// Garantir fazenda_id se não informado mas houver ativa
-		if a.FazendaID <= 0 {
-			a.FazendaID = fazendaAtivaID
+		ident, _ := call.Args["identificacao"].(string)
+		ident = strings.TrimSpace(ident)
+		if ident == "" {
+			return map[string]any{"erro": "Identificação do animal é obrigatória."}, nil
 		}
 
-		if a.FazendaID <= 0 {
+		fazendaID := fazendaAtivaID
+		if v, ok := call.Args["fazenda_id"].(float64); ok && v > 0 {
+			fazendaID = int64(v)
+		}
+		if fazendaID <= 0 {
 			return map[string]any{"erro": "Por favor, especifique em qual fazenda cadastrar o animal."}, nil
 		}
 
-		err := s.animalSvc.Create(ctx, &a)
+		a := &models.Animal{
+			FazendaID:     fazendaID,
+			Identificacao: ident,
+		}
+
+		if v, ok := call.Args["raca"].(string); ok && strings.TrimSpace(v) != "" {
+			s := strings.TrimSpace(v)
+			a.Raca = &s
+		}
+		if v, ok := call.Args["data_nascimento"].(string); ok && strings.TrimSpace(v) != "" {
+			t, errParse := parseFundacaoAssistente(strings.TrimSpace(v))
+			if errParse != nil {
+				slog.Warn("Data de nascimento inválida no assistente Live cadastrar animal", "value", v, "error", errParse)
+			} else if t != nil {
+				a.DataNascimento = t
+			}
+		}
+		if v, ok := call.Args["sexo"].(string); ok && strings.TrimSpace(v) != "" {
+			if norm := normalizarSexoPayload(strings.TrimSpace(v)); norm != "" {
+				a.Sexo = &norm
+			}
+		}
+		if v, ok := call.Args["status_saude"].(string); ok && strings.TrimSpace(v) != "" {
+			s := strings.TrimSpace(strings.ToUpper(v))
+			if models.IsValidStatusSaude(s) {
+				a.StatusSaude = &s
+			}
+		}
+		if a.StatusSaude == nil {
+			defaultStatus := models.StatusSaudavel
+			a.StatusSaude = &defaultStatus
+		}
+
+		err := s.animalSvc.Create(ctx, a)
 		if err != nil {
 			return nil, err
 		}
@@ -367,6 +404,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			"status":        "sucesso",
 			"mensagem":      "Animal cadastrado com sucesso",
 			"identificacao": a.Identificacao,
+			"redirect_path": fmt.Sprintf("/animais/%d", a.ID),
 		}, nil
 
 	case "registrar_producao":
@@ -389,10 +427,11 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			return nil, err
 		}
 		return map[string]any{
-			"status":     "sucesso",
-			"mensagem":   "Produção registrada com sucesso",
-			"animal":     ident,
-			"quantidade": quant,
+			"status":        "sucesso",
+			"mensagem":      "Produção registrada com sucesso",
+			"animal":        ident,
+			"quantidade":    quant,
+			"redirect_path": fmt.Sprintf("/animais/%d", animais[0].ID),
 		}, nil
 
 	case "buscar_fazenda":
@@ -411,7 +450,11 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			}
 			resumo.WriteString(fmt.Sprintf("%s (ID: %d, Local: %s)", f.Nome, f.ID, strOrEmpty(f.Localizacao)))
 		}
-		return map[string]any{"resultado_busca": resumo.String()}, nil
+		redirect := ""
+		if len(fazendas) > 0 {
+			redirect = fmt.Sprintf("/fazendas/%d", fazendas[0].ID)
+		}
+		return map[string]any{"resultado_busca": resumo.String(), "redirect_path": redirect}, nil
 
 	case "detalhar_animal":
 		ident, _ := call.Args["identificacao"].(string)
@@ -426,6 +469,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			"sexo":            sexoParaExibicao(a.Sexo),
 			"status_saude":    strOrEmpty(a.StatusSaude),
 			"data_nascimento": timeToStr(a.DataNascimento),
+			"redirect_path":   fmt.Sprintf("/animais/%d", a.ID),
 		}, nil
 
 	case "excluir_animal":
@@ -434,8 +478,13 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if err != nil || len(animais) == 0 {
 			return nil, fmt.Errorf("animal não encontrado")
 		}
-		err = s.animalSvc.Delete(ctx, animais[0].ID)
-		return map[string]any{"message": "Animal excluído com sucesso"}, err
+		animalID := animais[0].ID
+		fazendaID := animais[0].FazendaID
+		err = s.animalSvc.Delete(ctx, animalID)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"message": "Animal excluído com sucesso", "redirect_path": fmt.Sprintf("/fazendas/%d/animais", fazendaID)}, nil
 
 	case "finalizar_conversa":
 		return map[string]any{"status": "encerrar", "mensagem": "Até logo! O assistente será fechado."}, nil
@@ -488,7 +537,10 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		}
 
 		errUpdateAnimal := s.animalSvc.Update(ctx, a)
-		return map[string]any{"status": "sucesso", "mensagem": "Animal atualizado com sucesso", "animal": a.Identificacao}, errUpdateAnimal
+		if errUpdateAnimal != nil {
+			return nil, errUpdateAnimal
+		}
+		return map[string]any{"status": "sucesso", "mensagem": "Animal atualizado com sucesso", "animal": a.Identificacao, "redirect_path": fmt.Sprintf("/animais/%d", a.ID)}, nil
 
 	case "editar_fazenda":
 		var f *models.Fazenda

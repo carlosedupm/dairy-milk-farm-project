@@ -87,10 +87,10 @@ app/                            # App Router (Next.js)
 components/
 ├── fazendas/                   # FazendaForm, FazendaTable
 ├── dev-studio/                 # ChatInterface, CodePreview, PRStatus, UsageAlert
-├── layout/                     # Header, ProtectedRoute, Providers
+├── layout/                     # Header, ConditionalHeader, AssistenteFab, AssistenteDialog, ProtectedRoute, Providers
 └── ui/                         # Shadcn: button, card, dialog, input, label, table
 services/                       # api.ts (Axios + interceptors), auth, fazendas, devStudio
-contexts/                       # AuthContext
+contexts/                       # AuthContext, AssistenteContext, FazendaContext, ThemeContext
 lib/utils.ts
 ```
 
@@ -106,6 +106,7 @@ lib/utils.ts
 - **Contexto do repositório**: Com `GITHUB_TOKEN` + `GITHUB_REPO` configurados, exemplos de código e arquivos-alvo vêm sempre da **branch de produção** (`GITHUB_CONTEXT_BRANCH`, default `main`) via `GitHubService.GetFileContent`. Fallback para disco local quando GitHub não está configurado.
 
 **Assistente Virtual Multimodal Live**:
+- **Acesso (UI)**: **FAB (botão flutuante)** fixo no canto inferior direito (`AssistenteFab`), visível apenas em rotas autenticadas; um toque abre o modal. O assistente **não fica no Header**; estado em `AssistenteContext`; modal em `AssistenteDialog` renderizado no layout (ConditionalHeader).
 - **Arquitetura**: Streaming bidirecional via WebSocket (`/api/v1/assistente/live`).
 - **Backend**: Proxy entre Frontend e Gemini API; orquestração de goroutines para processamento paralelo; Function Calling para acesso ao banco. Processa apenas mensagens de **texto** (JSON `{ "text": "..." }`); áudio bruto não é utilizado. Em falha (Gemini ou rede), envia ao cliente `{"type": "error", "content": "<mensagem amigável>"}`. **CheckOrigin**: em produção usa `CORS_ORIGIN` para restringir a origem do WebSocket; em dev (localhost) aceita qualquer origem.
 - **Frontend**: Hook `useGeminiLive` abre o WebSocket; reconexão com backoff (1s, 2s, 4s, máx. 3 tentativas); detecção de offline (`navigator.onLine` + eventos `online`/`offline`); ao voltar à aba (`visibilitychange`) reconecta uma vez se o socket estiver fechado. Callbacks `onReconnecting`/`onReconnected` para feedback em texto. Tratamento de `type: "error"` para exibir e falar mensagem amigável.
@@ -429,5 +430,5 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Última atualização**: 2026-02-08
+**Última atualização**: 2026-02-10
 **Versão dos Padrões**: 2.6 (Go + Next.js) — Assistente Live: erros via WebSocket, reconexão com backoff, CheckOrigin em produção.

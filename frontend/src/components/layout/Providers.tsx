@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { AssistenteProvider } from '@/contexts/AssistenteContext'
 import { FazendaProvider } from '@/contexts/FazendaContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ServiceWorkerRegistration } from './ServiceWorkerRegistration'
@@ -22,7 +23,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <ServiceWorkerRegistration />
       <ThemeProvider>
         <AuthProvider>
-          <FazendaProvider>{children}</FazendaProvider>
+          <AssistenteProvider>
+            <FazendaProvider>{children}</FazendaProvider>
+          </AssistenteProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

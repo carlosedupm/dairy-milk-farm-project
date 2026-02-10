@@ -146,4 +146,21 @@ git remote set-url origin https://github.com/OWNER/REPO.git
 
 ---
 
-**Última atualização**: 2026-02-02
+## Erro: Couldn't find dlv at the Go tools path
+
+Ao iniciar o debug do backend Go, a extensão Go do VS Code/Cursor precisa do **Delve** (`dlv`), o debugger de Go. No dev container, o `dlv` é instalado automaticamente pelo `postCreateCommand` do `devcontainer.json` (em Create ou Rebuild).
+
+Se o erro aparecer (por exemplo, se o container foi criado antes dessa configuração):
+
+1. **Rebuild do container**: use **Dev Containers: Rebuild Container** para rodar o `postCreateCommand` de novo e instalar o `dlv`.
+2. **Instalação manual** (dentro do container): abra um terminal no workspace e rode:
+
+```bash
+go install github.com/go-delve/delve/cmd/dlv@latest
+```
+
+Depois disso, o executável ficará em `$GOPATH/bin/dlv` (normalmente `/home/vscode/go/bin/dlv`), que já está no `PATH`. Inicie o debug novamente.
+
+---
+
+**Última atualização**: 2026-02-09

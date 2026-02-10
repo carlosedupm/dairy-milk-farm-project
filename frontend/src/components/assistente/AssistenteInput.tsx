@@ -27,6 +27,7 @@ import {
 } from "@/lib/speechSynthesis";
 import { interpretVoiceConfirm } from "@/lib/voiceConfirm";
 import { Loader2, MessageCircle, Mic, MicOff } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 /** Delay em ms antes de reabrir o microfone após TTS (anti-eco em mobile/Samsung). */
 const RETRY_REOPEN_DELAY_MS = 2000;
@@ -129,7 +130,12 @@ function isEchoTranscript(transcript: string, lastAssistantText: string | null):
   return false;
 }
 
-export function AssistenteInput() {
+export interface AssistenteInputProps {
+  /** Chamado quando o assistente deve fechar (ex.: usuário se despediu / pediu para encerrar). */
+  onRequestClose?: () => void;
+}
+
+export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { fazendaAtiva } = useFazendaAtiva();
@@ -199,6 +205,8 @@ export function AssistenteInput() {
   const [reopeningMicInProgress, setReopeningMicInProgress] = useState(false);
   const reopenMicStateSetterRef = useRef<(() => void) | null>(null);
   reopenMicStateSetterRef.current = () => setReopeningMicInProgress(false);
+  /** Redirect a aplicar ao fechar o assistente (último assunto da conversa). */
+  const closeRedirectRef = useRef<string | null>(null);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   /** Última resposta de texto do assistente no Live (para filtrar eco). */
@@ -244,8 +252,19 @@ export function AssistenteInput() {
         });
       }
     },
-    onCloseRequest: (message) => {
+    onCloseRequest: (payload) => {
       setLiveThinking(false);
+      const message = typeof payload === "string" ? payload : payload.message;
+      const redirect = typeof payload === "object" && payload && "redirect" in payload ? payload.redirect : undefined;
+      closeRedirectRef.current = redirect ?? null;
+      const finalizeAndClose = () => {
+        handleCancelar();
+        geminiLive.stop();
+        onRequestClose?.();
+        const path = closeRedirectRef.current;
+        closeRedirectRef.current = null;
+        if (path) router.push(path);
+      };
       if (isSpeechSynthesisSupported()) {
         isTtsPlayingRef.current = true;
         ttsStartedAtRef.current = Date.now();
@@ -256,11 +275,11 @@ export function AssistenteInput() {
             isTtsPlayingRef.current = false;
             ttsEndedAtRef.current = Date.now();
             setIsTtsPlaying(false);
-            handleCancelar();
+            finalizeAndClose();
           },
         });
       } else {
-        handleCancelar();
+        finalizeAndClose();
       }
     },
     onAudioResponse: async (audioData) => {
@@ -1038,7 +1057,9 @@ export function AssistenteInput() {
         {liveMode && liveText && (
           <div className="p-2 rounded-md bg-primary/10 border border-primary/20 text-sm animate-in fade-in slide-in-from-top-1 min-h-[2.5rem]">
             <p className="font-medium text-primary text-xs mb-1">Assistente Live:</p>
-            {liveText}
+            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground [&_strong]:font-semibold [&_ul]:my-1 [&_li]:my-0">
+              <ReactMarkdown>{liveText}</ReactMarkdown>
+            </div>
           </div>
         )}
         {geminiLive.isOffline && (
