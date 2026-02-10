@@ -103,6 +103,16 @@ const ECHO_PHRASES = [
   "reconectado",
   "conexão caiu",
   "reconectando",
+  // Frases longas típicas das respostas do assistente (eco sem fone)
+  "aqui está a lista",
+  "encontrei os seguintes",
+  "você tem um total de",
+  "animais na fazenda",
+  "lista de animais da fazenda",
+  "produção da fazenda",
+  "não foi possível processar",
+  "ocorreu um erro",
+  "tente novamente mais tarde",
 ];
 
 /** Normaliza texto para comparação (lowercase, trim, colapsa espaços). */
@@ -203,8 +213,11 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
   const executandoRef = useRef(false);
   /** True enquanto o timer de reabertura do microfone está ativo (feedback visual no mobile). */
   const [reopeningMicInProgress, setReopeningMicInProgress] = useState(false);
+  /** True por alguns segundos após o TTS terminar (destaque "Pode falar agora" em uso sem fone). */
+  const [justFinishedTts, setJustFinishedTts] = useState(false);
   const reopenMicStateSetterRef = useRef<(() => void) | null>(null);
   reopenMicStateSetterRef.current = () => setReopeningMicInProgress(false);
+  const justFinishedTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Redirect a aplicar ao fechar o assistente (último assunto da conversa). */
   const closeRedirectRef = useRef<string | null>(null);
 
@@ -339,6 +352,8 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       const now = Date.now();
       // Grace inicial: nos primeiros ms após o TTS começar, ignorar (evitar eco da primeira sílaba).
       if (now - ttsStartedAtRef.current < TTS_BARGE_IN_GRACE_MS) return;
+      // Janela pós-TTS: logo após o assistente parar, ignorar só se parecer eco (evita reverberação sem fone).
+      if (now - ttsEndedAtRef.current < TTS_ECHO_GRACE_MS && isEchoTranscript(text, lastLiveTextRef.current)) return;
       // Fala do usuário tem prioridade: se for eco do assistente, ignorar; senão, interromper TTS e processar.
       if (isEchoTranscript(text, lastLiveTextRef.current)) return;
       // Usuário falou: encerrar fala do assistente imediatamente e enviar o que o usuário disse.
@@ -420,6 +435,26 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
     scheduleDelayedReopen();
   }, [scheduleDelayedReopen]);
 
+  /** Destaque "Pode falar agora" por 2,5s após o TTS terminar (uso sem fone). */
+  const prevTtsPlayingRef = useRef(false);
+  useEffect(() => {
+    if (prevTtsPlayingRef.current && !isTtsPlaying && liveMode) {
+      setJustFinishedTts(true);
+      if (justFinishedTtsTimerRef.current) clearTimeout(justFinishedTtsTimerRef.current);
+      justFinishedTtsTimerRef.current = setTimeout(() => {
+        justFinishedTtsTimerRef.current = null;
+        setJustFinishedTts(false);
+      }, 2500);
+    }
+    prevTtsPlayingRef.current = isTtsPlaying;
+    return () => {
+      if (justFinishedTtsTimerRef.current !== null) {
+        clearTimeout(justFinishedTtsTimerRef.current);
+        justFinishedTtsTimerRef.current = null;
+      }
+    };
+  }, [isTtsPlaying, liveMode]);
+
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -435,6 +470,10 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       if (confirmationTtsFallbackTimerRef.current !== null) {
         clearTimeout(confirmationTtsFallbackTimerRef.current);
         confirmationTtsFallbackTimerRef.current = null;
+      }
+      if (justFinishedTtsTimerRef.current !== null) {
+        clearTimeout(justFinishedTtsTimerRef.current);
+        justFinishedTtsTimerRef.current = null;
       }
       setAguardandoMaisOperacao(false);
       setMicAbreEmBreve(false);
@@ -1086,13 +1125,17 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
           >
             <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
             <span className="text-muted-foreground">
-              Aguarde… reabrindo microfone.
+              Aguarde… o microfone será reaberto em instantes.
             </span>
           </div>
         )}
         {(aguardandoMaisOperacao || isListening || (liveMode && isVoiceListening)) && (
           <div
-            className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-sm"
+            className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm ${
+              liveMode && justFinishedTts
+                ? "border-primary ring-2 ring-primary/30 bg-primary/10 animate-in fade-in duration-300"
+                : "border-primary/30 bg-primary/5"
+            }`}
             role="status"
             aria-live="polite"
             aria-label={
@@ -1113,6 +1156,11 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
                 : "Pode falar agora."}
             </span>
           </div>
+        )}
+        {liveMode && isSupported && (isVoiceListening || justFinishedTts) && (
+          <p className="text-xs text-muted-foreground" role="status">
+            Dica: usando alto-falante, fale depois que o assistente terminar para melhor reconhecimento.
+          </p>
         )}
         {isListening && (
           <p className="text-xs text-muted-foreground">

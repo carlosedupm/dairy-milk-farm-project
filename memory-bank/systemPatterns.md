@@ -112,6 +112,7 @@ lib/utils.ts
 - **Frontend**: Hook `useGeminiLive` abre o WebSocket; reconexão com backoff (1s, 2s, 4s, máx. 3 tentativas); detecção de offline (`navigator.onLine` + eventos `online`/`offline`); ao voltar à aba (`visibilitychange`) reconecta uma vez se o socket estiver fechado. Callbacks `onReconnecting`/`onReconnected` para feedback em texto. Tratamento de `type: "error"` para exibir e falar mensagem amigável.
 - **Compatibilidade**: Funciona em qualquer navegador com WebSocket (incluindo mobile). Voz quando há `SpeechRecognition`/`webkitSpeechRecognition`; TTS quando há `speechSynthesis`. Fallback gracioso para texto quando voz não está disponível.
 - **Contexto**: Injeção automática de `user_id` e `fazenda_id` (ativa) na inicialização da sessão.
+- **UX uso sem fone**: Para uso com alto-falante (sem fone), a fala do usuário tem prioridade (barge-in a qualquer momento). Filtro de eco: janela pós-TTS (`TTS_ECHO_GRACE_MS` 1,5s) ignora transcrições que parecem eco (`isEchoTranscript`); lista `ECHO_PHRASES` em `AssistenteInput.tsx` contém frases típicas do assistente. Dica exibida quando modo Live com voz ativo: "usando alto-falante, fale depois que o assistente terminar para melhor reconhecimento". Destaque visual breve em "Pode falar agora" por 2,5s após o TTS terminar. Mensagem de reabertura do microfone (modo não-Live): "o microfone será reaberto em instantes".
 
 **Padrão Handler (referência: fazenda_handler)**:
 

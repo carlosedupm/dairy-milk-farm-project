@@ -35,6 +35,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
   - **Feedback Visual**: Visualizador de ondas (Waveform) quando em voz; mensagem orientando digitação quando voz não é suportada.
   - **Resiliência**: Erros do Gemini/rede enviados ao cliente via WebSocket (`type: "error"`) com mensagens amigáveis; reconexão com backoff (1s, 2s, 4s, máx. 3 tentativas); detecção de offline e mensagem "precisa de internet"; ao voltar à aba (`visibilitychange`) reconexão automática quando o WebSocket estiver fechado.
   - **UX**: Indicador "Assistente está pensando…" no Live; sugestões rápidas também no modo Live; feedback de status (Reconectando… / Reconectado) sempre em texto.
+  - **Uso sem fone (alto-falante)**: Prioridade da fala do usuário mantida (pode interromper o TTS a qualquer momento). Janela pós-TTS (`TTS_ECHO_GRACE_MS` 1,5s) descarta apenas transcrições que parecem eco; lista `ECHO_PHRASES` e `isEchoTranscript` filtram eco do assistente. Dica na UI: "usando alto-falante, fale depois que o assistente terminar para melhor reconhecimento"; destaque breve "Pode falar agora" após o TTS terminar. Modo não-Live: mensagem "o microfone será reaberto em instantes" durante o delay anti-eco.
   - **WebSocket em produção**: CheckOrigin restringe a origem ao domínio do frontend (`CORS_ORIGIN`); em dev (localhost) aceita qualquer origem.
   - **PWA**: Web App Manifest (`/manifest.json`), ícones, theme_color e install prompt (banner "Instalar") para uso como app instalável em mobile.
 - **Módulo Administrador**: Área admin (`/admin/usuarios`) para ADMIN e DEVELOPER — listagem, criar, editar e ativar/desativar usuários. Perfis USER, ADMIN, DEVELOPER; constraint de unicidade para DEVELOPER no banco. Rotas `GET/POST /api/v1/admin/usuarios`, `PUT /api/v1/admin/usuarios/:id`, `PATCH /api/v1/admin/usuarios/:id/toggle-enabled`, `GET/PUT /api/v1/admin/usuarios/:id/fazendas`. Perfil DEVELOPER não atribuível via API. **Fazendas vinculadas**: somente ADMIN (ou DEVELOPER) pode atribuir quais fazendas cada usuário acessa, na tela de edição de usuário (seção "Fazendas vinculadas" com checkboxes + "Salvar vínculos"). **Perfil não editável**: ao editar um usuário com perfil ADMIN ou DEVELOPER, o campo perfil é somente leitura (frontend e backend preservam o perfil).
@@ -46,12 +47,13 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ### ✅ Concluído desde a última atualização:
 
-1. ✅ **Assistente flutuante (FAB)**: Acesso ao assistente via botão flutuante (FAB) no canto inferior direito em todas as telas autenticadas; estado compartilhado em `AssistenteContext`; modal em `AssistenteDialog` no layout; assistente removido do Header (desktop e mobile).
-2. ✅ **Assistente Virtual Multimodal Live**: Interface em tempo real via WebSockets (Gemini 2.0 Flash), Function Calling para Fazendas, Animais, Produção e fechamento automático por voz.
-3. ✅ **Compatibilidade do Assistente com qualquer navegador (incl. mobile)**: Removida a captura de áudio bruto no frontend (ScriptProcessorNode falhava em Safari/iOS). Modo Live usa apenas texto no WebSocket; voz quando o navegador oferece Web Speech API. Em navegadores sem reconhecimento de voz (ex.: Firefox Android), o Assistente Live permanece disponível em modo texto (digitar e Enviar/Enter).
-4. ✅ **Contexto Inteligente no Assistente**: Integração automática com o usuário logado e a fazenda ativa selecionada no sistema.
-5. ✅ **Correção de Erros de Compilação e Tipos**: Resolvidos conflitos em Go e incompatibilidades nos Protocol Buffers do Google.
-6. ✅ **Interatividade Contínua**: Auto-religamento do microfone quando voz está disponível; fallback gracioso para texto quando não está.
+1. ✅ **Assistente — uso sem fone**: Janela pós-TTS (`TTS_ECHO_GRACE_MS`) no modo Live para filtrar eco residual; expansão de `ECHO_PHRASES`; dica "usando alto-falante, fale depois que o assistente terminar"; destaque "Pode falar agora" após TTS; mensagem "o microfone será reaberto em instantes" no modo não-Live.
+2. ✅ **Assistente flutuante (FAB)**: Acesso ao assistente via botão flutuante (FAB) no canto inferior direito em todas as telas autenticadas; estado compartilhado em `AssistenteContext`; modal em `AssistenteDialog` no layout; assistente removido do Header (desktop e mobile).
+3. ✅ **Assistente Virtual Multimodal Live**: Interface em tempo real via WebSockets (Gemini 2.0 Flash), Function Calling para Fazendas, Animais, Produção e fechamento automático por voz.
+4. ✅ **Compatibilidade do Assistente com qualquer navegador (incl. mobile)**: Removida a captura de áudio bruto no frontend (ScriptProcessorNode falhava em Safari/iOS). Modo Live usa apenas texto no WebSocket; voz quando o navegador oferece Web Speech API. Em navegadores sem reconhecimento de voz (ex.: Firefox Android), o Assistente Live permanece disponível em modo texto (digitar e Enviar/Enter).
+5. ✅ **Contexto Inteligente no Assistente**: Integração automática com o usuário logado e a fazenda ativa selecionada no sistema.
+6. ✅ **Correção de Erros de Compilação e Tipos**: Resolvidos conflitos em Go e incompatibilidades nos Protocol Buffers do Google.
+7. ✅ **Interatividade Contínua**: Auto-religamento do microfone quando voz está disponível; fallback gracioso para texto quando não está.
 
 ### 📋 Próximos passos imediatos:
 
