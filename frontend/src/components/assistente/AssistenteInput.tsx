@@ -82,6 +82,32 @@ function getRedirectPathFromResult(data: unknown): string {
   return "/fazendas";
 }
 
+/**
+ * Frases do sistema que podem ser eco do TTS — ignorar se transcritas.
+ * Usado apenas no fluxo não-Live (interpretar), onde o mic pode ficar ativo durante TTS.
+ * No modo Live, o mic fica off durante o TTS, então esse filtro não é necessário.
+ */
+const ECHO_PHRASES = [
+  "pode repetir ou reformular",
+  "pode reformular",
+  "tente reformular",
+  "como posso ajudar",
+  "assistente do ceialmilk",
+  "até logo",
+  "assistente será fechado",
+  "deseja efetuar mais alguma operação",
+  "pode falar",
+  "aguardando sua confirmação",
+  "diga sim para confirmar",
+  "reconectado",
+  "conexão caiu",
+  "reconectando",
+  "não foi possível entender",
+  "não foi possível processar",
+  "ocorreu um erro",
+  "tente novamente mais tarde",
+];
+
 /** Sugestões rápidas para o usuário (clicáveis). */
 const SUGESTOES_RAPIDAS = [
   "Quantos animais eu tenho?",
