@@ -48,17 +48,21 @@ func NewAssistenteLiveService(geminiAPIKey, geminiModel string, fazendaSvc *Faze
 
 // Session representa uma sessão ativa de conversação live.
 type Session struct {
-	ctx           context.Context
-	cancel        context.CancelFunc
-	model         *genai.GenerativeModel
-	session       *genai.ChatSession
-	UserID        int64
-	Perfil        string
-	NomeUsuario   string
-	FazendaAtiva  int64
-	RedirectPath  string // Tela sugerida ao fechar o assistente (ex.: /animais/5, /fazendas/1/animais)
-	mu            sync.Mutex
-	wsMu          sync.Mutex // Mutex para proteger a escrita no WebSocket
+	ctx          context.Context
+	cancel       context.CancelFunc
+	model        *genai.GenerativeModel
+	session      *genai.ChatSession
+	UserID       int64
+	Perfil       string
+	NomeUsuario  string
+	FazendaAtiva int64
+	RedirectPath string // Tela sugerida ao fechar o assistente (ex.: /animais/5, /fazendas/1/animais)
+	mu           sync.Mutex
+	wsMu         sync.Mutex // Mutex para proteger a escrita no WebSocket
+	turnMu       sync.Mutex
+	turnID       uint64
+	turnCtx      context.Context
+	turnCancel   context.CancelFunc
 }
 
 // StartSession inicia uma nova sessão de chat com o Gemini.
@@ -136,6 +140,98 @@ func (s *Session) WriteWSMessage(ws *websocket.Conn, messageType int, data []byt
 	s.wsMu.Lock()
 	defer s.wsMu.Unlock()
 	return ws.WriteMessage(messageType, data)
+}
+
+// BeginTurn inicia um novo turno de conversa e cancela imediatamente o turno anterior (barge-in).
+func (s *Session) BeginTurn() (context.Context, uint64) {
+	s.turnMu.Lock()
+	defer s.turnMu.Unlock()
+
+	if s.turnCancel != nil {
+		s.turnCancel()
+		s.turnCancel = nil
+	}
+
+	baseCtx := s.ctx
+	if baseCtx == nil {
+		baseCtx = context.Background()
+	}
+
+	turnCtx, turnCancel := context.WithCancel(baseCtx)
+	s.turnID++
+	s.turnCtx = turnCtx
+	s.turnCancel = turnCancel
+
+	return turnCtx, s.turnID
+}
+
+// InterruptTurn cancela o turno atual, se existir.
+func (s *Session) InterruptTurn() {
+	s.turnMu.Lock()
+	defer s.turnMu.Unlock()
+
+	if s.turnCancel != nil {
+		s.turnCancel()
+	}
+	s.turnCancel = nil
+	s.turnCtx = nil
+}
+
+// IsTurnActive verifica se o turno informado ainda é o turno ativo da sessão.
+func (s *Session) IsTurnActive(turnID uint64) bool {
+	s.turnMu.Lock()
+	if turnID == 0 || turnID != s.turnID || s.turnCtx == nil {
+		s.turnMu.Unlock()
+		return false
+	}
+	ctx := s.turnCtx
+	s.turnMu.Unlock()
+
+	select {
+	case <-ctx.Done():
+		return false
+	default:
+		return true
+	}
+}
+
+// FinishTurn finaliza o turno se ele ainda for o atual.
+func (s *Session) FinishTurn(turnID uint64) {
+	s.turnMu.Lock()
+	defer s.turnMu.Unlock()
+
+	if turnID == 0 || turnID != s.turnID {
+		return
+	}
+	if s.turnCancel != nil {
+		s.turnCancel()
+	}
+	s.turnCancel = nil
+	s.turnCtx = nil
+}
+
+// WriteWSJSONForTurn envia JSON apenas se o turno ainda estiver ativo.
+func (s *Session) WriteWSJSONForTurn(ws *websocket.Conn, turnID uint64, v interface{}) error {
+	if !s.IsTurnActive(turnID) {
+		return nil
+	}
+	return s.WriteWSJSON(ws, v)
+}
+
+// WriteWSMessageForTurn envia mensagem bruta apenas se o turno ainda estiver ativo.
+func (s *Session) WriteWSMessageForTurn(ws *websocket.Conn, turnID uint64, messageType int, data []byte) error {
+	if !s.IsTurnActive(turnID) {
+		return nil
+	}
+	return s.WriteWSMessage(ws, messageType, data)
+}
+
+// Close encerra a sessão e cancela recursos internos.
+func (s *Session) Close() {
+	s.InterruptTurn()
+	if s.cancel != nil {
+		s.cancel()
+	}
 }
 
 func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDeclaration {
@@ -240,13 +336,13 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
-					"identificacao":      {Type: genai.TypeString, Description: "Identificação ATUAL do animal para localizá-lo"},
-					"identificacaoNovo":  {Type: genai.TypeString, Description: "Nova identificação/nome (se desejar renomear)"},
-					"raca":               {Type: genai.TypeString, Description: "Nova raça"},
-					"data_nascimento":    {Type: genai.TypeString, Description: "Nova data de nascimento (YYYY-MM-DD ou apenas YYYY)"},
-					"sexo":               {Type: genai.TypeString, Description: "Novo sexo (M ou F)"},
-					"status_saude":       {Type: genai.TypeString, Description: "Novo status (SAUDAVEL, DOENTE, EM_TRATAMENTO)"},
-					"fazenda_id":         {Type: genai.TypeInteger, Description: "ID da fazenda para transferir o animal (trocar de fazenda)"},
+					"identificacao":     {Type: genai.TypeString, Description: "Identificação ATUAL do animal para localizá-lo"},
+					"identificacaoNovo": {Type: genai.TypeString, Description: "Nova identificação/nome (se desejar renomear)"},
+					"raca":              {Type: genai.TypeString, Description: "Nova raça"},
+					"data_nascimento":   {Type: genai.TypeString, Description: "Nova data de nascimento (YYYY-MM-DD ou apenas YYYY)"},
+					"sexo":              {Type: genai.TypeString, Description: "Novo sexo (M ou F)"},
+					"status_saude":      {Type: genai.TypeString, Description: "Novo status (SAUDAVEL, DOENTE, EM_TRATAMENTO)"},
+					"fazenda_id":        {Type: genai.TypeInteger, Description: "ID da fazenda para transferir o animal (trocar de fazenda)"},
 				},
 				Required: []string{"identificacao"},
 			},
@@ -257,10 +353,10 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
-					"id":               {Type: genai.TypeInteger, Description: "ID da fazenda"},
-					"nome":             {Type: genai.TypeString, Description: "Nome atual ou novo nome"},
-					"quantidadeVacas":  {Type: genai.TypeInteger, Description: "Nova quantidade de vacas"},
-					"localizacao":      {Type: genai.TypeString, Description: "Nova localização"},
+					"id":              {Type: genai.TypeInteger, Description: "ID da fazenda"},
+					"nome":            {Type: genai.TypeString, Description: "Nome atual ou novo nome"},
+					"quantidadeVacas": {Type: genai.TypeInteger, Description: "Nova quantidade de vacas"},
+					"localizacao":     {Type: genai.TypeString, Description: "Nova localização"},
 				},
 			},
 		},

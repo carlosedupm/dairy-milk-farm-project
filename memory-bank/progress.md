@@ -87,6 +87,7 @@
 - [x] Integração com API (auth + fazendas)
 - [x] **Assistente – feedback "pode falar"**: Faixa visual e aria-live quando o assistente está aguardando a fala (fluxo "Deseja mais?" e dialog de confirmação); estados aguardandoMaisOperacao, micAbreEmBreve, preparandoOuvirConfirmacao; TTS "Pode falar." opcional
 - [x] **Assistente em linguagem natural**: **FAB (botão flutuante)** no canto inferior direito, visível em todas as telas autenticadas; um toque abre o modal do assistente. Estado em `AssistenteContext`; modal em `AssistenteDialog` no layout; **assistente removido do Header** (desktop e mobile). AssistenteInput no Dialog — acessível em qualquer página. **Contexto do usuário e do sistema**: backend Interpretar recebe user_id, perfil e nome; AssistenteService carrega **fazendas vinculadas ao usuário** (GetByUsuarioID) e injeta no prompt do Gemini (nome, perfil, lista de fazendas id+nome); quando o usuário tem apenas uma fazenda e não menciona fazenda em cadastrar_animal, listar_animais_fazenda ou consultar_animais_fazenda, o LLM inclui fazenda_id e o backend usa resolveFazendaForUser (fallback uma fazenda + validação de acesso); intents por perfil (USER só fazendas; ADMIN/DEVELOPER futuros intents admin). **Intents**: Fazendas: cadastrar, listar, buscar, editar, excluir. **Animais**: consultar_animais_fazenda, listar_animais_fazenda, detalhar_animal, **cadastrar_animal** (fazenda + identificação + opcionais), **editar_animal** (id ou identificação + campos), **excluir_animal**, **registrar_producao_animal** (animal + quantidade litros). Redirect: animal → /animais/:id; animal_id → /animais/:id; fazenda_id → /fazendas/:id/animais. Interpretar (Gemini) + executar (FazendaService + AnimalService para consulta de animais), dialog de confirmação, entrada por voz (Web Speech API pt-BR). **Voz em modo contínuo**: reconhecimento contínuo, acúmulo de transcrição, finalização por clique no microfone ou timeout de silêncio (2,5 s). **Retorno em voz (TTS)** e **confirmação por voz** (sim/não). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog (error.details)
+- [x] **Assistente Live sem fone (barge-in priorizado)**: cancelamento precoce do TTS ao detectar fala do usuário (interim), `getUserMedia` com `echoCancellation`/`noiseSuppression`/`autoGainControl`, janela anti-eco maior no mobile e reabertura do microfone sincronizada com fim do TTS; protocolo WS com `type: "interrupt"` + cancelamento de turno no backend para evitar respostas atrasadas.
 - [x] **Layout e DRY**: PageContainer (variantes default, narrow, wide, centered) em todas as páginas; BackLink para "Voltar"; getApiErrorMessage (lib/errors.ts) centralizado; ApiResponse<T> em api.ts; Header responsivo com menu hamburger em mobile
 - [x] **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER); constraint unicidade DEVELOPER (migração 8); área admin `/admin/usuarios` (listagem, criar, editar, ativar/desativar); RequireAdmin; link Admin no Header para ADMIN/DEVELOPER
 - [x] **UX e Acessibilidade**: Paleta rural (modo claro e escuro) em globals.css; toggle tema no Header e menu mobile com persistência (ThemeContext, ThemeToggle); tipografia 16px e alvos de toque 44px; ícones no menu (Farm, Cow, Milk, Users, Code); formulários e listas padronizados (space-y-5, botão lg, tabelas overflow-x-auto); home com atalhos (Ver fazendas, Ver animais, Registrar produção)
@@ -176,6 +177,12 @@
 ```
 
 ## 🔄 Histórico de Progresso
+
+### **2026-02-12 - Assistente Live: prioridade de fala do usuário (barge-in)**
+
+- ✅ **Frontend**: Detecção precoce de fala (interim) para interromper TTS antes do `isFinal`; envio de `interrupt` antes de novo `text`; prewarm do microfone com AEC/NS/AGC; reabertura do microfone no Live respeitando janela anti-eco (desktop/mobile).
+- ✅ **Backend**: Sessão Live com controle de turno (`BeginTurn`, `InterruptTurn`, `FinishTurn`) e contexto cancelável por turno.
+- ✅ **Respostas antigas bloqueadas**: Escritas no WebSocket condicionadas ao turno ativo (`WriteWSJSONForTurn`, `WriteWSMessageForTurn`) para impedir sobreposição/confusão após interrupção.
 
 ### **2026-02-10 - Assistente flutuante (FAB) e remoção do Header**
 
@@ -402,6 +409,6 @@
 
 ---
 
-**Última atualização**: 2026-02-10
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Assistente via FAB (flutuante), sem botão no Header | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Assistente com fazendas vinculadas ao usuário e fallback uma fazenda | Testes unitários e E2E configurados
+**Última atualização**: 2026-02-12
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Assistente via FAB (flutuante), sem botão no Header | Assistente Live com barge-in priorizado (interrupt + cancelamento de turno) | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Testes unitários e E2E configurados
 **Próxima revisão**: 2026-02-14

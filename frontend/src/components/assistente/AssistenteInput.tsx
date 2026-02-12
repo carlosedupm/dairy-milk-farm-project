@@ -33,6 +33,10 @@ import ReactMarkdown from "react-markdown";
 const RETRY_REOPEN_DELAY_MS = 2000;
 /** No mobile, delay menor para não parecer que travou. */
 const RETRY_REOPEN_DELAY_MOBILE_MS = 1000;
+/** Grace period (ms) após TTS terminar antes de reabrir o microfone (reverberação). Desktop. */
+const POST_TTS_GRACE_MS_DESKTOP = 800;
+/** Grace period (ms) após TTS terminar antes de reabrir o microfone (reverberação). Mobile. */
+const POST_TTS_GRACE_MS_MOBILE = 1200;
 
 function isMobileOrAndroid(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -84,61 +88,6 @@ const SUGESTOES_RAPIDAS = [
   "Ver produção da fazenda",
   "Listar animais da fazenda ativa",
 ];
-
-/** Frases do sistema que podem ser eco do TTS — ignorar se transcritas (frases completas do assistente). */
-const ECHO_PHRASES = [
-  "pode repetir ou reformular",
-  "pode reformular",
-  "pode reformular ou tentar novamente",
-  "não foi possível entender",
-  "tente reformular",
-  "como posso ajudar você hoje",
-  "sou o assistente do ceialmilk",
-  "até logo",
-  "o assistente será fechado",
-  "deseja efetuar mais alguma operação",
-  "pode falar",
-  "aguardando sua confirmação",
-  "diga sim para confirmar ou não para cancelar",
-  "reconectado",
-  "conexão caiu",
-  "reconectando",
-  // Frases longas típicas das respostas do assistente (eco sem fone)
-  "aqui está a lista",
-  "encontrei os seguintes",
-  "você tem um total de",
-  "animais na fazenda",
-  "lista de animais da fazenda",
-  "produção da fazenda",
-  "não foi possível processar",
-  "ocorreu um erro",
-  "tente novamente mais tarde",
-];
-
-/** Normaliza texto para comparação (lowercase, trim, colapsa espaços). */
-function normalizeForEcho(s: string): string {
-  return s.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-/** Verifica se a transcrição parece ser eco da fala do assistente (TTS capturado pelo microfone). */
-function isEchoTranscript(transcript: string, lastAssistantText: string | null): boolean {
-  if (!transcript.trim()) return true;
-  const t = normalizeForEcho(transcript);
-  if (ECHO_PHRASES.some((phrase) => t.includes(phrase) || phrase.includes(t))) return true;
-  if (!lastAssistantText?.trim()) return false;
-  const a = normalizeForEcho(lastAssistantText);
-  const tWords = t.split(/\s+/).filter(Boolean);
-  // Frases curtas do usuário (ex.: "sim", "não", "listar animais") não tratar como eco — permitir interromper
-  if (tWords.length <= 2 && a.length > 30) return false;
-  // Eco: transcrição é substring da resposta do assistente ou muito parecida
-  if (a.length >= 10 && (a.includes(t) || t.includes(a))) return true;
-  const aWords = new Set(a.split(/\s+/).filter(Boolean));
-  if (tWords.length >= 3) {
-    const matchCount = tWords.filter((w) => aWords.has(w)).length;
-    if (matchCount >= 0.8 * tWords.length) return true;
-  }
-  return false;
-}
 
 export interface AssistenteInputProps {
   /** Chamado quando o assistente deve fechar (ex.: usuário se despediu / pediu para encerrar). */
@@ -231,18 +180,83 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
   const ttsStartedAtRef = useRef<number>(0);
   /** Timestamp em que o TTS terminou; transcrições que parecem eco são ignoradas por ECHO_GRACE_MS após. */
   const ttsEndedAtRef = useRef<number>(0);
-  /** Nos primeiros N ms após o TTS começar, ignorar transcrições (evitar eco da primeira sílaba). */
-  const TTS_BARGE_IN_GRACE_MS = 700;
-  /** Após o TTS terminar, ignorar por N ms apenas se a transcrição parecer eco (isEchoTranscript). */
-  const TTS_ECHO_GRACE_MS = 1500;
   const startLiveVoiceRef = useRef<(() => void) | null>(null);
   const isLiveModeRef = useRef(false);
   const isVoiceSupportedRef = useRef(false);
+  /** Timer para reabrir o microfone após o TTS terminar + grace period. */
+  const reopenMicAfterTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const getPostTtsGraceMs = useCallback(
+    () => (isMobileOrAndroid() ? POST_TTS_GRACE_MS_MOBILE : POST_TTS_GRACE_MS_DESKTOP),
+    []
+  );
 
   const cancelSpeechAndClearTtsRef = useCallback(() => {
     isTtsPlayingRef.current = false;
+    ttsEndedAtRef.current = Date.now();
     cancelSpeech();
+    // Limpar timer de reabertura, pois o cancelamento manual faz o caller decidir quando religar.
+    if (reopenMicAfterTtsTimerRef.current) {
+      clearTimeout(reopenMicAfterTtsTimerRef.current);
+      reopenMicAfterTtsTimerRef.current = null;
+    }
   }, []);
+
+  /**
+   * ESTRATÉGIA ANTI-ECO: desligar o microfone ANTES de o TTS começar a falar
+   * e religá-lo somente após TTS terminar + grace period.
+   * Isso elimina o problema de o microfone captar a voz do assistente.
+   */
+  const pauseMicForTts = useCallback(() => {
+    if (stopLiveVoiceRef.current) {
+      stopLiveVoiceRef.current(true);
+    }
+    // Cancelar qualquer timer pendente de reabertura
+    if (reopenMicAfterTtsTimerRef.current) {
+      clearTimeout(reopenMicAfterTtsTimerRef.current);
+      reopenMicAfterTtsTimerRef.current = null;
+    }
+  }, []);
+
+  /** Reabre o mic após grace period pós-TTS. Só abre se ainda estiver em liveMode. */
+  const scheduleReopenMicAfterTts = useCallback(() => {
+    if (reopenMicAfterTtsTimerRef.current) {
+      clearTimeout(reopenMicAfterTtsTimerRef.current);
+    }
+    const graceMs = getPostTtsGraceMs();
+    reopenMicAfterTtsTimerRef.current = setTimeout(() => {
+      reopenMicAfterTtsTimerRef.current = null;
+      if (isLiveModeRef.current && isVoiceSupportedRef.current && startLiveVoiceRef.current) {
+        startLiveVoiceRef.current();
+      }
+    }, graceMs);
+  }, [getPostTtsGraceMs]);
+
+  /** Helper para iniciar TTS de forma padronizada: pausa mic → fala → reabrir mic. */
+  const speakWithMicPause = useCallback(
+    (text: string, opts?: { cancelPrevious?: boolean; onEnd?: () => void }) => {
+      // 1. Pausar microfone para evitar eco
+      pauseMicForTts();
+      // 2. Marcar TTS como ativo
+      isTtsPlayingRef.current = true;
+      ttsStartedAtRef.current = Date.now();
+      setIsTtsPlaying(true);
+      // 3. Falar
+      speak(text, {
+        cancelPrevious: opts?.cancelPrevious ?? true,
+        onEnd: () => {
+          isTtsPlayingRef.current = false;
+          ttsEndedAtRef.current = Date.now();
+          setIsTtsPlaying(false);
+          // 4. Agendar reabertura do mic após grace period
+          scheduleReopenMicAfterTts();
+          // 5. Callback opcional do chamador
+          opts?.onEnd?.();
+        },
+      });
+    },
+    [pauseMicForTts, scheduleReopenMicAfterTts]
+  );
 
   const geminiLive = useGeminiLive({
     fazendaId: fazendaAtiva?.id,
@@ -250,20 +264,16 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       setLiveThinking(false);
       lastLiveTextRef.current = text;
       setLiveText(text);
-      // Microfone permanece ligado; usuário pode interromper a qualquer momento (barge-in).
       if (isSpeechSynthesisSupported()) {
-        isTtsPlayingRef.current = true;
-        ttsStartedAtRef.current = Date.now();
-        setIsTtsPlaying(true);
-        speak(text, {
-          cancelPrevious: true,
-          onEnd: () => {
-            isTtsPlayingRef.current = false;
-            ttsEndedAtRef.current = Date.now();
-            setIsTtsPlaying(false);
-          },
-        });
+        speakWithMicPause(text);
       }
+    },
+    onGreeting: (text) => {
+      // Saudação: exibir como texto mas NÃO falar via TTS.
+      // Assim o microfone abre imediatamente e o usuário pode falar na hora.
+      setLiveThinking(false);
+      lastLiveTextRef.current = text;
+      setLiveText(text);
     },
     onCloseRequest: (payload) => {
       setLiveThinking(false);
@@ -279,17 +289,8 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
         if (path) router.push(path);
       };
       if (isSpeechSynthesisSupported()) {
-        isTtsPlayingRef.current = true;
-        ttsStartedAtRef.current = Date.now();
-        setIsTtsPlaying(true);
-        speak(message, {
-          cancelPrevious: true,
-          onEnd: () => {
-            isTtsPlayingRef.current = false;
-            ttsEndedAtRef.current = Date.now();
-            setIsTtsPlaying(false);
-            finalizeAndClose();
-          },
+        speakWithMicPause(message, {
+          onEnd: finalizeAndClose,
         });
       } else {
         finalizeAndClose();
@@ -304,17 +305,7 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       setError(err);
       setLiveMode(false);
       if (isSpeechSynthesisSupported()) {
-        isTtsPlayingRef.current = true;
-        ttsStartedAtRef.current = Date.now();
-        setIsTtsPlaying(true);
-        speak(err, {
-          cancelPrevious: true,
-          onEnd: () => {
-            isTtsPlayingRef.current = false;
-            ttsEndedAtRef.current = Date.now();
-            setIsTtsPlaying(false);
-          },
-        });
+        speakWithMicPause(err);
       }
     },
     onReconnecting: (msg) => {
@@ -323,21 +314,42 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
     onReconnected: (msg) => {
       setLiveReconnectStatus(msg);
       if (isSpeechSynthesisSupported()) {
-        isTtsPlayingRef.current = true;
-        ttsStartedAtRef.current = Date.now();
-        setIsTtsPlaying(true);
-        speak(msg, {
-          cancelPrevious: false,
-          onEnd: () => {
-            isTtsPlayingRef.current = false;
-            ttsEndedAtRef.current = Date.now();
-            setIsTtsPlaying(false);
-          },
-        });
+        speakWithMicPause(msg, { cancelPrevious: false });
       }
       setTimeout(() => setLiveReconnectStatus(""), 3000);
     }
   });
+
+  /**
+   * Filtragem de transcrições no modo Live.
+   * O mic fica SEMPRE off enquanto o TTS fala (sem eco possível).
+   * Se por algum motivo o mic captar algo durante TTS, ignorar.
+   */
+  const shouldIgnoreLiveTranscript = useCallback(
+    (text: string): boolean => {
+      if (!text.trim()) return true;
+      if (isTtsPlayingRef.current) return true;
+      return false;
+    },
+    []
+  );
+
+  const sendLiveTextWithPriority = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      // Cancelar TTS se estiver tocando (barge-in manual via texto/botão).
+      if (isTtsPlayingRef.current) {
+        cancelSpeechAndClearTtsRef();
+        setIsTtsPlaying(false);
+      }
+      // Sinaliza interrupção de turno para evitar resposta atrasada antes de enviar o novo pedido.
+      geminiLive.interrupt();
+      geminiLive.sendText(trimmed);
+      setLiveThinking(true);
+    },
+    [geminiLive, cancelSpeechAndClearTtsRef]
+  );
 
   // Hook de voz para o modo Live (transcreve e envia via WebSocket)
   const { 
@@ -349,17 +361,9 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
   } = useVoiceRecognition({
     onResult: (text, isFinal) => {
       if (!liveMode || !isFinal || !text.trim()) return;
-      const now = Date.now();
-      // Grace inicial: nos primeiros ms após o TTS começar, ignorar (evitar eco da primeira sílaba).
-      if (now - ttsStartedAtRef.current < TTS_BARGE_IN_GRACE_MS) return;
-      // Janela pós-TTS: logo após o assistente parar, ignorar só se parecer eco (evita reverberação sem fone).
-      if (now - ttsEndedAtRef.current < TTS_ECHO_GRACE_MS && isEchoTranscript(text, lastLiveTextRef.current)) return;
-      // Fala do usuário tem prioridade: se for eco do assistente, ignorar; senão, interromper TTS e processar.
-      if (isEchoTranscript(text, lastLiveTextRef.current)) return;
-      // Usuário falou: encerrar fala do assistente imediatamente e enviar o que o usuário disse.
-      cancelSpeechAndClearTtsRef();
-      setIsTtsPlaying(false);
-      geminiLive.sendText(text);
+      if (shouldIgnoreLiveTranscript(text)) return;
+      // Mic fica off durante TTS → tudo que chega aqui é fala real do usuário.
+      sendLiveTextWithPriority(text);
     },
     language: "pt-BR",
   });
@@ -385,17 +389,20 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
     }
   }, [liveMode, isVoiceSupported, startLiveVoice, stopLiveVoice]);
 
-  // Auto-religar o microfone no modo Live quando ficar fechado (ex.: após erro)
+  // Auto-religar o microfone no modo Live quando ficar fechado (ex.: após erro do SpeechRecognition).
+  // NÃO reabre se o TTS está tocando – o scheduleReopenMicAfterTts cuida da reabertura pós-TTS.
   useEffect(() => {
-    if (liveMode && isVoiceSupported && !isVoiceListening) {
+    if (liveMode && isVoiceSupported && !isVoiceListening && !isTtsPlayingRef.current) {
+      // Só tenta reabrir se não há timer de reabertura pós-TTS já agendado
+      if (reopenMicAfterTtsTimerRef.current) return;
       const timer = setTimeout(() => {
-        if (liveMode && isVoiceSupported && !isVoiceListening) {
-          startLiveVoice();
+        if (isLiveModeRef.current && isVoiceSupportedRef.current) {
+          startLiveVoiceRef.current?.();
         }
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [liveMode, isVoiceSupported, isVoiceListening, startLiveVoice]);
+  }, [liveMode, isVoiceSupported, isVoiceListening]);
 
   /** Delay em ms antes de lembrar o usuário de confirmar (dialog de confirmação). */
   const CONFIRMATION_REMINDER_MS = 10000;
@@ -481,6 +488,10 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       setMostrarLembreteConfirmacao(false);
       clearRetryReopenTimer();
       cancelSpeechAndClearTtsRef();
+      if (reopenMicAfterTtsTimerRef.current) {
+        clearTimeout(reopenMicAfterTtsTimerRef.current);
+        reopenMicAfterTtsTimerRef.current = null;
+      }
     };
   }, [clearRetryReopenTimer, cancelSpeechAndClearTtsRef]);
 
@@ -698,7 +709,7 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
   const handleInterpretar = () => {
     lastInputWasVoiceRef.current = false;
     if (liveMode && texto.trim()) {
-      geminiLive.sendText(texto.trim());
+      sendLiveTextWithPriority(texto.trim());
       setTexto("");
       return;
     }
@@ -713,8 +724,18 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       return;
     }
 
-    // Toggle entre modo Live e modo normal
     if (liveMode) {
+      // Se o TTS está tocando, o clique no mic = barge-in manual:
+      // interrompe o TTS e reabre o microfone imediatamente.
+      if (isTtsPlayingRef.current) {
+        cancelSpeechAndClearTtsRef();
+        setIsTtsPlaying(false);
+        geminiLive.interrupt();
+        // Abrir microfone imediatamente para o usuário falar
+        startLiveVoice();
+        return;
+      }
+      // Se não está falando, clicar no mic = parar modo Live
       geminiLive.stop();
       setLiveThinking(false);
       setLiveReconnectStatus("");
@@ -950,14 +971,13 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       if (loading) return;
       lastInputWasVoiceRef.current = false;
       if (liveMode) {
-        geminiLive.sendText?.(sugestao);
-        setLiveThinking(true);
+        sendLiveTextWithPriority(sugestao);
       } else {
         setTexto(sugestao);
         runInterpretar(sugestao);
       }
     },
-    [loading, liveMode, runInterpretar, geminiLive]
+    [loading, liveMode, runInterpretar, sendLiveTextWithPriority]
   );
 
   return (
@@ -981,9 +1001,8 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   if (liveMode && texto.trim()) {
-                    geminiLive.sendText?.(texto.trim());
+                    sendLiveTextWithPriority(texto.trim());
                     setTexto("");
-                    setLiveThinking(true);
                   } else if (!liveMode) {
                     handleInterpretar();
                   }
@@ -1005,26 +1024,44 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
               <Button
                 type="button"
                 size="icon"
-                variant={liveMode ? "destructive" : "secondary"}
+                variant={
+                  liveMode && isTtsPlaying
+                    ? "default"          // destaque: "toque para falar"
+                    : liveMode
+                      ? "destructive"    // modo Live ativo
+                      : "secondary"      // inativo
+                }
                 onClick={handleMainMicClick}
                 disabled={loading}
-                className="min-h-[44px] min-w-[44px] touch-manipulation"
-                aria-label={liveMode ? "Parar Assistente Live" : "Conversar em tempo real (voz ou texto)"}
+                className={`min-h-[44px] min-w-[44px] touch-manipulation ${
+                  liveMode && isTtsPlaying ? "animate-pulse ring-2 ring-primary/50" : ""
+                }`}
+                aria-label={
+                  liveMode && isTtsPlaying
+                    ? "Interromper assistente e falar"
+                    : liveMode
+                      ? "Parar Assistente Live"
+                      : "Conversar em tempo real (voz ou texto)"
+                }
                 title={
-                  liveMode
-                    ? "Parar Assistente Live"
-                    : isSupported
-                      ? "Conversar em tempo real (voz ou texto)"
-                      : "Conversar em tempo real (digite sua mensagem)"
+                  liveMode && isTtsPlaying
+                    ? "Toque para interromper e falar"
+                    : liveMode
+                      ? "Parar Assistente Live"
+                      : isSupported
+                        ? "Conversar em tempo real (voz ou texto)"
+                        : "Conversar em tempo real (digite sua mensagem)"
                 }
               >
-                {liveMode ? (
+                {liveMode && isTtsPlaying ? (
+                  <Mic className="h-4 w-4" />
+                ) : liveMode ? (
                   <MicOff className="h-4 w-4" />
                 ) : (
                   <Mic className="h-4 w-4" />
                 )}
               </Button>
-              {liveMode && isSupported && <VoiceWaveform isActive={liveMode} />}
+              {liveMode && isSupported && <VoiceWaveform isActive={liveMode && !isTtsPlaying} />}
             </div>
           )}
           <Button
@@ -1035,9 +1072,8 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
             aria-label="Enviar pedido em linguagem natural"
             onClick={() => {
               if (liveMode && texto.trim()) {
-                geminiLive.sendText?.(texto.trim());
+                sendLiveTextWithPriority(texto.trim());
                 setTexto("");
-                setLiveThinking(true);
               } else {
                 handleInterpretar();
               }
@@ -1089,8 +1125,8 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
           </p>
         )}
         {liveMode && isTtsPlaying && (
-          <p className="text-xs text-muted-foreground" role="status">
-            Você pode falar a qualquer momento para interromper.
+          <p className="text-xs text-primary font-medium" role="status">
+            Assistente falando… Toque no 🎤 ou digite para interromper.
           </p>
         )}
         {liveMode && liveText && (
@@ -1157,9 +1193,9 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
             </span>
           </div>
         )}
-        {liveMode && isSupported && (isVoiceListening || justFinishedTts) && (
+        {liveMode && isSupported && justFinishedTts && !isVoiceListening && (
           <p className="text-xs text-muted-foreground" role="status">
-            Dica: usando alto-falante, fale depois que o assistente terminar para melhor reconhecimento.
+            Preparando o microfone…
           </p>
         )}
         {isListening && (

@@ -108,11 +108,11 @@ lib/utils.ts
 **Assistente Virtual Multimodal Live**:
 - **Acesso (UI)**: **FAB (botão flutuante)** fixo no canto inferior direito (`AssistenteFab`), visível apenas em rotas autenticadas; um toque abre o modal. O assistente **não fica no Header**; estado em `AssistenteContext`; modal em `AssistenteDialog` renderizado no layout (ConditionalHeader).
 - **Arquitetura**: Streaming bidirecional via WebSocket (`/api/v1/assistente/live`).
-- **Backend**: Proxy entre Frontend e Gemini API; orquestração de goroutines para processamento paralelo; Function Calling para acesso ao banco. Processa apenas mensagens de **texto** (JSON `{ "text": "..." }`); áudio bruto não é utilizado. Em falha (Gemini ou rede), envia ao cliente `{"type": "error", "content": "<mensagem amigável>"}`. **CheckOrigin**: em produção usa `CORS_ORIGIN` para restringir a origem do WebSocket; em dev (localhost) aceita qualquer origem.
-- **Frontend**: Hook `useGeminiLive` abre o WebSocket; reconexão com backoff (1s, 2s, 4s, máx. 3 tentativas); detecção de offline (`navigator.onLine` + eventos `online`/`offline`); ao voltar à aba (`visibilitychange`) reconecta uma vez se o socket estiver fechado. Callbacks `onReconnecting`/`onReconnected` para feedback em texto. Tratamento de `type: "error"` para exibir e falar mensagem amigável.
+- **Backend**: Proxy entre Frontend e Gemini API; Function Calling para acesso ao banco; controle de turno ativo por sessão (`BeginTurn`, `InterruptTurn`, `FinishTurn`) com contexto cancelável para barge-in real. Processa mensagens de texto `{ "text": "..." }` e sinal de interrupção `{ "type": "interrupt" }`; áudio bruto não é utilizado. Escritas no WebSocket são condicionadas ao turno ativo (`WriteWSJSONForTurn`/`WriteWSMessageForTurn`) para bloquear respostas antigas. Em falha (Gemini/rede), envia `{"type": "error", "content": "<mensagem amigável>"}`. **CheckOrigin**: em produção usa `CORS_ORIGIN`; em dev (localhost) aceita qualquer origem.
+- **Frontend**: Hook `useGeminiLive` abre o WebSocket, envia `interrupt` antes de novos comandos no Live, trata reconexão com backoff (1s, 2s, 4s, máx. 3 tentativas), offline (`navigator.onLine` + eventos `online`/`offline`) e reconexão ao voltar à aba (`visibilitychange`). Callbacks `onReconnecting`/`onReconnected` para feedback em texto; tratamento de `type: "error"` para exibir e falar mensagem amigável.
 - **Compatibilidade**: Funciona em qualquer navegador com WebSocket (incluindo mobile). Voz quando há `SpeechRecognition`/`webkitSpeechRecognition`; TTS quando há `speechSynthesis`. Fallback gracioso para texto quando voz não está disponível.
 - **Contexto**: Injeção automática de `user_id` e `fazenda_id` (ativa) na inicialização da sessão.
-- **UX uso sem fone**: Para uso com alto-falante (sem fone), a fala do usuário tem prioridade (barge-in a qualquer momento). Filtro de eco: janela pós-TTS (`TTS_ECHO_GRACE_MS` 1,5s) ignora transcrições que parecem eco (`isEchoTranscript`); lista `ECHO_PHRASES` em `AssistenteInput.tsx` contém frases típicas do assistente. Dica exibida quando modo Live com voz ativo: "usando alto-falante, fale depois que o assistente terminar para melhor reconhecimento". Destaque visual breve em "Pode falar agora" por 2,5s após o TTS terminar. Mensagem de reabertura do microfone (modo não-Live): "o microfone será reaberto em instantes".
+- **UX uso sem fone**: Fala do usuário é prioridade. Barge-in no frontend ocorre em dois níveis: detecção precoce de fala (interim) para cortar TTS rapidamente e envio final do texto reconhecido. Anti-eco usa `isEchoTranscript` + `ECHO_PHRASES`, janela pós-TTS maior no mobile e reabertura inteligente do microfone no Live (respeitando fim do TTS/janela anti-eco). Prewarm de microfone usa `echoCancellation`, `noiseSuppression` e `autoGainControl`. UI mantém dicas: "Pode falar agora" e mensagem para uso com alto-falante.
 
 **Padrão Handler (referência: fazenda_handler)**:
 
@@ -431,5 +431,5 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Última atualização**: 2026-02-10
-**Versão dos Padrões**: 2.6 (Go + Next.js) — Assistente Live: erros via WebSocket, reconexão com backoff, CheckOrigin em produção.
+**Última atualização**: 2026-02-12
+**Versão dos Padrões**: 2.7 (Go + Next.js) — Assistente Live com barge-in de ponta a ponta: `interrupt`, cancelamento de turno e bloqueio de respostas antigas.

@@ -11,6 +11,8 @@ export type CloseRequestPayload = { message: string; redirect?: string };
 
 interface GeminiLiveOptions {
   onTextResponse?: (text: string) => void;
+  /** Chamado para mensagens que devem ser exibidas mas NÃO faladas via TTS (ex.: saudação). */
+  onGreeting?: (text: string) => void;
   onAudioResponse?: (audioData: ArrayBuffer) => void;
   /** Chamado quando o assistente deve fechar (ex.: despedida). Se o backend enviar redirect, a tela correspondente será carregada após fechar. */
   onCloseRequest?: (payload: CloseRequestPayload) => void;
@@ -96,6 +98,15 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
           try {
             const data = JSON.parse(event.data);
             if (data.type === "text") optionsRef.current.onTextResponse?.(data.content);
+            else if (data.type === "greeting") {
+              // Saudação: exibir como texto mas sem TTS (mic abre imediatamente)
+              if (optionsRef.current.onGreeting) {
+                optionsRef.current.onGreeting(data.content);
+              } else {
+                // Fallback: tratar como texto normal se onGreeting não definido
+                optionsRef.current.onTextResponse?.(data.content);
+              }
+            }
             else if (data.type === "error")
               optionsRef.current.onError?.(data.content ?? "Algo deu errado. Tente de novo.");
             else if (data.type === "close") {
@@ -196,10 +207,17 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
     }
   }, []);
 
+  const interrupt = useCallback(() => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ type: "interrupt" }));
+    }
+  }, []);
+
   return {
     start,
     stop,
     sendText,
+    interrupt,
     isActive,
     isConnecting,
     isReconnecting,
