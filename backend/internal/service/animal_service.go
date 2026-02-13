@@ -75,6 +75,16 @@ func (s *AnimalService) Create(ctx context.Context, animal *models.Animal) error
 		defaultStatus := models.StatusSaudavel
 		animal.StatusSaude = &defaultStatus
 	}
+	// Validar categoria, status reprodutivo e motivo saída se fornecidos
+	if animal.Categoria != nil && *animal.Categoria != "" && !models.IsValidCategoria(*animal.Categoria) {
+		return errors.New("categoria inválida")
+	}
+	if animal.StatusReprodutivo != nil && *animal.StatusReprodutivo != "" && !models.IsValidStatusReprodutivo(*animal.StatusReprodutivo) {
+		return errors.New("status reprodutivo inválido")
+	}
+	if animal.MotivoSaida != nil && *animal.MotivoSaida != "" && !models.IsValidMotivoSaida(*animal.MotivoSaida) {
+		return errors.New("motivo de saída inválido")
+	}
 
 	return s.repo.Create(ctx, animal)
 }
@@ -137,6 +147,15 @@ func (s *AnimalService) Update(ctx context.Context, animal *models.Animal) error
 	// Validar sexo se fornecido
 	if animal.Sexo != nil && *animal.Sexo != "" && !models.IsValidSexo(*animal.Sexo) {
 		return errors.New("sexo inválido (deve ser 'M' ou 'F')")
+	}
+	if animal.Categoria != nil && *animal.Categoria != "" && !models.IsValidCategoria(*animal.Categoria) {
+		return errors.New("categoria inválida")
+	}
+	if animal.StatusReprodutivo != nil && *animal.StatusReprodutivo != "" && !models.IsValidStatusReprodutivo(*animal.StatusReprodutivo) {
+		return errors.New("status reprodutivo inválido")
+	}
+	if animal.MotivoSaida != nil && *animal.MotivoSaida != "" && !models.IsValidMotivoSaida(*animal.MotivoSaida) {
+		return errors.New("motivo de saída inválido")
 	}
 
 	return s.repo.Update(ctx, animal)
@@ -206,4 +225,22 @@ func (s *AnimalService) Count(ctx context.Context) (int64, error) {
 
 func (s *AnimalService) CountByFazenda(ctx context.Context, fazendaID int64) (int64, error) {
 	return s.repo.CountByFazenda(ctx, fazendaID)
+}
+
+func (s *AnimalService) GetByLoteID(ctx context.Context, loteID int64) ([]*models.Animal, error) {
+	return s.repo.GetByLoteID(ctx, loteID)
+}
+
+func (s *AnimalService) GetByCategoria(ctx context.Context, fazendaID int64, categoria string) ([]*models.Animal, error) {
+	if categoria != "" && !models.IsValidCategoria(categoria) {
+		return nil, errors.New("categoria inválida")
+	}
+	return s.repo.GetByCategoria(ctx, fazendaID, categoria)
+}
+
+func (s *AnimalService) GetByStatusReprodutivo(ctx context.Context, fazendaID int64, status string) ([]*models.Animal, error) {
+	if status != "" && !models.IsValidStatusReprodutivo(status) {
+		return nil, errors.New("status reprodutivo inválido")
+	}
+	return s.repo.GetByStatusReprodutivo(ctx, fazendaID, status)
 }

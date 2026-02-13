@@ -114,6 +114,17 @@ func main() {
 					fazendaRepo := repository.NewFazendaRepository(pool)
 					animalRepo := repository.NewAnimalRepository(pool)
 					producaoRepo := repository.NewProducaoRepository(pool)
+					loteRepo := repository.NewLoteRepository(pool)
+					movimentacaoLoteRepo := repository.NewMovimentacaoLoteRepository(pool)
+					cioRepo := repository.NewCioRepository(pool)
+					protocoloIatfRepo := repository.NewProtocoloIATFRepository(pool)
+					coberturaRepo := repository.NewCoberturaRepository(pool)
+					diagnosticoGestacaoRepo := repository.NewDiagnosticoGestacaoRepository(pool)
+					gestacaoRepo := repository.NewGestacaoRepository(pool)
+					partoRepo := repository.NewPartoRepository(pool)
+					criaRepo := repository.NewCriaRepository(pool)
+					secagemRepo := repository.NewSecagemRepository(pool)
+					lactacaoRepo := repository.NewLactacaoRepository(pool)
 					refreshTokenRepo := repository.NewRefreshTokenRepository(pool)
 					fazendaSvc := service.NewFazendaService(fazendaRepo)
 					animalSvc := service.NewAnimalService(animalRepo, fazendaRepo)
@@ -130,6 +141,29 @@ func main() {
 					usuarioSvc := service.NewUsuarioService(userRepo)
 					adminHandler := handlers.NewAdminHandler(usuarioSvc, fazendaSvc)
 
+
+					loteSvc := service.NewLoteService(loteRepo, fazendaRepo)
+					movimentacaoLoteSvc := service.NewMovimentacaoLoteService(movimentacaoLoteRepo, animalRepo, loteRepo)
+					cioSvc := service.NewCioService(cioRepo, animalRepo, fazendaRepo)
+					loteHandler := handlers.NewLoteHandler(loteSvc, fazendaSvc)
+					movimentacaoLoteHandler := handlers.NewMovimentacaoLoteHandler(movimentacaoLoteSvc, animalSvc, fazendaSvc)
+					cioHandler := handlers.NewCioHandler(cioSvc, fazendaSvc)
+					protocoloIatfSvc := service.NewProtocoloIATFService(protocoloIatfRepo, fazendaRepo)
+					coberturaSvc := service.NewCoberturaService(coberturaRepo, animalRepo, fazendaRepo)
+					diagnosticoGestacaoSvc := service.NewDiagnosticoGestacaoService(diagnosticoGestacaoRepo, animalRepo, gestacaoRepo, coberturaRepo, fazendaRepo)
+					gestacaoSvc := service.NewGestacaoService(gestacaoRepo, animalRepo, fazendaRepo)
+					partoSvc := service.NewPartoService(partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo)
+					criaSvc := service.NewCriaService(criaRepo, partoRepo, animalRepo)
+					secagemSvc := service.NewSecagemService(secagemRepo, animalRepo, fazendaRepo)
+					lactacaoSvc := service.NewLactacaoService(lactacaoRepo, animalRepo, fazendaRepo)
+					coberturaHandler := handlers.NewCoberturaHandler(coberturaSvc, fazendaSvc)
+					diagnosticoGestacaoHandler := handlers.NewDiagnosticoGestacaoHandler(diagnosticoGestacaoSvc, fazendaSvc)
+					gestacaoHandler := handlers.NewGestacaoHandler(gestacaoSvc, fazendaSvc)
+					partoHandler := handlers.NewPartoHandler(partoSvc, fazendaSvc)
+					criaHandler := handlers.NewCriaHandler(criaSvc)
+					secagemHandler := handlers.NewSecagemHandler(secagemSvc, fazendaSvc)
+					lactacaoHandler := handlers.NewLactacaoHandler(lactacaoSvc, fazendaSvc)
+					protocoloIatfHandler := handlers.NewProtocoloIATFHandler(protocoloIatfSvc, fazendaSvc)
 					api := router.Group("/api")
 					api.POST("/auth/register", authHandler.Register)
 					api.POST("/auth/login", authHandler.Login)
@@ -170,6 +204,9 @@ func main() {
 						animais.GET("/search/by-identificacao", animalHandler.SearchByIdentificacao)
 						animais.GET("/filter/by-status-saude", animalHandler.GetByStatusSaude)
 						animais.GET("/filter/by-sexo", animalHandler.GetBySexo)
+						animais.GET("/filter/by-lote", animalHandler.GetByLoteID)
+						animais.GET("/filter/by-categoria", animalHandler.GetByCategoria)
+						animais.GET("/filter/by-status-reprodutivo", animalHandler.GetByStatusReprodutivo)
 						animais.GET("/:id", animalHandler.GetByID)
 						animais.POST("", animalHandler.Create)
 						animais.PUT("/:id", animalHandler.Update)
@@ -193,6 +230,75 @@ func main() {
 						producao.DELETE("/:id", producaoHandler.Delete)
 					}
 					slog.Info("Rotas de Produção de Leite registradas")
+
+					// Rotas de Lotes
+					lotes := api.Group("/v1/lotes", auth.AuthMiddleware(jwtSvc))
+					{
+						lotes.GET("", loteHandler.GetByFazendaID)
+						lotes.GET("/:id", loteHandler.GetByID)
+						lotes.POST("", loteHandler.Create)
+						lotes.PUT("/:id", loteHandler.Update)
+						lotes.DELETE("/:id", loteHandler.Delete)
+					}
+					// Movimentar animal de lote
+					animais.POST("/:id/movimentar-lote", movimentacaoLoteHandler.Movimentar)
+					// Rotas de Cios
+					cios := api.Group("/v1/cios", auth.AuthMiddleware(jwtSvc))
+					{
+						cios.GET("", cioHandler.GetByFazendaID)
+						cios.GET("/by-animal/:id", cioHandler.GetByAnimalID)
+						cios.GET("/:id", cioHandler.GetByID)
+						cios.POST("", cioHandler.Create)
+						cios.DELETE("/:id", cioHandler.Delete)
+					}
+					// Coberturas
+					coberturas := api.Group("/v1/coberturas", auth.AuthMiddleware(jwtSvc))
+					{
+						coberturas.GET("", coberturaHandler.GetByFazendaID)
+						coberturas.GET("/:id", coberturaHandler.GetByID)
+						coberturas.POST("", coberturaHandler.Create)
+					}
+					// Toques (diagnosticos de gestacao)
+					toques := api.Group("/v1/toques", auth.AuthMiddleware(jwtSvc))
+					{
+						toques.GET("", diagnosticoGestacaoHandler.GetByFazendaID)
+						toques.POST("", diagnosticoGestacaoHandler.Create)
+					}
+					// Gestacoes
+					gestacoes := api.Group("/v1/gestacoes", auth.AuthMiddleware(jwtSvc))
+					{
+						gestacoes.GET("", gestacaoHandler.GetByFazendaID)
+					}
+					// Partos
+					partos := api.Group("/v1/partos", auth.AuthMiddleware(jwtSvc))
+					{
+						partos.GET("", partoHandler.GetByFazendaID)
+						partos.POST("", partoHandler.Create)
+					}
+					// Crias
+					crias := api.Group("/v1/crias", auth.AuthMiddleware(jwtSvc))
+					{
+						crias.GET("", criaHandler.GetByPartoID)
+						crias.POST("", criaHandler.Create)
+					}
+					// Secagens
+					secagens := api.Group("/v1/secagens", auth.AuthMiddleware(jwtSvc))
+					{
+						secagens.GET("", secagemHandler.GetByFazendaID)
+						secagens.POST("", secagemHandler.Create)
+					}
+					// Lactacoes
+					lactacoes := api.Group("/v1/lactacoes", auth.AuthMiddleware(jwtSvc))
+					{
+						lactacoes.GET("", lactacaoHandler.GetByFazendaID)
+						lactacoes.POST("", lactacaoHandler.Create)
+					}
+					// Protocolos IATF
+					protocolosIatf := api.Group("/v1/protocolos-iatf", auth.AuthMiddleware(jwtSvc))
+					{
+						protocolosIatf.GET("", protocoloIatfHandler.GetByFazendaID)
+						protocolosIatf.POST("", protocoloIatfHandler.Create)
+					}
 
 					// Admin routes (perfil ADMIN ou DEVELOPER)
 					admin := api.Group("/v1/admin", auth.AuthMiddleware(jwtSvc), auth.RequireAdmin())
@@ -277,7 +383,14 @@ func main() {
 					assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc, userRepo)
 					
 					// Assistente Live (Multimodal)
-					assistenteLiveSvc, err := service.NewAssistenteLiveService(cfg.GeminiAPIKey, cfg.GeminiModel, fazendaSvc, animalSvc, producaoSvc)
+					assistenteLiveSvc, err := service.NewAssistenteLiveService(
+						cfg.GeminiAPIKey, cfg.GeminiModel,
+						fazendaSvc, animalSvc, producaoSvc,
+						loteSvc, cioSvc, coberturaSvc,
+						diagnosticoGestacaoSvc, gestacaoSvc,
+						partoSvc, secagemSvc, lactacaoSvc,
+						movimentacaoLoteSvc,
+					)
 					if err != nil {
 						slog.Warn("Falha ao inicializar Assistente Live", "error", err)
 					}

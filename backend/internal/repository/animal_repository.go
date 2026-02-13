@@ -21,8 +21,8 @@ func NewAnimalRepository(db *pgxpool.Pool) *AnimalRepository {
 
 func (r *AnimalRepository) Create(ctx context.Context, animal *models.Animal) error {
 	query := `
-		INSERT INTO animais (identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO animais (identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -35,6 +35,15 @@ func (r *AnimalRepository) Create(ctx context.Context, animal *models.Animal) er
 		animal.Sexo,
 		animal.StatusSaude,
 		animal.FazendaID,
+		animal.Categoria,
+		animal.StatusReprodutivo,
+		animal.MaeID,
+		animal.PaiInfo,
+		animal.LoteID,
+		animal.PesoNascimento,
+		animal.DataEntrada,
+		animal.DataSaida,
+		animal.MotivoSaida,
 	).Scan(&animal.ID, &animal.CreatedAt, &animal.UpdatedAt)
 
 	return err
@@ -42,7 +51,7 @@ func (r *AnimalRepository) Create(ctx context.Context, animal *models.Animal) er
 
 func (r *AnimalRepository) GetByID(ctx context.Context, id int64) (*models.Animal, error) {
 	query := `
-		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, created_at, updated_at
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
 		FROM animais
 		WHERE id = $1
 	`
@@ -56,6 +65,15 @@ func (r *AnimalRepository) GetByID(ctx context.Context, id int64) (*models.Anima
 		&animal.Sexo,
 		&animal.StatusSaude,
 		&animal.FazendaID,
+		&animal.Categoria,
+		&animal.StatusReprodutivo,
+		&animal.MaeID,
+		&animal.PaiInfo,
+		&animal.LoteID,
+		&animal.PesoNascimento,
+		&animal.DataEntrada,
+		&animal.DataSaida,
+		&animal.MotivoSaida,
 		&animal.CreatedAt,
 		&animal.UpdatedAt,
 	)
@@ -69,7 +87,7 @@ func (r *AnimalRepository) GetByID(ctx context.Context, id int64) (*models.Anima
 
 func (r *AnimalRepository) GetAll(ctx context.Context) ([]*models.Animal, error) {
 	query := `
-		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, created_at, updated_at
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
 		FROM animais
 		ORDER BY created_at DESC
 	`
@@ -79,7 +97,7 @@ func (r *AnimalRepository) GetAll(ctx context.Context) ([]*models.Animal, error)
 
 func (r *AnimalRepository) GetByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
 	query := `
-		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, created_at, updated_at
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
 		FROM animais
 		WHERE fazenda_id = $1
 		ORDER BY created_at DESC
@@ -88,14 +106,44 @@ func (r *AnimalRepository) GetByFazendaID(ctx context.Context, fazendaID int64) 
 	return r.queryList(ctx, query, fazendaID)
 }
 
+func (r *AnimalRepository) GetByLoteID(ctx context.Context, loteID int64) ([]*models.Animal, error) {
+	query := `
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
+		FROM animais
+		WHERE lote_id = $1
+		ORDER BY identificacao ASC
+	`
+	return r.queryList(ctx, query, loteID)
+}
+
+func (r *AnimalRepository) GetByCategoria(ctx context.Context, fazendaID int64, categoria string) ([]*models.Animal, error) {
+	query := `
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
+		FROM animais
+		WHERE fazenda_id = $1 AND categoria = $2
+		ORDER BY created_at DESC
+	`
+	return r.queryList(ctx, query, fazendaID, categoria)
+}
+
+func (r *AnimalRepository) GetByStatusReprodutivo(ctx context.Context, fazendaID int64, status string) ([]*models.Animal, error) {
+	query := `
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
+		FROM animais
+		WHERE fazenda_id = $1 AND status_reprodutivo = $2
+		ORDER BY created_at DESC
+	`
+	return r.queryList(ctx, query, fazendaID, status)
+}
+
 func (r *AnimalRepository) Update(ctx context.Context, animal *models.Animal) error {
 	if animal.ID <= 0 {
 		return fmt.Errorf("id do animal inválido: %d", animal.ID)
 	}
 	query := `
 		UPDATE animais
-		SET identificacao = $1, raca = $2, data_nascimento = $3, sexo = $4, status_saude = $5, fazenda_id = $6, updated_at = $7
-		WHERE id = $8
+		SET identificacao = $1, raca = $2, data_nascimento = $3, sexo = $4, status_saude = $5, fazenda_id = $6, categoria = $7, status_reprodutivo = $8, mae_id = $9, pai_info = $10, lote_id = $11, peso_nascimento = $12, data_entrada = $13, data_saida = $14, motivo_saida = $15, updated_at = $16
+		WHERE id = $17
 	`
 
 	cmd, err := r.db.Exec(
@@ -107,6 +155,15 @@ func (r *AnimalRepository) Update(ctx context.Context, animal *models.Animal) er
 		animal.Sexo,
 		animal.StatusSaude,
 		animal.FazendaID,
+		animal.Categoria,
+		animal.StatusReprodutivo,
+		animal.MaeID,
+		animal.PaiInfo,
+		animal.LoteID,
+		animal.PesoNascimento,
+		animal.DataEntrada,
+		animal.DataSaida,
+		animal.MotivoSaida,
 		time.Now(),
 		animal.ID,
 	)
@@ -127,7 +184,7 @@ func (r *AnimalRepository) Delete(ctx context.Context, id int64) error {
 
 func (r *AnimalRepository) SearchByIdentificacao(ctx context.Context, identificacao string) ([]*models.Animal, error) {
 	query := `
-		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, created_at, updated_at
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
 		FROM animais
 		WHERE identificacao ILIKE '%' || $1 || '%'
 		ORDER BY created_at DESC
@@ -137,7 +194,7 @@ func (r *AnimalRepository) SearchByIdentificacao(ctx context.Context, identifica
 
 func (r *AnimalRepository) GetByStatusSaude(ctx context.Context, statusSaude string) ([]*models.Animal, error) {
 	query := `
-		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, created_at, updated_at
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
 		FROM animais
 		WHERE status_saude = $1
 		ORDER BY created_at DESC
@@ -147,12 +204,24 @@ func (r *AnimalRepository) GetByStatusSaude(ctx context.Context, statusSaude str
 
 func (r *AnimalRepository) GetBySexo(ctx context.Context, sexo string) ([]*models.Animal, error) {
 	query := `
-		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, created_at, updated_at
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
 		FROM animais
 		WHERE sexo = $1
 		ORDER BY created_at DESC
 	`
 	return r.queryList(ctx, query, sexo)
+}
+
+func (r *AnimalRepository) UpdateLoteID(ctx context.Context, animalID int64, loteID *int64) error {
+	query := `UPDATE animais SET lote_id = $1, updated_at = $2 WHERE id = $3`
+	_, err := r.db.Exec(ctx, query, loteID, time.Now(), animalID)
+	return err
+}
+
+func (r *AnimalRepository) UpdateStatusReprodutivo(ctx context.Context, animalID int64, status *string) error {
+	query := `UPDATE animais SET status_reprodutivo = $1, updated_at = $2 WHERE id = $3`
+	_, err := r.db.Exec(ctx, query, status, time.Now(), animalID)
+	return err
 }
 
 func (r *AnimalRepository) Count(ctx context.Context) (int64, error) {
@@ -191,6 +260,15 @@ func (r *AnimalRepository) queryList(ctx context.Context, query string, args ...
 			&a.Sexo,
 			&a.StatusSaude,
 			&a.FazendaID,
+			&a.Categoria,
+			&a.StatusReprodutivo,
+			&a.MaeID,
+			&a.PaiInfo,
+			&a.LoteID,
+			&a.PesoNascimento,
+			&a.DataEntrada,
+			&a.DataSaida,
+			&a.MotivoSaida,
 			&a.CreatedAt,
 			&a.UpdatedAt,
 		)

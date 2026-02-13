@@ -17,15 +17,31 @@ import (
 
 // AssistenteLiveService gerencia a interação em tempo real com o Gemini Multimodal Live.
 type AssistenteLiveService struct {
-	geminiAPIKey string
-	geminiModel  string
-	fazendaSvc   *FazendaService
-	animalSvc    *AnimalService
-	producaoSvc  *ProducaoService
-	client       *genai.Client
+	geminiAPIKey        string
+	geminiModel         string
+	fazendaSvc          *FazendaService
+	animalSvc           *AnimalService
+	producaoSvc         *ProducaoService
+	loteSvc             *LoteService
+	cioSvc              *CioService
+	coberturaSvc        *CoberturaService
+	diagnosticoGestSvc  *DiagnosticoGestacaoService
+	gestacaoSvc         *GestacaoService
+	partoSvc            *PartoService
+	secagemSvc          *SecagemService
+	lactacaoSvc         *LactacaoService
+	movimentacaoLoteSvc *MovimentacaoLoteService
+	client              *genai.Client
 }
 
-func NewAssistenteLiveService(geminiAPIKey, geminiModel string, fazendaSvc *FazendaService, animalSvc *AnimalService, producaoSvc *ProducaoService) (*AssistenteLiveService, error) {
+func NewAssistenteLiveService(
+	geminiAPIKey, geminiModel string,
+	fazendaSvc *FazendaService, animalSvc *AnimalService, producaoSvc *ProducaoService,
+	loteSvc *LoteService, cioSvc *CioService, coberturaSvc *CoberturaService,
+	diagnosticoGestSvc *DiagnosticoGestacaoService, gestacaoSvc *GestacaoService,
+	partoSvc *PartoService, secagemSvc *SecagemService, lactacaoSvc *LactacaoService,
+	movimentacaoLoteSvc *MovimentacaoLoteService,
+) (*AssistenteLiveService, error) {
 	if geminiModel == "" {
 		geminiModel = "gemini-2.0-flash" // Modelo que suporta Live API
 	}
@@ -37,12 +53,21 @@ func NewAssistenteLiveService(geminiAPIKey, geminiModel string, fazendaSvc *Faze
 	}
 
 	return &AssistenteLiveService{
-		geminiAPIKey: geminiAPIKey,
-		geminiModel:  geminiModel,
-		fazendaSvc:   fazendaSvc,
-		animalSvc:    animalSvc,
-		producaoSvc:  producaoSvc,
-		client:       client,
+		geminiAPIKey:        geminiAPIKey,
+		geminiModel:         geminiModel,
+		fazendaSvc:          fazendaSvc,
+		animalSvc:           animalSvc,
+		producaoSvc:         producaoSvc,
+		loteSvc:             loteSvc,
+		cioSvc:              cioSvc,
+		coberturaSvc:        coberturaSvc,
+		diagnosticoGestSvc:  diagnosticoGestSvc,
+		gestacaoSvc:         gestacaoSvc,
+		partoSvc:            partoSvc,
+		secagemSvc:          secagemSvc,
+		lactacaoSvc:         lactacaoSvc,
+		movimentacaoLoteSvc: movimentacaoLoteSvc,
+		client:              client,
 	}, nil
 }
 
@@ -360,6 +385,131 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 				},
 			},
 		},
+		{
+			Name:        "listar_lotes",
+			Description: "Lista os lotes de uma fazenda. Use para 'quais lotes existem', 'listar lotes'.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+				},
+			},
+		},
+		{
+			Name:        "cadastrar_lote",
+			Description: "Cadastra um novo lote na fazenda.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"nome":      {Type: genai.TypeString, Description: "Nome do lote"},
+					"tipo":      {Type: genai.TypeString, Description: "Tipo: LACTACAO, SECAS, MATERNIDADE, etc."},
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+				},
+				Required: []string{"nome"},
+			},
+		},
+		{
+			Name:        "registrar_cio",
+			Description: "Registra a detecção de cio (estro) em uma fêmea.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal (fêmea)"},
+					"data_detectado": {Type: genai.TypeString, Description: "Data/hora em ISO (ex: 2025-02-13T08:00:00)"},
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+				},
+				Required: []string{"identificacao", "data_detectado"},
+			},
+		},
+		{
+			Name:        "registrar_cobertura",
+			Description: "Registra cobertura/inseminação de uma fêmea (IA, IATF, monta natural ou TE).",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
+					"tipo": {Type: genai.TypeString, Description: "IA, IATF, MONTA_NATURAL ou TE"},
+					"data": {Type: genai.TypeString, Description: "Data/hora em ISO"},
+					"touro_info": {Type: genai.TypeString, Description: "Nome/código do touro ou sêmen (opcional)"},
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+				},
+				Required: []string{"identificacao", "tipo", "data"},
+			},
+		},
+		{
+			Name:        "registrar_toque",
+			Description: "Registra toque (diagnóstico de gestação) - resultado POSITIVO, NEGATIVO ou INCONCLUSIVO.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
+					"data": {Type: genai.TypeString, Description: "Data/hora em ISO"},
+					"resultado": {Type: genai.TypeString, Description: "POSITIVO, NEGATIVO ou INCONCLUSIVO"},
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+				},
+				Required: []string{"identificacao", "data", "resultado"},
+			},
+		},
+		{
+			Name:        "listar_gestacoes",
+			Description: "Lista gestações em andamento ou históricas da fazenda.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+				},
+			},
+		},
+		{
+			Name:        "registrar_parto",
+			Description: "Registra o parto de uma fêmea.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"identificacao": {Type: genai.TypeString, Description: "Identificação da mãe"},
+					"data": {Type: genai.TypeString, Description: "Data/hora do parto em ISO"},
+					"numero_crias": {Type: genai.TypeInteger, Description: "Número de crias (default 1)"},
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+				},
+				Required: []string{"identificacao", "data"},
+			},
+		},
+		{
+			Name:        "registrar_secagem",
+			Description: "Registra a secagem de uma vaca.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
+					"data_secagem": {Type: genai.TypeString, Description: "Data da secagem (YYYY-MM-DD)"},
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+				},
+				Required: []string{"identificacao", "data_secagem"},
+			},
+		},
+		{
+			Name:        "listar_lactacoes",
+			Description: "Lista lactações da fazenda.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+				},
+			},
+		},
+		{
+			Name:        "movimentar_lote",
+			Description: "Move um animal de um lote para outro.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
+					"lote_destino_id": {Type: genai.TypeInteger, Description: "ID do lote de destino"},
+					"motivo": {Type: genai.TypeString, Description: "Motivo da movimentação (opcional)"},
+				},
+				Required: []string{"identificacao", "lote_destino_id"},
+			},
+		},
 	}
 }
 
@@ -669,11 +819,299 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		errUpdate := s.fazendaSvc.Update(ctx, f)
 		return map[string]any{"status": "sucesso", "mensagem": "Fazenda atualizada com sucesso", "fazenda": f.Nome}, errUpdate
 
+	case "listar_lotes":
+		if s.loteSvc == nil {
+			return map[string]any{"erro": "Serviço de lotes não disponível"}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			return map[string]any{"erro": "Especifique a fazenda ou selecione uma no sistema."}, nil
+		}
+		lotes, err := s.loteSvc.GetByFazendaID(ctx, fID)
+		if err != nil {
+			return nil, err
+		}
+		if len(lotes) == 0 {
+			return map[string]any{"status": "nenhum lote cadastrado"}, nil
+		}
+		var sb strings.Builder
+		sb.WriteString(fmt.Sprintf("Lotes (%d): ", len(lotes)))
+		for i, l := range lotes {
+			if i > 0 {
+				sb.WriteString("; ")
+			}
+			sb.WriteString(fmt.Sprintf("%s (ID: %d)", l.Nome, l.ID))
+			if l.Tipo != nil && *l.Tipo != "" {
+				sb.WriteString(fmt.Sprintf(" tipo=%s", *l.Tipo))
+			}
+		}
+		return map[string]any{"lista_lotes": sb.String(), "redirect_path": "/lotes"}, nil
+
+	case "cadastrar_lote":
+		if s.loteSvc == nil {
+			return map[string]any{"erro": "Serviço de lotes não disponível"}, nil
+		}
+		nome, _ := call.Args["nome"].(string)
+		nome = strings.TrimSpace(nome)
+		if nome == "" {
+			return map[string]any{"erro": "Nome do lote é obrigatório."}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			return map[string]any{"erro": "Especifique a fazenda."}, nil
+		}
+		lote := &models.Lote{FazendaID: fID, Nome: nome}
+		if v, ok := call.Args["tipo"].(string); ok && strings.TrimSpace(v) != "" {
+			lote.Tipo = ptr(strings.TrimSpace(v))
+		}
+		err := s.loteSvc.Create(ctx, lote)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"status": "sucesso", "mensagem": "Lote criado", "lote": lote.Nome, "redirect_path": "/lotes"}, nil
+
+	case "registrar_cio":
+		if s.cioSvc == nil {
+			return map[string]any{"erro": "Serviço de cios não disponível"}, nil
+		}
+		ident, _ := call.Args["identificacao"].(string)
+		dataStr, _ := call.Args["data_detectado"].(string)
+		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
+		if err != nil || len(animais) == 0 {
+			return map[string]any{"erro": "animal não encontrado"}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			fID = animais[0].FazendaID
+		}
+		t, errParse := time.Parse(time.RFC3339, dataStr)
+		if errParse != nil {
+			t, _ = time.Parse("2006-01-02T15:04:05", dataStr)
+		}
+		if errParse != nil {
+			t = time.Now()
+		}
+		cio := &models.Cio{AnimalID: animais[0].ID, DataDetectado: t, FazendaID: fID}
+		err = s.cioSvc.Create(ctx, cio)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"status": "sucesso", "mensagem": "Cio registrado", "redirect_path": "/gestao/cios"}, nil
+
+	case "registrar_cobertura":
+		if s.coberturaSvc == nil {
+			return map[string]any{"erro": "Serviço de coberturas não disponível"}, nil
+		}
+		ident, _ := call.Args["identificacao"].(string)
+		tipoCob, _ := call.Args["tipo"].(string)
+		dataStr, _ := call.Args["data"].(string)
+		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
+		if err != nil || len(animais) == 0 {
+			return map[string]any{"erro": "animal não encontrado"}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			fID = animais[0].FazendaID
+		}
+		t, errParse := time.Parse(time.RFC3339, dataStr)
+		if errParse != nil {
+			t, _ = time.Parse("2006-01-02T15:04:05", dataStr)
+		}
+		if errParse != nil {
+			t = time.Now()
+		}
+		cob := &models.Cobertura{AnimalID: animais[0].ID, Tipo: tipoCob, Data: t, FazendaID: fID}
+		if v, ok := call.Args["touro_info"].(string); ok && strings.TrimSpace(v) != "" {
+			cob.TouroInfo = ptr(strings.TrimSpace(v))
+		}
+		err = s.coberturaSvc.Create(ctx, cob)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"status": "sucesso", "mensagem": "Cobertura registrada", "redirect_path": "/gestao/coberturas"}, nil
+
+	case "registrar_toque":
+		if s.diagnosticoGestSvc == nil {
+			return map[string]any{"erro": "Serviço de toques não disponível"}, nil
+		}
+		ident, _ := call.Args["identificacao"].(string)
+		dataStr, _ := call.Args["data"].(string)
+		resultado, _ := call.Args["resultado"].(string)
+		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
+		if err != nil || len(animais) == 0 {
+			return map[string]any{"erro": "animal não encontrado"}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			fID = animais[0].FazendaID
+		}
+		t, errParse := time.Parse(time.RFC3339, dataStr)
+		if errParse != nil {
+			t, _ = time.Parse("2006-01-02T15:04:05", dataStr)
+		}
+		if errParse != nil {
+			t = time.Now()
+		}
+		dg := &models.DiagnosticoGestacao{AnimalID: animais[0].ID, Data: t, Resultado: resultado, FazendaID: fID}
+		err = s.diagnosticoGestSvc.Create(ctx, dg)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"status": "sucesso", "mensagem": "Toque registrado", "redirect_path": "/gestao/toques"}, nil
+
+	case "listar_gestacoes":
+		if s.gestacaoSvc == nil {
+			return map[string]any{"erro": "Serviço de gestações não disponível"}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			return map[string]any{"erro": "Especifique a fazenda."}, nil
+		}
+		gestacoes, err := s.gestacaoSvc.GetByFazendaID(ctx, fID)
+		if err != nil {
+			return nil, err
+		}
+		if len(gestacoes) == 0 {
+			return map[string]any{"status": "nenhuma gestação encontrada"}, nil
+		}
+		var sb2 strings.Builder
+		sb2.WriteString(fmt.Sprintf("Gestações (%d): ", len(gestacoes)))
+		for i, g := range gestacoes {
+			if i > 0 {
+				sb2.WriteString("; ")
+			}
+			sb2.WriteString(fmt.Sprintf("Animal %d - %s (confirmada em %s)", g.AnimalID, g.Status, g.DataConfirmacao.Format("02/01/2006")))
+		}
+		return map[string]any{"lista_gestacoes": sb2.String(), "redirect_path": "/gestao/gestacoes"}, nil
+
+	case "registrar_parto":
+		if s.partoSvc == nil {
+			return map[string]any{"erro": "Serviço de partos não disponível"}, nil
+		}
+		ident, _ := call.Args["identificacao"].(string)
+		dataStr, _ := call.Args["data"].(string)
+		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
+		if err != nil || len(animais) == 0 {
+			return map[string]any{"erro": "animal não encontrado"}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			fID = animais[0].FazendaID
+		}
+		t, errParse := time.Parse(time.RFC3339, dataStr)
+		if errParse != nil {
+			t, _ = time.Parse("2006-01-02T15:04:05", dataStr)
+		}
+		if errParse != nil {
+			t = time.Now()
+		}
+		numCrias := 1
+		if v, ok := call.Args["numero_crias"].(float64); ok && v > 0 {
+			numCrias = int(v)
+		}
+		parto := &models.Parto{AnimalID: animais[0].ID, Data: t, FazendaID: fID, NumeroCrias: numCrias}
+		err = s.partoSvc.Create(ctx, parto)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"status": "sucesso", "mensagem": "Parto registrado", "redirect_path": "/gestao/partos"}, nil
+
+	case "registrar_secagem":
+		if s.secagemSvc == nil {
+			return map[string]any{"erro": "Serviço de secagens não disponível"}, nil
+		}
+		ident, _ := call.Args["identificacao"].(string)
+		dataSec, _ := call.Args["data_secagem"].(string)
+		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
+		if err != nil || len(animais) == 0 {
+			return map[string]any{"erro": "animal não encontrado"}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			fID = animais[0].FazendaID
+		}
+		dt, errParse := time.Parse("2006-01-02", dataSec)
+		if errParse != nil {
+			return map[string]any{"erro": "data_secagem inválida (use YYYY-MM-DD)"}, nil
+		}
+		sec := &models.Secagem{AnimalID: animais[0].ID, DataSecagem: dt, FazendaID: fID}
+		err = s.secagemSvc.Create(ctx, sec)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"status": "sucesso", "mensagem": "Secagem registrada", "redirect_path": "/gestao/secagens"}, nil
+
+	case "listar_lactacoes":
+		if s.lactacaoSvc == nil {
+			return map[string]any{"erro": "Serviço de lactações não disponível"}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			return map[string]any{"erro": "Especifique a fazenda."}, nil
+		}
+		lactacoes, err := s.lactacaoSvc.GetByFazendaID(ctx, fID)
+		if err != nil {
+			return nil, err
+		}
+		if len(lactacoes) == 0 {
+			return map[string]any{"status": "nenhuma lactação encontrada"}, nil
+		}
+		var sb3 strings.Builder
+		sb3.WriteString(fmt.Sprintf("Lactações (%d): ", len(lactacoes)))
+		for i, lact := range lactacoes {
+			if i > 0 {
+				sb3.WriteString("; ")
+			}
+			sb3.WriteString(fmt.Sprintf("Animal %d - #%d (início %s)", lact.AnimalID, lact.NumeroLactacao, lact.DataInicio.Format("02/01/2006")))
+		}
+		return map[string]any{"lista_lactacoes": sb3.String(), "redirect_path": "/gestao/lactacoes"}, nil
+
+	case "movimentar_lote":
+		if s.movimentacaoLoteSvc == nil {
+			return map[string]any{"erro": "Serviço de movimentação de lote não disponível"}, nil
+		}
+		ident, _ := call.Args["identificacao"].(string)
+		loteDestID, ok := call.Args["lote_destino_id"].(float64)
+		if !ok || int64(loteDestID) <= 0 {
+			return map[string]any{"erro": "lote_destino_id é obrigatório"}, nil
+		}
+		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
+		if err != nil || len(animais) == 0 {
+			return map[string]any{"erro": "animal não encontrado"}, nil
+		}
+		motivo := ""
+		if v, ok := call.Args["motivo"].(string); ok {
+			motivo = v
+		}
+		m := &models.MovimentacaoLote{AnimalID: animais[0].ID, LoteDestinoID: int64(loteDestID), Motivo: &motivo}
+		err = s.movimentacaoLoteSvc.Create(ctx, m)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"status": "sucesso", "mensagem": "Animal movimentado", "redirect_path": fmt.Sprintf("/animais/%d", animais[0].ID)}, nil
+
 	default:
 		return nil, fmt.Errorf("função não implementada: %s", call.Name)
 	}
 }
 
+
+// resolveFazendaID obtém fazenda_id dos args ou usa fazendaAtivaID. Retorna 0 se nenhum.
+func resolveFazendaID(args map[string]interface{}, fazendaAtivaID int64, fazendaSvc *FazendaService, ctx context.Context) int64 {
+	fID := fazendaAtivaID
+	if v, ok := args["fazenda_id"].(float64); ok && v > 0 {
+		fID = int64(v)
+	}
+	if fID <= 0 {
+		if nome, ok := args["nome_fazenda"].(string); ok && strings.TrimSpace(nome) != "" {
+			fazendas, _ := fazendaSvc.SearchByNome(ctx, nome)
+			if len(fazendas) > 0 {
+				fID = fazendas[0].ID
+			}
+		}
+	}
+	return fID
+}
 // timeToStr converte *time.Time em valor serializável para o Gemini (proto Struct não aceita time.Time).
 func timeToStr(t *time.Time) interface{} {
 	if t == nil {

@@ -306,6 +306,59 @@ func (h *AnimalHandler) CountByFazenda(c *gin.Context) {
 	response.SuccessOK(c, gin.H{"count": n}, "Contagem realizada com sucesso")
 }
 
+func (h *AnimalHandler) GetByLoteID(c *gin.Context) {
+	loteIDStr := c.Query("lote_id")
+	loteID, err := strconv.ParseInt(loteIDStr, 10, 64)
+	if err != nil || loteID <= 0 {
+		response.ErrorBadRequest(c, "lote_id obrigatorio e deve ser maior que zero", nil)
+		return
+	}
+	list, err := h.service.GetByLoteID(c.Request.Context(), loteID)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao buscar animais do lote", err.Error())
+		return
+	}
+	response.SuccessOK(c, list, "Animais do lote listados com sucesso")
+}
+
+func (h *AnimalHandler) GetByCategoria(c *gin.Context) {
+	fazendaIDStr := c.Query("fazenda_id")
+	categoria := c.Query("categoria")
+	fazendaID, err := strconv.ParseInt(fazendaIDStr, 10, 64)
+	if err != nil || fazendaID <= 0 {
+		response.ErrorBadRequest(c, "fazenda_id obrigatorio", nil)
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, fazendaID) {
+		return
+	}
+	list, err := h.service.GetByCategoria(c.Request.Context(), fazendaID, categoria)
+	if err != nil {
+		response.ErrorValidation(c, err.Error(), nil)
+		return
+	}
+	response.SuccessOK(c, list, "Animais listados com sucesso")
+}
+
+func (h *AnimalHandler) GetByStatusReprodutivo(c *gin.Context) {
+	fazendaIDStr := c.Query("fazenda_id")
+	status := c.Query("status_reprodutivo")
+	fazendaID, err := strconv.ParseInt(fazendaIDStr, 10, 64)
+	if err != nil || fazendaID <= 0 {
+		response.ErrorBadRequest(c, "fazenda_id obrigatorio", nil)
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, fazendaID) {
+		return
+	}
+	list, err := h.service.GetByStatusReprodutivo(c.Request.Context(), fazendaID, status)
+	if err != nil {
+		response.ErrorValidation(c, err.Error(), nil)
+		return
+	}
+	response.SuccessOK(c, list, "Animais listados com sucesso")
+}
+
 // parseDate converte string ISO YYYY-MM-DD para *time.Time
 func parseDate(s *string) (*time.Time, error) {
 	if s == nil || *s == "" {

@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { cn } from "@/lib/utils";
-import { Building2, List, Droplets, Menu, Users, Code, X } from "lucide-react";
+import { Building2, List, Droplets, Layers, ClipboardList, Menu, Users, Code, X } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -58,6 +58,14 @@ export function Header() {
                 <Link href="/producao" className={navLinkClass("/producao")}>
                   <Droplets className="h-5 w-5 shrink-0" aria-hidden />
                   Produção
+                </Link>
+                <Link href="/lotes" className={navLinkClass("/lotes")}>
+                  <Layers className="h-5 w-5 shrink-0" aria-hidden />
+                  Lotes
+                </Link>
+                <Link href="/gestao" className={navLinkClass("/gestao")}>
+                  <ClipboardList className="h-5 w-5 shrink-0" aria-hidden />
+                  Gestão
                 </Link>
                 {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
                   <Link href="/admin/usuarios" className={navLinkClass("/admin")}>
@@ -175,6 +183,28 @@ export function Header() {
                   >
                     <Droplets className="h-5 w-5 shrink-0" aria-hidden />
                     Produção
+                  </Link>
+                  <Link
+                    href="/lotes"
+                    className={cn(
+                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                      navLinkClass("/lotes")
+                    )}
+                    onClick={closeMobileMenu}
+                  >
+                    <Layers className="h-5 w-5 shrink-0" aria-hidden />
+                    Lotes
+                  </Link>
+                  <Link
+                    href="/gestao"
+                    className={cn(
+                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                      navLinkClass("/gestao")
+                    )}
+                    onClick={closeMobileMenu}
+                  >
+                    <ClipboardList className="h-5 w-5 shrink-0" aria-hidden />
+                    Gestão
                   </Link>
                   {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
                     <Link
