@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Cio } from "@/services/cios";
 import { get, update } from "@/services/cios";
 import { listByFazenda } from "@/services/animais";
+import type { Animal } from "@/services/animais";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -25,16 +27,120 @@ import { getApiErrorMessage } from "@/lib/errors";
 const METODOS = ["VISUAL", "PEDOMETRO", "RUFIAO", "OUTRO"] as const;
 const INTENSIDADES = ["FRACO", "MODERADO", "FORTE"] as const;
 
-function EditarContent() {
+function initialFormState(cio: Cio) {
+  return {
+    animalId: cio.animal_id.toString(),
+    dataDetectado: cio.data_detectado?.slice(0, 16) ?? "",
+    metodo: cio.metodo_deteccao ?? "",
+    intensidade: cio.intensidade ?? "",
+  };
+}
+
+type CioEditFormProps = {
+  cio: Cio;
+  animais: Animal[];
+  fazendaId: number;
+};
+
+function CioEditForm({ cio, animais, fazendaId }: CioEditFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [formState, setFormState] = useState(() => initialFormState(cio));
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      update(cio.id, {
+        animal_id: Number(formState.animalId),
+        data_detectado: new Date(formState.dataDetectado).toISOString(),
+        fazenda_id: cio.fazenda_id,
+        metodo_deteccao: formState.metodo || undefined,
+        intensidade: formState.intensidade || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cios", fazendaId] });
+      queryClient.invalidateQueries({ queryKey: ["cio", cio.id] });
+      router.push("/gestao/cios");
+    },
+  });
+
+  return (
+    <GestaoFormLayout
+      title="Editar cio"
+      backHref="/gestao/cios"
+      submitLabel="Salvar"
+      onSubmit={() => mutation.mutate()}
+      isPending={mutation.isPending}
+      error={
+        mutation.isError
+          ? getApiErrorMessage(mutation.error, "Erro ao salvar.")
+          : undefined
+      }
+      submitDisabled={!formState.animalId}
+    >
+      <AnimalSelect
+        animais={animais}
+        value={formState.animalId}
+        onValueChange={(v) => setFormState((s) => ({ ...s, animalId: v }))}
+        label="Animal"
+        placeholder="Selecione"
+        femeasOnly
+      />
+      <div>
+        <Label>Data/hora detectado</Label>
+        <Input
+          type="datetime-local"
+          value={formState.dataDetectado}
+          onChange={(e) =>
+            setFormState((s) => ({ ...s, dataDetectado: e.target.value }))
+          }
+        />
+      </div>
+      <div>
+        <Label>Método (opcional)</Label>
+        <Select
+          value={formState.metodo}
+          onValueChange={(v) => setFormState((s) => ({ ...s, metodo: v }))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o método" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Nenhum</SelectItem>
+            {METODOS.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Intensidade (opcional)</Label>
+        <Select
+          value={formState.intensidade}
+          onValueChange={(v) => setFormState((s) => ({ ...s, intensidade: v }))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione a intensidade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Nenhuma</SelectItem>
+            {INTENSIDADES.map((i) => (
+              <SelectItem key={i} value={i}>
+                {i}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </GestaoFormLayout>
+  );
+}
+
+function EditarContent() {
   const params = useParams();
   const id = Number(params.id);
   const { fazendaAtiva } = useFazendaAtiva();
-  const queryClient = useQueryClient();
-  const [animalId, setAnimalId] = useState("");
-  const [dataDetectado, setDataDetectado] = useState("");
-  const [metodo, setMetodo] = useState<string>("");
-  const [intensidade, setIntensidade] = useState<string>("");
 
   const { data: cio, isLoading: loadingCio } = useQuery({
     queryKey: ["cio", id],
@@ -46,31 +152,6 @@ function EditarContent() {
     queryKey: ["animais", fazendaAtiva?.id],
     queryFn: () => listByFazenda(fazendaAtiva!.id),
     enabled: !!fazendaAtiva?.id,
-  });
-
-  useEffect(() => {
-    if (cio) {
-      setAnimalId(cio.animal_id.toString());
-      setDataDetectado(cio.data_detectado?.slice(0, 16) ?? "");
-      setMetodo(cio.metodo_deteccao ?? "");
-      setIntensidade(cio.intensidade ?? "");
-    }
-  }, [cio]);
-
-  const mutation = useMutation({
-    mutationFn: () =>
-      update(id, {
-        animal_id: Number(animalId),
-        data_detectado: new Date(dataDetectado).toISOString(),
-        fazenda_id: cio.fazenda_id,
-        metodo_deteccao: metodo || undefined,
-        intensidade: intensidade || undefined,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cios", fazendaAtiva?.id] });
-      queryClient.invalidateQueries({ queryKey: ["cio", id] });
-      router.push("/gestao/cios");
-    },
   });
 
   if (!fazendaAtiva) {
@@ -101,68 +182,12 @@ function EditarContent() {
   }
 
   return (
-    <GestaoFormLayout
-      title="Editar cio"
-      backHref="/gestao/cios"
-      submitLabel="Salvar"
-      onSubmit={() => mutation.mutate()}
-      isPending={mutation.isPending}
-      error={
-        mutation.isError
-          ? getApiErrorMessage(mutation.error, "Erro ao salvar.")
-          : undefined
-      }
-      submitDisabled={!animalId}
-    >
-      <AnimalSelect
-        animais={animais}
-        value={animalId}
-        onValueChange={setAnimalId}
-        label="Animal"
-        placeholder="Selecione"
-        femeasOnly
-      />
-      <div>
-        <Label>Data/hora detectado</Label>
-        <Input
-          type="datetime-local"
-          value={dataDetectado}
-          onChange={(e) => setDataDetectado(e.target.value)}
-        />
-      </div>
-      <div>
-        <Label>Método (opcional)</Label>
-        <Select value={metodo} onValueChange={setMetodo}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o método" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Nenhum</SelectItem>
-            {METODOS.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label>Intensidade (opcional)</Label>
-        <Select value={intensidade} onValueChange={setIntensidade}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione a intensidade" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Nenhuma</SelectItem>
-            {INTENSIDADES.map((i) => (
-              <SelectItem key={i} value={i}>
-                {i}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </GestaoFormLayout>
+    <CioEditForm
+      key={cio.id}
+      cio={cio}
+      animais={animais}
+      fazendaId={fazendaAtiva.id}
+    />
   );
 }
 
