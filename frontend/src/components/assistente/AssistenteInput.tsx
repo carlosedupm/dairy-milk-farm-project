@@ -27,7 +27,6 @@ import {
 } from "@/lib/speechSynthesis";
 import { interpretVoiceConfirm } from "@/lib/voiceConfirm";
 import { Loader2, MessageCircle, Mic, MicOff } from "lucide-react";
-import ReactMarkdown from "react-markdown";
 
 /** Delay em ms antes de reabrir o microfone após TTS (anti-eco em mobile/Samsung). */
 const RETRY_REOPEN_DELAY_MS = 2000;
@@ -1158,9 +1157,7 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
         {liveMode && liveText && (
           <div className="p-2 rounded-md bg-primary/10 border border-primary/20 text-sm animate-in fade-in slide-in-from-top-1 min-h-[2.5rem]">
             <p className="font-medium text-primary text-xs mb-1">Assistente Live:</p>
-            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground [&_strong]:font-semibold [&_ul]:my-1 [&_li]:my-0">
-              <ReactMarkdown>{liveText}</ReactMarkdown>
-            </div>
+            <p className="text-foreground whitespace-pre-wrap">{liveText}</p>
           </div>
         )}
         {geminiLive.isOffline && (

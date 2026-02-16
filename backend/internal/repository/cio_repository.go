@@ -71,6 +71,13 @@ func (r *CioRepository) GetByFazendaID(ctx context.Context, fazendaID int64) ([]
 	return list, rows.Err()
 }
 
+func (r *CioRepository) Update(ctx context.Context, c *models.Cio) error {
+	query := `UPDATE cios SET animal_id = $1, data_detectado = $2, metodo_deteccao = $3, intensidade = $4, observacoes = $5
+		WHERE id = $6`
+	_, err := r.db.Exec(ctx, query, c.AnimalID, c.DataDetectado, c.MetodoDeteccao, c.Intensidade, c.Observacoes, c.ID)
+	return err
+}
+
 func (r *CioRepository) Delete(ctx context.Context, id int64) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM cios WHERE id = $1`, id)
 	return err

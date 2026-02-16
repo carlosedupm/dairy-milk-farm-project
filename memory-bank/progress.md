@@ -2,12 +2,12 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 95%
+### **Completude Geral**: 96%
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 95% ✅
-💻  Implementação: 95% ✅ (CRUD Animais, Produção, Registro, Prometheus, vínculo usuário–fazenda)
+💻  Implementação: 96% ✅ (CRUD Animais, Produção, Gestão Pecuária com tabelas e layouts reutilizáveis, Cios CRUD completo)
 🧪  Testes: 70% ✅ (unitários backend + E2E frontend)
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
 ```
@@ -177,6 +177,13 @@
 ```
 
 ## 🔄 Histórico de Progresso
+
+### **2026-02-15 - Melhorias Módulo Gestão Pecuária**
+
+- **Componentes reutilizáveis**: GestaoListLayout, GestaoFormLayout, useAnimaisMap
+- **Tabelas**: CioTable, PartoTable, LactacaoTable, CoberturaTable, ToqueTable, SecagemTable, GestacaoTable — exibem identificação do animal
+- **Formulários**: DatePicker, Select Shadcn, getApiErrorMessage
+- **Cios CRUD completo**: PUT backend, página de edição, Excluir com Dialog
 
 ### **2026-02-12 - Assistente Live: prioridade de fala do usuário (barge-in)**
 
@@ -391,6 +398,11 @@
 - ✅ **Backend**: ProducaoService no AssistenteService; resolveAnimalByPayload; ErrAnimalIdentificacaoDuplicada; handler com Conflict para identificação duplicada
 - ✅ **Frontend**: getRedirectPathFromResult trata data.animal_id → /animais/:id
 
+### **2026-02-16 - Ajustes Assistente e Gestão Pecuária**
+
+- ✅ **useAnimaisMap**: Garantia de array iterável (`Array.isArray(data) ? data : []`) para evitar "animais is not iterable" em rotas como `/gestao/toques`
+- ✅ **Assistente Virtual (modo Live)**: Resposta exibida como texto puro (sem ReactMarkdown), sem negrito a partir de `*`; usuário não precisa "falar" asterisco; TTS e visual consistentes
+
 ### **2026-02-03 - Assistente: contexto fazendas do usuário e fallback uma fazenda**
 
 - ✅ **Interpretar**: Fazendas vinculadas ao usuário (GetByUsuarioID) em vez de GetAll; prompt com regra para cadastrar_animal, listar_animais_fazenda e consultar_animais_fazenda: quando o usuário tem apenas UMA fazenda e não menciona fazenda, incluir fazenda_id no payload
@@ -409,6 +421,6 @@
 
 ---
 
-**Última atualização**: 2026-02-12
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Assistente via FAB (flutuante), sem botão no Header | Assistente Live com barge-in priorizado (interrupt + cancelamento de turno) | CRUD Fazendas, Animais, Produção implementados | Registro de usuários | Prometheus metrics | Testes unitários e E2E configurados
-**Próxima revisão**: 2026-02-14
+**Última atualização**: 2026-02-16
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária: layouts reutilizáveis, useAnimaisMap defensivo, Cios CRUD completo | Assistente via FAB, resposta em texto puro (sem negrito) no Live | CRUD Fazendas, Animais, Produção | Testes unitários e E2E configurados
+**Próxima revisão**: 2026-02-21

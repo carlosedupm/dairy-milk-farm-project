@@ -75,6 +75,61 @@ func (h *CioHandler) GetByAnimalID(c *gin.Context) {
 	response.SuccessOK(c, list, "OK")
 }
 
+func (h *CioHandler) Update(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.ErrorBadRequest(c, "ID invalido", nil)
+		return
+	}
+	var req struct {
+		AnimalID       int64   `json:"animal_id" binding:"required"`
+		DataDetectado  string  `json:"data_detectado" binding:"required"`
+		MetodoDeteccao *string `json:"metodo_deteccao"`
+		Intensidade    *string `json:"intensidade"`
+		Observacoes    *string `json:"observacoes"`
+		FazendaID      int64   `json:"fazenda_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorValidation(c, "Dados invalidos", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, req.FazendaID) {
+		return
+	}
+	cio, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrCioNotFound) {
+			response.ErrorNotFound(c, "Cio nao encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar cio", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, cio.FazendaID) {
+		return
+	}
+	t, err := time.Parse(time.RFC3339, req.DataDetectado)
+	if err != nil {
+		response.ErrorValidation(c, "data_detectado invalida", err.Error())
+		return
+	}
+	cio.AnimalID = req.AnimalID
+	cio.DataDetectado = t
+	cio.MetodoDeteccao = req.MetodoDeteccao
+	cio.Intensidade = req.Intensidade
+	cio.Observacoes = req.Observacoes
+	cio.FazendaID = req.FazendaID
+	if err := h.svc.Update(c.Request.Context(), cio); err != nil {
+		if errors.Is(err, service.ErrCioNotFound) {
+			response.ErrorNotFound(c, "Cio nao encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao atualizar cio", err.Error())
+		return
+	}
+	response.SuccessOK(c, cio, "Cio atualizado com sucesso")
+}
+
 func (h *CioHandler) Delete(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	cio, err := h.svc.GetByID(c.Request.Context(), id)

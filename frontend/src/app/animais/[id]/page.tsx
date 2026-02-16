@@ -8,6 +8,7 @@ import {
   remove,
   SEXO_LABELS,
   STATUS_SAUDE_LABELS,
+  getCategoriaLabel,
 } from "@/services/animais";
 import type { Sexo, StatusSaude } from "@/services/animais";
 import { get as getFazenda } from "@/services/fazendas";
@@ -136,9 +137,27 @@ function AnimalDetailContent() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">
+                  Categoria
+                </dt>
+                <dd className="mt-0.5">{getCategoriaLabel(animal.categoria)}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
                   Data de nascimento
                 </dt>
                 <dd className="mt-0.5">{formatDate(animal.data_nascimento)}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Data de entrada
+                </dt>
+                <dd className="mt-0.5">{formatDate(animal.data_entrada)}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Data de saída
+                </dt>
+                <dd className="mt-0.5">{formatDate(animal.data_saida)}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">
@@ -160,6 +179,14 @@ function AnimalDetailContent() {
                   ) : (
                     "—"
                   )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Status reprodutivo
+                </dt>
+                <dd className="mt-0.5">
+                  {animal.status_reprodutivo ?? "—"}
                 </dd>
               </div>
             </dl>

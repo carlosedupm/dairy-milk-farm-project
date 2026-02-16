@@ -59,6 +59,48 @@ export const STATUS_SAUDE_LABELS: Record<StatusSaude, string> = {
   EM_TRATAMENTO: 'Em Tratamento',
 }
 
+// Categorias do animal (vaca = MATRIZ, bezerra = BEZERRA)
+export const CATEGORIAS = [
+  'MATRIZ',
+  'NOVILHA',
+  'BEZERRA',
+  'BEZERRO',
+  'TOURO',
+  'BOI',
+] as const
+
+export type Categoria = (typeof CATEGORIAS)[number]
+
+export const CATEGORIA_LABELS: Record<Categoria, string> = {
+  MATRIZ: 'Vaca (Matriz)',
+  NOVILHA: 'Novilha',
+  BEZERRA: 'Bezerra',
+  BEZERRO: 'Bezerro',
+  TOURO: 'Touro',
+  BOI: 'Boi',
+}
+
+/** Indica se o animal é bezerra (categoria BEZERRA). */
+export function isBezerra(animal: Animal): boolean {
+  return animal.categoria === 'BEZERRA'
+}
+
+/** Indica se o animal é vaca/matriz (categoria MATRIZ). */
+export function isMatriz(animal: Animal): boolean {
+  return animal.categoria === 'MATRIZ'
+}
+
+/** Indica se o animal é novilha (categoria NOVILHA). */
+export function isNovilha(animal: Animal): boolean {
+  return animal.categoria === 'NOVILHA'
+}
+
+/** Retorna o label legível da categoria ou "—" se não definida. */
+export function getCategoriaLabel(categoria?: string | null): string {
+  if (!categoria) return '—'
+  return CATEGORIA_LABELS[categoria as Categoria] ?? categoria
+}
+
 export async function list(): Promise<Animal[]> {
   const { data } = await api.get<ApiResponse<Animal[]>>('/api/v1/animais')
   return data.data ?? []

@@ -7,6 +7,7 @@ import {
   remove,
   SEXO_LABELS,
   STATUS_SAUDE_LABELS,
+  getCategoriaLabel,
   type Sexo,
   type StatusSaude,
 } from "@/services/animais";
@@ -71,6 +72,7 @@ export function AnimalTable({ items, showFazenda = false }: Props) {
             <TableHead>Identificação</TableHead>
             <TableHead>Raça</TableHead>
             <TableHead>Sexo</TableHead>
+            <TableHead>Categoria</TableHead>
             <TableHead>Saúde</TableHead>
             <TableHead>Nascimento</TableHead>
             <TableHead className="text-right">Ações</TableHead>
@@ -80,7 +82,7 @@ export function AnimalTable({ items, showFazenda = false }: Props) {
           {items.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={7}
                 className="h-24 text-center text-muted-foreground"
               >
                 Nenhum animal cadastrado.
@@ -94,6 +96,7 @@ export function AnimalTable({ items, showFazenda = false }: Props) {
                 <TableCell>
                   {a.sexo ? SEXO_LABELS[a.sexo as Sexo] ?? a.sexo : "—"}
                 </TableCell>
+                <TableCell>{getCategoriaLabel(a.categoria)}</TableCell>
                 <TableCell>
                   {a.status_saude ? (
                     <Badge

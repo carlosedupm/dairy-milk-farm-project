@@ -112,6 +112,7 @@ lib/utils.ts
 - **Frontend**: Hook `useGeminiLive` abre o WebSocket, envia `interrupt` antes de novos comandos no Live, trata reconexão com backoff (1s, 2s, 4s, máx. 3 tentativas), offline (`navigator.onLine` + eventos `online`/`offline`) e reconexão ao voltar à aba (`visibilitychange`). Callbacks `onReconnecting`/`onReconnected` para feedback em texto; tratamento de `type: "error"` para exibir e falar mensagem amigável.
 - **Compatibilidade**: Funciona em qualquer navegador com WebSocket (incluindo mobile). Voz quando há `SpeechRecognition`/`webkitSpeechRecognition`; TTS quando há `speechSynthesis`. Fallback gracioso para texto quando voz não está disponível.
 - **Contexto**: Injeção automática de `user_id` e `fazenda_id` (ativa) na inicialização da sessão.
+- **Exibição da resposta (modo Live)**: Texto exibido como texto puro (`whitespace-pre-wrap`), sem interpretação de markdown (sem negrito a partir de `*`), para que o usuário não precise "falar" asterisco e TTS/visual permaneçam consistentes. Implementação: `AssistenteInput.tsx` — `<p className="text-foreground whitespace-pre-wrap">` em vez de ReactMarkdown.
 - **UX uso sem fone**: Fala do usuário é prioridade. Barge-in no frontend ocorre em dois níveis: detecção precoce de fala (interim) para cortar TTS rapidamente e envio final do texto reconhecido. Anti-eco usa `isEchoTranscript` + `ECHO_PHRASES`, janela pós-TTS maior no mobile e reabertura inteligente do microfone no Live (respeitando fim do TTS/janela anti-eco). Prewarm de microfone usa `echoCancellation`, `noiseSuppression` e `autoGainControl`. UI mantém dicas: "Pode falar agora" e mensagem para uso com alto-falante.
 
 **Padrão Handler (referência: fazenda_handler)**:
@@ -171,6 +172,15 @@ Usuario (N) ─── (N) Fazenda  // via tabela usuarios_fazendas (vínculo N:N
 - **Vínculo usuário–fazenda**: Tabela `usuarios_fazendas` (usuario_id, fazenda_id). Um usuário pode ter várias fazendas vinculadas; quando há apenas uma, o sistema a considera automaticamente em formulários e atalhos.
 - **Atribuição de fazendas**: Somente o perfil **ADMIN** (ou DEVELOPER) pode atribuir fazendas a usuários, na tela de administração (editar usuário → seção "Fazendas vinculadas").
 - **Perfil não editável**: Na edição de usuário, o campo perfil não pode ser alterado quando o usuário já for ADMIN ou DEVELOPER (somente leitura no frontend e preservação no backend).
+
+### **Reclassificação automática de categoria (gestão pecuária)**
+
+A categoria do animal (BEZERRA, NOVILHA, MATRIZ, etc.) pode ser atualizada automaticamente por duas regras:
+
+1. **Por primeiro parto**: Ao registrar um parto de uma fêmea com categoria BEZERRA ou NOVILHA, o sistema reclassifica para **MATRIZ** (implementado em `PartoService.Create`).
+2. **Por idade (job/endpoint)**: Bezerras com `data_nascimento` preenchida e idade ≥ N meses são reclassificadas para **NOVILHA**. Execução via `POST /api/v1/animais/reclassificar-categoria?meses=12` (parâmetro `meses` opcional; padrão 12). Serviço: `ReclassificacaoCategoriaService.RunReclassificacaoPorIdade`. Animais já com `data_saida` preenchida são ignorados.
+
+Para agendamento periódico (cron), chamar o endpoint acima (ex.: diariamente ou semanalmente) com um job externo ou scheduler.
 
 ### **Padrões de Acesso a Dados**
 
@@ -368,6 +378,16 @@ Usuario (N) ─── (N) Fazenda  // via tabela usuarios_fazendas (vínculo N:N
   - Ao salvar com sucesso: invalidar a query e `setDirty(false)` para voltar a exibir os dados do servidor.
 - **Exemplo**: Admin editar usuário → seção "Fazendas vinculadas" (`frontend/src/app/admin/usuarios/[id]/editar/page.tsx`).
 
+### **Módulo Gestão Pecuária**
+
+- **Layout de listagem**: `GestaoListLayout` em `components/gestao/GestaoListLayout.tsx` — encapsula PageContainer, BackLink, Card, título e botão Novo (opcional via prop `newHref`).
+- **Layout de formulário**: `GestaoFormLayout` em `components/gestao/GestaoFormLayout.tsx` — encapsula PageContainer, BackLink, Card, children, botão de envio e exibição de erro com `getApiErrorMessage`.
+- **Hook useAnimaisMap**: Em `components/gestao/useAnimaisMap.ts` — busca animais da fazenda e retorna `Map<animal_id, identificacao>` para exibir nome do animal nas tabelas em vez do ID. Usa `Array.isArray(data) ? data : []` para garantir que sempre itera sobre um array (evita "animais is not iterable" quando a query está desabilitada ou retorna formato inesperado).
+- **Tabelas**: CioTable, PartoTable, LactacaoTable, etc. em `components/gestao/` — usam `useAnimaisMap`, Table Shadcn, formatDate em pt-BR. CioTable inclui Editar e Excluir (Dialog de confirmação).
+- **Formulários**: Select Shadcn para enums (tipo, resultado, método, intensidade); AnimalSelect para seleção de animal; `getApiErrorMessage` para erros da API.
+- **Campos de data**: Quando for apenas **data** (ex.: início de lactação, data de secagem), usar **DatePicker** (`components/ui/date-picker`). Quando for **data e hora** (ex.: cio detectado, cobertura, toque, parto), usar `Input type="datetime-local"`.
+- **Edição/exclusão**: Atualmente apenas Cios tem fluxo completo (página editar + Dialog de confirmação para excluir). Próximo passo: estender para coberturas, toques e secagens usando Cios como referência (backend PUT/DELETE + frontend página editar e coluna Ações na tabela).
+
 ### **Layout de Página (PageContainer)**
 
 - **Padrão**: Usar o componente `PageContainer` para wrappers de `<main>` em todas as páginas
@@ -431,5 +451,5 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Última atualização**: 2026-02-12
-**Versão dos Padrões**: 2.7 (Go + Next.js) — Assistente Live com barge-in de ponta a ponta: `interrupt`, cancelamento de turno e bloqueio de respostas antigas.
+**Última atualização**: 2026-02-16
+**Versão dos Padrões**: 2.10 (Go + Next.js) — Gestão Pecuária: useAnimaisMap defensivo; Assistente: resposta em texto puro (sem markdown/negrito) no modo Live.

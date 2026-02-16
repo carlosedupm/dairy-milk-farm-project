@@ -224,6 +224,25 @@ func (r *AnimalRepository) UpdateStatusReprodutivo(ctx context.Context, animalID
 	return err
 }
 
+func (r *AnimalRepository) UpdateCategoria(ctx context.Context, animalID int64, categoria *string) error {
+	query := `UPDATE animais SET categoria = $1, updated_at = $2 WHERE id = $3`
+	_, err := r.db.Exec(ctx, query, categoria, time.Now(), animalID)
+	return err
+}
+
+// ListBezerrasParaReclassificarPorIdade retorna bezerras com data_nascimento preenchida
+// e idade >= mesesIdadeMinima (em meses), elegíveis para reclassificação em novilha.
+func (r *AnimalRepository) ListBezerrasParaReclassificarPorIdade(ctx context.Context, mesesIdadeMinima int) ([]*models.Animal, error) {
+	limite := time.Now().AddDate(0, -mesesIdadeMinima, 0)
+	query := `
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, created_at, updated_at
+		FROM animais
+		WHERE categoria = $1 AND data_nascimento IS NOT NULL AND data_nascimento <= $2 AND (data_saida IS NULL OR data_saida > CURRENT_DATE)
+		ORDER BY id
+	`
+	return r.queryList(ctx, query, models.CategoriaBezerra, limite)
+}
+
 func (r *AnimalRepository) Count(ctx context.Context) (int64, error) {
 	var n int64
 	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM animais`).Scan(&n)

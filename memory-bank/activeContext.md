@@ -35,6 +35,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
   - **Feedback Visual**: Visualizador de ondas (Waveform) quando em voz; mensagem orientando digitação quando voz não é suportada.
   - **Resiliência**: Erros do Gemini/rede enviados ao cliente via WebSocket (`type: "error"`) com mensagens amigáveis; reconexão com backoff (1s, 2s, 4s, máx. 3 tentativas); detecção de offline e mensagem "precisa de internet"; ao voltar à aba (`visibilitychange`) reconexão automática quando o WebSocket estiver fechado.
   - **UX**: Indicador "Assistente está pensando…" no Live; sugestões rápidas também no modo Live; feedback de status (Reconectando… / Reconectado) sempre em texto.
+  - **Resposta em texto puro (modo Live)**: A resposta do assistente é exibida sem interpretação de markdown (sem negrito a partir de `*`), para consistência com TTS e para o usuário não precisar "falar" asterisco.
   - **Uso sem fone (alto-falante) com prioridade de fala do usuário**: Estratégia "mic off durante TTS" — microfone fica **sempre desligado** enquanto o assistente fala (qualquer duração) e é reaberto automaticamente após grace period (800ms desktop / 1200ms mobile). Barge-in manual: botão do mic fica **pulsante e destacado** durante TTS — um toque interrompe a fala e abre o mic imediatamente. O usuário também pode digitar para interromper. Saudação de boas-vindas enviada como `type: "greeting"` (exibida como texto, sem TTS) para o mic abrir instantaneamente ao iniciar. No backend, o WebSocket aceita `{"type":"interrupt"}` e cancela o turno em andamento; novo texto inicia novo turno e respostas antigas são descartadas.
   - **WebSocket em produção**: CheckOrigin restringe a origem ao domínio do frontend (`CORS_ORIGIN`); em dev (localhost) aceita qualquer origem.
   - **PWA**: Web App Manifest (`/manifest.json`), ícones, theme_color e install prompt (banner "Instalar") para uso como app instalável em mobile.
@@ -47,21 +48,27 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ### ✅ Concluído desde a última atualização:
 
-1. ✅ **Assistente Live — estratégia "mic off durante TTS"**: Microfone é desligado enquanto o TTS fala e reaberto automaticamente após grace period pós-TTS. Elimina por completo o eco do assistente ser capturado como fala do usuário. Substituiu a abordagem anterior de filtro de eco por texto (ECHO_PHRASES + isEchoTranscript) que era frágil.
-2. ✅ **Saudação sem TTS**: Backend agora envia boas-vindas como `type: "greeting"` (não `"text"`). Frontend exibe como texto mas não aciona TTS, permitindo que o microfone abra imediatamente ao iniciar o assistente.
-3. ✅ **Assistente Live — cancelamento de turno no backend**: WebSocket aceita `{"type":"interrupt"}`; novo texto cancela o turno anterior e cria novo turno com contexto cancelável; respostas de turnos antigos são bloqueadas para evitar sobreposição/confusão.
-4. ✅ **Assistente flutuante (FAB)**: Acesso ao assistente via botão flutuante (FAB) no canto inferior direito em todas as telas autenticadas; estado compartilhado em `AssistenteContext`; modal em `AssistenteDialog` no layout; assistente removido do Header (desktop e mobile).
-5. ✅ **Assistente Virtual Multimodal Live**: Interface em tempo real via WebSockets (Gemini 2.0 Flash), Function Calling para Fazendas, Animais, Produção e fechamento automático por voz.
-6. ✅ **Compatibilidade do Assistente com qualquer navegador (incl. mobile)**: Removida a captura de áudio bruto no frontend (ScriptProcessorNode falhava em Safari/iOS). Modo Live usa apenas texto no WebSocket; voz quando o navegador oferece Web Speech API. Em navegadores sem reconhecimento de voz (ex.: Firefox Android), o Assistente Live permanece disponível em modo texto (digitar e Enviar/Enter).
-7. ✅ **Contexto Inteligente no Assistente**: Integração automática com o usuário logado e a fazenda ativa selecionada no sistema.
-8. ✅ **Correção de Erros de Compilação e Tipos**: Resolvidos conflitos em Go e incompatibilidades nos Protocol Buffers do Google.
+1. ✅ **Plano de verificação Gestão Pecuária**: (a) **systemPatterns**: Documentado padrão de campos de data (DatePicker para só data; `Input type="datetime-local"` para data+hora) e próximo passo (estender edição/exclusão para coberturas, toques e secagens). (b) **CioTable**: Dialog de exclusão controlado com estado `deleteDialogOpenId`; fechamento automático após exclusão com sucesso.
+2. ✅ **Melhorias Módulo Gestão Pecuária**: (a) **Componentes reutilizáveis**: `GestaoListLayout`, `GestaoFormLayout`, `useAnimaisMap` (mapeia animal_id → identificação). (b) **Tabelas**: CioTable, PartoTable, LactacaoTable, CoberturaTable, ToqueTable, SecagemTable, GestacaoTable — exibem identificação do animal em vez do ID. (c) **Formulários padronizados**: DatePicker e Select Shadcn em lactações, secagens, coberturas, toques e cios; `getApiErrorMessage` em todos os formulários. (d) **Cios CRUD completo**: PUT /api/v1/cios/:id no backend; página de edição e exclusão (Dialog) na CioTable.
+3. ✅ **Correção Gestão Pecuária – AnimalHandler**: O handler de animais não aceitava nem persistia os campos de gestão pecuária (categoria, status_reprodutivo, mae_id, pai_info, lote_id, etc.), o que apagava a reclassificação automática ao editar um animal. Corrigido: CreateAnimalRequest e UpdateAnimalRequest agora incluem todos os campos; no Update, campos não enviados pelo formulário (status_reprodutivo, mae_id, pai_info, etc.) são preservados para não sobrescrever dados definidos automaticamente pelo PartoService.
+4. ✅ **Reclassificação automática de categoria (gestão pecuária)**: (a) **Por primeiro parto**: ao registrar parto de fêmea BEZERRA ou NOVILHA, categoria atualizada para MATRIZ em `PartoService.Create`. (b) **Por idade**: serviço `ReclassificacaoCategoriaService` reclassifica bezerras com idade ≥ N meses (padrão 12) em novilhas; endpoint `POST /api/v1/animais/reclassificar-categoria?meses=12` para execução manual ou por job/cron.
+5. ✅ **Assistente Live — estratégia "mic off durante TTS"**: Microfone é desligado enquanto o TTS fala e reaberto automaticamente após grace period pós-TTS. Elimina por completo o eco do assistente ser capturado como fala do usuário. Substituiu a abordagem anterior de filtro de eco por texto (ECHO_PHRASES + isEchoTranscript) que era frágil.
+6. ✅ **Saudação sem TTS**: Backend agora envia boas-vindas como `type: "greeting"` (não `"text"`). Frontend exibe como texto mas não aciona TTS, permitindo que o microfone abra imediatamente ao iniciar o assistente.
+7. ✅ **Assistente Live — cancelamento de turno no backend**: WebSocket aceita `{"type":"interrupt"}`; novo texto cancela o turno anterior e cria novo turno com contexto cancelável; respostas de turnos antigos são bloqueadas para evitar sobreposição/confusão.
+8. ✅ **Assistente flutuante (FAB)**: Acesso ao assistente via botão flutuante (FAB) no canto inferior direito em todas as telas autenticadas; estado compartilhado em `AssistenteContext`; modal em `AssistenteDialog` no layout; assistente removido do Header (desktop e mobile).
+9. ✅ **Assistente Virtual Multimodal Live**: Interface em tempo real via WebSockets (Gemini 2.0 Flash), Function Calling para Fazendas, Animais, Produção e fechamento automático por voz.
+10. ✅ **Compatibilidade do Assistente com qualquer navegador (incl. mobile)**: Removida a captura de áudio bruto no frontend (ScriptProcessorNode falhava em Safari/iOS). Modo Live usa apenas texto no WebSocket; voz quando o navegador oferece Web Speech API. Em navegadores sem reconhecimento de voz (ex.: Firefox Android), o Assistente Live permanece disponível em modo texto (digitar e Enviar/Enter).
+11. ✅ **Contexto Inteligente no Assistente**: Integração automática com o usuário logado e a fazenda ativa selecionada no sistema.
+12. ✅ **Correção de Erros de Compilação e Tipos**: Resolvidos conflitos em Go e incompatibilidades nos Protocol Buffers do Google.
+13. ✅ **useAnimaisMap — animais iterável**: Garantia com `Array.isArray(data) ? data : []` no hook para evitar erro "animais is not iterable" quando a query está desabilitada ou retorna formato inesperado (ex.: ao acessar `/gestao/toques`).
+14. ✅ **Assistente Virtual — resposta sem negrito**: Resposta no modo Live passou a ser exibida como texto puro (`whitespace-pre-wrap`), sem ReactMarkdown; não há mais negrito a partir de `*` e o usuário não precisa "falar" asterisco.
 
 ### 📋 Próximos passos imediatos:
 
 1. Implementar recuperação de senha (requer configuração SMTP)
 2. Validações adicionais nos handlers (go-playground/validator)
 3. Dashboard com gráficos de produção
-4. CRUD de outras entidades do domínio (saúde animal, gestão reprodutiva)
+4. Estender fluxos de edição/exclusão para coberturas, toques e secagens (padrão Cios como referência)
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -119,5 +126,5 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ---
 
-**Última atualização**: 2026-02-12
+**Última atualização**: 2026-02-16
 **Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Assistente Virtual via FAB (flutuante) + Live (Gemini 2.0 Flash) | Vínculo usuário–fazenda | Dev Studio Fase 0–3

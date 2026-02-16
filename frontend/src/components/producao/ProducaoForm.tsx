@@ -13,6 +13,7 @@ import {
   listByFazenda as listAnimaisByFazenda,
   type Animal,
 } from "@/services/animais";
+import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,31 +159,18 @@ export function ProducaoForm({
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="animal">Animal *</Label>
-              <Select
-                value={animalId?.toString() ?? ""}
-                onValueChange={(v) => setAnimalId(Number(v))}
-                disabled={!fazendaId || fazendaId <= 0 || !!initial}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      fazendaId > 0
-                        ? "Selecione um animal"
-                        : "Selecione uma fazenda primeiro"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {animais.map((a) => (
-                    <SelectItem key={a.id} value={a.id.toString()}>
-                      {a.identificacao}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <AnimalSelect
+              animais={animais}
+              value={animalId?.toString() ?? ""}
+              onValueChange={(v) => setAnimalId(Number(v))}
+              label="Animal *"
+              placeholder={
+                fazendaId > 0
+                  ? "Selecione um animal"
+                  : "Selecione uma fazenda primeiro"
+              }
+              disabled={!fazendaId || fazendaId <= 0 || !!initial}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

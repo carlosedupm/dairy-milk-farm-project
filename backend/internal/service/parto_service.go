@@ -58,6 +58,12 @@ func (s *PartoService) Create(ctx context.Context, p *models.Parto) error {
 	if err := s.repo.Create(ctx, p); err != nil {
 		return err
 	}
+	// Reclassificação automática: no primeiro parto, fêmea vira MATRIZ (se ainda não for)
+	partos, _ := s.repo.GetByAnimalID(ctx, p.AnimalID)
+	if len(partos) == 1 && !animal.IsMatriz() {
+		matriz := models.CategoriaMatriz
+		_ = s.animalRepo.UpdateCategoria(ctx, p.AnimalID, &matriz)
+	}
 	status := models.StatusReprodutivoParida
 	if err := s.animalRepo.UpdateStatusReprodutivo(ctx, p.AnimalID, &status); err != nil {
 		return err

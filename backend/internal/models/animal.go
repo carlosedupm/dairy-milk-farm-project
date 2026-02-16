@@ -120,6 +120,21 @@ func IsValidCategoria(categoria string) bool {
 	return false
 }
 
+// IsBezerra retorna true se o animal é uma bezerra (categoria BEZERRA).
+func (a *Animal) IsBezerra() bool {
+	return a.Categoria != nil && *a.Categoria == CategoriaBezerra
+}
+
+// IsMatriz retorna true se o animal é uma vaca/matriz (categoria MATRIZ).
+func (a *Animal) IsMatriz() bool {
+	return a.Categoria != nil && *a.Categoria == CategoriaMatriz
+}
+
+// IsNovilha retorna true se o animal é uma novilha (categoria NOVILHA).
+func (a *Animal) IsNovilha() bool {
+	return a.Categoria != nil && *a.Categoria == CategoriaNovilha
+}
+
 // IsValidStatusReprodutivo verifica se o status reprodutivo é válido
 func IsValidStatusReprodutivo(status string) bool {
 	for _, s := range ValidStatusReprodutivo() {

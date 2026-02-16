@@ -128,6 +128,7 @@ func main() {
 					refreshTokenRepo := repository.NewRefreshTokenRepository(pool)
 					fazendaSvc := service.NewFazendaService(fazendaRepo)
 					animalSvc := service.NewAnimalService(animalRepo, fazendaRepo)
+					reclassificacaoCategoriaSvc := service.NewReclassificacaoCategoriaService(animalRepo)
 					producaoSvc := service.NewProducaoService(producaoRepo, animalRepo)
 					refreshTokenSvc := service.NewRefreshTokenService(refreshTokenRepo)
 					cookieSameSite := http.SameSiteStrictMode
@@ -136,7 +137,7 @@ func main() {
 					}
 					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
-					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc)
+					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, reclassificacaoCategoriaSvc)
 					producaoHandler := handlers.NewProducaoHandler(producaoSvc, animalSvc, fazendaSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
 					adminHandler := handlers.NewAdminHandler(usuarioSvc, fazendaSvc)
@@ -207,6 +208,7 @@ func main() {
 						animais.GET("/filter/by-lote", animalHandler.GetByLoteID)
 						animais.GET("/filter/by-categoria", animalHandler.GetByCategoria)
 						animais.GET("/filter/by-status-reprodutivo", animalHandler.GetByStatusReprodutivo)
+						animais.POST("/reclassificar-categoria", animalHandler.RunReclassificacaoPorIdade)
 						animais.GET("/:id", animalHandler.GetByID)
 						animais.POST("", animalHandler.Create)
 						animais.PUT("/:id", animalHandler.Update)
@@ -249,6 +251,7 @@ func main() {
 						cios.GET("/by-animal/:id", cioHandler.GetByAnimalID)
 						cios.GET("/:id", cioHandler.GetByID)
 						cios.POST("", cioHandler.Create)
+						cios.PUT("/:id", cioHandler.Update)
 						cios.DELETE("/:id", cioHandler.Delete)
 					}
 					// Coberturas

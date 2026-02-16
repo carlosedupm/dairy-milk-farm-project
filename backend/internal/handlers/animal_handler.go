@@ -12,30 +12,49 @@ import (
 )
 
 type AnimalHandler struct {
-	service    *service.AnimalService
-	fazendaSvc *service.FazendaService
+	service           *service.AnimalService
+	fazendaSvc        *service.FazendaService
+	reclassificacaoSvc *service.ReclassificacaoCategoriaService
 }
 
-func NewAnimalHandler(service *service.AnimalService, fazendaSvc *service.FazendaService) *AnimalHandler {
-	return &AnimalHandler{service: service, fazendaSvc: fazendaSvc}
+func NewAnimalHandler(service *service.AnimalService, fazendaSvc *service.FazendaService, reclassificacaoSvc *service.ReclassificacaoCategoriaService) *AnimalHandler {
+	return &AnimalHandler{service: service, fazendaSvc: fazendaSvc, reclassificacaoSvc: reclassificacaoSvc}
 }
 
 type CreateAnimalRequest struct {
-	FazendaID      int64   `json:"fazenda_id" binding:"required"`
-	Identificacao  string  `json:"identificacao" binding:"required"`
-	Raca           *string `json:"raca"`
-	DataNascimento *string `json:"data_nascimento"` // ISO date YYYY-MM-DD
-	Sexo           *string `json:"sexo"`            // M ou F
-	StatusSaude    *string `json:"status_saude"`
+	FazendaID         int64   `json:"fazenda_id" binding:"required"`
+	Identificacao     string  `json:"identificacao" binding:"required"`
+	Raca              *string `json:"raca"`
+	DataNascimento    *string `json:"data_nascimento"` // ISO date YYYY-MM-DD
+	Sexo              *string `json:"sexo"`            // M ou F
+	StatusSaude       *string `json:"status_saude"`
+	Categoria         *string `json:"categoria"`
+	StatusReprodutivo *string `json:"status_reprodutivo"`
+	MaeID             *int64  `json:"mae_id"`
+	PaiInfo           *string `json:"pai_info"`
+	LoteID            *int64  `json:"lote_id"`
+	PesoNascimento    *float64 `json:"peso_nascimento"`
+	DataEntrada       *string  `json:"data_entrada"`   // ISO date YYYY-MM-DD
+	DataSaida         *string  `json:"data_saida"`     // ISO date YYYY-MM-DD
+	MotivoSaida       *string  `json:"motivo_saida"`
 }
 
 type UpdateAnimalRequest struct {
-	FazendaID      int64   `json:"fazenda_id" binding:"required"`
-	Identificacao  string  `json:"identificacao" binding:"required"`
-	Raca           *string `json:"raca"`
-	DataNascimento *string `json:"data_nascimento"` // ISO date YYYY-MM-DD
-	Sexo           *string `json:"sexo"`            // M ou F
-	StatusSaude    *string `json:"status_saude"`
+	FazendaID         int64   `json:"fazenda_id" binding:"required"`
+	Identificacao     string  `json:"identificacao" binding:"required"`
+	Raca              *string `json:"raca"`
+	DataNascimento    *string `json:"data_nascimento"` // ISO date YYYY-MM-DD
+	Sexo              *string `json:"sexo"`            // M ou F
+	StatusSaude       *string `json:"status_saude"`
+	Categoria         *string `json:"categoria"`
+	StatusReprodutivo *string `json:"status_reprodutivo"`
+	MaeID             *int64  `json:"mae_id"`
+	PaiInfo           *string `json:"pai_info"`
+	LoteID            *int64  `json:"lote_id"`
+	PesoNascimento    *float64 `json:"peso_nascimento"`
+	DataEntrada       *string  `json:"data_entrada"`   // ISO date YYYY-MM-DD
+	DataSaida         *string  `json:"data_saida"`     // ISO date YYYY-MM-DD
+	MotivoSaida       *string  `json:"motivo_saida"`
 }
 
 func (h *AnimalHandler) Create(c *gin.Context) {
@@ -51,11 +70,18 @@ func (h *AnimalHandler) Create(c *gin.Context) {
 	}
 
 	animal := &models.Animal{
-		FazendaID:     req.FazendaID,
-		Identificacao: req.Identificacao,
-		Raca:          req.Raca,
-		Sexo:          req.Sexo,
-		StatusSaude:   req.StatusSaude,
+		FazendaID:         req.FazendaID,
+		Identificacao:     req.Identificacao,
+		Raca:              req.Raca,
+		Sexo:              req.Sexo,
+		StatusSaude:       req.StatusSaude,
+		Categoria:         req.Categoria,
+		StatusReprodutivo: req.StatusReprodutivo,
+		MaeID:             req.MaeID,
+		PaiInfo:           req.PaiInfo,
+		LoteID:            req.LoteID,
+		PesoNascimento:    req.PesoNascimento,
+		MotivoSaida:       req.MotivoSaida,
 	}
 
 	if dataNascimento, err := parseDate(req.DataNascimento); err != nil {
@@ -63,6 +89,18 @@ func (h *AnimalHandler) Create(c *gin.Context) {
 		return
 	} else if dataNascimento != nil {
 		animal.DataNascimento = dataNascimento
+	}
+	if dataEntrada, err := parseDate(req.DataEntrada); err != nil {
+		response.ErrorValidation(c, "Data de entrada inválida", err.Error())
+		return
+	} else if dataEntrada != nil {
+		animal.DataEntrada = dataEntrada
+	}
+	if dataSaida, err := parseDate(req.DataSaida); err != nil {
+		response.ErrorValidation(c, "Data de saída inválida", err.Error())
+		return
+	} else if dataSaida != nil {
+		animal.DataSaida = dataSaida
 	}
 
 	if err := h.service.Create(c.Request.Context(), animal); err != nil {
@@ -171,13 +209,51 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 		}
 	}
 
+	// Montar animal: usar valores de req; preservar campos de gestão pecuária
+	// que o frontend não envia (evita apagar reclassificação automática pós-parto)
 	animal := &models.Animal{
-		ID:            id,
-		FazendaID:     req.FazendaID,
-		Identificacao: req.Identificacao,
-		Raca:          req.Raca,
-		Sexo:          req.Sexo,
-		StatusSaude:   req.StatusSaude,
+		ID:                id,
+		FazendaID:         req.FazendaID,
+		Identificacao:     req.Identificacao,
+		Raca:              req.Raca,
+		Sexo:              req.Sexo,
+		StatusSaude:       req.StatusSaude,
+		Categoria:         req.Categoria,
+		StatusReprodutivo: req.StatusReprodutivo,
+		MaeID:             req.MaeID,
+		PaiInfo:           req.PaiInfo,
+		LoteID:            req.LoteID,
+		PesoNascimento:    req.PesoNascimento,
+		MotivoSaida:       req.MotivoSaida,
+	}
+	// Preservar campos que o formulário atual não envia (evita apagar reclassificação)
+	if req.StatusReprodutivo == nil {
+		animal.StatusReprodutivo = animalExistente.StatusReprodutivo
+	}
+	if req.MaeID == nil {
+		animal.MaeID = animalExistente.MaeID
+	}
+	if req.PaiInfo == nil {
+		animal.PaiInfo = animalExistente.PaiInfo
+	}
+	if req.LoteID == nil {
+		animal.LoteID = animalExistente.LoteID
+	}
+	if req.PesoNascimento == nil {
+		animal.PesoNascimento = animalExistente.PesoNascimento
+	}
+	if req.DataEntrada == nil || *req.DataEntrada == "" {
+		animal.DataEntrada = animalExistente.DataEntrada
+	} else if t, err := parseDate(req.DataEntrada); err == nil && t != nil {
+		animal.DataEntrada = t
+	}
+	if req.DataSaida == nil || *req.DataSaida == "" {
+		animal.DataSaida = animalExistente.DataSaida
+	} else if t, err := parseDate(req.DataSaida); err == nil && t != nil {
+		animal.DataSaida = t
+	}
+	if req.MotivoSaida == nil {
+		animal.MotivoSaida = animalExistente.MotivoSaida
 	}
 
 	if dataNascimento, err := parseDate(req.DataNascimento); err != nil {
@@ -357,6 +433,23 @@ func (h *AnimalHandler) GetByStatusReprodutivo(c *gin.Context) {
 		return
 	}
 	response.SuccessOK(c, list, "Animais listados com sucesso")
+}
+
+// RunReclassificacaoPorIdade executa a reclassificação por idade (bezerra → novilha).
+// Query: meses (opcional) — idade mínima em meses; padrão 12.
+func (h *AnimalHandler) RunReclassificacaoPorIdade(c *gin.Context) {
+	meses := 0
+	if s := c.Query("meses"); s != "" {
+		if n, err := strconv.Atoi(s); err == nil && n > 0 {
+			meses = n
+		}
+	}
+	res, err := h.reclassificacaoSvc.RunReclassificacaoPorIdade(c.Request.Context(), meses)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao reclassificar categorias", err.Error())
+		return
+	}
+	response.SuccessOK(c, res, "Reclassificação por idade concluída")
 }
 
 // parseDate converte string ISO YYYY-MM-DD para *time.Time

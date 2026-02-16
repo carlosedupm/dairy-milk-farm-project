@@ -36,8 +36,16 @@ export async function get(id: number): Promise<Cio | null> {
   return data.data ?? null;
 }
 
+export type CioUpdate = CioCreate;
+
 export async function create(payload: CioCreate): Promise<Cio> {
   const { data } = await api.post<ApiResponse<Cio>>("/api/v1/cios", payload);
+  if (!data.data) throw new Error("Resposta invalida");
+  return data.data;
+}
+
+export async function update(id: number, payload: CioUpdate): Promise<Cio> {
+  const { data } = await api.put<ApiResponse<Cio>>(`/api/v1/cios/${id}`, payload);
   if (!data.data) throw new Error("Resposta invalida");
   return data.data;
 }

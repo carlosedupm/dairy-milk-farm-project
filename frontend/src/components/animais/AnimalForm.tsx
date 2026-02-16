@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import type {
   Animal,
   AnimalCreate,
+  Categoria,
   Sexo,
   StatusSaude,
 } from "@/services/animais";
@@ -13,10 +14,13 @@ import {
   STATUS_SAUDE_OPTIONS,
   SEXO_LABELS,
   STATUS_SAUDE_LABELS,
+  CATEGORIAS,
+  CATEGORIA_LABELS,
 } from "@/services/animais";
 import { getMinhasFazendas, type Fazenda } from "@/services/fazendas";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,9 +69,18 @@ export function AnimalForm({
   const [dataNascimento, setDataNascimento] = useState(
     initial?.data_nascimento ? initial.data_nascimento.slice(0, 10) : ""
   );
+  const [dataEntrada, setDataEntrada] = useState(
+    initial?.data_entrada ? initial.data_entrada.slice(0, 10) : ""
+  );
+  const [dataSaida, setDataSaida] = useState(
+    initial?.data_saida ? initial.data_saida.slice(0, 10) : ""
+  );
   const [sexo, setSexo] = useState<Sexo>((initial?.sexo as Sexo) ?? "F");
   const [statusSaude, setStatusSaude] = useState<StatusSaude>(
     (initial?.status_saude as StatusSaude) ?? "SAUDAVEL"
+  );
+  const [categoria, setCategoria] = useState<Categoria | "">(
+    (initial?.categoria as Categoria) ?? ""
   );
   const [error, setError] = useState("");
 
@@ -95,10 +108,13 @@ export function AnimalForm({
       identificacao: identificacao.trim(),
       sexo,
       status_saude: statusSaude,
+      categoria: categoria || null,
     };
 
     if (raca.trim()) payload.raca = raca.trim();
     if (dataNascimento.trim()) payload.data_nascimento = dataNascimento.trim();
+    if (dataEntrada.trim()) payload.data_entrada = dataEntrada.trim();
+    if (dataSaida.trim()) payload.data_saida = dataSaida.trim();
 
     try {
       await onSubmit(payload);
@@ -165,17 +181,37 @@ export function AnimalForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dataNascimento">Data de nascimento</Label>
-              <Input
+              <DatePicker
                 id="dataNascimento"
-                type="date"
-                value={dataNascimento}
-                onChange={(e) => setDataNascimento(e.target.value)}
+                value={dataNascimento || undefined}
+                onChange={(v) => setDataNascimento(v)}
+                placeholder="Selecione a data"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="dataEntrada">Data de entrada</Label>
+              <DatePicker
+                id="dataEntrada"
+                value={dataEntrada || undefined}
+                onChange={(v) => setDataEntrada(v)}
+                placeholder="Selecione a data"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dataSaida">Data de saída</Label>
+              <DatePicker
+                id="dataSaida"
+                value={dataSaida || undefined}
+                onChange={(v) => setDataSaida(v)}
+                placeholder="Selecione a data"
+              />
+            </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="sexo">Sexo</Label>
               <Select value={sexo} onValueChange={(v) => setSexo(v as Sexo)}>
@@ -205,6 +241,28 @@ export function AnimalForm({
                   {STATUS_SAUDE_OPTIONS.map((s) => (
                     <SelectItem key={s} value={s}>
                       {STATUS_SAUDE_LABELS[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="categoria">Categoria</Label>
+              <Select
+                value={categoria || "_"}
+                onValueChange={(v) =>
+                  setCategoria(v === "_" ? "" : (v as Categoria))
+                }
+              >
+                <SelectTrigger id="categoria">
+                  <SelectValue placeholder="Não informada" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_">Não informada</SelectItem>
+                  {CATEGORIAS.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {CATEGORIA_LABELS[c]}
                     </SelectItem>
                   ))}
                 </SelectContent>

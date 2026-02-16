@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { create } from "@/services/cios";
+import { get, update } from "@/services/cios";
 import { listByFazenda } from "@/services/animais";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -25,14 +25,22 @@ import { getApiErrorMessage } from "@/lib/errors";
 const METODOS = ["VISUAL", "PEDOMETRO", "RUFIAO", "OUTRO"] as const;
 const INTENSIDADES = ["FRACO", "MODERADO", "FORTE"] as const;
 
-function NovoContent() {
+function EditarContent() {
   const router = useRouter();
+  const params = useParams();
+  const id = Number(params.id);
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
   const [animalId, setAnimalId] = useState("");
-  const [dataDetectado, setDataDetectado] = useState(new Date().toISOString().slice(0, 16));
+  const [dataDetectado, setDataDetectado] = useState("");
   const [metodo, setMetodo] = useState<string>("");
   const [intensidade, setIntensidade] = useState<string>("");
+
+  const { data: cio, isLoading: loadingCio } = useQuery({
+    queryKey: ["cio", id],
+    queryFn: () => get(id),
+    enabled: id > 0,
+  });
 
   const { data: animais = [] } = useQuery({
     queryKey: ["animais", fazendaAtiva?.id],
@@ -40,17 +48,27 @@ function NovoContent() {
     enabled: !!fazendaAtiva?.id,
   });
 
+  useEffect(() => {
+    if (cio) {
+      setAnimalId(cio.animal_id.toString());
+      setDataDetectado(cio.data_detectado?.slice(0, 16) ?? "");
+      setMetodo(cio.metodo_deteccao ?? "");
+      setIntensidade(cio.intensidade ?? "");
+    }
+  }, [cio]);
+
   const mutation = useMutation({
     mutationFn: () =>
-      create({
+      update(id, {
         animal_id: Number(animalId),
         data_detectado: new Date(dataDetectado).toISOString(),
-        fazenda_id: fazendaAtiva!.id,
+        fazenda_id: cio.fazenda_id,
         metodo_deteccao: metodo || undefined,
         intensidade: intensidade || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cios", fazendaAtiva?.id] });
+      queryClient.invalidateQueries({ queryKey: ["cio", id] });
       router.push("/gestao/cios");
     },
   });
@@ -64,14 +82,36 @@ function NovoContent() {
     );
   }
 
+  if (loadingCio) {
+    return (
+      <PageContainer variant="narrow">
+        <BackLink href="/gestao/cios">Voltar</BackLink>
+        <p className="text-muted-foreground mt-4">Carregando…</p>
+      </PageContainer>
+    );
+  }
+
+  if (!cio) {
+    return (
+      <PageContainer variant="narrow">
+        <BackLink href="/gestao/cios">Voltar</BackLink>
+        <p className="text-destructive mt-4">Registro não encontrado.</p>
+      </PageContainer>
+    );
+  }
+
   return (
     <GestaoFormLayout
-      title="Registrar cio"
+      title="Editar cio"
       backHref="/gestao/cios"
-      submitLabel="Registrar"
+      submitLabel="Salvar"
       onSubmit={() => mutation.mutate()}
       isPending={mutation.isPending}
-      error={mutation.isError ? getApiErrorMessage(mutation.error, "Erro ao registrar.") : undefined}
+      error={
+        mutation.isError
+          ? getApiErrorMessage(mutation.error, "Erro ao salvar.")
+          : undefined
+      }
       submitDisabled={!animalId}
     >
       <AnimalSelect
@@ -126,6 +166,10 @@ function NovoContent() {
   );
 }
 
-export default function NovoPage() {
-  return <ProtectedRoute><NovoContent /></ProtectedRoute>;
+export default function EditarPage() {
+  return (
+    <ProtectedRoute>
+      <EditarContent />
+    </ProtectedRoute>
+  );
 }
