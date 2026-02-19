@@ -21,6 +21,7 @@ type Animal struct {
 	DataEntrada       *time.Time `json:"data_entrada,omitempty" db:"data_entrada"`
 	DataSaida         *time.Time `json:"data_saida,omitempty" db:"data_saida"`
 	MotivoSaida       *string    `json:"motivo_saida,omitempty" db:"motivo_saida"`
+	OrigemAquisicao   *string    `json:"origem_aquisicao,omitempty" db:"origem_aquisicao"`
 	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
 }
@@ -86,6 +87,27 @@ const (
 	StatusReprodutivoParida  = "PARIDA"
 	StatusReprodutivoSeca    = "SECA"
 )
+
+// Constantes para OrigemAquisicao (nascido na propriedade vs comprado)
+const (
+	OrigemNascido  = "NASCIDO"
+	OrigemComprado = "COMPRADO"
+)
+
+// ValidOrigensAquisicao retorna os valores válidos de origem de aquisição
+func ValidOrigensAquisicao() []string {
+	return []string{OrigemNascido, OrigemComprado}
+}
+
+// IsValidOrigemAquisicao verifica se a origem de aquisição é válida
+func IsValidOrigemAquisicao(origem string) bool {
+	for _, o := range ValidOrigensAquisicao() {
+		if o == origem {
+			return true
+		}
+	}
+	return false
+}
 
 // Constantes para MotivoSaida
 const (

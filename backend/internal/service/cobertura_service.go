@@ -41,6 +41,32 @@ func (s *CoberturaService) Create(ctx context.Context, c *models.Cobertura) erro
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return errors.New("apenas femeas podem ter cobertura")
 	}
+	// Para monta natural, exige reprodutor (touro_animal_id ou touro_info)
+	if c.Tipo == models.CoberturaTipoMontaNatural {
+		hasReprodutor := (c.TouroAnimalID != nil && *c.TouroAnimalID > 0) || (c.TouroInfo != nil && *c.TouroInfo != "")
+		if !hasReprodutor {
+			return errors.New("para monta natural, informe o reprodutor (touro/boi) ou touro_info")
+		}
+	}
+	// Se touro_animal_id informado, validar que o animal existe, é macho e da mesma fazenda
+	if c.TouroAnimalID != nil && *c.TouroAnimalID > 0 {
+		touro, err := s.animalRepo.GetByID(ctx, *c.TouroAnimalID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return errors.New("reprodutor (touro/boi) nao encontrado")
+			}
+			return err
+		}
+		if touro.FazendaID != c.FazendaID {
+			return errors.New("reprodutor deve ser da mesma fazenda")
+		}
+		if touro.Sexo == nil || *touro.Sexo != "M" {
+			return errors.New("reprodutor deve ser macho")
+		}
+		if touro.Categoria == nil || (*touro.Categoria != models.CategoriaTouro && *touro.Categoria != models.CategoriaBoi) {
+			return errors.New("reprodutor deve ser touro ou boi")
+		}
+	}
 	if err := s.repo.Create(ctx, c); err != nil {
 		return err
 	}
@@ -70,6 +96,32 @@ func (s *CoberturaService) GetByFazendaID(ctx context.Context, fazendaID int64) 
 func (s *CoberturaService) Update(ctx context.Context, c *models.Cobertura) error {
 	if c.ID <= 0 {
 		return errors.New("id invalido")
+	}
+	// Para monta natural, exige reprodutor (touro_animal_id ou touro_info)
+	if c.Tipo == models.CoberturaTipoMontaNatural {
+		hasReprodutor := (c.TouroAnimalID != nil && *c.TouroAnimalID > 0) || (c.TouroInfo != nil && *c.TouroInfo != "")
+		if !hasReprodutor {
+			return errors.New("para monta natural, informe o reprodutor (touro/boi) ou touro_info")
+		}
+	}
+	// Se touro_animal_id informado, validar que o animal existe, é macho e da mesma fazenda
+	if c.TouroAnimalID != nil && *c.TouroAnimalID > 0 {
+		touro, err := s.animalRepo.GetByID(ctx, *c.TouroAnimalID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return errors.New("reprodutor (touro/boi) nao encontrado")
+			}
+			return err
+		}
+		if touro.FazendaID != c.FazendaID {
+			return errors.New("reprodutor deve ser da mesma fazenda")
+		}
+		if touro.Sexo == nil || *touro.Sexo != "M" {
+			return errors.New("reprodutor deve ser macho")
+		}
+		if touro.Categoria == nil || (*touro.Categoria != models.CategoriaTouro && *touro.Categoria != models.CategoriaBoi) {
+			return errors.New("reprodutor deve ser touro ou boi")
+		}
 	}
 	_, err := s.repo.GetByID(ctx, c.ID)
 	if err != nil {

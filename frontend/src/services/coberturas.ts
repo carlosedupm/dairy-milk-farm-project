@@ -6,6 +6,8 @@ export type Cobertura = {
   tipo: string;
   data: string;
   fazenda_id: number;
+  touro_animal_id?: number | null;
+  touro_info?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -21,6 +23,7 @@ export type CoberturaCreate = {
   data: string;
   fazenda_id: number;
   cio_id?: number | null;
+  touro_animal_id?: number | null;
   touro_info?: string | null;
   semen_partida?: string | null;
   tecnico?: string | null;

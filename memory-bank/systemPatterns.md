@@ -113,6 +113,7 @@ lib/utils.ts
 - **Compatibilidade**: Funciona em qualquer navegador com WebSocket (incluindo mobile). Voz quando há `SpeechRecognition`/`webkitSpeechRecognition`; TTS quando há `speechSynthesis`. Fallback gracioso para texto quando voz não está disponível.
 - **Contexto**: Injeção automática de `user_id` e `fazenda_id` (ativa) na inicialização da sessão.
 - **Exibição da resposta (modo Live)**: Texto exibido como texto puro (`whitespace-pre-wrap`), sem interpretação de markdown (sem negrito a partir de `*`), para que o usuário não precise "falar" asterisco e TTS/visual permaneçam consistentes. Implementação: `AssistenteInput.tsx` — `<p className="text-foreground whitespace-pre-wrap">` em vez de ReactMarkdown.
+- **Formato de resposta (API)**: O system instruction do Assistente Live e o prompt do endpoint interpretar instruem o modelo a responder em texto puro, sem markdown e sem asteriscos (*), para exibição e TTS consistentes.
 - **UX uso sem fone**: Fala do usuário é prioridade. Barge-in no frontend ocorre em dois níveis: detecção precoce de fala (interim) para cortar TTS rapidamente e envio final do texto reconhecido. Anti-eco usa `isEchoTranscript` + `ECHO_PHRASES`, janela pós-TTS maior no mobile e reabertura inteligente do microfone no Live (respeitando fim do TTS/janela anti-eco). Prewarm de microfone usa `echoCancellation`, `noiseSuppression` e `autoGainControl`. UI mantém dicas: "Pode falar agora" e mensagem para uso com alto-falante.
 
 **Padrão Handler (referência: fazenda_handler)**:
@@ -181,6 +182,26 @@ A categoria do animal (BEZERRA, NOVILHA, MATRIZ, etc.) pode ser atualizada autom
 2. **Por idade (job/endpoint)**: Bezerras com `data_nascimento` preenchida e idade ≥ N meses são reclassificadas para **NOVILHA**. Execução via `POST /api/v1/animais/reclassificar-categoria?meses=12` (parâmetro `meses` opcional; padrão 12). Serviço: `ReclassificacaoCategoriaService.RunReclassificacaoPorIdade`. Animais já com `data_saida` preenchida são ignorados.
 
 Para agendamento periódico (cron), chamar o endpoint acima (ex.: diariamente ou semanalmente) com um job externo ou scheduler.
+
+### **Origem de aquisição (animais)**
+
+O cadastro de animais distingue dois cenários via `origem_aquisicao` (NASCIDO | COMPRADO):
+
+- **NASCIDO**: Animal nascido na propriedade — `data_nascimento` é obrigatória.
+- **COMPRADO**: Animal comprado — `data_nascimento` não é obrigatória (muitas vezes desconhecida). Usar `data_entrada` como referência (data de aquisição).
+
+Validação em `AnimalService.Create` e `AnimalService.Update`: para origem NASCIDO, exige `data_nascimento != nil`. Coluna `origem_aquisicao` com DEFAULT 'NASCIDO' para retrocompatibilidade (migration 13).
+
+### **Vinculação do reprodutor em cobertura (monta natural)**
+
+Para coberturas de tipo **MONTA_NATURAL**, o reprodutor (touro/boi) deve ser registrado. O sistema aceita:
+
+- **`touro_animal_id`** (FK para `animais`): vincula diretamente ao animal cadastrado; validações: animal existe, sexo M, categoria TOURO ou BOI, mesma fazenda.
+- **`touro_info`** (texto livre): alternativa quando o touro não está cadastrado (ex.: touro de aluguel).
+
+Regras em `CoberturaService.Create` e `Update`: para MONTA_NATURAL, exige pelo menos um de `touro_animal_id` ou `touro_info`. A coluna `touro_animal_id` foi adicionada na migration 14.
+
+Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) para MONTA_NATURAL; CoberturaTable exibe coluna "Reprodutor" (identificação do animal ou `touro_info`).
 
 ### **Padrões de Acesso a Dados**
 
@@ -451,5 +472,5 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Última atualização**: 2026-02-16
+**Última atualização**: 2026-02-17
 **Versão dos Padrões**: 2.10 (Go + Next.js) — Gestão Pecuária: useAnimaisMap defensivo; Assistente: resposta em texto puro (sem markdown/negrito) no modo Live.

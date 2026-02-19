@@ -6,6 +6,7 @@ import type {
   Animal,
   AnimalCreate,
   Categoria,
+  OrigemAquisicao,
   Sexo,
   StatusSaude,
 } from "@/services/animais";
@@ -16,6 +17,8 @@ import {
   STATUS_SAUDE_LABELS,
   CATEGORIAS,
   CATEGORIA_LABELS,
+  ORIGENS_AQUISICAO,
+  ORIGEM_LABELS,
 } from "@/services/animais";
 import { getMinhasFazendas, type Fazenda } from "@/services/fazendas";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
@@ -62,6 +65,9 @@ export function AnimalForm({
     0;
 
   const [fazendaId, setFazendaId] = useState<number>(initialFazendaId);
+  const [origemAquisicao, setOrigemAquisicao] = useState<OrigemAquisicao>(
+    (initial?.origem_aquisicao as OrigemAquisicao) ?? "NASCIDO"
+  );
   const [identificacao, setIdentificacao] = useState(
     initial?.identificacao ?? ""
   );
@@ -102,6 +108,10 @@ export function AnimalForm({
       setError("Selecione uma fazenda.");
       return;
     }
+    if (origemAquisicao === "NASCIDO" && !dataNascimento.trim()) {
+      setError("Data de nascimento é obrigatória para animais nascidos na propriedade.");
+      return;
+    }
 
     const payload: AnimalCreate = {
       fazenda_id: fazendaUnicaId ?? fazendaId,
@@ -109,10 +119,15 @@ export function AnimalForm({
       sexo,
       status_saude: statusSaude,
       categoria: categoria || null,
+      origem_aquisicao: origemAquisicao,
     };
 
     if (raca.trim()) payload.raca = raca.trim();
-    if (dataNascimento.trim()) payload.data_nascimento = dataNascimento.trim();
+    if (origemAquisicao === "NASCIDO" && dataNascimento.trim()) {
+      payload.data_nascimento = dataNascimento.trim();
+    } else if (origemAquisicao === "COMPRADO") {
+      payload.data_nascimento = null; // Limpar ao mudar para comprado
+    }
     if (dataEntrada.trim()) payload.data_entrada = dataEntrada.trim();
     if (dataSaida.trim()) payload.data_saida = dataSaida.trim();
 
@@ -158,6 +173,30 @@ export function AnimalForm({
             </div>
           )}
 
+          <div className="space-y-2">
+            <Label>Origem</Label>
+            <Select
+              value={origemAquisicao}
+              onValueChange={(v) => setOrigemAquisicao(v as OrigemAquisicao)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ORIGENS_AQUISICAO.map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {ORIGEM_LABELS[o]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              {origemAquisicao === "NASCIDO"
+                ? "Animal nascido na fazenda — informe a data de nascimento."
+                : "Animal comprado — data de nascimento não é necessária. Use data de entrada como referência."}
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="identificacao">Identificação *</Label>
@@ -182,17 +221,28 @@ export function AnimalForm({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {origemAquisicao === "NASCIDO" && (
+              <div className="space-y-2">
+                <Label htmlFor="dataNascimento">
+                  Data de nascimento <span className="text-destructive">*</span>
+                </Label>
+                <DatePicker
+                  id="dataNascimento"
+                  value={dataNascimento || undefined}
+                  onChange={(v) => setDataNascimento(v)}
+                  placeholder="Selecione a data"
+                />
+              </div>
+            )}
             <div className="space-y-2">
-              <Label htmlFor="dataNascimento">Data de nascimento</Label>
-              <DatePicker
-                id="dataNascimento"
-                value={dataNascimento || undefined}
-                onChange={(v) => setDataNascimento(v)}
-                placeholder="Selecione a data"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dataEntrada">Data de entrada</Label>
+              <Label htmlFor="dataEntrada">
+                Data de entrada
+                {origemAquisicao === "COMPRADO" && (
+                  <span className="text-muted-foreground text-xs ml-1">
+                    (data de aquisição)
+                  </span>
+                )}
+              </Label>
               <DatePicker
                 id="dataEntrada"
                 value={dataEntrada || undefined}

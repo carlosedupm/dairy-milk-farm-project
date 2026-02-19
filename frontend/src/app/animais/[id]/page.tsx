@@ -9,7 +9,9 @@ import {
   SEXO_LABELS,
   STATUS_SAUDE_LABELS,
   getCategoriaLabel,
+  ORIGEM_LABELS,
 } from "@/services/animais";
+import type { OrigemAquisicao } from "@/services/animais";
 import type { Sexo, StatusSaude } from "@/services/animais";
 import { get as getFazenda } from "@/services/fazendas";
 import { getResumoByAnimal } from "@/services/producao";
@@ -140,6 +142,16 @@ function AnimalDetailContent() {
                   Categoria
                 </dt>
                 <dd className="mt-0.5">{getCategoriaLabel(animal.categoria)}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Origem
+                </dt>
+                <dd className="mt-0.5">
+                  {animal.origem_aquisicao
+                    ? ORIGEM_LABELS[animal.origem_aquisicao as OrigemAquisicao] ?? animal.origem_aquisicao
+                    : "—"}
+                </dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">

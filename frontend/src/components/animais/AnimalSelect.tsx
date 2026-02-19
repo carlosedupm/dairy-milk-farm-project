@@ -20,6 +20,8 @@ type Props = {
   disabled?: boolean;
   /** Filtrar apenas fêmeas (para partos, coberturas, etc.) */
   femeasOnly?: boolean;
+  /** Filtrar apenas touros e bois (para monta natural) */
+  reprodutoresOnly?: boolean;
   id?: string;
 };
 
@@ -35,11 +37,18 @@ export function AnimalSelect({
   placeholder = "Selecione",
   disabled = false,
   femeasOnly = false,
+  reprodutoresOnly = false,
   id,
 }: Props) {
   const lista = femeasOnly
     ? animais.filter((a) => a.sexo === "F")
-    : animais;
+    : reprodutoresOnly
+      ? animais.filter(
+          (a) =>
+            a.sexo === "M" &&
+            (a.categoria === "TOURO" || a.categoria === "BOI")
+        )
+      : animais;
 
   return (
     <div className="space-y-2">

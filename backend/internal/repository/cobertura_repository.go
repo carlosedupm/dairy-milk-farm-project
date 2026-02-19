@@ -20,16 +20,16 @@ func NewCoberturaRepository(db *pgxpool.Pool) *CoberturaRepository {
 }
 
 func (r *CoberturaRepository) Create(ctx context.Context, c *models.Cobertura) error {
-	query := `INSERT INTO coberturas (animal_id, cio_id, tipo, data, touro_info, semen_partida, tecnico, protocolo_id, observacoes, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at, updated_at`
-	return r.db.QueryRow(ctx, query, c.AnimalID, c.CioID, c.Tipo, c.Data, c.TouroInfo, c.SemenPartida, c.Tecnico, c.ProtocoloID, c.Observacoes, c.FazendaID).
+	query := `INSERT INTO coberturas (animal_id, cio_id, tipo, data, touro_animal_id, touro_info, semen_partida, tecnico, protocolo_id, observacoes, fazenda_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, created_at, updated_at`
+	return r.db.QueryRow(ctx, query, c.AnimalID, c.CioID, c.Tipo, c.Data, c.TouroAnimalID, c.TouroInfo, c.SemenPartida, c.Tecnico, c.ProtocoloID, c.Observacoes, c.FazendaID).
 		Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 }
 
 func (r *CoberturaRepository) GetByID(ctx context.Context, id int64) (*models.Cobertura, error) {
-	query := `SELECT id, animal_id, cio_id, tipo, data, touro_info, semen_partida, tecnico, protocolo_id, observacoes, fazenda_id, created_at, updated_at FROM coberturas WHERE id = $1`
+	query := `SELECT id, animal_id, cio_id, tipo, data, touro_animal_id, touro_info, semen_partida, tecnico, protocolo_id, observacoes, fazenda_id, created_at, updated_at FROM coberturas WHERE id = $1`
 	var c models.Cobertura
-	err := r.db.QueryRow(ctx, query, id).Scan(&c.ID, &c.AnimalID, &c.CioID, &c.Tipo, &c.Data, &c.TouroInfo, &c.SemenPartida, &c.Tecnico, &c.ProtocoloID, &c.Observacoes, &c.FazendaID, &c.CreatedAt, &c.UpdatedAt)
+	err := r.db.QueryRow(ctx, query, id).Scan(&c.ID, &c.AnimalID, &c.CioID, &c.Tipo, &c.Data, &c.TouroAnimalID, &c.TouroInfo, &c.SemenPartida, &c.Tecnico, &c.ProtocoloID, &c.Observacoes, &c.FazendaID, &c.CreatedAt, &c.UpdatedAt)
 	if err == pgx.ErrNoRows {
 		return nil, pgx.ErrNoRows
 	}
@@ -37,7 +37,7 @@ func (r *CoberturaRepository) GetByID(ctx context.Context, id int64) (*models.Co
 }
 
 func (r *CoberturaRepository) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.Cobertura, error) {
-	query := `SELECT id, animal_id, cio_id, tipo, data, touro_info, semen_partida, tecnico, protocolo_id, observacoes, fazenda_id, created_at, updated_at
+	query := `SELECT id, animal_id, cio_id, tipo, data, touro_animal_id, touro_info, semen_partida, tecnico, protocolo_id, observacoes, fazenda_id, created_at, updated_at
 		FROM coberturas WHERE animal_id = $1 ORDER BY data DESC`
 	rows, err := r.db.Query(ctx, query, animalID)
 	if err != nil {
@@ -47,7 +47,7 @@ func (r *CoberturaRepository) GetByAnimalID(ctx context.Context, animalID int64)
 	var list []*models.Cobertura
 	for rows.Next() {
 		var c models.Cobertura
-		if err := rows.Scan(&c.ID, &c.AnimalID, &c.CioID, &c.Tipo, &c.Data, &c.TouroInfo, &c.SemenPartida, &c.Tecnico, &c.ProtocoloID, &c.Observacoes, &c.FazendaID, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.AnimalID, &c.CioID, &c.Tipo, &c.Data, &c.TouroAnimalID, &c.TouroInfo, &c.SemenPartida, &c.Tecnico, &c.ProtocoloID, &c.Observacoes, &c.FazendaID, &c.CreatedAt, &c.UpdatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, &c)
@@ -56,7 +56,7 @@ func (r *CoberturaRepository) GetByAnimalID(ctx context.Context, animalID int64)
 }
 
 func (r *CoberturaRepository) GetByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Cobertura, error) {
-	query := `SELECT id, animal_id, cio_id, tipo, data, touro_info, semen_partida, tecnico, protocolo_id, observacoes, fazenda_id, created_at, updated_at
+	query := `SELECT id, animal_id, cio_id, tipo, data, touro_animal_id, touro_info, semen_partida, tecnico, protocolo_id, observacoes, fazenda_id, created_at, updated_at
 		FROM coberturas WHERE fazenda_id = $1 ORDER BY data DESC`
 	rows, err := r.db.Query(ctx, query, fazendaID)
 	if err != nil {
@@ -66,7 +66,7 @@ func (r *CoberturaRepository) GetByFazendaID(ctx context.Context, fazendaID int6
 	var list []*models.Cobertura
 	for rows.Next() {
 		var c models.Cobertura
-		if err := rows.Scan(&c.ID, &c.AnimalID, &c.CioID, &c.Tipo, &c.Data, &c.TouroInfo, &c.SemenPartida, &c.Tecnico, &c.ProtocoloID, &c.Observacoes, &c.FazendaID, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.AnimalID, &c.CioID, &c.Tipo, &c.Data, &c.TouroAnimalID, &c.TouroInfo, &c.SemenPartida, &c.Tecnico, &c.ProtocoloID, &c.Observacoes, &c.FazendaID, &c.CreatedAt, &c.UpdatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, &c)
@@ -78,8 +78,8 @@ func (r *CoberturaRepository) Update(ctx context.Context, c *models.Cobertura) e
 	if c.ID <= 0 {
 		return fmt.Errorf("id invalido: %d", c.ID)
 	}
-	query := `UPDATE coberturas SET animal_id = $1, cio_id = $2, tipo = $3, data = $4, touro_info = $5, semen_partida = $6, tecnico = $7, protocolo_id = $8, observacoes = $9, updated_at = $10 WHERE id = $11`
-	cmd, err := r.db.Exec(ctx, query, c.AnimalID, c.CioID, c.Tipo, c.Data, c.TouroInfo, c.SemenPartida, c.Tecnico, c.ProtocoloID, c.Observacoes, time.Now(), c.ID)
+	query := `UPDATE coberturas SET animal_id = $1, cio_id = $2, tipo = $3, data = $4, touro_animal_id = $5, touro_info = $6, semen_partida = $7, tecnico = $8, protocolo_id = $9, observacoes = $10, updated_at = $11 WHERE id = $12`
+	cmd, err := r.db.Exec(ctx, query, c.AnimalID, c.CioID, c.Tipo, c.Data, c.TouroAnimalID, c.TouroInfo, c.SemenPartida, c.Tecnico, c.ProtocoloID, c.Observacoes, time.Now(), c.ID)
 	if err != nil {
 		return err
 	}

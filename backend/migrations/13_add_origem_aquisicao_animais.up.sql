@@ -1,0 +1,1 @@
+ALTER TABLE animais ADD COLUMN IF NOT EXISTS origem_aquisicao VARCHAR(20) DEFAULT 'NASCIDO' CHECK (origem_aquisicao IN ('NASCIDO', 'COMPRADO'));

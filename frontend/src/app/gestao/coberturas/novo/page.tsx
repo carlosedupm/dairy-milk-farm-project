@@ -31,6 +31,7 @@ function NovoContent() {
   const [animalId, setAnimalId] = useState("");
   const [tipo, setTipo] = useState("IA");
   const [data, setData] = useState(new Date().toISOString().slice(0, 16));
+  const [touroAnimalId, setTouroAnimalId] = useState("");
   const [touroInfo, setTouroInfo] = useState("");
 
   const { data: animais = [] } = useQuery({
@@ -39,6 +40,9 @@ function NovoContent() {
     enabled: !!fazendaAtiva?.id,
   });
 
+  const isMontaNatural = tipo === "MONTA_NATURAL";
+  const hasReprodutor = !!touroAnimalId || !!touroInfo.trim();
+
   const mutation = useMutation({
     mutationFn: () =>
       create({
@@ -46,7 +50,9 @@ function NovoContent() {
         tipo,
         data: new Date(data).toISOString(),
         fazenda_id: fazendaAtiva!.id,
-        touro_info: touroInfo || undefined,
+        // Para MONTA_NATURAL: priorizar touro_animal_id (vinculação); touro_info só quando reprodutor não está cadastrado
+        touro_animal_id: touroAnimalId ? Number(touroAnimalId) : undefined,
+        touro_info: touroAnimalId ? undefined : (touroInfo.trim() || undefined),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coberturas", fazendaAtiva?.id] });
@@ -71,7 +77,7 @@ function NovoContent() {
       onSubmit={() => mutation.mutate()}
       isPending={mutation.isPending}
       error={mutation.isError ? getApiErrorMessage(mutation.error, "Erro ao registrar.") : undefined}
-      submitDisabled={!animalId}
+      submitDisabled={!animalId || (isMontaNatural && !hasReprodutor)}
     >
       <AnimalSelect
         animais={animais}
@@ -100,12 +106,28 @@ function NovoContent() {
         <Label>Data/hora</Label>
         <Input type="datetime-local" value={data} onChange={(e) => setData(e.target.value)} />
       </div>
+      <AnimalSelect
+        animais={animais}
+        value={touroAnimalId}
+        onValueChange={(v) => {
+          setTouroAnimalId(v);
+          if (v) setTouroInfo(""); // Ao selecionar animal, limpar texto para priorizar vinculação
+        }}
+        label={isMontaNatural ? "Reprodutor (touro/boi) *" : "Reprodutor (opcional)"}
+        placeholder="Selecione o touro ou boi cadastrado"
+        reprodutoresOnly
+      />
       <div>
-        <Label>Touro/sêmen (opcional)</Label>
+        <Label>
+          {isMontaNatural ? "Touro (só se não estiver cadastrado)" : "Touro/sêmen (opcional)"}
+        </Label>
         <Input
           value={touroInfo}
-          onChange={(e) => setTouroInfo(e.target.value)}
-          placeholder="Nome ou código"
+          onChange={(e) => {
+            setTouroInfo(e.target.value);
+            if (e.target.value.trim()) setTouroAnimalId(""); // Ao digitar, limpar seleção
+          }}
+          placeholder="Nome ou código do touro/sêmen"
         />
       </div>
     </GestaoFormLayout>

@@ -37,6 +37,7 @@ export function CoberturaTable({ items, fazendaId }: Props) {
           <TableRow>
             <TableHead>Animal</TableHead>
             <TableHead>Tipo</TableHead>
+            <TableHead>Reprodutor</TableHead>
             <TableHead>Data</TableHead>
           </TableRow>
         </TableHeader>
@@ -44,7 +45,7 @@ export function CoberturaTable({ items, fazendaId }: Props) {
           {items.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={3}
+                colSpan={4}
                 className="h-24 text-center text-muted-foreground"
               >
                 Nenhum registro.
@@ -57,6 +58,13 @@ export function CoberturaTable({ items, fazendaId }: Props) {
                   {animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`}
                 </TableCell>
                 <TableCell>{item.tipo}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {item.touro_animal_id != null
+                    ? animaisMap.get(item.touro_animal_id) ?? `Animal ${item.touro_animal_id}`
+                    : item.touro_info?.trim()
+                      ? item.touro_info
+                      : "—"}
+                </TableCell>
                 <TableCell>{formatDate(item.data)}</TableCell>
               </TableRow>
             ))

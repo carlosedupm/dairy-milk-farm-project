@@ -17,6 +17,7 @@ export type Animal = {
   data_entrada?: string | null
   data_saida?: string | null
   motivo_saida?: string | null
+  origem_aquisicao?: OrigemAquisicao | null
   created_at: string
   updated_at: string
 }
@@ -37,9 +38,19 @@ export type AnimalCreate = {
   data_entrada?: string | null
   data_saida?: string | null
   motivo_saida?: string | null
+  origem_aquisicao?: OrigemAquisicao | null
 }
 
 export type AnimalUpdate = AnimalCreate
+
+// Origem de aquisição (nascido na propriedade vs comprado)
+export const ORIGENS_AQUISICAO = ['NASCIDO', 'COMPRADO'] as const
+export type OrigemAquisicao = (typeof ORIGENS_AQUISICAO)[number]
+
+export const ORIGEM_LABELS: Record<OrigemAquisicao, string> = {
+  NASCIDO: 'Nascido na propriedade',
+  COMPRADO: 'Comprado',
+}
 
 // Constantes para valores válidos
 export const SEXOS = ['M', 'F'] as const

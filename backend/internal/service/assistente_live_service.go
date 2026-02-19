@@ -127,6 +127,8 @@ Contexto do Usuário:
 - Perfil: %s
 - %s
 
+Formato de resposta: use sempre texto puro. Não use markdown: não use asteriscos (*) para negrito nem qualquer outra formatação. Sua resposta será exibida como texto e também lida em voz (TTS); evite caracteres que soem mal quando falados.
+
 Responda de forma natural, empática e concisa.`, nomeUsuario, userID, perfil, fazendaAtivaMsg)),
 		},
 	}
@@ -292,16 +294,18 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 		},
 		{
 			Name:        "cadastrar_animal",
-			Description: "Cadastra um novo animal em uma fazenda.",
+			Description: "Cadastra um novo animal em uma fazenda. Use origem_aquisicao NASCIDO quando o animal nasceu na propriedade (exige data_nascimento) ou COMPRADO quando foi comprado (data_nascimento não necessária).",
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
-					"identificacao":   {Type: genai.TypeString, Description: "Identificação única do animal (brinco, nome)"},
-					"fazenda_id":      {Type: genai.TypeInteger, Description: "ID da fazenda (se não informado, usa a ativa)"},
-					"raca":            {Type: genai.TypeString, Description: "Raça do animal"},
-					"data_nascimento": {Type: genai.TypeString, Description: "Data de nascimento no formato YYYY-MM-DD ou apenas YYYY"},
-					"sexo":            {Type: genai.TypeString, Description: "Sexo (M ou F)"},
-					"status_saude":    {Type: genai.TypeString, Description: "Status de saúde: SAUDAVEL, DOENTE ou EM_TRATAMENTO"},
+					"identificacao":     {Type: genai.TypeString, Description: "Identificação única do animal (brinco, nome)"},
+					"fazenda_id":        {Type: genai.TypeInteger, Description: "ID da fazenda (se não informado, usa a ativa)"},
+					"raca":              {Type: genai.TypeString, Description: "Raça do animal"},
+					"origem_aquisicao":  {Type: genai.TypeString, Description: "NASCIDO (nascido na propriedade, exige data_nascimento) ou COMPRADO (comprado, data_nascimento não necessária)"},
+					"data_nascimento":   {Type: genai.TypeString, Description: "Data de nascimento no formato YYYY-MM-DD ou apenas YYYY (obrigatória se origem_aquisicao for NASCIDO)"},
+					"data_entrada":      {Type: genai.TypeString, Description: "Data de entrada na fazenda (útil para animais COMPRADOS, indica data de aquisição)"},
+					"sexo":              {Type: genai.TypeString, Description: "Sexo (M ou F)"},
+					"status_saude":      {Type: genai.TypeString, Description: "Status de saúde: SAUDAVEL, DOENTE ou EM_TRATAMENTO"},
 				},
 				Required: []string{"identificacao"},
 			},
@@ -423,17 +427,19 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 		},
 		{
 			Name:        "registrar_cobertura",
-			Description: "Registra cobertura/inseminação de uma fêmea (IA, IATF, monta natural ou TE).",
+			Description: "Registra cobertura/inseminação de uma fêmea. Quando o usuário informar a identificação do boi/touro, use touro_identificacao: o sistema trata como MONTA_NATURAL e vincula o reprodutor ao animal cadastrado. Para IA/IATF/TE use touro_info (nome do sêmen).",
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
-					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
-					"tipo": {Type: genai.TypeString, Description: "IA, IATF, MONTA_NATURAL ou TE"},
-					"data": {Type: genai.TypeString, Description: "Data/hora em ISO"},
-					"touro_info": {Type: genai.TypeString, Description: "Nome/código do touro ou sêmen (opcional)"},
-					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+					"identificacao":       {Type: genai.TypeString, Description: "Identificação da fêmea coberta"},
+					"touro_identificacao": {Type: genai.TypeString, Description: "Identificação do touro/boi que fez a cobertura — ao informar, é monta natural e o sistema vincula ao animal cadastrado"},
+					"tipo":                {Type: genai.TypeString, Description: "IA, IATF, MONTA_NATURAL ou TE (inferido como MONTA_NATURAL quando touro_identificacao é informado)"},
+					"data":                {Type: genai.TypeString, Description: "Data/hora em ISO"},
+					"touro_animal_id":     {Type: genai.TypeInteger, Description: "ID do touro/boi (alternativa a touro_identificacao)"},
+					"touro_info":          {Type: genai.TypeString, Description: "Nome/código do touro ou sêmen (para IA/IATF/TE)"},
+					"fazenda_id":          {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
 				},
-				Required: []string{"identificacao", "tipo", "data"},
+				Required: []string{"identificacao", "data"},
 			},
 		},
 		{
@@ -614,6 +620,13 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			Identificacao: ident,
 		}
 
+		if v, ok := call.Args["origem_aquisicao"].(string); ok && strings.TrimSpace(v) != "" {
+			s := strings.TrimSpace(strings.ToUpper(v))
+			if models.IsValidOrigemAquisicao(s) {
+				a.OrigemAquisicao = &s
+			}
+		}
+
 		if v, ok := call.Args["raca"].(string); ok && strings.TrimSpace(v) != "" {
 			s := strings.TrimSpace(v)
 			a.Raca = &s
@@ -624,6 +637,14 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 				slog.Warn("Data de nascimento inválida no assistente Live cadastrar animal", "value", v, "error", errParse)
 			} else if t != nil {
 				a.DataNascimento = t
+			}
+		}
+		if v, ok := call.Args["data_entrada"].(string); ok && strings.TrimSpace(v) != "" {
+			t, errParse := parseFundacaoAssistente(strings.TrimSpace(v))
+			if errParse != nil {
+				slog.Warn("Data de entrada inválida no assistente Live cadastrar animal", "value", v, "error", errParse)
+			} else if t != nil {
+				a.DataEntrada = t
 			}
 		}
 		if v, ok := call.Args["sexo"].(string); ok && strings.TrimSpace(v) != "" {
@@ -905,26 +926,85 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		ident, _ := call.Args["identificacao"].(string)
 		tipoCob, _ := call.Args["tipo"].(string)
 		dataStr, _ := call.Args["data"].(string)
+		touroIdent, _ := call.Args["touro_identificacao"].(string)
+		touroIdent = strings.TrimSpace(touroIdent)
+
 		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
 		if err != nil || len(animais) == 0 {
-			return map[string]any{"erro": "animal não encontrado"}, nil
+			return map[string]any{"erro": "animal (fêmea) não encontrado"}, nil
 		}
 		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
 		if fID <= 0 {
 			fID = animais[0].FazendaID
 		}
-		t, errParse := time.Parse(time.RFC3339, dataStr)
-		if errParse != nil {
-			t, _ = time.Parse("2006-01-02T15:04:05", dataStr)
+
+		// Se usuário informou identificação do boi/touro: monta natural, buscar animal e vincular
+		if touroIdent != "" {
+			tipoCob = models.CoberturaTipoMontaNatural
+			touros, errT := s.animalSvc.SearchByIdentificacao(ctx, touroIdent)
+			if errT != nil || len(touros) == 0 {
+				return map[string]any{"erro": "touro/boi não encontrado: " + touroIdent}, nil
+			}
+			var touro *models.Animal
+			for _, a := range touros {
+				if a.Sexo != nil && *a.Sexo == "M" && a.Categoria != nil &&
+					(*a.Categoria == models.CategoriaTouro || *a.Categoria == models.CategoriaBoi) &&
+					a.FazendaID == fID {
+					touro = a
+					break
+				}
+			}
+			if touro == nil {
+				for _, a := range touros {
+					if a.Sexo != nil && *a.Sexo == "M" && a.Categoria != nil &&
+						(*a.Categoria == models.CategoriaTouro || *a.Categoria == models.CategoriaBoi) {
+						touro = a
+						break
+					}
+				}
+			}
+			if touro == nil {
+				return map[string]any{"erro": "animal " + touroIdent + " não é touro nem boi cadastrado"}, nil
+			}
+			if touro.FazendaID != fID {
+				return map[string]any{"erro": "touro/boi deve ser da mesma fazenda da fêmea"}, nil
+			}
+			t, errParse := time.Parse(time.RFC3339, dataStr)
+			if errParse != nil {
+				t, _ = time.Parse("2006-01-02T15:04:05", dataStr)
+			}
+			if errParse != nil {
+				t = time.Now()
+			}
+			cob := &models.Cobertura{
+				AnimalID:      animais[0].ID,
+				Tipo:          tipoCob,
+				Data:          t,
+				FazendaID:     fID,
+				TouroAnimalID: &touro.ID,
+			}
+			err = s.coberturaSvc.Create(ctx, cob)
+		} else {
+			if tipoCob == "" {
+				tipoCob = models.CoberturaTipoIA
+			}
+			t, errParse := time.Parse(time.RFC3339, dataStr)
+			if errParse != nil {
+				t, _ = time.Parse("2006-01-02T15:04:05", dataStr)
+			}
+			if errParse != nil {
+				t = time.Now()
+			}
+			cob := &models.Cobertura{AnimalID: animais[0].ID, Tipo: tipoCob, Data: t, FazendaID: fID}
+			if v, ok := call.Args["touro_animal_id"].(float64); ok && v > 0 {
+				id := int64(v)
+				cob.TouroAnimalID = &id
+			}
+			if v, ok := call.Args["touro_info"].(string); ok && strings.TrimSpace(v) != "" {
+				cob.TouroInfo = ptr(strings.TrimSpace(v))
+			}
+			err = s.coberturaSvc.Create(ctx, cob)
 		}
-		if errParse != nil {
-			t = time.Now()
-		}
-		cob := &models.Cobertura{AnimalID: animais[0].ID, Tipo: tipoCob, Data: t, FazendaID: fID}
-		if v, ok := call.Args["touro_info"].(string); ok && strings.TrimSpace(v) != "" {
-			cob.TouroInfo = ptr(strings.TrimSpace(v))
-		}
-		err = s.coberturaSvc.Create(ctx, cob)
 		if err != nil {
 			return nil, err
 		}

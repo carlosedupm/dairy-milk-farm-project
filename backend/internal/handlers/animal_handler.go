@@ -37,6 +37,7 @@ type CreateAnimalRequest struct {
 	DataEntrada       *string  `json:"data_entrada"`   // ISO date YYYY-MM-DD
 	DataSaida         *string  `json:"data_saida"`     // ISO date YYYY-MM-DD
 	MotivoSaida       *string  `json:"motivo_saida"`
+	OrigemAquisicao   *string  `json:"origem_aquisicao"` // NASCIDO ou COMPRADO
 }
 
 type UpdateAnimalRequest struct {
@@ -55,6 +56,7 @@ type UpdateAnimalRequest struct {
 	DataEntrada       *string  `json:"data_entrada"`   // ISO date YYYY-MM-DD
 	DataSaida         *string  `json:"data_saida"`     // ISO date YYYY-MM-DD
 	MotivoSaida       *string  `json:"motivo_saida"`
+	OrigemAquisicao   *string  `json:"origem_aquisicao"` // NASCIDO ou COMPRADO
 }
 
 func (h *AnimalHandler) Create(c *gin.Context) {
@@ -67,6 +69,15 @@ func (h *AnimalHandler) Create(c *gin.Context) {
 	// Validar acesso à fazenda
 	if !ValidateFazendaAccess(c, h.fazendaSvc, req.FazendaID) {
 		return
+	}
+
+	origem := models.OrigemNascido
+	if req.OrigemAquisicao != nil && *req.OrigemAquisicao != "" {
+		if !models.IsValidOrigemAquisicao(*req.OrigemAquisicao) {
+			response.ErrorValidation(c, "origem_aquisicao inválida", "deve ser NASCIDO ou COMPRADO")
+			return
+		}
+		origem = *req.OrigemAquisicao
 	}
 
 	animal := &models.Animal{
@@ -82,6 +93,7 @@ func (h *AnimalHandler) Create(c *gin.Context) {
 		LoteID:            req.LoteID,
 		PesoNascimento:    req.PesoNascimento,
 		MotivoSaida:       req.MotivoSaida,
+		OrigemAquisicao:   &origem,
 	}
 
 	if dataNascimento, err := parseDate(req.DataNascimento); err != nil {
@@ -211,6 +223,15 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 
 	// Montar animal: usar valores de req; preservar campos de gestão pecuária
 	// que o frontend não envia (evita apagar reclassificação automática pós-parto)
+	origem := animalExistente.OrigemAquisicao
+	if req.OrigemAquisicao != nil && *req.OrigemAquisicao != "" {
+		if !models.IsValidOrigemAquisicao(*req.OrigemAquisicao) {
+			response.ErrorValidation(c, "origem_aquisicao inválida", "deve ser NASCIDO ou COMPRADO")
+			return
+		}
+		origem = req.OrigemAquisicao
+	}
+
 	animal := &models.Animal{
 		ID:                id,
 		FazendaID:         req.FazendaID,
@@ -225,6 +246,7 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 		LoteID:            req.LoteID,
 		PesoNascimento:    req.PesoNascimento,
 		MotivoSaida:       req.MotivoSaida,
+		OrigemAquisicao:   origem,
 	}
 	// Preservar campos que o formulário atual não envia (evita apagar reclassificação)
 	if req.StatusReprodutivo == nil {
@@ -261,6 +283,10 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 		return
 	} else if dataNascimento != nil {
 		animal.DataNascimento = dataNascimento
+	} else if req.DataNascimento != nil && *req.DataNascimento == "" {
+		animal.DataNascimento = nil // Frontend enviou string vazia para limpar
+	} else {
+		animal.DataNascimento = animalExistente.DataNascimento // Preservar quando não enviado
 	}
 
 	if err := h.service.Update(c.Request.Context(), animal); err != nil {

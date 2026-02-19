@@ -26,22 +26,23 @@ func (h *CoberturaHandler) GetByFazendaID(c *gin.Context) {
 }
 func (h *CoberturaHandler) Create(c *gin.Context) {
 	var req struct {
-		AnimalID int64 `json:"animal_id" binding:"required"`
-		Tipo string `json:"tipo" binding:"required"`
-		Data string `json:"data" binding:"required"`
-		FazendaID int64 `json:"fazenda_id" binding:"required"`
-		CioID *int64 `json:"cio_id"`
-		TouroInfo *string `json:"touro_info"`
-		SemenPartida *string `json:"semen_partida"`
-		Tecnico *string `json:"tecnico"`
-		ProtocoloID *int64 `json:"protocolo_id"`
-		Observacoes *string `json:"observacoes"`
+		AnimalID      int64   `json:"animal_id" binding:"required"`
+		Tipo          string  `json:"tipo" binding:"required"`
+		Data          string  `json:"data" binding:"required"`
+		FazendaID     int64   `json:"fazenda_id" binding:"required"`
+		CioID         *int64  `json:"cio_id"`
+		TouroAnimalID *int64  `json:"touro_animal_id"`
+		TouroInfo     *string `json:"touro_info"`
+		SemenPartida  *string `json:"semen_partida"`
+		Tecnico       *string `json:"tecnico"`
+		ProtocoloID   *int64  `json:"protocolo_id"`
+		Observacoes   *string `json:"observacoes"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil { response.ErrorValidation(c, "Dados invalidos", err.Error()); return }
 	if !ValidateFazendaAccess(c, h.fazendaSvc, req.FazendaID) { return }
 	t, err := time.Parse(time.RFC3339, req.Data)
 	if err != nil { response.ErrorValidation(c, "data invalida", err.Error()); return }
-	cobertura := &models.Cobertura{AnimalID: req.AnimalID, Tipo: req.Tipo, Data: t, FazendaID: req.FazendaID, CioID: req.CioID, TouroInfo: req.TouroInfo, SemenPartida: req.SemenPartida, Tecnico: req.Tecnico, ProtocoloID: req.ProtocoloID, Observacoes: req.Observacoes}
+	cobertura := &models.Cobertura{AnimalID: req.AnimalID, Tipo: req.Tipo, Data: t, FazendaID: req.FazendaID, CioID: req.CioID, TouroAnimalID: req.TouroAnimalID, TouroInfo: req.TouroInfo, SemenPartida: req.SemenPartida, Tecnico: req.Tecnico, ProtocoloID: req.ProtocoloID, Observacoes: req.Observacoes}
 	if err := h.svc.Create(c.Request.Context(), cobertura); err != nil { response.ErrorInternal(c, "Erro ao registrar cobertura", err.Error()); return }
 	response.SuccessCreated(c, cobertura, "Cobertura registrada")
 }

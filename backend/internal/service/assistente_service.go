@@ -166,7 +166,7 @@ IMPORTANTE - Animais: o usuário SEMPRE identifica animais pela IDENTIFICAÇÃO 
 
 Para detalhar_animal, extraia: identificacao (string = identificação do animal; se o usuário disser "animal 30" ou "animal 123", use identificacao "30" ou "123"). Resumo: "Ver detalhes do animal X."
 
-Para cadastrar_animal, extraia: fazenda_id (number) OU nome_fazenda (string = nome da fazenda onde cadastrar), identificacao (string = identificação do animal, obrigatória), raca (string, opcional), data_nascimento (string YYYY-MM-DD ou YYYY, opcional), sexo (string M ou F, opcional), status_saude (string SAUDAVEL/DOENTE/EM_TRATAMENTO, opcional). Resumo: "Cadastrar animal X na fazenda Y."
+Para cadastrar_animal, extraia: fazenda_id (number) OU nome_fazenda (string = nome da fazenda onde cadastrar), identificacao (string = identificação do animal, obrigatória), origem_aquisicao (string NASCIDO ou COMPRADO, opcional; NASCIDO = nascido na propriedade, exige data_nascimento; COMPRADO = comprado, data_nascimento não necessária), raca (string, opcional), data_nascimento (string YYYY-MM-DD ou YYYY, obrigatória se origem NASCIDO), data_entrada (string YYYY-MM-DD, opcional; útil para animais comprados), sexo (string M ou F, opcional), status_saude (string SAUDAVEL/DOENTE/EM_TRATAMENTO, opcional). Resumo: "Cadastrar animal X na fazenda Y."
 
 Para editar_animal, extraia: identificacao (string = identificação do animal para identificar qual animal editar); depois os campos a alterar: identificacaoNovo (string = nova identificação quando renomear), raca, data_nascimento, sexo (M ou F ou Macho ou Fêmea), status_saude, fazenda_id (para transferir de fazenda). Resumo: descreva claramente O QUE será alterado, ex.: "Atualizar animal X: sexo para Fêmea." ou "Atualizar animal Vaca 01: raça para Girolando; sexo para Macho."
 
@@ -178,7 +178,7 @@ Para editar_fazenda, extraia: id (number) OU nome (string = nome ATUAL da fazend
 
 Para excluir_fazenda, extraia: id (number) OU nome (string) para identificar a fazenda a excluir. Resumo: "Excluir a fazenda X." (deixe claro que é exclusão).
 
-Retorne APENAS um JSON válido, sem markdown, sem explicações. Exemplos de formato:
+Retorne APENAS um JSON válido, sem markdown, sem explicações. No campo "resumo" use apenas texto puro, sem markdown e sem asteriscos (*); o resumo pode ser exibido na tela e lido em voz. Exemplos de formato:
 - cadastrar: {"intent":"cadastrar_fazenda","payload":{"nome":"...","quantidadeVacas":0,"fundacao":"...","localizacao":"..."},"resumo":"Criar fazenda X com Y vacas, fundada em Z."}
 - listar: {"intent":"listar_fazendas","payload":{},"resumo":"Listar fazendas cadastradas."}
 - buscar: {"intent":"buscar_fazenda","payload":{"nome":"Sítio X"},"resumo":"Buscar fazenda Sítio X."}
@@ -691,6 +691,20 @@ func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload
 	if v, ok := payload["raca"].(string); ok && strings.TrimSpace(v) != "" {
 		s := strings.TrimSpace(v)
 		animal.Raca = &s
+	}
+	if v, ok := payload["origem_aquisicao"].(string); ok && strings.TrimSpace(v) != "" {
+		s := strings.TrimSpace(strings.ToUpper(v))
+		if models.IsValidOrigemAquisicao(s) {
+			animal.OrigemAquisicao = &s
+		}
+	}
+	if v, ok := payload["data_entrada"].(string); ok && strings.TrimSpace(v) != "" {
+		t, err := parseFundacaoAssistente(strings.TrimSpace(v))
+		if err != nil {
+			slog.Warn("Data de entrada inválida no assistente cadastrar animal", "value", v, "error", err)
+		} else if t != nil {
+			animal.DataEntrada = t
+		}
 	}
 	if v, ok := payload["data_nascimento"].(string); ok && strings.TrimSpace(v) != "" {
 		t, err := parseFundacaoAssistente(strings.TrimSpace(v))

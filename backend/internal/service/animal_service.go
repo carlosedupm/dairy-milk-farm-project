@@ -70,6 +70,16 @@ func (s *AnimalService) Create(ctx context.Context, animal *models.Animal) error
 		return errors.New("sexo inválido (deve ser 'M' ou 'F')")
 	}
 
+	// Definir origem de aquisição padrão se não fornecido
+	if animal.OrigemAquisicao == nil || *animal.OrigemAquisicao == "" {
+		o := models.OrigemNascido
+		animal.OrigemAquisicao = &o
+	}
+	// Para animal nascido na propriedade, data de nascimento é obrigatória
+	if *animal.OrigemAquisicao == models.OrigemNascido && animal.DataNascimento == nil {
+		return errors.New("data de nascimento é obrigatória para animais nascidos na propriedade")
+	}
+
 	// Definir status de saúde padrão se não fornecido
 	if animal.StatusSaude == nil {
 		defaultStatus := models.StatusSaudavel
@@ -142,6 +152,11 @@ func (s *AnimalService) Update(ctx context.Context, animal *models.Animal) error
 			return errors.New("fazenda não encontrada")
 		}
 		return err
+	}
+
+	// Para animal nascido na propriedade, data de nascimento é obrigatória
+	if animal.OrigemAquisicao != nil && *animal.OrigemAquisicao == models.OrigemNascido && animal.DataNascimento == nil {
+		return errors.New("data de nascimento é obrigatória para animais nascidos na propriedade")
 	}
 
 	// Validar sexo se fornecido
