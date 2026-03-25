@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getArea, updateArea } from "@/services/agricultura";
@@ -20,9 +20,12 @@ function EditarAreaContent() {
   const queryClient = useQueryClient();
   const id = params?.id ? parseInt(String(params.id), 10) : NaN;
 
-  const [nome, setNome] = useState("");
-  const [hectares, setHectares] = useState("");
-  const [descricao, setDescricao] = useState("");
+  const [draft, setDraft] = useState({
+    nome: "",
+    hectares: "",
+    descricao: "",
+  });
+  const [dirty, setDirty] = useState(false);
 
   const { data: area, isLoading, error } = useQuery({
     queryKey: ["areas", id],
@@ -30,13 +33,16 @@ function EditarAreaContent() {
     enabled: !Number.isNaN(id),
   });
 
-  useEffect(() => {
-    if (area) {
-      setNome(area.nome);
-      setHectares(String(area.hectares));
-      setDescricao(area.descricao ?? "");
-    }
-  }, [area]);
+  const initialForm = useMemo(
+    () => ({
+      nome: area?.nome ?? "",
+      hectares: area ? String(area.hectares) : "",
+      descricao: area?.descricao ?? "",
+    }),
+    [area]
+  );
+
+  const form = dirty ? draft : initialForm;
 
   const updateMutation = useMutation({
     mutationFn: (p: AreaUpdate) => updateArea(id, p),
@@ -46,14 +52,14 @@ function EditarAreaContent() {
     },
   });
 
-  const hectaresNum = parseFloat(hectares);
-  const isValid = nome.trim() && !isNaN(hectaresNum) && hectaresNum > 0;
+  const hectaresNum = parseFloat(form.hectares);
+  const isValid = form.nome.trim() && !isNaN(hectaresNum) && hectaresNum > 0;
 
   const handleSubmit = () => {
     updateMutation.mutate({
-      nome,
+      nome: form.nome,
       hectares: hectaresNum,
-      descricao: descricao || undefined,
+      descricao: form.descricao || undefined,
     });
   };
 
@@ -103,7 +109,15 @@ function EditarAreaContent() {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Talhão Norte" />
+            <Input
+              id="nome"
+              value={form.nome}
+              onChange={(e) => {
+                setDirty(true);
+                setDraft((prev) => ({ ...(dirty ? prev : initialForm), nome: e.target.value }));
+              }}
+              placeholder="Ex: Talhão Norte"
+            />
           </div>
           <div>
             <Label htmlFor="hectares">Hectares</Label>
@@ -112,14 +126,24 @@ function EditarAreaContent() {
               type="number"
               step="0.01"
               min="0.01"
-              value={hectares}
-              onChange={(e) => setHectares(e.target.value)}
+              value={form.hectares}
+              onChange={(e) => {
+                setDirty(true);
+                setDraft((prev) => ({ ...(dirty ? prev : initialForm), hectares: e.target.value }));
+              }}
               placeholder="Ex: 10,5"
             />
           </div>
           <div>
             <Label htmlFor="descricao">Descrição (opcional)</Label>
-            <Input id="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+            <Input
+              id="descricao"
+              value={form.descricao}
+              onChange={(e) => {
+                setDirty(true);
+                setDraft((prev) => ({ ...(dirty ? prev : initialForm), descricao: e.target.value }));
+              }}
+            />
           </div>
           <Button onClick={handleSubmit} disabled={!isValid || updateMutation.isPending}>
             {updateMutation.isPending ? "Salvando…" : "Salvar"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFornecedor, updateFornecedor } from "@/services/agricultura";
@@ -21,11 +21,14 @@ function EditarFornecedorContent() {
   const queryClient = useQueryClient();
   const id = params?.id ? parseInt(String(params.id), 10) : NaN;
 
-  const [nome, setNome] = useState("");
-  const [tipo, setTipo] = useState("COOPERATIVA");
-  const [contato, setContato] = useState("");
-  const [observacoes, setObservacoes] = useState("");
-  const [ativo, setAtivo] = useState(true);
+  const [draft, setDraft] = useState({
+    nome: "",
+    tipo: "COOPERATIVA",
+    contato: "",
+    observacoes: "",
+    ativo: true,
+  });
+  const [dirty, setDirty] = useState(false);
 
   const { data: fornecedor, isLoading, error } = useQuery({
     queryKey: ["fornecedores", id],
@@ -33,15 +36,18 @@ function EditarFornecedorContent() {
     enabled: !Number.isNaN(id),
   });
 
-  useEffect(() => {
-    if (fornecedor) {
-      setNome(fornecedor.nome);
-      setTipo(fornecedor.tipo);
-      setContato(fornecedor.contato ?? "");
-      setObservacoes(fornecedor.observacoes ?? "");
-      setAtivo(fornecedor.ativo);
-    }
-  }, [fornecedor]);
+  const initialForm = useMemo(
+    () => ({
+      nome: fornecedor?.nome ?? "",
+      tipo: fornecedor?.tipo ?? "COOPERATIVA",
+      contato: fornecedor?.contato ?? "",
+      observacoes: fornecedor?.observacoes ?? "",
+      ativo: fornecedor?.ativo ?? true,
+    }),
+    [fornecedor]
+  );
+
+  const form = dirty ? draft : initialForm;
 
   const updateMutation = useMutation({
     mutationFn: (p: FornecedorUpdate) => updateFornecedor(id, p),
@@ -52,7 +58,13 @@ function EditarFornecedorContent() {
   });
 
   const handleSubmit = () => {
-    updateMutation.mutate({ nome, tipo, contato: contato || undefined, observacoes: observacoes || undefined, ativo });
+    updateMutation.mutate({
+      nome: form.nome,
+      tipo: form.tipo,
+      contato: form.contato || undefined,
+      observacoes: form.observacoes || undefined,
+      ativo: form.ativo,
+    });
   };
 
   if (!params?.id) {
@@ -101,11 +113,25 @@ function EditarFornecedorContent() {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Cooperativa XYZ" />
+            <Input
+              id="nome"
+              value={form.nome}
+              onChange={(e) => {
+                setDirty(true);
+                setDraft((prev) => ({ ...(dirty ? prev : initialForm), nome: e.target.value }));
+              }}
+              placeholder="Ex: Cooperativa XYZ"
+            />
           </div>
           <div>
             <Label htmlFor="tipo">Tipo</Label>
-            <Select value={tipo} onValueChange={setTipo}>
+            <Select
+              value={form.tipo}
+              onValueChange={(value) => {
+                setDirty(true);
+                setDraft((prev) => ({ ...(dirty ? prev : initialForm), tipo: value }));
+              }}
+            >
               <SelectTrigger id="tipo">
                 <SelectValue />
               </SelectTrigger>
@@ -118,15 +144,36 @@ function EditarFornecedorContent() {
           </div>
           <div>
             <Label htmlFor="contato">Contato (opcional)</Label>
-            <Input id="contato" value={contato} onChange={(e) => setContato(e.target.value)} placeholder="Telefone ou e-mail" />
+            <Input
+              id="contato"
+              value={form.contato}
+              onChange={(e) => {
+                setDirty(true);
+                setDraft((prev) => ({ ...(dirty ? prev : initialForm), contato: e.target.value }));
+              }}
+              placeholder="Telefone ou e-mail"
+            />
           </div>
           <div>
             <Label htmlFor="observacoes">Observações (opcional)</Label>
-            <Input id="observacoes" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+            <Input
+              id="observacoes"
+              value={form.observacoes}
+              onChange={(e) => {
+                setDirty(true);
+                setDraft((prev) => ({ ...(dirty ? prev : initialForm), observacoes: e.target.value }));
+              }}
+            />
           </div>
           <div>
             <Label htmlFor="ativo">Ativo</Label>
-            <Select value={ativo ? "true" : "false"} onValueChange={(v) => setAtivo(v === "true")}>
+            <Select
+              value={form.ativo ? "true" : "false"}
+              onValueChange={(v) => {
+                setDirty(true);
+                setDraft((prev) => ({ ...(dirty ? prev : initialForm), ativo: v === "true" }));
+              }}
+            >
               <SelectTrigger id="ativo">
                 <SelectValue />
               </SelectTrigger>
@@ -136,7 +183,7 @@ function EditarFornecedorContent() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleSubmit} disabled={!(nome ?? "").trim() || updateMutation.isPending}>
+          <Button onClick={handleSubmit} disabled={!(form.nome ?? "").trim() || updateMutation.isPending}>
             {updateMutation.isPending ? "Salvando…" : "Salvar"}
           </Button>
           {updateMutation.isError && (
