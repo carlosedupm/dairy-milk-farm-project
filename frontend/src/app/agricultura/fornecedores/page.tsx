@@ -58,8 +58,14 @@ function FornecedoresContent() {
             <ul className="space-y-2">
               {items.map((f, index) => {
                 // Suporta id, ID ou fornecedor_id (diferentes formatos de API)
-                const rawId = f?.id ?? (f as { ID?: number })?.ID ?? (f as { fornecedor_id?: number })?.fornecedor_id;
-                const fornecedorId = rawId != null && rawId !== "" ? Number(rawId) : NaN;
+                const rawId =
+                  f?.id ??
+                  (f as { ID?: number | string })?.ID ??
+                  (f as { fornecedor_id?: number | string })?.fornecedor_id;
+                const fornecedorId =
+                  rawId != null && String(rawId).trim() !== ""
+                    ? Number(rawId)
+                    : NaN;
                 const hasValidId = !Number.isNaN(fornecedorId) && fornecedorId > 0;
                 return (
                   <li key={hasValidId ? fornecedorId : `f-${index}`} className="flex items-center justify-between border-b pb-2">
