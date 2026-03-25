@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { cn } from "@/lib/utils";
-import { Building2, List, Droplets, Layers, ClipboardList, Menu, Users, Code, X } from "lucide-react";
+import { Building2, List, Droplets, Layers, ClipboardList, Menu, Users, Code, X, Wheat } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -62,6 +62,10 @@ export function Header() {
                 <Link href="/lotes" className={navLinkClass("/lotes")}>
                   <Layers className="h-5 w-5 shrink-0" aria-hidden />
                   Lotes
+                </Link>
+                <Link href="/agricultura" className={navLinkClass("/agricultura")}>
+                  <Wheat className="h-5 w-5 shrink-0" aria-hidden />
+                  Agricultura
                 </Link>
                 <Link href="/gestao" className={navLinkClass("/gestao")}>
                   <ClipboardList className="h-5 w-5 shrink-0" aria-hidden />
@@ -194,6 +198,17 @@ export function Header() {
                   >
                     <Layers className="h-5 w-5 shrink-0" aria-hidden />
                     Lotes
+                  </Link>
+                  <Link
+                    href="/agricultura"
+                    className={cn(
+                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                      navLinkClass("/agricultura")
+                    )}
+                    onClick={closeMobileMenu}
+                  >
+                    <Wheat className="h-5 w-5 shrink-0" aria-hidden />
+                    Agricultura
                   </Link>
                   <Link
                     href="/gestao"

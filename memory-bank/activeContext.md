@@ -41,36 +41,26 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
   - **PWA**: Web App Manifest (`/manifest.json`), ícones, theme_color e install prompt (banner "Instalar") para uso como app instalável em mobile.
 - **Módulo Administrador**: Área admin (`/admin/usuarios`) para ADMIN e DEVELOPER — listagem, criar, editar e ativar/desativar usuários. Perfis USER, ADMIN, DEVELOPER; constraint de unicidade para DEVELOPER no banco. Rotas `GET/POST /api/v1/admin/usuarios`, `PUT /api/v1/admin/usuarios/:id`, `PATCH /api/v1/admin/usuarios/:id/toggle-enabled`, `GET/PUT /api/v1/admin/usuarios/:id/fazendas`. Perfil DEVELOPER não atribuível via API. **Fazendas vinculadas**: somente ADMIN (ou DEVELOPER) pode atribuir quais fazendas cada usuário acessa, na tela de edição de usuário (seção "Fazendas vinculadas" com checkboxes + "Salvar vínculos"). **Perfil não editável**: ao editar um usuário com perfil ADMIN ou DEVELOPER, o campo perfil é somente leitura (frontend e backend preservam o perfil).
 - **Vínculo usuário–fazenda e fazenda única**: Tabela `usuarios_fazendas` (N:N). Endpoint `GET /api/v1/me/fazendas` retorna as fazendas vinculadas ao usuário logado. Quando o usuário tem **apenas uma fazenda** vinculada: formulários de novo animal e nova produção usam essa fazenda automaticamente (seletor de fazenda oculto); atalhos da home ("Ver fazendas", "Ver animais") apontam diretamente para essa fazenda. Admin atribui fazendas a usuários na edição de usuário.
+- **Módulo Custos Agrícolas**: Migration 15 (fornecedores, areas, analises_solo, safras_culturas, custos_agricolas, producoes_agricolas, receitas_agricolas). Backend: CRUD completo fornecedores, áreas, análises solo, safras/culturas; custos, produções e receitas por safra/cultura (com seleção de fornecedor); resultado por área/safra e consolidado; comparativo de fornecedores por safra. Frontend: dashboard Agricultura; CRUD fornecedores e áreas (incl. edição); análises de solo (listagem e nova por área); safras/culturas por área/ano (dialog criar cultura); detalhe safra/cultura com custos, produções, receitas e formulários (com FornecedorSelect em custos e receitas); resultado por safra; comparativo fornecedores. Acesso via menu "Agricultura" (ícone Wheat). Próximo: integração Assistente Virtual.
 
 ### 🚧 Em andamento:
 
-- Nenhum item em andamento no momento
+- **Consolidação do Módulo Agrícola**: backend (handlers/services/repositories/models + migration 15) e frontend (`/agricultura`) já estruturados no workspace, com ajustes finais de validação integrada e fechamento dos fluxos ponta a ponta.
+- **Sincronização de documentação**: atualização do memory bank para refletir corretamente o status real do código local (evitando divergência entre "concluído" e alterações ainda não consolidadas).
 
 ### ✅ Concluído desde a última atualização:
 
-1. ✅ **Vinculação do reprodutor em cobertura (monta natural)**: Coluna `touro_animal_id` (FK para animais) na tabela coberturas (migration 14). Validação em CoberturaService: para MONTA_NATURAL, exige `touro_animal_id` ou `touro_info`; se `touro_animal_id` informado, valida que o animal existe, é macho, categoria TOURO ou BOI e da mesma fazenda. Frontend: formulário de nova cobertura exibe AnimalSelect (reprodutoresOnly) para MONTA_NATURAL; CoberturaTable exibe coluna "Reprodutor"; AnimalSelect ganhou prop `reprodutoresOnly`. Documentado em systemPatterns.
-2. ✅ **Cadastro de animal: origem (nascido vs comprado)**: Campo `origem_aquisicao` (NASCIDO | COMPRADO) no modelo, API, frontend e assistente. Para NASCIDO, data de nascimento obrigatória; para COMPRADO, opcional (uso de data_entrada como referência). Migration 13; validação no AnimalService; seletor no formulário; badge na listagem e detalhe.
-3. ✅ **Plano de verificação Gestão Pecuária**: (a) **systemPatterns**: Documentado padrão de campos de data (DatePicker para só data; `Input type="datetime-local"` para data+hora) e próximo passo (estender edição/exclusão para coberturas, toques e secagens). (b) **CioTable**: Dialog de exclusão controlado com estado `deleteDialogOpenId`; fechamento automático após exclusão com sucesso.
-4. ✅ **Melhorias Módulo Gestão Pecuária**: (a) **Componentes reutilizáveis**: `GestaoListLayout`, `GestaoFormLayout`, `useAnimaisMap` (mapeia animal_id → identificação). (b) **Tabelas**: CioTable, PartoTable, LactacaoTable, CoberturaTable, ToqueTable, SecagemTable, GestacaoTable — exibem identificação do animal em vez do ID. (c) **Formulários padronizados**: DatePicker e Select Shadcn em lactações, secagens, coberturas, toques e cios; `getApiErrorMessage` em todos os formulários. (d) **Cios CRUD completo**: PUT /api/v1/cios/:id no backend; página de edição e exclusão (Dialog) na CioTable.
-5. ✅ **Correção Gestão Pecuária – AnimalHandler**: O handler de animais não aceitava nem persistia os campos de gestão pecuária (categoria, status_reprodutivo, mae_id, pai_info, lote_id, etc.), o que apagava a reclassificação automática ao editar um animal. Corrigido: CreateAnimalRequest e UpdateAnimalRequest agora incluem todos os campos; no Update, campos não enviados pelo formulário (status_reprodutivo, mae_id, pai_info, etc.) são preservados para não sobrescrever dados definidos automaticamente pelo PartoService.
-6. ✅ **Reclassificação automática de categoria (gestão pecuária)**: (a) **Por primeiro parto**: ao registrar parto de fêmea BEZERRA ou NOVILHA, categoria atualizada para MATRIZ em `PartoService.Create`. (b) **Por idade**: serviço `ReclassificacaoCategoriaService` reclassifica bezerras com idade ≥ N meses (padrão 12) em novilhas; endpoint `POST /api/v1/animais/reclassificar-categoria?meses=12` para execução manual ou por job/cron.
-7. ✅ **Assistente Live — estratégia "mic off durante TTS"**: Microfone é desligado enquanto o TTS fala e reaberto automaticamente após grace period pós-TTS. Elimina por completo o eco do assistente ser capturado como fala do usuário. Substituiu a abordagem anterior de filtro de eco por texto (ECHO_PHRASES + isEchoTranscript) que era frágil.
-8. ✅ **Saudação sem TTS**: Backend agora envia boas-vindas como `type: "greeting"` (não `"text"`). Frontend exibe como texto mas não aciona TTS, permitindo que o microfone abra imediatamente ao iniciar o assistente.
-9. ✅ **Assistente Live — cancelamento de turno no backend**: WebSocket aceita `{"type":"interrupt"}`; novo texto cancela o turno anterior e cria novo turno com contexto cancelável; respostas de turnos antigos são bloqueadas para evitar sobreposição/confusão.
-10. ✅ **Assistente flutuante (FAB)**: Acesso ao assistente via botão flutuante (FAB) no canto inferior direito em todas as telas autenticadas; estado compartilhado em `AssistenteContext`; modal em `AssistenteDialog` no layout; assistente removido do Header (desktop e mobile).
-11. ✅ **Assistente Virtual Multimodal Live**: Interface em tempo real via WebSockets (Gemini 2.0 Flash), Function Calling para Fazendas, Animais, Produção e fechamento automático por voz.
-12. ✅ **Compatibilidade do Assistente com qualquer navegador (incl. mobile)**: Removida a captura de áudio bruto no frontend (ScriptProcessorNode falhava em Safari/iOS). Modo Live usa apenas texto no WebSocket; voz quando o navegador oferece Web Speech API. Em navegadores sem reconhecimento de voz (ex.: Firefox Android), o Assistente Live permanece disponível em modo texto (digitar e Enviar/Enter).
-13. ✅ **Contexto Inteligente no Assistente**: Integração automática com o usuário logado e a fazenda ativa selecionada no sistema.
-14. ✅ **Correção de Erros de Compilação e Tipos**: Resolvidos conflitos em Go e incompatibilidades nos Protocol Buffers do Google.
-15. ✅ **useAnimaisMap — animais iterável**: Garantia com `Array.isArray(data) ? data : []` no hook para evitar erro "animais is not iterable" quando a query está desabilitada ou retorna formato inesperado (ex.: ao acessar `/gestao/toques`).
-16. ✅ **Assistente Virtual — resposta sem negrito**: Resposta no modo Live passou a ser exibida como texto puro (`whitespace-pre-wrap`), sem ReactMarkdown; não há mais negrito a partir de `*` e o usuário não precisa "falar" asterisco.
+1. ✅ **Módulo Custos Agrícolas (estrutura completa no código)**: Migration 15 criada e estrutura de backend/front consolidada para fornecedores, áreas, análises de solo, safras/culturas, custos, produções, receitas e resultado agrícola (por área/safra e consolidado por fazenda/ano).
+2. ✅ **Navegação Agricultura no frontend**: novo acesso "Agricultura" no Header (desktop/mobile), páginas dedicadas em `frontend/src/app/agricultura` e componentes específicos em `frontend/src/components/agricultura`.
+3. ✅ **Integração de rotas agrícolas no backend**: registro de rotas em `main.go` para CRUD e consultas analíticas (resultado por área, resultado por fazenda e comparativo de fornecedores por safra).
 
 ### 📋 Próximos passos imediatos:
 
-1. Implementar recuperação de senha (requer configuração SMTP)
-2. Validações adicionais nos handlers (go-playground/validator)
-3. Dashboard com gráficos de produção
-4. Estender fluxos de edição/exclusão para coberturas, toques e secagens (padrão Cios como referência)
+1. Consolidar e validar o Módulo Agrícola em ambiente de desenvolvimento (fluxos completos: fornecedores, áreas, análises, safras, custos, produções, receitas e resultado).
+2. Executar bateria de testes manuais de regressão entre Agricultura, Gestão Pecuária e módulos já estáveis.
+3. Implementar validações adicionais nos handlers (go-playground/validator), priorizando novas rotas agrícolas.
+4. Implementar recuperação de senha (requer configuração SMTP).
+5. Evoluir dashboard com gráficos de produção (pecuária + agrícola).
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -128,5 +118,5 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ---
 
-**Última atualização**: 2026-02-18
-**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Assistente Virtual via FAB (flutuante) + Live (Gemini 2.0 Flash) | Vínculo usuário–fazenda | Dev Studio Fase 0–3
+**Última atualização**: 2026-03-25
+**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Módulo Agrícola em consolidação no código local | Assistente Virtual via FAB (flutuante) + Live (Gemini 2.0 Flash) | Vínculo usuário–fazenda | Dev Studio Fase 0–3

@@ -7,7 +7,7 @@
 ```bash
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 95% ✅
-💻  Implementação: 96% ✅ (CRUD Animais, Produção, Gestão Pecuária com tabelas e layouts reutilizáveis, Cios CRUD completo)
+💻  Implementação: 96% ✅ (CRUD Animais, Produção, Gestão Pecuária, Módulo Agrícola avançado no código local, em consolidação)
 🧪  Testes: 70% ✅ (unitários backend + E2E frontend)
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
 ```
@@ -65,7 +65,7 @@
 
 ## 🚧 Em andamento
 
-### **Backend Go (🚧 75%)**
+### **Backend Go (🚧 88%)**
 
 - [x] Estrutura básica e configuração
 - [x] Modelos de domínio
@@ -74,9 +74,10 @@
 - [x] Sistema de migrações (golang-migrate no startup)
 - [x] Autenticação (login, validate), JWT RS256, middleware
 - [x] Chaves JWT de desenvolvimento (devcontainer)
+- [x] Módulo agrícola (fornecedores, áreas, análises de solo, safras/culturas, custos, produções, receitas, resultado)
 - [ ] Validações de entrada adicionais
 
-### **Frontend Next.js (🚧 65%)**
+### **Frontend Next.js (🚧 82%)**
 
 - [x] Setup inicial e configuração
 - [x] Estrutura básica
@@ -92,6 +93,7 @@
 - [x] **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER); constraint unicidade DEVELOPER (migração 8); área admin `/admin/usuarios` (listagem, criar, editar, ativar/desativar); RequireAdmin; link Admin no Header para ADMIN/DEVELOPER
 - [x] **UX e Acessibilidade**: Paleta rural (modo claro e escuro) em globals.css; toggle tema no Header e menu mobile com persistência (ThemeContext, ThemeToggle); tipografia 16px e alvos de toque 44px; ícones no menu (Farm, Cow, Milk, Users, Code); formulários e listas padronizados (space-y-5, botão lg, tabelas overflow-x-auto); home com atalhos (Ver fazendas, Ver animais, Registrar produção)
 - [x] **Fluxos de acesso e onboarding**: Header oculto em `/registro`; botão "Voltar para login" no onboarding faz logout; restrição de acesso às páginas de fazenda para USER (gateway em `/fazendas`, `/fazendas/[id]` admin-only); correção de erro no `AnimalForm` ao iniciar nova criação
+- [x] **Módulo Agricultura no App Router**: dashboard `/agricultura`, CRUD de fornecedores e áreas, análises de solo, safras/culturas, custos, produções, receitas, resultado por fazenda/ano e comparativo de fornecedores, com serviços dedicados em `src/services/agricultura.ts`
 
 ## 📋 Próximos Passos
 
@@ -115,6 +117,14 @@
 - [ ] CRUD de Animais (backend + frontend)
 - [ ] CRUD de Produção de Leite (backend + frontend)
 - [ ] Validações e tratamento de erros
+
+### **Sprint 4 (Consolidação Módulo Agrícola)**
+
+- [x] Migration 15 e estrutura de domínio agrícola no backend
+- [x] Rotas de API agrícola registradas em `cmd/api/main.go`
+- [x] Navegação e páginas agrícolas no frontend
+- [ ] Validação integrada final (dados reais + permissões + cenários de erro)
+- [ ] Testes automatizados dedicados ao módulo agrícola
 
 ### **Sprint 3 (Melhorias)**
 
@@ -421,6 +431,6 @@
 
 ---
 
-**Última atualização**: 2026-02-16
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária: layouts reutilizáveis, useAnimaisMap defensivo, Cios CRUD completo | Assistente via FAB, resposta em texto puro (sem negrito) no Live | CRUD Fazendas, Animais, Produção | Testes unitários e E2E configurados
-**Próxima revisão**: 2026-02-21
+**Última atualização**: 2026-03-25
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Módulo Agrícola avançado no código local e em fase de consolidação | Assistente via FAB e modo Live | CRUD Fazendas, Animais, Produção | Testes unitários e E2E configurados
+**Próxima revisão**: 2026-03-29

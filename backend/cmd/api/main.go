@@ -126,6 +126,14 @@ func main() {
 					secagemRepo := repository.NewSecagemRepository(pool)
 					lactacaoRepo := repository.NewLactacaoRepository(pool)
 					refreshTokenRepo := repository.NewRefreshTokenRepository(pool)
+					// Módulo agrícola
+					fornecedorRepo := repository.NewFornecedorRepository(pool)
+					areaRepo := repository.NewAreaRepository(pool)
+					analiseSoloRepo := repository.NewAnaliseSoloRepository(pool)
+					safraCulturaRepo := repository.NewSafraCulturaRepository(pool)
+					custoAgricolaRepo := repository.NewCustoAgricolaRepository(pool)
+					producaoAgricolaRepo := repository.NewProducaoAgricolaRepository(pool)
+					receitaAgricolaRepo := repository.NewReceitaAgricolaRepository(pool)
 					fazendaSvc := service.NewFazendaService(fazendaRepo)
 					animalSvc := service.NewAnimalService(animalRepo, fazendaRepo)
 					reclassificacaoCategoriaSvc := service.NewReclassificacaoCategoriaService(animalRepo)
@@ -165,6 +173,23 @@ func main() {
 					secagemHandler := handlers.NewSecagemHandler(secagemSvc, fazendaSvc)
 					lactacaoHandler := handlers.NewLactacaoHandler(lactacaoSvc, fazendaSvc)
 					protocoloIatfHandler := handlers.NewProtocoloIATFHandler(protocoloIatfSvc, fazendaSvc)
+					// Serviços e handlers do módulo agrícola
+					fornecedorSvc := service.NewFornecedorService(fornecedorRepo)
+					areaSvc := service.NewAreaService(areaRepo)
+					analiseSoloSvc := service.NewAnaliseSoloService(analiseSoloRepo)
+					safraCulturaSvc := service.NewSafraCulturaService(safraCulturaRepo, areaRepo)
+					custoAgricolaSvc := service.NewCustoAgricolaService(custoAgricolaRepo)
+					producaoAgricolaSvc := service.NewProducaoAgricolaService(producaoAgricolaRepo)
+					receitaAgricolaSvc := service.NewReceitaAgricolaService(receitaAgricolaRepo)
+					resultadoAgricolaSvc := service.NewResultadoAgricolaService(fornecedorRepo, areaRepo, safraCulturaRepo, custoAgricolaRepo, receitaAgricolaRepo)
+					fornecedorHandler := handlers.NewFornecedorHandler(fornecedorSvc, fazendaSvc)
+					areaHandler := handlers.NewAreaHandler(areaSvc, fazendaSvc)
+					analiseSoloHandler := handlers.NewAnaliseSoloHandler(analiseSoloSvc, areaSvc, fazendaSvc)
+					safraCulturaHandler := handlers.NewSafraCulturaHandler(safraCulturaSvc, areaSvc, fazendaSvc)
+					custoAgricolaHandler := handlers.NewCustoAgricolaHandler(custoAgricolaSvc, safraCulturaSvc, areaSvc, fazendaSvc)
+					producaoAgricolaHandler := handlers.NewProducaoAgricolaHandler(producaoAgricolaSvc, safraCulturaSvc, areaSvc, fazendaSvc)
+					receitaAgricolaHandler := handlers.NewReceitaAgricolaHandler(receitaAgricolaSvc, safraCulturaSvc, areaSvc, fazendaSvc)
+					resultadoAgricolaHandler := handlers.NewResultadoAgricolaHandler(resultadoAgricolaSvc, areaSvc, fazendaSvc)
 					api := router.Group("/api")
 					api.POST("/auth/register", authHandler.Register)
 					api.POST("/auth/login", authHandler.Login)
@@ -195,6 +220,13 @@ func main() {
 						// Animais por fazenda
 						v1.GET("/:id/animais", animalHandler.GetByFazendaID)
 						v1.GET("/:id/animais/count", animalHandler.CountByFazenda)
+						// Módulo agrícola: fornecedores e áreas por fazenda
+						v1.GET("/:id/fornecedores/comparativo/:ano", resultadoAgricolaHandler.GetComparativoFornecedores)
+						v1.GET("/:id/fornecedores", fornecedorHandler.GetByFazendaID)
+						v1.POST("/:id/fornecedores", fornecedorHandler.Create)
+						v1.GET("/:id/areas", areaHandler.GetByFazendaID)
+						v1.POST("/:id/areas", areaHandler.Create)
+						v1.GET("/:id/resultado-agricola/:ano", resultadoAgricolaHandler.GetByFazendaIDAndAno)
 					}
 
 					// Rotas de Animais
@@ -301,6 +333,39 @@ func main() {
 					{
 						protocolosIatf.GET("", protocoloIatfHandler.GetByFazendaID)
 						protocolosIatf.POST("", protocoloIatfHandler.Create)
+					}
+
+					// Módulo agrícola: fornecedores (CRUD por id)
+					fornecedores := api.Group("/v1/fornecedores", auth.AuthMiddleware(jwtSvc))
+					{
+						fornecedores.GET("/:id", fornecedorHandler.GetByID)
+						fornecedores.PUT("/:id", fornecedorHandler.Update)
+						fornecedores.DELETE("/:id", fornecedorHandler.Delete)
+					}
+					// Módulo agrícola: áreas (CRUD por id)
+					areas := api.Group("/v1/areas", auth.AuthMiddleware(jwtSvc))
+					{
+						areas.GET("/:id", areaHandler.GetByID)
+						areas.PUT("/:id", areaHandler.Update)
+						areas.DELETE("/:id", areaHandler.Delete)
+						areas.GET("/:id/analises-solo", analiseSoloHandler.GetByAreaID)
+						areas.POST("/:id/analises-solo", analiseSoloHandler.Create)
+						areas.GET("/:id/safras/:ano", safraCulturaHandler.GetByAreaIDAndAno)
+						areas.GET("/:id/resultado/:ano", resultadoAgricolaHandler.GetByAreaIDAndAno)
+					}
+					// Módulo agrícola: safras-culturas
+					safrasCulturas := api.Group("/v1/safras-culturas", auth.AuthMiddleware(jwtSvc))
+					{
+						safrasCulturas.POST("", safraCulturaHandler.Create)
+						safrasCulturas.GET("/:id", safraCulturaHandler.GetByID)
+						safrasCulturas.PUT("/:id", safraCulturaHandler.Update)
+						safrasCulturas.DELETE("/:id", safraCulturaHandler.Delete)
+						safrasCulturas.GET("/:id/custos", custoAgricolaHandler.GetBySafraCulturaID)
+						safrasCulturas.POST("/:id/custos", custoAgricolaHandler.Create)
+						safrasCulturas.GET("/:id/producoes", producaoAgricolaHandler.GetBySafraCulturaID)
+						safrasCulturas.POST("/:id/producoes", producaoAgricolaHandler.Create)
+						safrasCulturas.GET("/:id/receitas", receitaAgricolaHandler.GetBySafraCulturaID)
+						safrasCulturas.POST("/:id/receitas", receitaAgricolaHandler.Create)
 					}
 
 					// Admin routes (perfil ADMIN ou DEVELOPER)
