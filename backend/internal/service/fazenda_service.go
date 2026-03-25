@@ -111,6 +111,11 @@ func (s *FazendaService) GetByUsuarioID(ctx context.Context, usuarioID int64) ([
 	return s.repo.GetFazendasByUsuarioID(ctx, usuarioID)
 }
 
+// ListUsuariosPublicosPorFazenda retorna usuários vinculados à fazenda.
+func (s *FazendaService) ListUsuariosPublicosPorFazenda(ctx context.Context, fazendaID int64) ([]models.UsuarioPublico, error) {
+	return s.repo.ListUsuariosPublicosByFazendaID(ctx, fazendaID)
+}
+
 // GetFazendaIDsByUsuarioID retorna os IDs das fazendas vinculadas ao usuário (para admin).
 func (s *FazendaService) GetFazendaIDsByUsuarioID(ctx context.Context, usuarioID int64) ([]int64, error) {
 	return s.repo.GetFazendaIDsByUsuarioID(ctx, usuarioID)

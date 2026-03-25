@@ -68,9 +68,6 @@ func (h *AdminHandler) CreateUsuario(c *gin.Context) {
 	if perfil == "" {
 		perfil = models.PerfilUser
 	}
-	if perfil != models.PerfilUser && perfil != models.PerfilAdmin {
-		perfil = models.PerfilUser
-	}
 
 	u := &models.Usuario{
 		Nome:   req.Nome,
@@ -112,9 +109,6 @@ func (h *AdminHandler) UpdateUsuario(c *gin.Context) {
 
 	perfil := req.Perfil
 	if perfil == "" {
-		perfil = models.PerfilUser
-	}
-	if perfil != models.PerfilUser && perfil != models.PerfilAdmin {
 		perfil = models.PerfilUser
 	}
 

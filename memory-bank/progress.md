@@ -75,6 +75,7 @@
 - [x] Autenticação (login, validate), JWT RS256, middleware
 - [x] Chaves JWT de desenvolvimento (devcontainer)
 - [x] Módulo agrícola (fornecedores, áreas, análises de solo, safras/culturas, custos, produções, receitas, resultado)
+- [x] Módulo folgas 5x1 (migration 16, API, perfis FUNCIONARIO/GESTAO, página `/folgas`, motivos/exceção na célula, filtro visual por funcionário para gestão, fazenda por `/me/fazendas` em folgas para admin/dev)
 - [ ] Validações de entrada adicionais
 
 ### **Frontend Next.js (🚧 82%)**
@@ -187,6 +188,12 @@
 ```
 
 ## 🔄 Histórico de Progresso
+
+### **2026-03-25 - Folgas e fazenda ativa (UX)**
+
+- ✅ **`/folgas` — filtro por funcionário**: Gestão (ADMIN/DEVELOPER/GESTAO) pode usar “Visualizar folgas de” para destacar apenas os dias de folga do usuário selecionado e esmaecer os demais; contagem de dias no mês.
+- ✅ **`/folgas` — fazenda para ADMIN/DEVELOPER**: Passa a usar `GET /api/v1/me/fazendas` (vínculos), não a lista global de fazendas; seletor na página só quando há **mais de uma** fazenda vinculada; uma única fazenda é usada automaticamente; troca sincronizada com `setFazendaAtiva`.
+- ✅ **`FazendaContext`**: Tratamento explícito de 0, 1 e N fazendas retornadas por `getMinhasFazendas`; com exatamente uma fazenda, sempre define como ativa e persiste (sobrescreve necessidade de `savedId` prévio).
 
 ### **2026-02-15 - Melhorias Módulo Gestão Pecuária**
 
@@ -432,5 +439,5 @@
 ---
 
 **Última atualização**: 2026-03-25
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Módulo Agrícola avançado no código local e em fase de consolidação | Assistente via FAB e modo Live | CRUD Fazendas, Animais, Produção | Testes unitários e E2E configurados
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Folgas 5x1 com UX de filtro e fazenda por vínculo | Módulo Agrícola avançado no código local e em fase de consolidação | Assistente via FAB e modo Live | CRUD Fazendas, Animais, Produção | Testes unitários e E2E configurados
 **Próxima revisão**: 2026-03-29

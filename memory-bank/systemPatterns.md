@@ -105,6 +105,8 @@ lib/utils.ts
 - `GET|POST /api/v1/safras-culturas/:id/custos|producoes|receitas`
 - `GET /api/v1/areas/:id/resultado/:ano` + `GET /api/v1/fazendas/:id/resultado-agricola/:ano`
 - `GET /api/v1/fazendas/:id/fornecedores/comparativo/:ano`
+- `GET /api/v1/fazendas/:id/usuarios-vinculados` (usuários com vínculo N:N à fazenda; acesso: vínculo ou gestão/admin/dev via `ValidateFazendaAccessOrGestao`)
+- `GET|PUT /api/v1/fazendas/:id/folgas/config` | `GET /api/v1/fazendas/:id/folgas/escala` | `POST /api/v1/fazendas/:id/folgas/gerar` | `POST /api/v1/fazendas/:id/folgas/alteracoes` | `POST /api/v1/fazendas/:id/folgas/justificativas` | `GET /api/v1/fazendas/:id/folgas/alteracoes` | `GET /api/v1/fazendas/:id/folgas/alertas`
 - `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`
 
 **Dev Studio – contexto da IA**:
@@ -278,15 +280,19 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 
 ### **Autorização**
 
-- **Role-Based**: Controle de acesso baseado em roles (USER, ADMIN, DEVELOPER)
+- **Role-Based**: Controle de acesso baseado em roles (USER, FUNCIONARIO, GESTAO, ADMIN, DEVELOPER)
 - **USER**: Perfil padrão; acesso a Fazendas e Assistente.
+- **FUNCIONARIO**: Pode visualizar módulo Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`).
+- **GESTAO**: Pode **configurar**, **gerar** e **alterar** escala de folgas (`RequireGestaoFolgas` = GESTAO, ADMIN ou DEVELOPER), com acesso a fazendas existentes mesmo sem vínculo N:N (via `ValidateFazendaAccessOrGestao`).
 - **ADMIN**: Perfil para acesso à área administrativa (`/api/v1/admin/*`); requer `auth.RequireAdmin()` (ADMIN ou DEVELOPER).
 - **DEVELOPER**: Perfil único no sistema (constraint no banco garante 1 apenas); acesso ao Dev Studio (`/api/v1/dev-studio/*`) e área Admin; requer `auth.RequireDeveloper()` para Dev Studio, `auth.RequireAdmin()` para Admin.
 - **Resource Ownership**: Verificação de propriedade de recursos
 - **Middleware de Autenticação**: Verificação de token em todas as rotas protegidas
 - **Frontend (controle por perfil)**:
   - **USER**: não acessa manutenção de fazendas; `/fazendas` funciona como gateway de redirecionamento (onboarding/seleção/animais).
-  - **ADMIN/DEVELOPER**: acesso completo às páginas de fazendas (listar/detalhar/criar/editar).
+  - **ADMIN/DEVELOPER**: acesso completo às páginas de fazendas (listar/detalhar/criar/editar); em **`/folgas`** a fazenda efetiva vem das **fazendas vinculadas** (`GET /api/v1/me/fazendas` / `useMinhasFazendas`): uma única → sem seletor na página; várias → seletor na página + `setFazendaAtiva` (alinhado ao `FazendaSelector` no header).
+  - **GESTAO**: em `/folgas`, mesmas ações de gestão da escala que admin/dev (usa fazenda ativa / vínculo).
+  - **FUNCIONARIO**: em `/folgas`, apenas visualização e botão de justificativa no próprio dia de folga.
 
 ### **Proteção**
 
@@ -441,6 +447,9 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 - **Implementação**: `Header.tsx` — estado `mobileMenuOpen`, ícone Menu (lucide-react), overlay + painel fixo com links, email e Sair; fechar ao clicar no overlay ou no link. O assistente em linguagem natural (AssistenteInput) aparece apenas na página de listagem de fazendas (`/fazendas`), não no Header.
 - **Ícones no menu**: Cada link de navegação exibe ícone + texto (Farm/Fazendas, Cow/Animais, Milk/Produção, Users/Admin, Code/Dev Studio) para reforço visual e reconhecimento rápido.
 - **Menu Agricultura**: Link dedicado no Header (`Wheat`) com navegação para `/agricultura`, tanto no desktop quanto no menu mobile.
+- **Menu Folgas**: Link no Header (`CalendarDays`) para `/folgas` (escala 5x1 por fazenda).
+- **Fazenda ativa (`FazendaContext` + `FazendaSelector`)**: `getMinhasFazendas` no carregamento; **0** fazendas → limpa estado; **1** → sempre define como ativa e grava `ceialmilk_fazenda_ativa`; **2+** → restaura `savedId` se ainda válido. **`FazendaSelector`**: componente retorna `null` quando `fazendas.length <= 1` (sem dropdown desnecessário).
+- **Folgas — visualização para gestão**: Seletor opcional “Visualizar folgas de” em `app/folgas/page.tsx`; estado de filtro acoplado a `{ fazendaId, usuarioId }` para invalidar ao mudar de fazenda sem `useEffect` de reset; células com destaque (`ring-primary`) ou esmaecidas conforme o funcionário escolhido.
 - **Toggle de tema**: Botão de alternar modo claro/escuro (ThemeToggle) no Header (desktop) e no menu mobile; alvo de toque mínimo 44px; ver seção "Padrões de UX e Acessibilidade".
 - **Controle por perfil**: Menu de **Fazendas** aparece apenas para ADMIN/DEVELOPER; USER sem fazendas não vê itens de manutenção.
 
@@ -487,4 +496,4 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 ---
 
 **Última atualização**: 2026-03-25
-**Versão dos Padrões**: 2.11 (Go + Next.js) — inclusão do padrão de domínio e rotas do Módulo Agrícola; menu Agricultura no Header.
+**Versão dos Padrões**: 2.12 (Go + Next.js) — Módulo Folgas 5x1, perfis FUNCIONARIO/GESTAO, `ValidateFazendaAccessOrGestao`, menu Folgas no Header.

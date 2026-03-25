@@ -62,6 +62,25 @@ func (h *FazendaHandler) Create(c *gin.Context) {
 	response.SuccessCreated(c, fazenda, "Fazenda criada com sucesso")
 }
 
+// GetUsuariosVinculados GET /api/v1/fazendas/:id/usuarios-vinculados
+func (h *FazendaHandler) GetUsuariosVinculados(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+	if !ValidateFazendaAccessOrGestao(c, h.service, id) {
+		return
+	}
+	list, err := h.service.ListUsuariosPublicosPorFazenda(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao listar usuários da fazenda", err.Error())
+		return
+	}
+	response.SuccessOK(c, list, "Usuários vinculados listados")
+}
+
 func (h *FazendaHandler) GetByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)

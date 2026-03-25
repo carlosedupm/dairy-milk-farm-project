@@ -23,12 +23,16 @@ type Props = {
 
 const PERFIS_DISPONIVEIS = [
   { value: "USER", label: "Usuário" },
+  { value: "FUNCIONARIO", label: "Funcionário" },
+  { value: "GESTAO", label: "Gestão" },
   { value: "ADMIN", label: "Administrador" },
   { value: "DEVELOPER", label: "Developer" },
 ];
 
 const PERFIL_LABEL: Record<string, string> = {
   USER: "Usuário",
+  FUNCIONARIO: "Funcionário",
+  GESTAO: "Gestão",
   ADMIN: "Administrador",
   DEVELOPER: "Developer",
 };
@@ -45,13 +49,12 @@ export function UsuarioForm({
   const [nome, setNome] = useState(initial?.nome ?? "");
   const [email, setEmail] = useState(initial?.email ?? "");
   const [senha, setSenha] = useState("");
-  const [perfil, setPerfil] = useState(
-    initial?.perfil === "ADMIN"
-      ? "ADMIN"
-      : initial?.perfil === "DEVELOPER"
-      ? "DEVELOPER"
-      : "USER"
-  );
+  const [perfil, setPerfil] = useState(() => {
+    const p = initial?.perfil ?? "USER";
+    const editaveis = ["USER", "FUNCIONARIO", "GESTAO", "ADMIN"];
+    if (editaveis.includes(p)) return p;
+    return "USER";
+  });
   const perfilReadOnly = !!(initial && perfilNaoEditavel(initial.perfil));
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
   const [error, setError] = useState("");

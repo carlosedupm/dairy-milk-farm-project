@@ -135,6 +135,9 @@ func main() {
 					producaoAgricolaRepo := repository.NewProducaoAgricolaRepository(pool)
 					receitaAgricolaRepo := repository.NewReceitaAgricolaRepository(pool)
 					fazendaSvc := service.NewFazendaService(fazendaRepo)
+					folgasRepo := repository.NewFolgasRepository(pool)
+					folgasSvc := service.NewFolgasService(folgasRepo, fazendaSvc)
+					folgasHandler := handlers.NewFolgasHandler(folgasSvc)
 					animalSvc := service.NewAnimalService(animalRepo, fazendaRepo)
 					reclassificacaoCategoriaSvc := service.NewReclassificacaoCategoriaService(animalRepo)
 					producaoSvc := service.NewProducaoService(producaoRepo, animalRepo)
@@ -212,6 +215,7 @@ func main() {
 						v1.GET("/search/by-localizacao", fazendaHandler.SearchByLocalizacao)
 						v1.GET("/search/by-vacas-min", fazendaHandler.SearchByVacasMin)
 						v1.GET("/search/by-vacas-range", fazendaHandler.SearchByVacasRange)
+						v1.GET("/:id/usuarios-vinculados", fazendaHandler.GetUsuariosVinculados)
 						v1.GET("/:id", fazendaHandler.GetByID)
 						// Criar, editar e excluir fazendas requerem perfil ADMIN ou DEVELOPER
 						v1.POST("", auth.RequireAdmin(), fazendaHandler.Create)
@@ -227,6 +231,15 @@ func main() {
 						v1.GET("/:id/areas", areaHandler.GetByFazendaID)
 						v1.POST("/:id/areas", areaHandler.Create)
 						v1.GET("/:id/resultado-agricola/:ano", resultadoAgricolaHandler.GetByFazendaIDAndAno)
+						// Folgas (escala 5x1)
+						v1.GET("/:id/folgas/config", folgasHandler.GetConfig)
+						v1.PUT("/:id/folgas/config", auth.RequireGestaoFolgas(), folgasHandler.PutConfig)
+						v1.GET("/:id/folgas/escala", folgasHandler.GetEscala)
+						v1.POST("/:id/folgas/gerar", auth.RequireGestaoFolgas(), folgasHandler.PostGerar)
+						v1.POST("/:id/folgas/alteracoes", auth.RequireGestaoFolgas(), folgasHandler.PostAlteracoes)
+						v1.POST("/:id/folgas/justificativas", folgasHandler.PostJustificativa)
+						v1.GET("/:id/folgas/alteracoes", folgasHandler.GetAlteracoes)
+						v1.GET("/:id/folgas/alertas", folgasHandler.GetAlertas)
 					}
 
 					// Rotas de Animais

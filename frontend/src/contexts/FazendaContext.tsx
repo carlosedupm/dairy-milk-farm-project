@@ -63,10 +63,18 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
       setIsValidating(true)
       try {
         const fazendas = await getMinhasFazendas()
-        
-        // Se tem apenas uma fazenda, definir automaticamente como ativa
-        const savedId = localStorage.getItem(STORAGE_KEY)
-        if (fazendas.length === 1 && !savedId) {
+
+        if (fazendas.length === 0) {
+          localStorage.removeItem(STORAGE_KEY)
+          setFazendaAtivaState(null)
+          setIsReady(true)
+          setIsValidating(false)
+          hasLoaded.current = true
+          return
+        }
+
+        // Uma única fazenda: sempre definir como ativa (vínculo do usuário)
+        if (fazendas.length === 1) {
           localStorage.setItem(STORAGE_KEY, fazendas[0].id.toString())
           setFazendaAtivaState(fazendas[0])
           setIsReady(true)
@@ -75,6 +83,7 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
           return
         }
 
+        const savedId = localStorage.getItem(STORAGE_KEY)
         if (savedId) {
           const fazendaId = parseInt(savedId, 10)
           if (!isNaN(fazendaId)) {

@@ -154,6 +154,12 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 - **Referência de CRUD**: Fazenda (handler → service → repository → model). Ver `memory-bank/systemPatterns.md` para padrões e estrutura detalhada.
 - **Dev Studio**: `GitHubService.GetFileContent(ctx, branch, path)` obtém conteúdo de arquivos na branch de produção (GitHub Contents API). Usado para contexto da IA quando `GITHUB_*` configurados.
 
+## Módulo Folgas (escala 5x1)
+
+- **Migração**: `backend/migrations/16_add_folgas_escala.up.sql` — `folgas_escala_config`, `escala_folgas`, `folgas_justificativas`, `folgas_excecoes_dia`, `folgas_alteracoes`.
+- **Backend**: `folgas_repository.go`, `folgas_service.go`, `folgas_handler.go`; `auth.RequireGestaoFolgas()`; `ValidateFazendaAccessOrGestao` em `handlers/access_helper.go`; escala com `excecao_motivo_dia` (JOIN `folgas_excecoes_dia`).
+- **Frontend**: `frontend/src/app/folgas/page.tsx`, `frontend/src/services/folgas.ts`; `useMinhasFazendas` para ADMIN/DEVELOPER na página (não usar `GET /api/v1/fazendas` global); filtro opcional por funcionário para gestão; **`FazendaContext`** (`frontend/src/contexts/FazendaContext.tsx`) define fazenda ativa a partir de `GET /api/v1/me/fazendas` com regras 0 / 1 / N fazendas.
+
 ## Módulo Agrícola (Contexto Técnico)
 
 ### Backend (Go)
@@ -237,4 +243,4 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 ---
 
 **Última atualização**: 2026-03-25
-**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — estrutura atual com Módulo Agrícola documentado (backend + frontend), Dev Studio com contexto do repositório (GitHub)
+**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — Módulo Folgas 5x1 (migration 16), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub)

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/repository"
@@ -15,6 +16,20 @@ var ErrPerfilDeveloperViaAPI = errors.New("perfil DEVELOPER não pode ser atribu
 var ErrEmailEmUso = errors.New("email já está em uso")
 
 const bcryptCost = 10
+
+var perfisAtribuiveisAPI = []string{
+	models.PerfilUser,
+	models.PerfilAdmin,
+	models.PerfilFuncionario,
+	models.PerfilGestao,
+}
+
+func normalizarPerfilAPI(p string) string {
+	if slices.Contains(perfisAtribuiveisAPI, p) {
+		return p
+	}
+	return models.PerfilUser
+}
 
 type UsuarioService struct {
 	repo *repository.UsuarioRepository
@@ -56,9 +71,7 @@ func (s *UsuarioService) Create(ctx context.Context, u *models.Usuario) error {
 	if u.Perfil == models.PerfilDeveloper {
 		return ErrPerfilDeveloperViaAPI
 	}
-	if u.Perfil != models.PerfilUser && u.Perfil != models.PerfilAdmin {
-		u.Perfil = models.PerfilUser
-	}
+	u.Perfil = normalizarPerfilAPI(u.Perfil)
 	if u.Nome == "" {
 		return errors.New("nome é obrigatório")
 	}
@@ -109,9 +122,7 @@ func (s *UsuarioService) Update(ctx context.Context, u *models.Usuario) error {
 		if u.Perfil == models.PerfilDeveloper {
 			return ErrPerfilDeveloperViaAPI
 		}
-		if u.Perfil != models.PerfilUser && u.Perfil != models.PerfilAdmin {
-			u.Perfil = models.PerfilUser
-		}
+		u.Perfil = normalizarPerfilAPI(u.Perfil)
 	}
 
 	exists, err := s.repo.ExistsByEmail(ctx, u.Email, u.ID)

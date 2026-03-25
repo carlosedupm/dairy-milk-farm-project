@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { cn } from "@/lib/utils";
-import { Building2, List, Droplets, Layers, ClipboardList, Menu, Users, Code, X, Wheat } from "lucide-react";
+import { Building2, List, Droplets, Layers, ClipboardList, Menu, Users, Code, X, Wheat, CalendarDays } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -70,6 +70,10 @@ export function Header() {
                 <Link href="/gestao" className={navLinkClass("/gestao")}>
                   <ClipboardList className="h-5 w-5 shrink-0" aria-hidden />
                   Gestão
+                </Link>
+                <Link href="/folgas" className={navLinkClass("/folgas")}>
+                  <CalendarDays className="h-5 w-5 shrink-0" aria-hidden />
+                  Folgas
                 </Link>
                 {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
                   <Link href="/admin/usuarios" className={navLinkClass("/admin")}>
@@ -220,6 +224,17 @@ export function Header() {
                   >
                     <ClipboardList className="h-5 w-5 shrink-0" aria-hidden />
                     Gestão
+                  </Link>
+                  <Link
+                    href="/folgas"
+                    className={cn(
+                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                      navLinkClass("/folgas")
+                    )}
+                    onClick={closeMobileMenu}
+                  >
+                    <CalendarDays className="h-5 w-5 shrink-0" aria-hidden />
+                    Folgas
                   </Link>
                   {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
                     <Link

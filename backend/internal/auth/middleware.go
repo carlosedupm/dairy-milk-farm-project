@@ -69,6 +69,25 @@ func RequireAdmin() gin.HandlerFunc {
 	}
 }
 
+// RequireGestaoFolgas permite ADMIN, DEVELOPER ou GESTAO (gestão de folgas).
+func RequireGestaoFolgas() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		perfil, exists := c.Get("perfil")
+		if !exists {
+			response.ErrorForbidden(c, "Acesso negado. Perfil de gestão necessário.")
+			c.Abort()
+			return
+		}
+		p, ok := perfil.(string)
+		if !ok || !models.PodeGerenciarFolgas(p) {
+			response.ErrorForbidden(c, "Acesso negado. Apenas gestão ou administrador pode alterar a escala de folgas.")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 // RequireDeveloper verifica se o usuário tem perfil DEVELOPER
 func RequireDeveloper() gin.HandlerFunc {
 	return func(c *gin.Context) {

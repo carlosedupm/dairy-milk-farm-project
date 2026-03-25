@@ -258,6 +258,31 @@ func (r *FazendaRepository) queryList(ctx context.Context, query string, args ..
 	return list, rows.Err()
 }
 
+// ListUsuariosPublicosByFazendaID lista usuários vinculados à fazenda (sem senha).
+func (r *FazendaRepository) ListUsuariosPublicosByFazendaID(ctx context.Context, fazendaID int64) ([]models.UsuarioPublico, error) {
+	query := `
+		SELECT u.id, u.nome, u.email, u.perfil
+		FROM usuarios u
+		INNER JOIN usuarios_fazendas uf ON uf.usuario_id = u.id
+		WHERE uf.fazenda_id = $1 AND u.enabled = true
+		ORDER BY u.nome ASC
+	`
+	rows, err := r.db.Query(ctx, query, fazendaID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.UsuarioPublico
+	for rows.Next() {
+		var u models.UsuarioPublico
+		if err := rows.Scan(&u.ID, &u.Nome, &u.Email, &u.Perfil); err != nil {
+			return nil, err
+		}
+		out = append(out, u)
+	}
+	return out, rows.Err()
+}
+
 // GetFazendasByUsuarioID retorna as fazendas vinculadas ao usuário (minhas fazendas).
 func (r *FazendaRepository) GetFazendasByUsuarioID(ctx context.Context, usuarioID int64) ([]*models.Fazenda, error) {
 	query := `
