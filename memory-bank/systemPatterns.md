@@ -98,6 +98,13 @@ lib/utils.ts
 
 - `POST /api/auth/login|logout|refresh|validate`
 - `GET|POST|PUT|DELETE /api/v1/fazendas` (+ /count, /exists, /search/by-\*)
+- `GET|POST /api/v1/fazendas/:id/fornecedores` + `GET|PUT|DELETE /api/v1/fornecedores/:id`
+- `GET|POST /api/v1/fazendas/:id/areas` + `GET|PUT|DELETE /api/v1/areas/:id`
+- `GET|POST /api/v1/areas/:id/analises-solo`
+- `GET /api/v1/areas/:id/safras/:ano` + `POST|GET|PUT|DELETE /api/v1/safras-culturas`
+- `GET|POST /api/v1/safras-culturas/:id/custos|producoes|receitas`
+- `GET /api/v1/areas/:id/resultado/:ano` + `GET /api/v1/fazendas/:id/resultado-agricola/:ano`
+- `GET /api/v1/fazendas/:id/fornecedores/comparativo/:ano`
 - `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`
 
 **Dev Studio – contexto da IA**:
@@ -168,11 +175,17 @@ lib/utils.ts
 // Estrutura principal de entidades
 Fazenda (1) ─── (N) Animal (1) ─── (N) ProduçãoLeite
 Usuario (N) ─── (N) Fazenda  // via tabela usuarios_fazendas (vínculo N:N)
+Fazenda (1) ─── (N) Área (1) ─── (N) SafraCultura
+SafraCultura (1) ─── (N) CustoAgricola
+SafraCultura (1) ─── (N) ProducaoAgricola
+SafraCultura (1) ─── (N) ReceitaAgricola
+Fazenda (1) ─── (N) Fornecedor (referenciado por custos/receitas)
 ```
 
 - **Vínculo usuário–fazenda**: Tabela `usuarios_fazendas` (usuario_id, fazenda_id). Um usuário pode ter várias fazendas vinculadas; quando há apenas uma, o sistema a considera automaticamente em formulários e atalhos.
 - **Atribuição de fazendas**: Somente o perfil **ADMIN** (ou DEVELOPER) pode atribuir fazendas a usuários, na tela de administração (editar usuário → seção "Fazendas vinculadas").
 - **Perfil não editável**: Na edição de usuário, o campo perfil não pode ser alterado quando o usuário já for ADMIN ou DEVELOPER (somente leitura no frontend e preservação no backend).
+- **Módulo agrícola**: domínio separado por safra/cultura para permitir cálculo de resultado agrícola por área/ano e consolidado por fazenda/ano, além de comparativo de fornecedores.
 
 ### **Reclassificação automática de categoria (gestão pecuária)**
 
@@ -427,6 +440,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 - **Padrão**: Navegação desktop (lg:) com links visíveis; em mobile (< lg) menu hamburger que abre drawer lateral
 - **Implementação**: `Header.tsx` — estado `mobileMenuOpen`, ícone Menu (lucide-react), overlay + painel fixo com links, email e Sair; fechar ao clicar no overlay ou no link. O assistente em linguagem natural (AssistenteInput) aparece apenas na página de listagem de fazendas (`/fazendas`), não no Header.
 - **Ícones no menu**: Cada link de navegação exibe ícone + texto (Farm/Fazendas, Cow/Animais, Milk/Produção, Users/Admin, Code/Dev Studio) para reforço visual e reconhecimento rápido.
+- **Menu Agricultura**: Link dedicado no Header (`Wheat`) com navegação para `/agricultura`, tanto no desktop quanto no menu mobile.
 - **Toggle de tema**: Botão de alternar modo claro/escuro (ThemeToggle) no Header (desktop) e no menu mobile; alvo de toque mínimo 44px; ver seção "Padrões de UX e Acessibilidade".
 - **Controle por perfil**: Menu de **Fazendas** aparece apenas para ADMIN/DEVELOPER; USER sem fazendas não vê itens de manutenção.
 
@@ -472,5 +486,5 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Última atualização**: 2026-02-17
-**Versão dos Padrões**: 2.10 (Go + Next.js) — Gestão Pecuária: useAnimaisMap defensivo; Assistente: resposta em texto puro (sem markdown/negrito) no modo Live.
+**Última atualização**: 2026-03-25
+**Versão dos Padrões**: 2.11 (Go + Next.js) — inclusão do padrão de domínio e rotas do Módulo Agrícola; menu Agricultura no Header.

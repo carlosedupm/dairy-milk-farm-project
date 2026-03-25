@@ -150,9 +150,69 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 ## Estrutura de pastas atual
 
 - **Backend**: `backend/cmd/api`, `backend/internal/{handlers,service,repository,models,response,auth,middleware,config,observability}`, `backend/migrations`.
-- **Frontend**: `frontend/src/app`, `frontend/src/components/{fazendas,dev-studio,layout,ui}`, `frontend/src/services`, `frontend/src/contexts`, `frontend/src/lib`.
+- **Frontend**: `frontend/src/app`, `frontend/src/components/{fazendas,agricultura,dev-studio,layout,ui}`, `frontend/src/services`, `frontend/src/contexts`, `frontend/src/lib`.
 - **Referência de CRUD**: Fazenda (handler → service → repository → model). Ver `memory-bank/systemPatterns.md` para padrões e estrutura detalhada.
 - **Dev Studio**: `GitHubService.GetFileContent(ctx, branch, path)` obtém conteúdo de arquivos na branch de produção (GitHub Contents API). Usado para contexto da IA quando `GITHUB_*` configurados.
+
+## Módulo Agrícola (Contexto Técnico)
+
+### Backend (Go)
+
+- **Migração**: `backend/migrations/15_add_modulo_agricola.up.sql` e `.down.sql`.
+- **Domínio**:
+  - `fornecedores`
+  - `areas`
+  - `analises_solo`
+  - `safras_culturas`
+  - `custos_agricolas`
+  - `producoes_agricolas`
+  - `receitas_agricolas`
+- **Camadas implementadas**:
+  - **Models**: `backend/internal/models/*` (entidades agrícolas)
+  - **Repositories**: `backend/internal/repository/*_repository.go`
+  - **Services**: `backend/internal/service/*_service.go`
+  - **Handlers**: `backend/internal/handlers/*_handler.go`
+- **Registro de rotas**: centralizado em `backend/cmd/api/main.go` no grupo `/api/v1`.
+
+### Rotas principais do módulo
+
+- **Fornecedores por fazenda**:
+  - `GET /api/v1/fazendas/:id/fornecedores`
+  - `POST /api/v1/fazendas/:id/fornecedores`
+  - `GET|PUT|DELETE /api/v1/fornecedores/:id`
+- **Áreas por fazenda**:
+  - `GET /api/v1/fazendas/:id/areas`
+  - `POST /api/v1/fazendas/:id/areas`
+  - `GET|PUT|DELETE /api/v1/areas/:id`
+- **Análises de solo**:
+  - `GET /api/v1/areas/:id/analises-solo`
+  - `POST /api/v1/areas/:id/analises-solo`
+- **Safras/Culturas**:
+  - `GET /api/v1/areas/:id/safras/:ano`
+  - `POST|GET|PUT|DELETE /api/v1/safras-culturas`
+- **Custos / Produções / Receitas por safra-cultura**:
+  - `GET|POST /api/v1/safras-culturas/:id/custos`
+  - `GET|POST /api/v1/safras-culturas/:id/producoes`
+  - `GET|POST /api/v1/safras-culturas/:id/receitas`
+- **Resultados e comparativos**:
+  - `GET /api/v1/areas/:id/resultado/:ano`
+  - `GET /api/v1/fazendas/:id/resultado-agricola/:ano`
+  - `GET /api/v1/fazendas/:id/fornecedores/comparativo/:ano`
+
+### Frontend (Next.js)
+
+- **Páginas App Router**: `frontend/src/app/agricultura/**`
+  - Dashboard do módulo
+  - CRUD de fornecedores
+  - CRUD de áreas
+  - Análises de solo por área
+  - Safras/culturas por área/ano
+  - Detalhe de safra/cultura com custos, produções e receitas
+  - Resultado agrícola por fazenda/ano
+  - Comparativo de fornecedores
+- **Componentes dedicados**: `frontend/src/components/agricultura/**`
+- **Service dedicado**: `frontend/src/services/agricultura.ts`
+- **Navegação**: acesso via item "Agricultura" no Header (desktop e mobile).
 
 ## Vantagens da Nova Stack
 
@@ -176,5 +236,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-01-26
-**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — Estrutura de pastas atual documentada; Dev Studio com contexto do repositório (GitHub)
+**Última atualização**: 2026-03-25
+**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — estrutura atual com Módulo Agrícola documentado (backend + frontend), Dev Studio com contexto do repositório (GitHub)
