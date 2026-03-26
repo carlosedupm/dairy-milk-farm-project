@@ -95,6 +95,7 @@
 - [x] **UX e Acessibilidade**: Paleta rural (modo claro e escuro) em globals.css; toggle tema no Header e menu mobile com persistência (ThemeContext, ThemeToggle); tipografia 16px e alvos de toque 44px; ícones no menu (Farm, Cow, Milk, Users, Code); formulários e listas padronizados (space-y-5, botão lg, tabelas overflow-x-auto); home com atalhos (Ver fazendas, Ver animais, Registrar produção)
 - [x] **Fluxos de acesso e onboarding**: Header oculto em `/registro`; botão "Voltar para login" no onboarding faz logout; restrição de acesso às páginas de fazenda para USER (gateway em `/fazendas`, `/fazendas/[id]` admin-only); correção de erro no `AnimalForm` ao iniciar nova criação
 - [x] **Módulo Agricultura no App Router**: dashboard `/agricultura`, CRUD de fornecedores e áreas, análises de solo, safras/culturas, custos, produções, receitas, resultado por fazenda/ano e comparativo de fornecedores, com serviços dedicados em `src/services/agricultura.ts`
+- [x] **Folgas UX mobile (refatoração)**: layout mobile reorganizado mantendo grade mensal, cards de alertas/equidade colapsáveis no celular, células compactas com “Ver detalhes”, dialog touch-friendly por dia e histórico em cards no mobile (tabela preservada no desktop)
 
 ## 📋 Próximos Passos
 
@@ -203,6 +204,14 @@
 
 - ✅ `GERENTE` agora é tratado como perfil com permissões de gestão na tela `/folgas` (front) e nas validações de API para gerar/alterar escala (back).
 - ✅ Os combos de usuários continuam restringindo as opções para `FUNCIONARIO` e `GERENTE` (com `GESTAO` como compatibilidade).
+
+### **2026-03-26 - Folgas: UX mobile com detalhes por dia**
+
+- ✅ **Hierarquia mobile da página**: navegação de mês + ações em bloco compacto, com melhor priorização visual no topo.
+- ✅ **Alertas e Equidade no mobile**: exibidos em seções colapsáveis para reduzir rolagem antes do calendário.
+- ✅ **Células do calendário**: simplificadas para resumo visual (status do dia + indicadores), removendo excesso de texto no grid.
+- ✅ **Interação touch-friendly**: novo dialog “Detalhes do dia” com previsão do rodízio, registros e ações contextuais (Alterar/Justificar).
+- ✅ **Histórico responsivo**: cards no mobile e tabela mantida no desktop.
 
 ### **2026-03-26 - Admin usuários: padrão UI + auto-vínculo de fazenda única**
 

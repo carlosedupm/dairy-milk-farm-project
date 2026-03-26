@@ -16,8 +16,31 @@ type Props = {
 };
 
 export function FolgasHistoricoTable({ items }: Props) {
+  const renderDetalhes = (detalhes?: Record<string, unknown>) => {
+    if (!detalhes) return "—";
+    const pairs = Object.entries(detalhes);
+    if (pairs.length === 0) return "—";
+    return pairs
+      .slice(0, 3)
+      .map(([k, v]) => `${k}: ${String(v)}`)
+      .join(" | ");
+  };
+
   return (
-    <Table className="text-base">
+    <>
+      <div className="space-y-3 md:hidden">
+        {items.map((h) => (
+          <div key={h.id} className="rounded-md border p-3 text-base">
+            <p className="text-muted-foreground">
+              {format(new Date(h.created_at), "dd/MM/yyyy HH:mm")}
+            </p>
+            <p className="mt-1 font-medium">{h.tipo}</p>
+            <p className="mt-1 text-muted-foreground">{renderDetalhes(h.detalhes)}</p>
+          </div>
+        ))}
+      </div>
+
+      <Table className="hidden text-base md:table">
         <TableHeader>
           <TableRow>
             <TableHead className="text-base font-medium">Data/hora</TableHead>
@@ -45,5 +68,6 @@ export function FolgasHistoricoTable({ items }: Props) {
           ))}
         </TableBody>
       </Table>
+    </>
   );
 }

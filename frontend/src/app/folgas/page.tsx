@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FolgasCalendarioDia } from "@/components/folgas/FolgasCalendarioDia";
 import { FolgasHistoricoTable } from "@/components/folgas/FolgasHistoricoTable";
+import { FolgasDiaDetalhesDialog } from "@/components/folgas/FolgasDiaDetalhesDialog";
 import { parseApiDate, toYMD } from "@/components/folgas/folgas-utils";
 import {
   Select,
@@ -223,6 +224,8 @@ function FolgasContent() {
   const [justOpen, setJustOpen] = useState(false);
   const [diaAlter, setDiaAlter] = useState<string | null>(null);
   const [diaJust, setDiaJust] = useState<string | null>(null);
+  const [diaDetalhes, setDiaDetalhes] = useState<string | null>(null);
+  const [diaDetalhesOpen, setDiaDetalhesOpen] = useState(false);
 
   const [cfgAnchor, setCfgAnchor] = useState(toYMD(new Date()));
   const [cfgS0, setCfgS0] = useState<string>("");
@@ -398,6 +401,35 @@ function FolgasContent() {
     setJustOpen(true);
   };
 
+  const abrirDetalhesDia = (ymd: string) => {
+    setDiaDetalhes(ymd);
+    setDiaDetalhesOpen(true);
+  };
+
+  const fecharDetalhesDia = (open: boolean) => {
+    setDiaDetalhesOpen(open);
+    if (!open) setDiaDetalhes(null);
+  };
+
+  const detalhesData = useMemo(
+    () => (diaDetalhes ? new Date(`${diaDetalhes}T00:00:00`) : null),
+    [diaDetalhes]
+  );
+  const detalhesLista = useMemo(
+    () => (diaDetalhes ? porDia.get(diaDetalhes) ?? [] : []),
+    [diaDetalhes, porDia]
+  );
+  const detalhesRodizio = useMemo(
+    () => (diaDetalhes ? rodizioPorDiaMap.get(diaDetalhes) ?? null : null),
+    [diaDetalhes, rodizioPorDiaMap]
+  );
+  const detalhesMeuDia =
+    !!diaDetalhes &&
+    isFuncionario &&
+    !!user?.id &&
+    detalhesLista.some((x) => x.usuario_id === user.id);
+  const detalhesExcecaoDia = detalhesLista[0]?.excecao_motivo_dia ?? null;
+
   const fazendaNomeVisivel =
     fazendaAtiva?.id === fazendaId
       ? fazendaAtiva.nome
@@ -426,7 +458,7 @@ function FolgasContent() {
       {fazendaId && (
         <>
           {alertasNoMesCorrente.length > 0 && (
-            <Card className="border-destructive/50">
+            <Card className="border-destructive/50 hidden md:block">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2 text-destructive">
                   <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden />
@@ -444,9 +476,24 @@ function FolgasContent() {
             </Card>
           )}
 
+          {alertasNoMesCorrente.length > 0 && (
+            <details className="md:hidden rounded-md border border-destructive/50 px-3 py-2">
+              <summary className="cursor-pointer list-none text-base font-medium text-destructive">
+                Alertas no mês ({alertasNoMesCorrente.length})
+              </summary>
+              <div className="mt-2 space-y-2 text-base">
+                {alertasNoMesCorrente.map((a) => (
+                  <p key={a.data}>
+                    <strong>{parseApiDate(a.data)}</strong>: {a.motivo_alerta} ({a.quantidade_folga} folgas)
+                  </p>
+                ))}
+              </div>
+            </details>
+          )}
+
           {canManage && config && resumoEquidade.length > 0 && (
             <Card
-              className={`mt-6 ${equidadeDestaqueForte ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-border"}`}
+              className={`mt-6 hidden md:block ${equidadeDestaqueForte ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-border"}`}
             >
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -484,6 +531,30 @@ function FolgasContent() {
                 </ul>
               </CardContent>
             </Card>
+          )}
+
+          {canManage && config && resumoEquidade.length > 0 && (
+            <details
+              className={`mt-6 rounded-md border px-3 py-2 md:hidden ${equidadeDestaqueForte ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-border"}`}
+            >
+              <summary className="cursor-pointer list-none text-base font-medium">
+                Equidade no mês (informativo)
+              </summary>
+              <div className="mt-3 space-y-3 text-base">
+                <p className="text-muted-foreground">
+                  Comparativo entre folgas <strong>registradas</strong> e o que o rodízio
+                  <strong> prevê</strong> para cada slot.
+                </p>
+                {resumoEquidade.map((r) => (
+                  <p key={r.usuario_id}>
+                    <strong>{r.usuario_nome || `Usuário #${r.usuario_id}`}</strong>
+                    {" — "}
+                    {r.folgas_registradas} registrada(s) vs {r.folgas_teoricas_auto} prevista(s)
+                    {r.delta !== 0 ? ` (Δ ${r.delta > 0 ? "+" : ""}${r.delta})` : ""}
+                  </p>
+                ))}
+              </div>
+            </details>
           )}
 
           <Card className={alertasNoMesCorrente.length > 0 || (canManage && config && resumoEquidade.length > 0) ? "mt-6" : ""}>
@@ -535,35 +606,37 @@ function FolgasContent() {
               )}
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="min-h-[44px] min-w-[44px]"
-                  onClick={() => setMonth((m) => addMonths(m, -1))}
-                  aria-label="Mês anterior"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <span className="min-w-[160px] text-center text-base font-medium capitalize">
-                  {format(month, "MMMM yyyy", { locale: ptBR })}
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="min-h-[44px] min-w-[44px]"
-                  onClick={() => setMonth((m) => addMonths(m, 1))}
-                  aria-label="Próximo mês"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="min-h-[44px] min-w-[44px]"
+                    onClick={() => setMonth((m) => addMonths(m, -1))}
+                    aria-label="Mês anterior"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <span className="text-center text-base font-medium capitalize">
+                    {format(month, "MMMM yyyy", { locale: ptBR })}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="min-h-[44px] min-w-[44px]"
+                    onClick={() => setMonth((m) => addMonths(m, 1))}
+                    aria-label="Próximo mês"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
                 {canManage && (
-                  <>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <Button
                       type="button"
-                      className="min-h-[44px]"
+                      className="min-h-[44px] w-full"
                       onClick={() => {
                         setFormError("");
                         if (config) {
@@ -585,7 +658,7 @@ function FolgasContent() {
                     <Button
                       type="button"
                       variant="secondary"
-                      className="min-h-[44px]"
+                      className="min-h-[44px] w-full"
                       onClick={() => {
                         setFormError("");
                         setGerarOpen(true);
@@ -594,7 +667,7 @@ function FolgasContent() {
                     >
                       Gerar mês automático
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
 
@@ -704,8 +777,7 @@ function FolgasContent() {
                               filtroVisualAtivo={filtroVisualAtivo}
                               filtroFuncionarioId={filtroFuncionarioIdEfetivo}
                               userId={user?.id}
-                              onAlterar={abrirAlterar}
-                              onJustificar={abrirJustificar}
+                              onOpenDetails={abrirDetalhesDia}
                             />
                           );
                         })}
@@ -1006,6 +1078,29 @@ function FolgasContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <FolgasDiaDetalhesDialog
+        open={diaDetalhesOpen}
+        onOpenChange={fecharDetalhesDia}
+        date={detalhesData}
+        lista={detalhesLista}
+        rodizioDia={detalhesRodizio}
+        excecaoMotivoDia={detalhesExcecaoDia}
+        canManage={canManage}
+        isFuncionario={isFuncionario}
+        meuDia={detalhesMeuDia}
+        userId={user?.id}
+        onAlterarDia={() => {
+          if (!diaDetalhes) return;
+          setDiaDetalhesOpen(false);
+          abrirAlterar(diaDetalhes);
+        }}
+        onJustificarDia={() => {
+          if (!diaDetalhes) return;
+          setDiaDetalhesOpen(false);
+          abrirJustificar(diaDetalhes);
+        }}
+      />
     </PageContainer>
   );
 }

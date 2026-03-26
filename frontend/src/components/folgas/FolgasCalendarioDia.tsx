@@ -27,8 +27,7 @@ export type FolgasCalendarioDiaProps = {
   filtroVisualAtivo: boolean;
   filtroFuncionarioId: number | null;
   userId: number | undefined;
-  onAlterar: (ymd: string) => void;
-  onJustificar: (ymd: string) => void;
+  onOpenDetails: (ymd: string) => void;
 };
 
 export function FolgasCalendarioDia({
@@ -43,8 +42,7 @@ export function FolgasCalendarioDia({
   filtroVisualAtivo,
   filtroFuncionarioId,
   userId,
-  onAlterar,
-  onJustificar,
+  onOpenDetails,
 }: FolgasCalendarioDiaProps) {
   const ymd = toYMD(d);
   const fora = !isSameMonth(d, month);
@@ -76,7 +74,14 @@ export function FolgasCalendarioDia({
 
   const foraDoRodizio =
     canManage && divergeRegistradoDoRodizio(lista, rodizioDia ?? undefined);
-  const linhaRodizio = labelRodizioPrevisto(rodizioDia ?? undefined);
+  const rodizioCurto = (() => {
+    if (!rodizioDia?.tem_folga) return null;
+    if (rodizioDia.usuario_nome?.trim()) {
+      return rodizioDia.usuario_nome.trim();
+    }
+    if (rodizioDia.usuario_id != null) return `#${rodizioDia.usuario_id}`;
+    return "Folga prevista";
+  })();
 
   const tooltipText = buildFolgasCellTooltipText({
     entradas: entradasTooltip,
@@ -88,6 +93,11 @@ export function FolgasCalendarioDia({
     userId,
   });
 
+  const totalFolgasVisiveis = listaVisivel.length;
+  const diaLabel =
+    isFuncionario && meuDia
+      ? "Meu dia"
+      : `${totalFolgasVisiveis} ${totalFolgasVisiveis === 1 ? "folga" : "folgas"}`;
   const cellClassName = `min-h-[88px] rounded-md border border-border p-1.5 text-base outline-none ${
     fora ? "bg-muted/40 text-muted-foreground" : "bg-card"
   } ${temAlerta ? "ring-2 ring-destructive/60" : ""} ${
@@ -105,71 +115,49 @@ export function FolgasCalendarioDia({
           format(d, "d")
         )}
       </div>
-      <div className="mt-1 space-y-0.5">
-        {linhaRodizio && (
-          <div className="truncate text-[13px] leading-snug text-muted-foreground">
-            {linhaRodizio}
+      <div className="mt-1 space-y-1">
+        {!fora && rodizioCurto && (
+          <div className="truncate text-[12px] leading-snug text-muted-foreground">
+            {rodizioCurto}
+          </div>
+        )}
+        {!fora && !diaEsmaecidoFiltro && (
+          <div className="text-sm leading-snug">
+            {totalFolgasVisiveis > 0 ? (
+              <span className="font-medium">{diaLabel}</span>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
           </div>
         )}
         {foraDoRodizio && (
-          <Badge variant="outline" className="mt-0.5 border-amber-500/70 text-amber-900 dark:text-amber-100">
+          <Badge
+            variant="outline"
+            className="mt-0.5 hidden border-amber-500/70 text-amber-900 dark:text-amber-100 md:inline-flex"
+          >
             Fora do rodízio
           </Badge>
         )}
-        {listaVisivel.map((e) => (
-          <div key={e.id}>
-            <div className="truncate text-base leading-snug">
-              {e.usuario_nome || `Usuário #${e.usuario_id}`}
-              {e.origem === "MANUAL" && (
-                <span className="text-muted-foreground"> (aj.)</span>
-              )}
-              {e.justificada && (
-                <span className="text-muted-foreground"> ✓</span>
-              )}
-            </div>
-            {e.motivo &&
-              (canManage ||
-                (isFuncionario && userId && e.usuario_id === userId)) && (
-                <div className="mt-0.5 truncate text-base leading-snug text-muted-foreground">
-                  Motivo: {e.motivo}
-                </div>
-              )}
-          </div>
-        ))}
-        {!diaEsmaecidoFiltro &&
-          listaVisivel.length === 0 &&
-          !excecaoMotivoDia && (
-            <span className="text-base text-muted-foreground">—</span>
-          )}
-
-        {mostrarExcecaoDia && (
-          <div className="mt-1 truncate text-base leading-snug text-muted-foreground">
-            Exceção do dia: {excecaoMotivoDia}
-          </div>
+        {foraDoRodizio && (
+          <span
+            className="mt-0.5 inline-block h-2 w-2 rounded-full bg-amber-500 md:hidden"
+            aria-label="Fora do rodízio"
+            title="Fora do rodízio"
+          />
+        )}
+        {!fora && mostrarExcecaoDia && (
+          <p className="truncate text-sm text-muted-foreground">Exceção</p>
         )}
       </div>
-      {canManage && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="lg"
-          className="mt-1 h-auto min-h-[44px] w-full px-2 text-base font-normal"
-          onClick={() => onAlterar(ymd)}
-        >
-          Alterar dia
-        </Button>
-      )}
-      {isFuncionario && meuDia && (
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className="mt-1 h-auto min-h-[44px] w-full px-2 text-base font-normal"
-          onClick={() => onJustificar(ymd)}
-        >
-          Justificar
-        </Button>
-      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="lg"
+        className="mt-1 hidden h-auto min-h-[44px] w-full px-2 text-sm font-normal md:flex"
+        onClick={() => onOpenDetails(ymd)}
+      >
+        Ver detalhes
+      </Button>
     </>
   );
 
@@ -179,8 +167,16 @@ export function FolgasCalendarioDia({
         <TooltipTrigger asChild>
           <div
             tabIndex={0}
-            className={cellClassName}
-            aria-label={`${format(d, "d/MM/yyyy")}. Ver detalhes ao focar ou passar o mouse.`}
+            className={`${cellClassName} cursor-pointer`}
+            aria-label={`${format(d, "d/MM/yyyy")}. ${diaLabel}. Toque para ver detalhes.`}
+            role="button"
+            onClick={() => onOpenDetails(ymd)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpenDetails(ymd);
+              }
+            }}
           >
             {cellBody}
           </div>
@@ -196,5 +192,21 @@ export function FolgasCalendarioDia({
     );
   }
 
-  return <div className={cellClassName}>{cellBody}</div>;
+  return (
+    <div
+      tabIndex={0}
+      role="button"
+      className={`${cellClassName} cursor-pointer`}
+      aria-label={`${format(d, "d/MM/yyyy")}. ${diaLabel}. Toque para ver detalhes.`}
+      onClick={() => onOpenDetails(ymd)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpenDetails(ymd);
+        }
+      }}
+    >
+      {cellBody}
+    </div>
+  );
 }
