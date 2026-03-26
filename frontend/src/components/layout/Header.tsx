@@ -10,7 +10,36 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { cn } from "@/lib/utils";
-import { Building2, List, Droplets, Layers, ClipboardList, Menu, Users, Code, X, Wheat, CalendarDays } from "lucide-react";
+import {
+  Building2,
+  List,
+  Droplets,
+  Layers,
+  ClipboardList,
+  Menu,
+  Users,
+  Code,
+  X,
+  Wheat,
+  CalendarDays,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  getNavAreasForPerfil,
+  getAreaHref,
+  AREA_LABEL,
+  type AppArea,
+} from "@/config/appAccess";
+
+const AREA_ICON: Record<AppArea, LucideIcon> = {
+  fazendas: Building2,
+  animais: List,
+  producao: Droplets,
+  lotes: Layers,
+  agricultura: Wheat,
+  gestao: ClipboardList,
+  folgas: CalendarDays,
+};
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -23,6 +52,8 @@ export function Header() {
   const showNavLinks =
     !!user && (isAdmin || (!fazendasLoading && fazendas.length > 0));
 
+  const navAreas = getNavAreasForPerfil(user?.perfil);
+
   const isActive = (path: string) =>
     pathname === path || pathname?.startsWith(path + "/");
 
@@ -33,6 +64,75 @@ export function Header() {
     );
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  const renderMainNavLinks = (opts: { onNavigate?: () => void }) => {
+    const onNav = opts.onNavigate ?? (() => {});
+    return (
+      <>
+        {isAdmin && (
+          <Link
+            href="/fazendas"
+            className={cn(
+              opts.onNavigate &&
+                "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+              navLinkClass("/fazendas")
+            )}
+            onClick={onNav}
+          >
+            <Building2 className="h-5 w-5 shrink-0" aria-hidden />
+            {AREA_LABEL.fazendas}
+          </Link>
+        )}
+        {navAreas.map((area) => {
+          const pathPrefix = getAreaHref(area);
+          const Icon = AREA_ICON[area];
+          return (
+            <Link
+              key={area}
+              href={pathPrefix}
+              className={cn(
+                opts.onNavigate &&
+                  "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+                navLinkClass(pathPrefix)
+              )}
+              onClick={onNav}
+            >
+              <Icon className="h-5 w-5 shrink-0" aria-hidden />
+              {AREA_LABEL[area]}
+            </Link>
+          );
+        })}
+        {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
+          <Link
+            href="/admin/usuarios"
+            className={cn(
+              opts.onNavigate &&
+                "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+              navLinkClass("/admin")
+            )}
+            onClick={onNav}
+          >
+            <Users className="h-5 w-5 shrink-0" aria-hidden />
+            Admin
+          </Link>
+        )}
+        {user && user.perfil === "DEVELOPER" && (
+          <Link
+            href="/dev-studio"
+            className={cn(
+              opts.onNavigate &&
+                "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
+              navLinkClass("/dev-studio")
+            )}
+            onClick={onNav}
+          >
+            <Code className="h-5 w-5 shrink-0" aria-hidden />
+            Dev Studio
+          </Link>
+        )}
+      </>
+    );
+  };
 
   return (
     <header className="border-b bg-card sticky top-0 z-50">
@@ -45,48 +145,7 @@ export function Header() {
             {/* Desktop nav - hidden on mobile */}
             {showNavLinks && (
               <nav className="hidden lg:flex items-center gap-1">
-                {isAdmin && (
-                  <Link href="/fazendas" className={navLinkClass("/fazendas")}>
-                    <Building2 className="h-5 w-5 shrink-0" aria-hidden />
-                    Fazendas
-                  </Link>
-                )}
-                <Link href="/animais" className={navLinkClass("/animais")}>
-                  <List className="h-5 w-5 shrink-0" aria-hidden />
-                  Animais
-                </Link>
-                <Link href="/producao" className={navLinkClass("/producao")}>
-                  <Droplets className="h-5 w-5 shrink-0" aria-hidden />
-                  Produção
-                </Link>
-                <Link href="/lotes" className={navLinkClass("/lotes")}>
-                  <Layers className="h-5 w-5 shrink-0" aria-hidden />
-                  Lotes
-                </Link>
-                <Link href="/agricultura" className={navLinkClass("/agricultura")}>
-                  <Wheat className="h-5 w-5 shrink-0" aria-hidden />
-                  Agricultura
-                </Link>
-                <Link href="/gestao" className={navLinkClass("/gestao")}>
-                  <ClipboardList className="h-5 w-5 shrink-0" aria-hidden />
-                  Gestão
-                </Link>
-                <Link href="/folgas" className={navLinkClass("/folgas")}>
-                  <CalendarDays className="h-5 w-5 shrink-0" aria-hidden />
-                  Folgas
-                </Link>
-                {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
-                  <Link href="/admin/usuarios" className={navLinkClass("/admin")}>
-                    <Users className="h-5 w-5 shrink-0" aria-hidden />
-                    Admin
-                  </Link>
-                )}
-                {user && user.perfil === "DEVELOPER" && (
-                  <Link href="/dev-studio" className={navLinkClass("/dev-studio")}>
-                    <Code className="h-5 w-5 shrink-0" aria-hidden />
-                    Dev Studio
-                  </Link>
-                )}
+                {renderMainNavLinks({})}
               </nav>
             )}
           </div>
@@ -157,111 +216,7 @@ export function Header() {
               </div>
               {showNavLinks && (
                 <>
-                  {isAdmin && (
-                    <Link
-                      href="/fazendas"
-                      className={cn(
-                        "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                        navLinkClass("/fazendas")
-                      )}
-                      onClick={closeMobileMenu}
-                    >
-                      <Building2 className="h-5 w-5 shrink-0" aria-hidden />
-                      Fazendas
-                    </Link>
-                  )}
-                  <Link
-                    href="/animais"
-                    className={cn(
-                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                      navLinkClass("/animais")
-                    )}
-                    onClick={closeMobileMenu}
-                  >
-                    <List className="h-5 w-5 shrink-0" aria-hidden />
-                    Animais
-                  </Link>
-                  <Link
-                    href="/producao"
-                    className={cn(
-                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                      navLinkClass("/producao")
-                    )}
-                    onClick={closeMobileMenu}
-                  >
-                    <Droplets className="h-5 w-5 shrink-0" aria-hidden />
-                    Produção
-                  </Link>
-                  <Link
-                    href="/lotes"
-                    className={cn(
-                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                      navLinkClass("/lotes")
-                    )}
-                    onClick={closeMobileMenu}
-                  >
-                    <Layers className="h-5 w-5 shrink-0" aria-hidden />
-                    Lotes
-                  </Link>
-                  <Link
-                    href="/agricultura"
-                    className={cn(
-                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                      navLinkClass("/agricultura")
-                    )}
-                    onClick={closeMobileMenu}
-                  >
-                    <Wheat className="h-5 w-5 shrink-0" aria-hidden />
-                    Agricultura
-                  </Link>
-                  <Link
-                    href="/gestao"
-                    className={cn(
-                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                      navLinkClass("/gestao")
-                    )}
-                    onClick={closeMobileMenu}
-                  >
-                    <ClipboardList className="h-5 w-5 shrink-0" aria-hidden />
-                    Gestão
-                  </Link>
-                  <Link
-                    href="/folgas"
-                    className={cn(
-                      "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                      navLinkClass("/folgas")
-                    )}
-                    onClick={closeMobileMenu}
-                  >
-                    <CalendarDays className="h-5 w-5 shrink-0" aria-hidden />
-                    Folgas
-                  </Link>
-                  {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
-                    <Link
-                      href="/admin/usuarios"
-                      className={cn(
-                        "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                        navLinkClass("/admin")
-                      )}
-                      onClick={closeMobileMenu}
-                    >
-                      <Users className="h-5 w-5 shrink-0" aria-hidden />
-                      Admin
-                    </Link>
-                  )}
-                  {user && user.perfil === "DEVELOPER" && (
-                    <Link
-                      href="/dev-studio"
-                      className={cn(
-                        "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                        navLinkClass("/dev-studio")
-                      )}
-                      onClick={closeMobileMenu}
-                    >
-                      <Code className="h-5 w-5 shrink-0" aria-hidden />
-                      Dev Studio
-                    </Link>
-                  )}
+                  {renderMainNavLinks({ onNavigate: closeMobileMenu })}
                 </>
               )}
               {user && (

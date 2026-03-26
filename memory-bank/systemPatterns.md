@@ -106,7 +106,7 @@ lib/utils.ts
 - `GET /api/v1/areas/:id/resultado/:ano` + `GET /api/v1/fazendas/:id/resultado-agricola/:ano`
 - `GET /api/v1/fazendas/:id/fornecedores/comparativo/:ano`
 - `GET /api/v1/fazendas/:id/usuarios-vinculados` (usuários com vínculo N:N à fazenda; acesso: vínculo ou gestão/admin/dev via `ValidateFazendaAccessOrGestao`)
-- `GET|PUT /api/v1/fazendas/:id/folgas/config` | `GET /api/v1/fazendas/:id/folgas/escala` | `POST /api/v1/fazendas/:id/folgas/gerar` | `POST /api/v1/fazendas/:id/folgas/alteracoes` | `POST /api/v1/fazendas/:id/folgas/justificativas` | `GET /api/v1/fazendas/:id/folgas/alteracoes` | `GET /api/v1/fazendas/:id/folgas/alertas`
+- `GET|PUT /api/v1/fazendas/:id/folgas/config` | `GET /api/v1/fazendas/:id/folgas/escala` (resposta: `linhas` + `rodizio_por_dia` por data) | `GET /api/v1/fazendas/:id/folgas/resumo-equidade?inicio&fim` (GESTAO/ADMIN/DEVELOPER: registradas vs previstas do 5x1 por slot) | `POST /api/v1/fazendas/:id/folgas/gerar` | `POST /api/v1/fazendas/:id/folgas/alteracoes` | `POST /api/v1/fazendas/:id/folgas/justificativas` | `GET /api/v1/fazendas/:id/folgas/alteracoes` | `GET /api/v1/fazendas/:id/folgas/alertas`
 - `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`
 
 **Dev Studio – contexto da IA**:
@@ -282,7 +282,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 
 - **Role-Based**: Controle de acesso baseado em roles (USER, FUNCIONARIO, GESTAO, ADMIN, DEVELOPER)
 - **USER**: Perfil padrão; acesso a Fazendas e Assistente.
-- **FUNCIONARIO**: Pode visualizar módulo Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`).
+- **FUNCIONARIO**: Pode visualizar módulo Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`). Fora de Folgas, o acesso à UI e à API é **restrito** por matriz configurável (ver abaixo).
 - **GESTAO**: Pode **configurar**, **gerar** e **alterar** escala de folgas (`RequireGestaoFolgas` = GESTAO, ADMIN ou DEVELOPER), com acesso a fazendas existentes mesmo sem vínculo N:N (via `ValidateFazendaAccessOrGestao`).
 - **ADMIN**: Perfil para acesso à área administrativa (`/api/v1/admin/*`); requer `auth.RequireAdmin()` (ADMIN ou DEVELOPER).
 - **DEVELOPER**: Perfil único no sistema (constraint no banco garante 1 apenas); acesso ao Dev Studio (`/api/v1/dev-studio/*`) e área Admin; requer `auth.RequireDeveloper()` para Dev Studio, `auth.RequireAdmin()` para Admin.
@@ -292,7 +292,12 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
   - **USER**: não acessa manutenção de fazendas; `/fazendas` funciona como gateway de redirecionamento (onboarding/seleção/animais).
   - **ADMIN/DEVELOPER**: acesso completo às páginas de fazendas (listar/detalhar/criar/editar); em **`/folgas`** a fazenda efetiva vem das **fazendas vinculadas** (`GET /api/v1/me/fazendas` / `useMinhasFazendas`): uma única → sem seletor na página; várias → seletor na página + `setFazendaAtiva` (alinhado ao `FazendaSelector` no header).
   - **GESTAO**: em `/folgas`, mesmas ações de gestão da escala que admin/dev (usa fazenda ativa / vínculo).
-  - **FUNCIONARIO**: em `/folgas`, apenas visualização e botão de justificativa no próprio dia de folga.
+  - **FUNCIONARIO**: em `/folgas`, apenas visualização e botão de justificativa no próprio dia de folga; **menu e rotas** limitados à área Folgas (`frontend/src/config/appAccess.ts`), com `RouteAccessGuard` redirecionando outras URLs e FAB do assistente oculto quando o perfil só tem Folgas.
+
+### **Matriz de acesso por perfil (configurável)**
+
+- **Frontend**: `frontend/src/config/appAccess.ts` — mapa `PERFIL_AREAS` (ex.: `FUNCIONARIO: ['folgas']`), helpers `getNavAreasForPerfil`, `isPathAllowedForPerfil`, `getDefaultLandingPath`, `showAssistenteForPerfil`. O `Header` monta o menu a partir dessa lista; `RouteAccessGuard` (`Providers.tsx`) redireciona utilizadores autenticados para a landing permitida se a rota não estiver autorizada. Rotas utilitárias: `/login`, `/registro`, `/onboarding`, `/fazendas/selecionar`.
+- **Backend**: `backend/internal/auth/perfil_access.go` — `RequirePerfilAPIAccess()` aplicado após `AuthMiddleware` em todos os grupos `/api/v1/*` autenticados. Para **FUNCIONARIO**, apenas `GET /api/v1/me/*` e caminhos que casam com `/api/v1/fazendas/:id/folgas/...` (regex); demais endpoints retornam 403. Manter regras alinhadas ao TypeScript ao adicionar perfis ou áreas.
 
 ### **Proteção**
 
@@ -450,6 +455,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 - **Menu Folgas**: Link no Header (`CalendarDays`) para `/folgas` (escala 5x1 por fazenda).
 - **Fazenda ativa (`FazendaContext` + `FazendaSelector`)**: `getMinhasFazendas` no carregamento; **0** fazendas → limpa estado; **1** → sempre define como ativa e grava `ceialmilk_fazenda_ativa`; **2+** → restaura `savedId` se ainda válido. **`FazendaSelector`**: componente retorna `null` quando `fazendas.length <= 1` (sem dropdown desnecessário).
 - **Folgas — visualização para gestão**: Seletor opcional “Visualizar folgas de” em `app/folgas/page.tsx`; estado de filtro acoplado a `{ fazendaId, usuarioId }` para invalidar ao mudar de fazenda sem `useEffect` de reset; células com destaque (`ring-primary`) ou esmaecidas conforme o funcionário escolhido.
+- **Folgas — componentes e formulários**: `frontend/src/components/folgas/` — `folgas-utils.ts` (`toYMD`, `parseApiDate`), `folgas-rodizio-utils.ts` (rótulo/divergência previsto vs registrado), `folgas-cell-tooltip.ts` (tooltip por célula), `FolgasCalendarioDia.tsx` (célula com linha do rodízio 5x1, badge “Fora do rodízio” para gestão, tipografia `text-base`, botões `size="lg"`), `FolgasHistoricoTable.tsx` (tabela Shadcn com `overflow` herdado do `Table`). Na página: painel **Equidade no mês** (informativo) + aviso âmbar se houver Δ entre registradas e previstas; ao **substituir** dia, confirmação extra se divergir do previsto (sem bloqueio no backend). **Tratamento de conflito**: erros de duplicidade do banco (`unique_violation` / “duplicate key”) são convertidos para mensagem orientativa (ex.: indicar diferença entre `Substituir o dia inteiro` vs `Adicionar outra folga`). **DatePicker** para data âncora; **Labels** / **DialogDescription** `text-base text-muted-foreground`; ações principais **`size="lg"`**.
 - **Toggle de tema**: Botão de alternar modo claro/escuro (ThemeToggle) no Header (desktop) e no menu mobile; alvo de toque mínimo 44px; ver seção "Padrões de UX e Acessibilidade".
 - **Controle por perfil**: Menu de **Fazendas** aparece apenas para ADMIN/DEVELOPER; USER sem fazendas não vê itens de manutenção.
 
@@ -495,5 +501,6 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Última atualização**: 2026-03-25
-**Versão dos Padrões**: 2.12 (Go + Next.js) — Módulo Folgas 5x1, perfis FUNCIONARIO/GESTAO, `ValidateFazendaAccessOrGestao`, menu Folgas no Header.
+**Versão dos Padrões**: 2.13 (Go + Next.js) — Folgas: escala com `rodizio_por_dia`, resumo-equidade informativo, UI previsto vs real.
+
+**Última atualização**: 2026-03-26

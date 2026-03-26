@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { AssistenteProvider } from '@/contexts/AssistenteContext'
 import { FazendaProvider } from '@/contexts/FazendaContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { RouteAccessGuard } from '@/components/layout/RouteAccessGuard'
 import { ServiceWorkerRegistration } from './ServiceWorkerRegistration'
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -23,9 +24,11 @@ export function Providers({ children }: { children: ReactNode }) {
       <ServiceWorkerRegistration />
       <ThemeProvider>
         <AuthProvider>
-          <AssistenteProvider>
-            <FazendaProvider>{children}</FazendaProvider>
-          </AssistenteProvider>
+          <RouteAccessGuard>
+            <AssistenteProvider>
+              <FazendaProvider>{children}</FazendaProvider>
+            </AssistenteProvider>
+          </RouteAccessGuard>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

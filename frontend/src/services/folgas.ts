@@ -23,6 +23,29 @@ export type EscalaFolga = {
   created_at: string;
   updated_at: string;
   usuario_nome?: string;
+  rodizio_esperado_tem_folga?: boolean;
+  rodizio_esperado_usuario_id?: number | null;
+  rodizio_esperado_usuario_nome?: string | null;
+};
+
+export type FolgasRodizioDia = {
+  data: string;
+  tem_folga: boolean;
+  usuario_id?: number | null;
+  usuario_nome?: string | null;
+};
+
+export type FolgasEscalaListResponse = {
+  linhas: EscalaFolga[];
+  rodizio_por_dia: FolgasRodizioDia[];
+};
+
+export type FolgaEquidadeResumo = {
+  usuario_id: number;
+  usuario_nome: string;
+  folgas_registradas: number;
+  folgas_teoricas_auto: number;
+  delta: number;
 };
 
 export type FolgaAlteracao = {
@@ -92,9 +115,29 @@ export async function getFolgasEscala(
   fazendaId: number,
   inicio: string,
   fim: string
-): Promise<EscalaFolga[]> {
-  const { data } = await api.get<ApiResponse<EscalaFolga[]>>(
+): Promise<FolgasEscalaListResponse> {
+  const { data } = await api.get<ApiResponse<FolgasEscalaListResponse>>(
     `/api/v1/fazendas/${fazendaId}/folgas/escala`,
+    { params: { inicio, fim } }
+  );
+  const raw = data.data;
+  if (!raw) return { linhas: [], rodizio_por_dia: [] };
+  if (Array.isArray(raw)) {
+    return { linhas: raw as EscalaFolga[], rodizio_por_dia: [] };
+  }
+  return {
+    linhas: raw.linhas ?? [],
+    rodizio_por_dia: raw.rodizio_por_dia ?? [],
+  };
+}
+
+export async function getFolgasResumoEquidade(
+  fazendaId: number,
+  inicio: string,
+  fim: string
+): Promise<FolgaEquidadeResumo[]> {
+  const { data } = await api.get<ApiResponse<FolgaEquidadeResumo[]>>(
+    `/api/v1/fazendas/${fazendaId}/folgas/resumo-equidade`,
     { params: { inicio, fim } }
   );
   return data.data ?? [];

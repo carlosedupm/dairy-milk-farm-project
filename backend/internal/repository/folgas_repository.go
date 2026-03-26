@@ -271,3 +271,45 @@ func (r *FolgasRepository) GetConfigOrErr(ctx context.Context, fazendaID int64) 
 	}
 	return c, nil
 }
+
+// LookupNomesUsuarios retorna id -> nome para os IDs informados (deduplicados).
+func (r *FolgasRepository) LookupNomesUsuarios(ctx context.Context, ids []int64) (map[int64]string, error) {
+	uniq := make(map[int64]struct{})
+	var list []int64
+	for _, id := range ids {
+		if _, ok := uniq[id]; ok {
+			continue
+		}
+		uniq[id] = struct{}{}
+		list = append(list, id)
+	}
+	if len(list) == 0 {
+		return map[int64]string{}, nil
+	}
+	rows, err := r.db.Query(ctx, `SELECT id, nome FROM usuarios WHERE id = ANY($1::bigint[])`, list)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make(map[int64]string)
+	for rows.Next() {
+		var id int64
+		var nome string
+		if err := rows.Scan(&id, &nome); err != nil {
+			return nil, err
+		}
+		out[id] = nome
+	}
+	return out, rows.Err()
+}
+
+// CountDistinctFolgasUsuarioRange conta dias distintos com folga registrada para o usuário no intervalo.
+func (r *FolgasRepository) CountDistinctFolgasUsuarioRange(ctx context.Context, fazendaID, usuarioID int64, inicio, fim time.Time) (int64, error) {
+	var n int64
+	err := r.db.QueryRow(ctx,
+		`SELECT COUNT(DISTINCT data) FROM escala_folgas
+		 WHERE fazenda_id = $1 AND usuario_id = $2 AND data >= $3::date AND data <= $4::date`,
+		fazendaID, usuarioID, inicio, fim,
+	).Scan(&n)
+	return n, err
+}

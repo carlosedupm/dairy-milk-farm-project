@@ -134,7 +134,7 @@ func (h *FolgasHandler) GetEscala(c *gin.Context) {
 	p, _ := perfil.(string)
 	uid, _ := c.Get("user_id")
 	userID, _ := uid.(int64)
-	list, err := h.svc.ListEscala(c.Request.Context(), fazendaID, inicio, fim, p, userID)
+	payload, err := h.svc.ListEscala(c.Request.Context(), fazendaID, inicio, fim, p, userID)
 	if err != nil {
 		if errors.Is(err, service.ErrFolgasSemPermissao) {
 			response.ErrorForbidden(c, err.Error())
@@ -143,7 +143,51 @@ func (h *FolgasHandler) GetEscala(c *gin.Context) {
 		response.ErrorInternal(c, "Erro ao listar escala", err.Error())
 		return
 	}
-	response.SuccessOK(c, list, "Escala listada")
+	response.SuccessOK(c, payload, "Escala listada")
+}
+
+// GetResumoEquidade GET /api/v1/fazendas/:id/folgas/resumo-equidade?inicio=&fim=
+func (h *FolgasHandler) GetResumoEquidade(c *gin.Context) {
+	fazendaID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || fazendaID <= 0 {
+		response.ErrorBadRequest(c, "fazenda_id inválido", nil)
+		return
+	}
+	if !ValidateFazendaAccessOrGestao(c, h.svc.FazendaService(), fazendaID) {
+		return
+	}
+	perfil, _ := c.Get("perfil")
+	p, _ := perfil.(string)
+	if !models.PodeGerenciarFolgas(p) {
+		response.ErrorForbidden(c, "Apenas gestão ou administrador pode ver o resumo de equidade.")
+		return
+	}
+	inicio, err := parseDateQuery(c, "inicio")
+	if err != nil {
+		response.ErrorBadRequest(c, "Parâmetro inicio (YYYY-MM-DD) obrigatório", nil)
+		return
+	}
+	fim, err := parseDateQuery(c, "fim")
+	if err != nil {
+		response.ErrorBadRequest(c, "Parâmetro fim (YYYY-MM-DD) obrigatório", nil)
+		return
+	}
+	uid, _ := c.Get("user_id")
+	userID, _ := uid.(int64)
+	list, err := h.svc.ResumoEquidade(c.Request.Context(), fazendaID, inicio, fim, p, userID)
+	if err != nil {
+		if errors.Is(err, service.ErrFolgasSemPermissao) {
+			response.ErrorForbidden(c, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrFolgasConfigNotFound) {
+			response.ErrorBadRequest(c, "Configure a escala antes de consultar equidade.", nil)
+			return
+		}
+		response.ErrorInternal(c, "Erro ao calcular resumo de equidade", err.Error())
+		return
+	}
+	response.SuccessOK(c, list, "Resumo de equidade")
 }
 
 // PostGerar POST /api/v1/fazendas/:id/folgas/gerar
@@ -240,6 +284,22 @@ func (h *FolgasHandler) PostAlteracoes(c *gin.Context) {
 	if err := h.svc.AlterarDia(c.Request.Context(), fazendaID, d, req.UsuarioID, req.Motivo, modo, req.ExcecaoDiaMotivo, userID, p); err != nil {
 		if errors.Is(err, service.ErrFolgasConflitoFolgaDupla) {
 			response.ErrorValidation(c, err.Error(), map[string]string{"hint": "Use modo adicionar com excecao_dia_motivo ou ajuste o dia."})
+			return
+		}
+		if errors.Is(err, service.ErrFolgasUsuarioJaFolgaDia) {
+			if modo == service.AlterarDiaAdicionar {
+				response.ErrorValidation(
+					c,
+					"Já existe folga registrada para este usuário nesta data. Para trocar a folga principal, use modo 'Substituir o dia inteiro'. Para adicionar segunda folga, selecione outro usuário.",
+					map[string]string{"hint": "Se o objetivo for trocar, selecione 'Substituir o dia inteiro'."},
+				)
+				return
+			}
+			response.ErrorValidation(
+				c,
+				"Já existe folga registrada para este usuário nesta data. Para trocar a folga principal, selecione outro usuário no modo 'Substituir o dia inteiro'.",
+				map[string]string{"hint": "Selecione um usuário diferente da folga já registrada para esta data."},
+			)
 			return
 		}
 		response.ErrorInternal(c, "Erro ao alterar dia", err.Error())

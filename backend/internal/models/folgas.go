@@ -32,6 +32,33 @@ type EscalaFolga struct {
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
 	UsuarioNome  string     `json:"usuario_nome,omitempty" db:"-"`
+	// Rodízio 5x1 previsto (UsuarioParaDia); preenchido na listagem enriquecida, não vem do banco.
+	RodizioEsperadoTemFolga    bool    `json:"rodizio_esperado_tem_folga" db:"-"`
+	RodizioEsperadoUsuarioID   *int64  `json:"rodizio_esperado_usuario_id,omitempty" db:"-"`
+	RodizioEsperadoUsuarioNome *string `json:"rodizio_esperado_usuario_nome,omitempty" db:"-"`
+}
+
+// FolgasRodizioDia previsto pelo ciclo 5x1 para uma data (independente de haver linha na escala).
+type FolgasRodizioDia struct {
+	Data         time.Time `json:"data"`
+	TemFolga     bool      `json:"tem_folga"`
+	UsuarioID    *int64    `json:"usuario_id,omitempty"`
+	UsuarioNome  *string   `json:"usuario_nome,omitempty"`
+}
+
+// FolgasEscalaListResponse escala + mapa diário do rodízio (para dias sem registros).
+type FolgasEscalaListResponse struct {
+	Linhas         []EscalaFolga       `json:"linhas"`
+	RodizioPorDia  []FolgasRodizioDia  `json:"rodizio_por_dia"`
+}
+
+// FolgaEquidadeResumo compara folgas registradas vs teóricas do rodízio no intervalo.
+type FolgaEquidadeResumo struct {
+	UsuarioID          int64  `json:"usuario_id"`
+	UsuarioNome        string `json:"usuario_nome"`
+	FolgasRegistradas  int    `json:"folgas_registradas"`
+	FolgasTeoricasAuto int    `json:"folgas_teoricas_auto"`
+	Delta              int    `json:"delta"`
 }
 
 // FolgaJustificativa trilha de justificativa do funcionário.

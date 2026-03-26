@@ -201,12 +201,12 @@ func main() {
 					api.POST("/auth/validate", authHandler.Validate)
 
 					// Minhas fazendas (usuário logado)
-					me := api.Group("/v1/me", auth.AuthMiddleware(jwtSvc))
+					me := api.Group("/v1/me", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						me.GET("/fazendas", fazendaHandler.GetMinhasFazendas)
 					}
 
-					v1 := api.Group("/v1/fazendas", auth.AuthMiddleware(jwtSvc))
+					v1 := api.Group("/v1/fazendas", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						v1.GET("", fazendaHandler.GetAll)
 						v1.GET("/count", fazendaHandler.Count)
@@ -240,10 +240,11 @@ func main() {
 						v1.POST("/:id/folgas/justificativas", folgasHandler.PostJustificativa)
 						v1.GET("/:id/folgas/alteracoes", folgasHandler.GetAlteracoes)
 						v1.GET("/:id/folgas/alertas", folgasHandler.GetAlertas)
+						v1.GET("/:id/folgas/resumo-equidade", folgasHandler.GetResumoEquidade)
 					}
 
 					// Rotas de Animais
-					animais := api.Group("/v1/animais", auth.AuthMiddleware(jwtSvc))
+					animais := api.Group("/v1/animais", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						animais.GET("", animalHandler.GetAll)
 						animais.GET("/count", animalHandler.Count)
@@ -266,7 +267,7 @@ func main() {
 					slog.Info("Rotas de Animais registradas")
 
 					// Rotas de Produção de Leite
-					producao := api.Group("/v1/producao", auth.AuthMiddleware(jwtSvc))
+					producao := api.Group("/v1/producao", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						producao.GET("", producaoHandler.GetAll)
 						producao.GET("/count", producaoHandler.Count)
@@ -279,7 +280,7 @@ func main() {
 					slog.Info("Rotas de Produção de Leite registradas")
 
 					// Rotas de Lotes
-					lotes := api.Group("/v1/lotes", auth.AuthMiddleware(jwtSvc))
+					lotes := api.Group("/v1/lotes", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						lotes.GET("", loteHandler.GetByFazendaID)
 						lotes.GET("/:id", loteHandler.GetByID)
@@ -290,7 +291,7 @@ func main() {
 					// Movimentar animal de lote
 					animais.POST("/:id/movimentar-lote", movimentacaoLoteHandler.Movimentar)
 					// Rotas de Cios
-					cios := api.Group("/v1/cios", auth.AuthMiddleware(jwtSvc))
+					cios := api.Group("/v1/cios", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						cios.GET("", cioHandler.GetByFazendaID)
 						cios.GET("/by-animal/:id", cioHandler.GetByAnimalID)
@@ -300,63 +301,63 @@ func main() {
 						cios.DELETE("/:id", cioHandler.Delete)
 					}
 					// Coberturas
-					coberturas := api.Group("/v1/coberturas", auth.AuthMiddleware(jwtSvc))
+					coberturas := api.Group("/v1/coberturas", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						coberturas.GET("", coberturaHandler.GetByFazendaID)
 						coberturas.GET("/:id", coberturaHandler.GetByID)
 						coberturas.POST("", coberturaHandler.Create)
 					}
 					// Toques (diagnosticos de gestacao)
-					toques := api.Group("/v1/toques", auth.AuthMiddleware(jwtSvc))
+					toques := api.Group("/v1/toques", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						toques.GET("", diagnosticoGestacaoHandler.GetByFazendaID)
 						toques.POST("", diagnosticoGestacaoHandler.Create)
 					}
 					// Gestacoes
-					gestacoes := api.Group("/v1/gestacoes", auth.AuthMiddleware(jwtSvc))
+					gestacoes := api.Group("/v1/gestacoes", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						gestacoes.GET("", gestacaoHandler.GetByFazendaID)
 					}
 					// Partos
-					partos := api.Group("/v1/partos", auth.AuthMiddleware(jwtSvc))
+					partos := api.Group("/v1/partos", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						partos.GET("", partoHandler.GetByFazendaID)
 						partos.POST("", partoHandler.Create)
 					}
 					// Crias
-					crias := api.Group("/v1/crias", auth.AuthMiddleware(jwtSvc))
+					crias := api.Group("/v1/crias", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						crias.GET("", criaHandler.GetByPartoID)
 						crias.POST("", criaHandler.Create)
 					}
 					// Secagens
-					secagens := api.Group("/v1/secagens", auth.AuthMiddleware(jwtSvc))
+					secagens := api.Group("/v1/secagens", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						secagens.GET("", secagemHandler.GetByFazendaID)
 						secagens.POST("", secagemHandler.Create)
 					}
 					// Lactacoes
-					lactacoes := api.Group("/v1/lactacoes", auth.AuthMiddleware(jwtSvc))
+					lactacoes := api.Group("/v1/lactacoes", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						lactacoes.GET("", lactacaoHandler.GetByFazendaID)
 						lactacoes.POST("", lactacaoHandler.Create)
 					}
 					// Protocolos IATF
-					protocolosIatf := api.Group("/v1/protocolos-iatf", auth.AuthMiddleware(jwtSvc))
+					protocolosIatf := api.Group("/v1/protocolos-iatf", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						protocolosIatf.GET("", protocoloIatfHandler.GetByFazendaID)
 						protocolosIatf.POST("", protocoloIatfHandler.Create)
 					}
 
 					// Módulo agrícola: fornecedores (CRUD por id)
-					fornecedores := api.Group("/v1/fornecedores", auth.AuthMiddleware(jwtSvc))
+					fornecedores := api.Group("/v1/fornecedores", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						fornecedores.GET("/:id", fornecedorHandler.GetByID)
 						fornecedores.PUT("/:id", fornecedorHandler.Update)
 						fornecedores.DELETE("/:id", fornecedorHandler.Delete)
 					}
 					// Módulo agrícola: áreas (CRUD por id)
-					areas := api.Group("/v1/areas", auth.AuthMiddleware(jwtSvc))
+					areas := api.Group("/v1/areas", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						areas.GET("/:id", areaHandler.GetByID)
 						areas.PUT("/:id", areaHandler.Update)
@@ -367,7 +368,7 @@ func main() {
 						areas.GET("/:id/resultado/:ano", resultadoAgricolaHandler.GetByAreaIDAndAno)
 					}
 					// Módulo agrícola: safras-culturas
-					safrasCulturas := api.Group("/v1/safras-culturas", auth.AuthMiddleware(jwtSvc))
+					safrasCulturas := api.Group("/v1/safras-culturas", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						safrasCulturas.POST("", safraCulturaHandler.Create)
 						safrasCulturas.GET("/:id", safraCulturaHandler.GetByID)
@@ -382,7 +383,7 @@ func main() {
 					}
 
 					// Admin routes (perfil ADMIN ou DEVELOPER)
-					admin := api.Group("/v1/admin", auth.AuthMiddleware(jwtSvc), auth.RequireAdmin())
+					admin := api.Group("/v1/admin", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), auth.RequireAdmin())
 					{
 						admin.GET("/usuarios", adminHandler.ListUsuarios)
 						admin.POST("/usuarios", adminHandler.CreateUsuario)
@@ -438,6 +439,7 @@ func main() {
 							middleware.StructuredLoggingMiddleware(),
 							middleware.SentryRecoveryMiddleware(),
 							auth.AuthMiddleware(jwtSvc),
+							auth.RequirePerfilAPIAccess(),
 							auth.RequireDeveloper(),
 							middleware.DevStudioRateLimit(),
 						)
@@ -480,11 +482,11 @@ func main() {
 					assistente := api.Group("/v1/assistente")
 					{
 						// Rotas HTTP normais continuam com AuthMiddleware padrão
-						assistente.POST("/interpretar", auth.AuthMiddleware(jwtSvc), assistenteHandler.Interpretar)
-						assistente.POST("/executar", auth.AuthMiddleware(jwtSvc), assistenteHandler.Executar)
-						
+						assistente.POST("/interpretar", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), assistenteHandler.Interpretar)
+						assistente.POST("/executar", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), assistenteHandler.Executar)
+
 						// Rota WebSocket Live (AuthMiddleware injetado manualmente ou via sub-grupo se necessário)
-						assistente.GET("/live", auth.AuthMiddleware(jwtSvc), assistenteLiveHandler.LiveSession)
+						assistente.GET("/live", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), assistenteLiveHandler.LiveSession)
 					}
 					slog.Info("Rotas do Assistente (linguagem natural e live) registradas")
 					} else {

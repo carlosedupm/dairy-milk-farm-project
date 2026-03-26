@@ -195,6 +195,10 @@
 - ✅ **`/folgas` — fazenda para ADMIN/DEVELOPER**: Passa a usar `GET /api/v1/me/fazendas` (vínculos), não a lista global de fazendas; seletor na página só quando há **mais de uma** fazenda vinculada; uma única fazenda é usada automaticamente; troca sincronizada com `setFazendaAtiva`.
 - ✅ **`FazendaContext`**: Tratamento explícito de 0, 1 e N fazendas retornadas por `getMinhasFazendas`; com exatamente uma fazenda, sempre define como ativa e persiste (sobrescreve necessidade de `savedId` prévio).
 
+### **2026-03-26 - Folgas (mensagens de erro amigáveis)**
+
+- ✅ **`unique_violation` / “duplicate key”**: backend e frontend agora convertem mensagens genéricas de duplicidade para texto orientativo no fluxo de **alterar dia** da escala 5x1 (evita exibir “duplicate key” ao usuário).
+
 ### **2026-02-15 - Melhorias Módulo Gestão Pecuária**
 
 - **Componentes reutilizáveis**: GestaoListLayout, GestaoFormLayout, useAnimaisMap
@@ -438,6 +442,6 @@
 
 ---
 
-**Última atualização**: 2026-03-25
+**Última atualização**: 2026-03-26
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Folgas 5x1 com UX de filtro e fazenda por vínculo | Módulo Agrícola avançado no código local e em fase de consolidação | Assistente via FAB e modo Live | CRUD Fazendas, Animais, Produção | Testes unitários e E2E configurados
 **Próxima revisão**: 2026-03-29

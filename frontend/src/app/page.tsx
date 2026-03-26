@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
+import { getAreasMode, getDefaultLandingPath } from "@/config/appAccess";
 import { PageContainer } from "@/components/layout/PageContainer";
 import {
   Card,
@@ -17,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, List, Droplets } from "lucide-react";
 
 export default function Home() {
-  const { isAuthenticated, isReady } = useAuth();
+  const { user, isAuthenticated, isReady } = useAuth();
   const router = useRouter();
   const { isSingleFazenda, fazendaUnica } = useMinhasFazendas();
   const hasRedirected = useRef(false);
@@ -29,8 +30,17 @@ export default function Home() {
       hasRedirected.current = true;
       // Usar window.location para evitar loops do Next.js router
       window.location.href = "/login";
+      return;
     }
-  }, [isReady, isAuthenticated]);
+    const mode = getAreasMode(user?.perfil);
+    if (mode !== "full") {
+      const landing = getDefaultLandingPath(user?.perfil);
+      if (landing !== "/") {
+        hasRedirected.current = true;
+        router.replace(landing);
+      }
+    }
+  }, [isReady, isAuthenticated, router, user?.perfil]);
 
   if (!isReady) {
     return (
@@ -41,6 +51,14 @@ export default function Home() {
   }
 
   if (!isAuthenticated) {
+    return (
+      <PageContainer variant="centered">
+        <p className="text-muted-foreground">Redirecionando…</p>
+      </PageContainer>
+    );
+  }
+
+  if (getAreasMode(user?.perfil) !== "full") {
     return (
       <PageContainer variant="centered">
         <p className="text-muted-foreground">Redirecionando…</p>

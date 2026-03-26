@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/repository"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
@@ -17,6 +19,7 @@ var (
 	ErrFolgasSlotsInvalidos     = errors.New("os três usuários do rodízio devem ser distintos e vinculados à fazenda")
 	ErrFolgasConflitoFolgaDupla = errors.New("mais de um funcionário de folga neste dia: registre exceção do dia (motivo) ou justifique")
 	ErrFolgasNaoEFolga          = errors.New("você não está de folga nesta data")
+	ErrFolgasUsuarioJaFolgaDia = errors.New("já existe folga registrada para este usuário nesta data")
 )
 
 type FolgasService struct {
@@ -35,6 +38,37 @@ func (s *FolgasService) FazendaService() *FazendaService {
 
 func truncateDateUTC(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func isEscalaFolgasUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return false
+	}
+	if pgErr.Code != "23505" { // unique_violation
+		return false
+	}
+	// Postgres cria um nome padrão para constraint única, mas pode variar
+	// (ex.: sufixos de migrações reaplicadas). Então, em vez de comparar
+	// o nome exato, validamos por tabela/colunas no nome ou na mensagem.
+	if pgErr.TableName != "" && strings.ToLower(pgErr.TableName) != "escala_folgas" {
+		return false
+	}
+
+	constraint := strings.ToLower(pgErr.ConstraintName)
+	if constraint == "" {
+		// Fallback: quando ConstraintName não vem preenchida, usamos a mensagem.
+		msg := strings.ToLower(pgErr.Message)
+		return strings.Contains(msg, "duplicate key") &&
+			strings.Contains(msg, "escala_folgas") &&
+			strings.Contains(msg, "usuario_id")
+	}
+
+	// Ex.: "escala_folgas_fazenda_id_data_usuario_id_key" ou variações com sufixo.
+	return strings.Contains(constraint, "escala_folgas") &&
+		strings.Contains(constraint, "fazenda_id") &&
+		strings.Contains(constraint, "data") &&
+		strings.Contains(constraint, "usuario_id")
 }
 
 // UsuarioParaDia calcula quem folga no dia (rodízio 5x1 com 3 pessoas).
@@ -236,6 +270,9 @@ func (s *FolgasService) AlterarDia(ctx context.Context, fazendaID int64, d time.
 			CreatedBy: &actorID,
 		}
 		if err := s.repo.InsertEscala(ctx, e); err != nil {
+			if isEscalaFolgasUniqueViolation(err) {
+				return ErrFolgasUsuarioJaFolgaDia
+			}
 			return err
 		}
 	} else if modo == AlterarDiaAdicionar {
@@ -248,6 +285,9 @@ func (s *FolgasService) AlterarDia(ctx context.Context, fazendaID int64, d time.
 			CreatedBy: &actorID,
 		}
 		if err := s.repo.InsertEscala(ctx, e); err != nil {
+			if isEscalaFolgasUniqueViolation(err) {
+				return ErrFolgasUsuarioJaFolgaDia
+			}
 			return err
 		}
 		n, err := s.repo.CountFolgasOnDate(ctx, fazendaID, d)
@@ -332,11 +372,102 @@ func (s *FolgasService) AddJustificativa(ctx context.Context, fazendaID int64, d
 	return nil
 }
 
-func (s *FolgasService) ListEscala(ctx context.Context, fazendaID int64, inicio, fim time.Time, perfil string, userID int64) ([]models.EscalaFolga, error) {
+// ListEscala retorna linhas da escala no intervalo + previsto do rodízio por dia (inclusive dias sem registro).
+func (s *FolgasService) ListEscala(ctx context.Context, fazendaID int64, inicio, fim time.Time, perfil string, userID int64) (*models.FolgasEscalaListResponse, error) {
 	if err := s.validarAcessoFazenda(ctx, fazendaID, perfil, userID); err != nil {
 		return nil, err
 	}
-	return s.repo.ListEscalaRange(ctx, fazendaID, truncateDateUTC(inicio), truncateDateUTC(fim))
+	inicio = truncateDateUTC(inicio)
+	fim = truncateDateUTC(fim)
+	list, err := s.repo.ListEscalaRange(ctx, fazendaID, inicio, fim)
+	if err != nil {
+		return nil, err
+	}
+	out := &models.FolgasEscalaListResponse{Linhas: list, RodizioPorDia: nil}
+	cfg, err := s.repo.GetConfig(ctx, fazendaID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return out, nil
+		}
+		return nil, err
+	}
+	nomes, err := s.repo.LookupNomesUsuarios(ctx, []int64{cfg.UsuarioSlot0, cfg.UsuarioSlot1, cfg.UsuarioSlot2})
+	if err != nil {
+		return nil, err
+	}
+	for d := inicio; !d.After(fim); d = d.AddDate(0, 0, 1) {
+		uid, tem := UsuarioParaDia(cfg, d)
+		rd := models.FolgasRodizioDia{Data: d, TemFolga: tem}
+		if tem {
+			u := uid
+			rd.UsuarioID = &u
+			if nm, ok := nomes[uid]; ok {
+				n := nm
+				rd.UsuarioNome = &n
+			}
+		}
+		out.RodizioPorDia = append(out.RodizioPorDia, rd)
+	}
+	for i := range out.Linhas {
+		uid, tem := UsuarioParaDia(cfg, out.Linhas[i].Data)
+		out.Linhas[i].RodizioEsperadoTemFolga = tem
+		if tem {
+			u := uid
+			out.Linhas[i].RodizioEsperadoUsuarioID = &u
+			if nm, ok := nomes[uid]; ok {
+				n := nm
+				out.Linhas[i].RodizioEsperadoUsuarioNome = &n
+			}
+		}
+	}
+	return out, nil
+}
+
+// ResumoEquidade compara folgas registradas vs dias em que o rodízio prevê folga para cada um dos três slots (gestão).
+func (s *FolgasService) ResumoEquidade(ctx context.Context, fazendaID int64, inicio, fim time.Time, perfil string, userID int64) ([]models.FolgaEquidadeResumo, error) {
+	if !models.PodeGerenciarFolgas(perfil) {
+		return nil, ErrFolgasSemPermissao
+	}
+	if err := s.validarAcessoFazenda(ctx, fazendaID, perfil, userID); err != nil {
+		return nil, err
+	}
+	cfg, err := s.repo.GetConfigOrErr(ctx, fazendaID)
+	if err != nil {
+		return nil, err
+	}
+	inicio = truncateDateUTC(inicio)
+	fim = truncateDateUTC(fim)
+	if fim.Before(inicio) {
+		return nil, fmt.Errorf("data fim anterior à início")
+	}
+	nomes, err := s.repo.LookupNomesUsuarios(ctx, []int64{cfg.UsuarioSlot0, cfg.UsuarioSlot1, cfg.UsuarioSlot2})
+	if err != nil {
+		return nil, err
+	}
+	slots := []int64{cfg.UsuarioSlot0, cfg.UsuarioSlot1, cfg.UsuarioSlot2}
+	out := make([]models.FolgaEquidadeResumo, 0, len(slots))
+	for _, uid := range slots {
+		reg, err := s.repo.CountDistinctFolgasUsuarioRange(ctx, fazendaID, uid, inicio, fim)
+		if err != nil {
+			return nil, err
+		}
+		teo := 0
+		for d := inicio; !d.After(fim); d = d.AddDate(0, 0, 1) {
+			u, tem := UsuarioParaDia(cfg, d)
+			if tem && u == uid {
+				teo++
+			}
+		}
+		r := int(reg)
+		out = append(out, models.FolgaEquidadeResumo{
+			UsuarioID:          uid,
+			UsuarioNome:        nomes[uid],
+			FolgasRegistradas:  r,
+			FolgasTeoricasAuto: teo,
+			Delta:              r - teo,
+		})
+	}
+	return out, nil
 }
 
 func (s *FolgasService) ListAlteracoes(ctx context.Context, fazendaID int64, limit int, perfil string, userID int64) ([]models.FolgaAlteracao, error) {
