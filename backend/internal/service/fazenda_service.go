@@ -134,3 +134,25 @@ func (s *FazendaService) SetFazendasForUsuario(ctx context.Context, usuarioID in
 	}
 	return s.repo.SetFazendasForUsuario(ctx, usuarioID, fazendaIDs)
 }
+
+// VincularFazendaUnicaSeAplicavel vincula automaticamente o usuário à única fazenda
+// cadastrada no sistema, apenas quando o usuário ainda não possui vínculos.
+func (s *FazendaService) VincularFazendaUnicaSeAplicavel(ctx context.Context, usuarioID int64) error {
+	ids, err := s.repo.GetFazendaIDsByUsuarioID(ctx, usuarioID)
+	if err != nil {
+		return err
+	}
+	if len(ids) > 0 {
+		return nil
+	}
+
+	fazendas, err := s.repo.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+	if len(fazendas) != 1 {
+		return nil
+	}
+
+	return s.repo.SetFazendasForUsuario(ctx, usuarioID, []int64{fazendas[0].ID})
+}

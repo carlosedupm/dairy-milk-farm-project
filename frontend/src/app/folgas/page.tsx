@@ -31,6 +31,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getApiErrorMessage } from "@/lib/errors";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
+import { getDefaultLandingPath } from "@/config/appAccess";
 import {
   labelRodizioPrevisto,
   substituirDivergeDoRodizio,
@@ -83,6 +84,7 @@ function FolgasContent() {
   const queryClient = useQueryClient();
   const canManage = podeGerenciarFolgas(user?.perfil);
   const isFuncionario = user?.perfil === "FUNCIONARIO";
+  const hasAlternativeLanding = getDefaultLandingPath(user?.perfil) !== "/folgas";
   const isAdminLike =
     user?.perfil === "ADMIN" ||
     user?.perfil === "DEVELOPER" ||
@@ -404,7 +406,7 @@ function FolgasContent() {
   return (
     <PageContainer variant="default">
       <div className="mb-4">
-        <BackLink href="/">Voltar</BackLink>
+        {hasAlternativeLanding && <BackLink href="/">Voltar</BackLink>}
       </div>
 
       {!fazendaId && !(isAdminLike && loadingMinhasFazendas) && (

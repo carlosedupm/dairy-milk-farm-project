@@ -204,6 +204,13 @@
 - ✅ `GERENTE` agora é tratado como perfil com permissões de gestão na tela `/folgas` (front) e nas validações de API para gerar/alterar escala (back).
 - ✅ Os combos de usuários continuam restringindo as opções para `FUNCIONARIO` e `GERENTE` (com `GESTAO` como compatibilidade).
 
+### **2026-03-26 - Admin usuários: padrão UI + auto-vínculo de fazenda única**
+
+- ✅ **UI da rota `/admin/usuarios` padronizada**: campo de perfil no formulário de usuário migrado de `<select>` nativo para `Select` Shadcn.
+- ✅ **Perfis no admin alinhados**: inclusão de `GERENTE` no formulário de edição/criação e mapeamento completo de labels na tabela (USER, FUNCIONARIO, GERENTE, GESTAO, ADMIN, DEVELOPER).
+- ✅ **Correção de edição de perfil**: usuários com perfil `GERENTE` deixam de sofrer fallback indevido para `USER` no estado inicial do formulário.
+- ✅ **Auto-vínculo backend para fazenda única**: rotina idempotente aplicada em `POST /api/auth/register`, `POST /api/v1/admin/usuarios` e no fluxo de login/validate para backfill progressivo de usuários já cadastrados sem vínculo.
+
 ### **2026-02-15 - Melhorias Módulo Gestão Pecuária**
 
 - **Componentes reutilizáveis**: GestaoListLayout, GestaoFormLayout, useAnimaisMap

@@ -18,6 +18,12 @@ import { useState } from 'react'
 
 function perfilLabel(perfil: string): string {
   switch (perfil) {
+    case 'FUNCIONARIO':
+      return 'Funcionário'
+    case 'GERENTE':
+      return 'Gerente'
+    case 'GESTAO':
+      return 'Gestão'
     case 'ADMIN':
       return 'Administrador'
     case 'DEVELOPER':

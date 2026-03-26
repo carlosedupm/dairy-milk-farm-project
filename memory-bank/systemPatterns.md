@@ -185,6 +185,7 @@ Fazenda (1) ─── (N) Fornecedor (referenciado por custos/receitas)
 ```
 
 - **Vínculo usuário–fazenda**: Tabela `usuarios_fazendas` (usuario_id, fazenda_id). Um usuário pode ter várias fazendas vinculadas; quando há apenas uma, o sistema a considera automaticamente em formulários e atalhos.
+- **Auto-vínculo backend (fazenda única)**: ao criar usuário via `POST /api/auth/register` ou `POST /api/v1/admin/usuarios`, se existir exatamente uma fazenda no sistema e o usuário estiver sem vínculos, o backend cria automaticamente o vínculo em `usuarios_fazendas`. O mesmo check roda em login/validate para backfill progressivo (idempotente) de usuários já existentes sem vínculo.
 - **Atribuição de fazendas**: Somente o perfil **ADMIN** (ou DEVELOPER) pode atribuir fazendas a usuários, na tela de administração (editar usuário → seção "Fazendas vinculadas").
 - **Perfil não editável**: Na edição de usuário, o campo perfil não pode ser alterado quando o usuário já for ADMIN ou DEVELOPER (somente leitura no frontend e preservação no backend).
 - **Módulo agrícola**: domínio separado por safra/cultura para permitir cálculo de resultado agrícola por área/ano e consolidado por fazenda/ano, além de comparativo de fornecedores.
@@ -390,6 +391,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 - **Biblioteca**: Shadcn/UI como base de componentes
 - **Componentes Disponíveis**: button, card, dialog, input, label, table
 - **Estilização**: Tailwind CSS com tema customizado
+- **Combos/seletores**: usar `Select` do Shadcn para campos de seleção (evitar `<select>` nativo), incluindo formulários da área Admin (`/admin/usuarios`).
 
 ### **Dialogs de Confirmação**
 
@@ -501,6 +503,6 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Versão dos Padrões**: 2.13 (Go + Next.js) — Folgas: escala com `rodizio_por_dia`, resumo-equidade informativo, UI previsto vs real.
+**Versão dos Padrões**: 2.14 (Go + Next.js) — Admin: `Select` Shadcn em usuários + auto-vínculo de fazenda única no backend.
 
 **Última atualização**: 2026-03-26

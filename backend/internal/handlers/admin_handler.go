@@ -88,6 +88,10 @@ func (h *AdminHandler) CreateUsuario(c *gin.Context) {
 		response.ErrorInternal(c, "Erro ao criar usuário", err.Error())
 		return
 	}
+	if err := h.fazendaSvc.VincularFazendaUnicaSeAplicavel(c.Request.Context(), u.ID); err != nil {
+		response.ErrorInternal(c, "Erro ao aplicar vínculo automático de fazenda", err.Error())
+		return
+	}
 
 	u.Senha = ""
 	response.SuccessCreated(c, u, "Usuário criado com sucesso")

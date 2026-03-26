@@ -146,13 +146,12 @@ func main() {
 					if !strings.Contains(cfg.CORSOrigin, "localhost") {
 						cookieSameSite = http.SameSiteNoneMode // cross-origin (Vercel + Render)
 					}
-					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc, cookieSameSite)
+					authHandler := handlers.NewAuthHandler(userRepo, fazendaSvc, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
 					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, reclassificacaoCategoriaSvc)
 					producaoHandler := handlers.NewProducaoHandler(producaoSvc, animalSvc, fazendaSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
 					adminHandler := handlers.NewAdminHandler(usuarioSvc, fazendaSvc)
-
 
 					loteSvc := service.NewLoteService(loteRepo, fazendaRepo)
 					movimentacaoLoteSvc := service.NewMovimentacaoLoteService(movimentacaoLoteRepo, animalRepo, loteRepo)
@@ -462,33 +461,33 @@ func main() {
 						if modelAssistente == "" {
 							modelAssistente = cfg.GeminiModel
 						}
-					assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, modelAssistente, fazendaSvc, animalSvc, producaoSvc)
-					assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc, userRepo)
-					
-					// Assistente Live (Multimodal)
-					assistenteLiveSvc, err := service.NewAssistenteLiveService(
-						cfg.GeminiAPIKey, cfg.GeminiModel,
-						fazendaSvc, animalSvc, producaoSvc,
-						loteSvc, cioSvc, coberturaSvc,
-						diagnosticoGestacaoSvc, gestacaoSvc,
-						partoSvc, secagemSvc, lactacaoSvc,
-						movimentacaoLoteSvc,
-					)
-					if err != nil {
-						slog.Warn("Falha ao inicializar Assistente Live", "error", err)
-					}
-					assistenteLiveHandler := handlers.NewAssistenteLiveHandler(assistenteLiveSvc, userRepo, cfg.CORSOrigin)
+						assistenteSvc := service.NewAssistenteService(cfg.GeminiAPIKey, modelAssistente, fazendaSvc, animalSvc, producaoSvc)
+						assistenteHandler := handlers.NewAssistenteHandler(assistenteSvc, userRepo)
 
-					assistente := api.Group("/v1/assistente")
-					{
-						// Rotas HTTP normais continuam com AuthMiddleware padrão
-						assistente.POST("/interpretar", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), assistenteHandler.Interpretar)
-						assistente.POST("/executar", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), assistenteHandler.Executar)
+						// Assistente Live (Multimodal)
+						assistenteLiveSvc, err := service.NewAssistenteLiveService(
+							cfg.GeminiAPIKey, cfg.GeminiModel,
+							fazendaSvc, animalSvc, producaoSvc,
+							loteSvc, cioSvc, coberturaSvc,
+							diagnosticoGestacaoSvc, gestacaoSvc,
+							partoSvc, secagemSvc, lactacaoSvc,
+							movimentacaoLoteSvc,
+						)
+						if err != nil {
+							slog.Warn("Falha ao inicializar Assistente Live", "error", err)
+						}
+						assistenteLiveHandler := handlers.NewAssistenteLiveHandler(assistenteLiveSvc, userRepo, cfg.CORSOrigin)
 
-						// Rota WebSocket Live (AuthMiddleware injetado manualmente ou via sub-grupo se necessário)
-						assistente.GET("/live", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), assistenteLiveHandler.LiveSession)
-					}
-					slog.Info("Rotas do Assistente (linguagem natural e live) registradas")
+						assistente := api.Group("/v1/assistente")
+						{
+							// Rotas HTTP normais continuam com AuthMiddleware padrão
+							assistente.POST("/interpretar", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), assistenteHandler.Interpretar)
+							assistente.POST("/executar", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), assistenteHandler.Executar)
+
+							// Rota WebSocket Live (AuthMiddleware injetado manualmente ou via sub-grupo se necessário)
+							assistente.GET("/live", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), assistenteLiveHandler.LiveSession)
+						}
+						slog.Info("Rotas do Assistente (linguagem natural e live) registradas")
 					} else {
 						slog.Warn("GEMINI_API_KEY não configurada: Dev Studio e Assistente desabilitados")
 					}

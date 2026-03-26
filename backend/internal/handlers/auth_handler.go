@@ -17,6 +17,7 @@ import (
 
 type AuthHandler struct {
 	userRepo        *repository.UsuarioRepository
+	fazendaSvc      *service.FazendaService
 	jwt             *auth.JWTService
 	refreshTokenSvc *service.RefreshTokenService
 	cookieSameSite  http.SameSite
@@ -24,12 +25,14 @@ type AuthHandler struct {
 
 func NewAuthHandler(
 	userRepo *repository.UsuarioRepository,
+	fazendaSvc *service.FazendaService,
 	jwt *auth.JWTService,
 	refreshTokenSvc *service.RefreshTokenService,
 	cookieSameSite http.SameSite,
 ) *AuthHandler {
 	return &AuthHandler{
 		userRepo:        userRepo,
+		fazendaSvc:      fazendaSvc,
 		jwt:             jwt,
 		refreshTokenSvc: refreshTokenSvc,
 		cookieSameSite:  cookieSameSite,
@@ -88,6 +91,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		response.ErrorInternal(c, "Erro ao criar usuário", err.Error())
 		return
 	}
+	if err := h.fazendaSvc.VincularFazendaUnicaSeAplicavel(c.Request.Context(), user.ID); err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{"operation": "auto_link_single_farm_register"})
+		response.ErrorInternal(c, "Erro ao aplicar vínculo automático de fazenda", err.Error())
+		return
+	}
 
 	registerData := gin.H{
 		"id":    user.ID,
@@ -123,6 +131,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Senha), []byte(req.Password)); err != nil {
 		response.ErrorUnauthorized(c, "Credenciais inválidas")
 		return
+	}
+	if err := h.fazendaSvc.VincularFazendaUnicaSeAplicavel(c.Request.Context(), user.ID); err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{"operation": "auto_link_single_farm_login"})
 	}
 
 	// Gerar access token
@@ -202,6 +213,9 @@ func (h *AuthHandler) Validate(c *gin.Context) {
 	if !user.Enabled {
 		response.ErrorUnauthorized(c, "Usuário desativado")
 		return
+	}
+	if err := h.fazendaSvc.VincularFazendaUnicaSeAplicavel(c.Request.Context(), user.ID); err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{"operation": "auto_link_single_farm_validate"})
 	}
 
 	validateData := gin.H{

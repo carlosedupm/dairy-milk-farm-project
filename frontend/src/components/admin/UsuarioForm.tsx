@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getApiErrorMessage } from "@/lib/errors";
 
 type CreatePayload = UsuarioCreate;
@@ -24,6 +31,7 @@ type Props = {
 const PERFIS_DISPONIVEIS = [
   { value: "USER", label: "Usuário" },
   { value: "FUNCIONARIO", label: "Funcionário" },
+  { value: "GERENTE", label: "Gerente" },
   { value: "GESTAO", label: "Gestão" },
   { value: "ADMIN", label: "Administrador" },
   { value: "DEVELOPER", label: "Developer" },
@@ -32,6 +40,7 @@ const PERFIS_DISPONIVEIS = [
 const PERFIL_LABEL: Record<string, string> = {
   USER: "Usuário",
   FUNCIONARIO: "Funcionário",
+  GERENTE: "Gerente",
   GESTAO: "Gestão",
   ADMIN: "Administrador",
   DEVELOPER: "Developer",
@@ -51,7 +60,7 @@ export function UsuarioForm({
   const [senha, setSenha] = useState("");
   const [perfil, setPerfil] = useState(() => {
     const p = initial?.perfil ?? "USER";
-    const editaveis = ["USER", "FUNCIONARIO", "GESTAO", "ADMIN"];
+    const editaveis = ["USER", "FUNCIONARIO", "GERENTE", "GESTAO", "ADMIN"];
     if (editaveis.includes(p)) return p;
     return "USER";
   });
@@ -143,20 +152,20 @@ export function UsuarioForm({
                 </span>
               </p>
             ) : (
-              <select
-                id="perfil"
-                value={perfil}
-                onChange={(e) => setPerfil(e.target.value)}
-                className="flex h-11 min-h-[44px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                {PERFIS_DISPONIVEIS.filter((p) => p.value !== "DEVELOPER").map(
-                  (p) => (
-                    <option key={p.value} value={p.value}>
+              <Select value={perfil} onValueChange={setPerfil}>
+                <SelectTrigger id="perfil">
+                  <SelectValue placeholder="Selecione o perfil" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PERFIS_DISPONIVEIS.filter(
+                    (p) => p.value !== "DEVELOPER"
+                  ).map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
                       {p.label}
-                    </option>
-                  )
-                )}
-              </select>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
           {initial && (
