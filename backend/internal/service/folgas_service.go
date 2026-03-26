@@ -17,6 +17,7 @@ var (
 	ErrFolgasConfigNotFound     = repository.ErrFolgasConfigNotFound
 	ErrFolgasSemPermissao       = errors.New("sem permissão para esta operação")
 	ErrFolgasSlotsInvalidos     = errors.New("os três usuários do rodízio devem ser distintos e vinculados à fazenda")
+	ErrFolgasPerfilNaoPermitido = errors.New("apenas usuários com perfil FUNCIONARIO e GERENTE (ou GESTAO) podem ser usados na escala de folgas")
 	ErrFolgasConflitoFolgaDupla = errors.New("mais de um funcionário de folga neste dia: registre exceção do dia (motivo) ou justifique")
 	ErrFolgasNaoEFolga          = errors.New("você não está de folga nesta data")
 	ErrFolgasUsuarioJaFolgaDia = errors.New("já existe folga registrada para este usuário nesta data")
@@ -115,12 +116,12 @@ func (s *FolgasService) validarSlotsFazenda(ctx context.Context, fazendaID, s0, 
 		return ErrFolgasSlotsInvalidos
 	}
 	for _, uid := range []int64{s0, s1, s2} {
-		ok, err := s.repo.UsuarioTemFazenda(ctx, uid, fazendaID)
+		ok, err := s.repo.UsuarioTemFazendaComPerfilPermitido(ctx, uid, fazendaID)
 		if err != nil {
 			return err
 		}
 		if !ok {
-			return ErrFolgasSlotsInvalidos
+			return ErrFolgasPerfilNaoPermitido
 		}
 	}
 	return nil
@@ -248,12 +249,12 @@ func (s *FolgasService) AlterarDia(ctx context.Context, fazendaID int64, d time.
 	if _, err := s.repo.GetConfigOrErr(ctx, fazendaID); err != nil {
 		return err
 	}
-	okSlot, err := s.repo.UsuarioTemFazenda(ctx, usuarioID, fazendaID)
+	okSlot, err := s.repo.UsuarioTemFazendaComPerfilPermitido(ctx, usuarioID, fazendaID)
 	if err != nil {
 		return err
 	}
 	if !okSlot {
-		return fmt.Errorf("usuário não vinculado à fazenda")
+		return ErrFolgasPerfilNaoPermitido
 	}
 	d = truncateDateUTC(d)
 

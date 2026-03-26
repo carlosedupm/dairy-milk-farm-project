@@ -71,7 +71,12 @@ export type UsuarioVinculado = {
 };
 
 export function podeGerenciarFolgas(perfil: string | undefined): boolean {
-  return perfil === "ADMIN" || perfil === "DEVELOPER" || perfil === "GESTAO";
+  return (
+    perfil === "ADMIN" ||
+    perfil === "DEVELOPER" ||
+    perfil === "GERENTE" ||
+    perfil === "GESTAO"
+  );
 }
 
 export async function listUsuariosVinculados(fazendaId: number): Promise<UsuarioVinculado[]> {

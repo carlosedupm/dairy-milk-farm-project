@@ -281,7 +281,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 ### **Autorização**
 
 - **Role-Based**: Controle de acesso baseado em roles (USER, FUNCIONARIO, GESTAO, ADMIN, DEVELOPER)
-- **USER**: Perfil padrão; acesso a Fazendas e Assistente.
+- **USER**: Perfil geral; acesso a Fazendas e Assistente.
 - **FUNCIONARIO**: Pode visualizar módulo Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`). Fora de Folgas, o acesso à UI e à API é **restrito** por matriz configurável (ver abaixo).
 - **GESTAO**: Pode **configurar**, **gerar** e **alterar** escala de folgas (`RequireGestaoFolgas` = GESTAO, ADMIN ou DEVELOPER), com acesso a fazendas existentes mesmo sem vínculo N:N (via `ValidateFazendaAccessOrGestao`).
 - **ADMIN**: Perfil para acesso à área administrativa (`/api/v1/admin/*`); requer `auth.RequireAdmin()` (ADMIN ou DEVELOPER).

@@ -264,7 +264,9 @@ func (r *FazendaRepository) ListUsuariosPublicosByFazendaID(ctx context.Context,
 		SELECT u.id, u.nome, u.email, u.perfil
 		FROM usuarios u
 		INNER JOIN usuarios_fazendas uf ON uf.usuario_id = u.id
-		WHERE uf.fazenda_id = $1 AND u.enabled = true
+		WHERE uf.fazenda_id = $1
+		  AND u.enabled = true
+		  AND u.perfil IN ('FUNCIONARIO', 'GERENTE', 'GESTAO')
 		ORDER BY u.nome ASC
 	`
 	rows, err := r.db.Query(ctx, query, fazendaID)

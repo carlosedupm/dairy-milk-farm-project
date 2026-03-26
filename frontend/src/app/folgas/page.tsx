@@ -84,7 +84,9 @@ function FolgasContent() {
   const canManage = podeGerenciarFolgas(user?.perfil);
   const isFuncionario = user?.perfil === "FUNCIONARIO";
   const isAdminLike =
-    user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER";
+    user?.perfil === "ADMIN" ||
+    user?.perfil === "DEVELOPER" ||
+    user?.perfil === "GERENTE";
 
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
 
@@ -152,6 +154,17 @@ function FolgasContent() {
     queryFn: () => listUsuariosVinculados(fazendaId!),
     enabled: !!fazendaId && canManage,
   });
+
+  const usuariosFolgasPermitidos = useMemo(
+    () =>
+      usuariosVinc.filter(
+        (u) =>
+          u.perfil === "FUNCIONARIO" ||
+          u.perfil === "GERENTE" ||
+          u.perfil === "GESTAO"
+      ),
+    [usuariosVinc]
+  );
 
   const { data: historico = [] } = useQuery({
     queryKey: ["folgas", "historico", fazendaId],
@@ -236,6 +249,15 @@ function FolgasContent() {
       ? filtroFuncPorFazenda.usuarioId
       : null;
 
+  // Se o funcionário selecionado anteriormente não estiver mais entre os
+  // perfis permitidos, desconsidera o filtro para não “mascarar” dias.
+  const filtroFuncionarioIdEfetivo = useMemo(() => {
+    if (filtroFuncionarioId == null) return null;
+    return usuariosFolgasPermitidos.some((u) => u.id === filtroFuncionarioId)
+      ? filtroFuncionarioId
+      : null;
+  }, [filtroFuncionarioId, usuariosFolgasPermitidos]);
+
   const setFiltroFuncionarioSelection = (usuarioId: number | null) => {
     if (usuarioId == null || !fazendaId) {
       setFiltroFuncPorFazenda(null);
@@ -244,17 +266,17 @@ function FolgasContent() {
     setFiltroFuncPorFazenda({ fazendaId, usuarioId });
   };
 
-  const filtroVisualAtivo = canManage && filtroFuncionarioId != null;
+  const filtroVisualAtivo = canManage && filtroFuncionarioIdEfetivo != null;
 
   const contagemFolgasMesFiltrado = useMemo(() => {
-    if (!filtroFuncionarioId) return 0;
+    if (!filtroFuncionarioIdEfetivo) return 0;
     return escala.filter(
       (e) =>
-        e.usuario_id === filtroFuncionarioId &&
+        e.usuario_id === filtroFuncionarioIdEfetivo &&
         parseApiDate(e.data) >= inicioMes &&
         parseApiDate(e.data) <= fimMes
     ).length;
-  }, [escala, filtroFuncionarioId, inicioMes, fimMes]);
+  }, [escala, filtroFuncionarioIdEfetivo, inicioMes, fimMes]);
 
   const invalidateFolgas = () => {
     queryClient.invalidateQueries({ queryKey: ["folgas"] });
@@ -579,8 +601,8 @@ function FolgasContent() {
                   <Label htmlFor="folgas-filtro-func">Visualizar folgas de</Label>
                   <Select
                     value={
-                      filtroFuncionarioId != null
-                        ? String(filtroFuncionarioId)
+                      filtroFuncionarioIdEfetivo != null
+                        ? String(filtroFuncionarioIdEfetivo)
                         : "__todos__"
                     }
                     onValueChange={(v) =>
@@ -599,16 +621,16 @@ function FolgasContent() {
                       <SelectItem value="__todos__">
                         Todos os funcionários
                       </SelectItem>
-                      {usuariosVinc
+                      {usuariosFolgasPermitidos
                         .slice()
                         .sort((a, b) =>
                           a.nome.localeCompare(b.nome, "pt-BR")
                         )
                         .map((u) => (
                           <SelectItem key={u.id} value={String(u.id)}>
-                            {u.perfil && u.perfil !== "FUNCIONARIO"
-                              ? `${u.nome} (${u.perfil})`
-                              : u.nome}
+                            {u.perfil === "FUNCIONARIO"
+                              ? u.nome
+                              : `${u.nome} (GERENTE)`}
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -678,7 +700,7 @@ function FolgasContent() {
                               isFuncionario={isFuncionario}
                               canManage={canManage}
                               filtroVisualAtivo={filtroVisualAtivo}
-                              filtroFuncionarioId={filtroFuncionarioId}
+                              filtroFuncionarioId={filtroFuncionarioIdEfetivo}
                               userId={user?.id}
                               onAlterar={abrirAlterar}
                               onJustificar={abrirJustificar}
@@ -738,7 +760,7 @@ function FolgasContent() {
                       <SelectValue placeholder="Usuário" />
                     </SelectTrigger>
                     <SelectContent>
-                      {usuariosVinc.map((u) => (
+                      {usuariosFolgasPermitidos.map((u) => (
                         <SelectItem key={u.id} value={String(u.id)}>
                           {u.nome} ({u.email})
                         </SelectItem>
@@ -837,7 +859,7 @@ function FolgasContent() {
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      {usuariosVinc.map((u) => (
+                      {usuariosFolgasPermitidos.map((u) => (
                         <SelectItem key={u.id} value={String(u.id)}>
                           {u.nome}
                         </SelectItem>

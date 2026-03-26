@@ -74,12 +74,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Criar usuário com perfil USER (padrão)
+	// Criar usuário com perfil FUNCIONARIO (padrão)
 	user := &models.Usuario{
 		Nome:    req.Nome,
 		Email:   req.Email,
 		Senha:   string(hashedPassword),
-		Perfil:  "USER",
+		Perfil:  models.PerfilFuncionario,
 		Enabled: true,
 	}
 

@@ -199,6 +199,11 @@
 
 - ✅ **`unique_violation` / “duplicate key”**: backend e frontend agora convertem mensagens genéricas de duplicidade para texto orientativo no fluxo de **alterar dia** da escala 5x1 (evita exibir “duplicate key” ao usuário).
 
+### **2026-03-26 - Folgas: permissões de gestão para GERENTE**
+
+- ✅ `GERENTE` agora é tratado como perfil com permissões de gestão na tela `/folgas` (front) e nas validações de API para gerar/alterar escala (back).
+- ✅ Os combos de usuários continuam restringindo as opções para `FUNCIONARIO` e `GERENTE` (com `GESTAO` como compatibilidade).
+
 ### **2026-02-15 - Melhorias Módulo Gestão Pecuária**
 
 - **Componentes reutilizáveis**: GestaoListLayout, GestaoFormLayout, useAnimaisMap

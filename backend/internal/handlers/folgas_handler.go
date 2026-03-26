@@ -103,6 +103,10 @@ func (h *FolgasHandler) PutConfig(c *gin.Context) {
 			response.ErrorValidation(c, err.Error(), nil)
 			return
 		}
+		if errors.Is(err, service.ErrFolgasPerfilNaoPermitido) {
+			response.ErrorValidation(c, err.Error(), map[string]string{"hint": "Selecione usuários com perfil FUNCIONARIO e GERENTE (ou GESTAO)."})
+			return
+		}
 		response.ErrorInternal(c, "Erro ao salvar configuração", err.Error())
 		return
 	}
@@ -284,6 +288,10 @@ func (h *FolgasHandler) PostAlteracoes(c *gin.Context) {
 	if err := h.svc.AlterarDia(c.Request.Context(), fazendaID, d, req.UsuarioID, req.Motivo, modo, req.ExcecaoDiaMotivo, userID, p); err != nil {
 		if errors.Is(err, service.ErrFolgasConflitoFolgaDupla) {
 			response.ErrorValidation(c, err.Error(), map[string]string{"hint": "Use modo adicionar com excecao_dia_motivo ou ajuste o dia."})
+			return
+		}
+		if errors.Is(err, service.ErrFolgasPerfilNaoPermitido) {
+			response.ErrorValidation(c, err.Error(), map[string]string{"hint": "Selecione um usuário com perfil FUNCIONARIO e/ou GERENTE (ou GESTAO)."})
 			return
 		}
 		if errors.Is(err, service.ErrFolgasUsuarioJaFolgaDia) {
