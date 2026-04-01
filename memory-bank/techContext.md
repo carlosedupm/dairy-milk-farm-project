@@ -158,7 +158,7 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 - **Migração**: `backend/migrations/16_add_folgas_escala.up.sql` — `folgas_escala_config`, `escala_folgas`, `folgas_justificativas`, `folgas_excecoes_dia`, `folgas_alteracoes`.
 - **Backend**: `folgas_repository.go`, `folgas_service.go`, `folgas_handler.go`; `auth.RequireGestaoFolgas()`; `ValidateFazendaAccessOrGestao` em `handlers/access_helper.go`; escala com `excecao_motivo_dia` (JOIN `folgas_excecoes_dia`).
-- **Frontend**: `frontend/src/app/folgas/page.tsx`, `frontend/src/services/folgas.ts`; `useMinhasFazendas` para ADMIN/DEVELOPER na página (não usar `GET /api/v1/fazendas` global); filtro opcional por funcionário para gestão; **`FazendaContext`** (`frontend/src/contexts/FazendaContext.tsx`) define fazenda ativa a partir de `GET /api/v1/me/fazendas` com regras 0 / 1 / N fazendas.
+- **Frontend**: `frontend/src/app/folgas/page.tsx`, `frontend/src/services/folgas.ts`, `frontend/src/components/folgas/*` (`FolgasCalendarioDia`, `FolgasDiaDetalhesDialog`, `FolgasHistoricoTable`, utilitários); `useMinhasFazendas` para ADMIN/DEVELOPER/GERENTE na página (não usar lista global de fazendas); filtro opcional por funcionário para gestão; **`FazendaContext`** com regras 0 / 1 / N fazendas. **Gerar mês automático**: envia `inicio`/`fim` do **mês exibido** no estado `month` da página (primeiro e último dia desse mês), não o mês calendário do sistema.
 
 ## Módulo Agrícola (Contexto Técnico)
 
@@ -242,5 +242,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-03-25
-**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — Módulo Folgas 5x1 (migration 16), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub)
+**Última atualização**: 2026-04-01
+**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub)

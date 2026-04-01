@@ -6,7 +6,7 @@
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
-📚  Documentação: 95% ✅
+📚  Documentação: 96% ✅ (memory bank alinhado a Folgas mobile + regras de negócio)
 💻  Implementação: 96% ✅ (CRUD Animais, Produção, Gestão Pecuária, Módulo Agrícola avançado no código local, em consolidação)
 🧪  Testes: 70% ✅ (unitários backend + E2E frontend)
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
@@ -53,10 +53,10 @@
 - [x] **Deploy Backend**: ✅ Funcionando em produção no Render (PostgreSQL, JWT, CORS)
 - [x] **Deploy Frontend**: ✅ Funcionando em produção na Vercel; login, validate e CRUD validados no ar
 
-### **Documentação (✅ 90%)**
+### **Documentação (✅ 96%)**
 
 - [x] **README.md**: Atualizado para nova stack
-- [x] **Memory bank**: Todos os arquivos atualizados
+- [x] **Memory bank**: Atualizado (incl. Folgas 5x1 — regras de negócio, UX mobile, geração pelo mês visível — 2026-04-01)
   - [x] `activeContext.md`: Estado atual refletindo migração
   - [x] `techContext.md`: Stack Go + Next.js documentada
   - [x] `systemPatterns.md`: Padrões atualizados
@@ -95,7 +95,7 @@
 - [x] **UX e Acessibilidade**: Paleta rural (modo claro e escuro) em globals.css; toggle tema no Header e menu mobile com persistência (ThemeContext, ThemeToggle); tipografia 16px e alvos de toque 44px; ícones no menu (Farm, Cow, Milk, Users, Code); formulários e listas padronizados (space-y-5, botão lg, tabelas overflow-x-auto); home com atalhos (Ver fazendas, Ver animais, Registrar produção)
 - [x] **Fluxos de acesso e onboarding**: Header oculto em `/registro`; botão "Voltar para login" no onboarding faz logout; restrição de acesso às páginas de fazenda para USER (gateway em `/fazendas`, `/fazendas/[id]` admin-only); correção de erro no `AnimalForm` ao iniciar nova criação
 - [x] **Módulo Agricultura no App Router**: dashboard `/agricultura`, CRUD de fornecedores e áreas, análises de solo, safras/culturas, custos, produções, receitas, resultado por fazenda/ano e comparativo de fornecedores, com serviços dedicados em `src/services/agricultura.ts`
-- [x] **Folgas UX mobile (refatoração)**: layout mobile reorganizado mantendo grade mensal, cards de alertas/equidade colapsáveis no celular, células compactas com “Ver detalhes”, dialog touch-friendly por dia e histórico em cards no mobile (tabela preservada no desktop)
+- [x] **Folgas UX mobile (refatoração + polimento)**: layout mobile reorganizado mantendo grade mensal; alertas/equidade colapsáveis; célula tocável no mobile (sem rótulo “Ver detalhes” repetido; botão explícito só `md+`); `FolgasDiaDetalhesDialog`; grade com texto mínimo e indicador compacto para fora do rodízio no celular; histórico em cards no mobile e tabela no desktop
 
 ## 📋 Próximos Passos
 
@@ -212,6 +212,13 @@
 - ✅ **Células do calendário**: simplificadas para resumo visual (status do dia + indicadores), removendo excesso de texto no grid.
 - ✅ **Interação touch-friendly**: novo dialog “Detalhes do dia” com previsão do rodízio, registros e ações contextuais (Alterar/Justificar).
 - ✅ **Histórico responsivo**: cards no mobile e tabela mantida no desktop.
+
+### **2026-04-01 - Folgas: polimento mobile e documentação de regras**
+
+- ✅ **Célula sem poluição horizontal**: remoção do texto “Ver detalhes” em todas as células no mobile; toque na célula abre detalhes; teclado `Enter`/`Espaço` suportado.
+- ✅ **Texto na grade**: rótulo curto do previsto (nome ou `#id`); sem “folga(s)” genérico duplicado; `—` quando não há folga; “Exceção” curto no grid; fora do rodízio como ponto âmbar no mobile e badge no desktop.
+- ✅ **Regra de negócio documentada**: “Gerar mês automático” preenche o **mês visível** no calendário (intervalo início–fim do mês navegado), preservando registros `MANUAL`.
+- ✅ **Memory bank**: `activeContext`, `progress`, `systemPatterns`, `techContext`, `productContext`, `projectbrief` atualizados.
 
 ### **2026-03-26 - Admin usuários: padrão UI + auto-vínculo de fazenda única**
 
@@ -463,6 +470,6 @@
 
 ---
 
-**Última atualização**: 2026-03-26
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Folgas 5x1 com UX de filtro e fazenda por vínculo | Módulo Agrícola avançado no código local e em fase de consolidação | Assistente via FAB e modo Live | CRUD Fazendas, Animais, Produção | Testes unitários e E2E configurados
-**Próxima revisão**: 2026-03-29
+**Última atualização**: 2026-04-01
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live | CRUD Fazendas, Animais, Produção | Testes unitários e E2E configurados
+**Próxima revisão**: 2026-04-08

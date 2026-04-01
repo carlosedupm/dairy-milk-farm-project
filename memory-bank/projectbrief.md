@@ -25,7 +25,7 @@ Desenvolver um sistema de gestão completo para fazendas leiteiras que combine a
 
 ### **Experiência do Usuário**
 - Interface intuitiva para trabalhadores rurais
-- Multiplataforma (web com mobile futuro)
+- Multiplataforma (web responsiva; Folgas e demais telas priorizam uso em celular onde aplicável)
 - Relatórios automáticos e insights preditivos
 - Sistema de alertas inteligentes para saúde animal
 
@@ -64,6 +64,7 @@ Desenvolver um sistema de gestão completo para fazendas leiteiras que combine a
 - [ ] CRUD completo de Produção de Leite
 - [x] Sistema de Autenticação JWT
 - [x] API REST (Go) funcional
+- [x] **Módulo Folgas 5x1** por fazenda (configuração, geração pelo mês visível, alteração por gestão, justificativa pelo funcionário, alertas/equidade informativos, UX mobile com grade + detalhes por dia)
 
 ### **Fase 2 - Operacional**
 - [ ] Controle de saúde animal integrado
@@ -121,5 +122,5 @@ Desenvolver um sistema de gestão completo para fazendas leiteiras que combine a
 
 ---
 
-**Última atualização**: 2026-01-24
-**Versão do Brief**: 2.0 (Go + Next.js)
+**Última atualização**: 2026-04-01
+**Versão do Brief**: 2.1 (Go + Next.js — Folgas 5x1 no escopo MVP)

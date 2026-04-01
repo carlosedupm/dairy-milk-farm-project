@@ -65,6 +65,18 @@ Ser a plataforma de referência em gestão leiteira no Brasil, atingindo 1.000+ 
 3. **Controle Saúde**: Fluxo intuitivo para acompanhamento veterinário
 4. **Relatórios**: Visualizações claras e acionáveis
 
+## 📅 Requisitos de negócio — Folgas (escala 5x1)
+
+Módulo voltado a **organizar folgas da equipe por fazenda** com rodízio **5x1** (três profissionais em slots sequenciais de folga no ciclo).
+
+- **Escopo por fazenda**: configuração, escala e alertas são sempre da fazenda selecionada (vínculo N:N usuário–fazenda; admin atribui vínculos).
+- **Configuração**: data âncora do ciclo + três usuários nos slots do rodízio (perfis elegíveis na UI/API: principalmente **FUNCIONARIO** e **GERENTE**, com **GESTAO** como compatibilidade).
+- **Geração automática**: preenche o **mês que o usuário está visualizando** no calendário (primeiro ao último dia desse mês), **preservando** dias já marcados como ajuste **MANUAL**; não está amarrado ao “mês atual” do relógio se o usuário navegou para outro mês.
+- **Alteração pelo gestor**: perfis **GERENTE**, **GESTAO**, **ADMIN** e **DEVELOPER** podem alterar dia (substituir dia inteiro ou adicionar segunda folga com motivo de exceção do dia quando aplicável). **Equidade** e **alertas** são **informativos** (não bloqueiam a operação no backend).
+- **Funcionário**: vê a escala da fazenda vinculada; pode enviar **justificativa** apenas no **próprio** dia de folga; vê **exceção do dia** só quando é folguista naquela data.
+- **Transparência operacional**: indicadores de divergência em relação ao previsto (ex.: “fora do rodízio”) e lista de alertas quando há inconsistências (ex.: mais de uma folga no dia sem exceção/justificativas completas).
+- **Experiência mobile**: grade mensal mantida; detalhes longos (texto completo do rodízio, motivos) concentrados em **painel por dia** para reduzir ruído visual na grade.
+
 ## 📊 Métricas de Valor
 
 ### **Para o Produtor**
@@ -121,5 +133,5 @@ Ser a plataforma de referência em gestão leiteira no Brasil, atingindo 1.000+ 
 
 ---
 
-**Última atualização**: 2026-01-24
-**Versão do Contexto**: 2.0 (Go + Next.js)
+**Última atualização**: 2026-04-01
+**Versão do Contexto**: 2.1 (Go + Next.js — Folgas 5x1 e UX mobile documentadas)
