@@ -17,7 +17,7 @@
 
 ### Frontend
 
-- **Framework**: Next.js 16.1.4 (App Router, Turbopack como bundler padrão)
+- **Framework**: Next.js 16.2.2 (App Router, Turbopack como bundler padrão)
 - **React**: 19.2.3 (compatível com Next.js 16)
 - **Linguagem**: TypeScript 5.7.2
 - **Estilização**: Tailwind CSS 3.4.17
@@ -243,4 +243,4 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 ---
 
 **Última atualização**: 2026-04-01
-**Stack**: Go + Next.js 16 (Next.js 16.1.4, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub)
+**Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub)

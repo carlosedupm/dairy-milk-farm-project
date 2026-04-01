@@ -82,7 +82,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 ### **Arquitetura e Stack**
 
 - ✅ **Decidido**: Backend em **Go** usando framework **Gin**
-- ✅ **Decidido**: Frontend em **Next.js 16.1.4** com App Router e Turbopack
+- ✅ **Decidido**: Frontend em **Next.js 16.2.2** com App Router e Turbopack
 - ✅ **Decidido**: **React 19.2.3** para melhor performance e novas features
 - ✅ **Decidido**: Banco de dados **PostgreSQL** mantido (schema existente)
 - ✅ **Decidido**: Estrutura **Monorepo** com `/backend` e `/frontend`
