@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { getApiErrorMessage } from "@/lib/errors";
 
 type Props = {
@@ -75,11 +76,11 @@ export function FazendaForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="fundacao">Data de fundação</Label>
-            <Input
+            <DatePicker
               id="fundacao"
-              type="date"
-              value={fundacao}
-              onChange={(e) => setFundacao(e.target.value)}
+              value={fundacao || undefined}
+              onChange={(v) => setFundacao(v)}
+              placeholder="Selecione a data"
             />
           </div>
           {error && <p className="text-base text-destructive">{error}</p>}

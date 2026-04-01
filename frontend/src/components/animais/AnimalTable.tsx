@@ -33,6 +33,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { formatDatePtBr } from "@/lib/format";
 
 type Props = {
   items: Animal[];
@@ -59,11 +60,6 @@ export function AnimalTable({ items, showFazenda = false }: Props) {
 
   const handleDelete = (id: number) => {
     deleteMutation.mutate(id);
-  };
-
-  const formatDate = (date?: string | null) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleDateString("pt-BR");
   };
 
   return (
@@ -124,7 +120,7 @@ export function AnimalTable({ items, showFazenda = false }: Props) {
                     "—"
                   )}
                 </TableCell>
-                <TableCell>{formatDate(a.data_nascimento)}</TableCell>
+                <TableCell>{formatDatePtBr(a.data_nascimento)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex flex-wrap justify-end gap-2">
                     <Button variant="outline" size="default" asChild>

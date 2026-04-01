@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Props = {
@@ -99,11 +100,21 @@ export function CreateSafraCulturaDialog({
           </div>
           <div>
             <Label htmlFor="data_plantio">Data do plantio (opcional)</Label>
-            <Input id="data_plantio" type="date" value={dataPlantio} onChange={(e) => setDataPlantio(e.target.value)} />
+            <DatePicker
+              id="data_plantio"
+              value={dataPlantio || undefined}
+              onChange={setDataPlantio}
+              placeholder="Data do plantio"
+            />
           </div>
           <div>
             <Label htmlFor="data_colheita">Data da colheita (opcional)</Label>
-            <Input id="data_colheita" type="date" value={dataColheita} onChange={(e) => setDataColheita(e.target.value)} />
+            <DatePicker
+              id="data_colheita"
+              value={dataColheita || undefined}
+              onChange={setDataColheita}
+              placeholder="Data da colheita"
+            />
           </div>
           <div>
             <Label htmlFor="observacoes">Observações (opcional)</Label>

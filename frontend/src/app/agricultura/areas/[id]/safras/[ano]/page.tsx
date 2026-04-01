@@ -12,6 +12,8 @@ import { BackLink } from "@/components/layout/BackLink";
 import Link from "next/link";
 import { Plus, Wheat } from "lucide-react";
 import { CreateSafraCulturaDialog } from "@/components/agricultura/CreateSafraCulturaDialog";
+import { getApiErrorMessage } from "@/lib/errors";
+import { formatDatePtBr } from "@/lib/format";
 
 function SafrasContent() {
   const params = useParams<{ id?: string; ano?: string }>();
@@ -50,8 +52,6 @@ function SafrasContent() {
     );
   }
 
-  const formatDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("pt-BR") : "—");
-
   return (
     <PageContainer variant="default">
       <div className="mb-4">
@@ -70,7 +70,11 @@ function SafrasContent() {
         </CardHeader>
         <CardContent>
           {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-          {error && <p className="text-destructive">Erro ao carregar culturas.</p>}
+          {error && (
+            <p className="text-destructive">
+              {getApiErrorMessage(error, "Erro ao carregar culturas.")}
+            </p>
+          )}
           {!isLoading && !error && items.length === 0 && (
             <p className="text-muted-foreground">Nenhuma cultura cadastrada nesta safra.</p>
           )}
@@ -79,7 +83,7 @@ function SafrasContent() {
               {items.map((sc) => (
                 <li key={sc.id} className="flex items-center justify-between border-b pb-2">
                   <span className="font-medium">{sc.cultura}</span>
-                  <span className="text-sm text-muted-foreground">{sc.status} | Plantio: {formatDate(sc.data_plantio)}</span>
+                  <span className="text-sm text-muted-foreground">{sc.status} | Plantio: {formatDatePtBr(sc.data_plantio)}</span>
                   <Button asChild variant="ghost" size="sm">
                     <Link href={`/agricultura/safras-culturas/${sc.id}`}>Ver detalhes</Link>
                   </Button>

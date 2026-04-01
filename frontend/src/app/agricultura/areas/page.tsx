@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BackLink } from "@/components/layout/BackLink";
 import { Plus, MapPin } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/errors";
 
 function AreasContent() {
   const { fazendaAtiva } = useFazendaAtiva();
@@ -50,7 +51,11 @@ function AreasContent() {
         </CardHeader>
         <CardContent>
           {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-          {error && <p className="text-destructive">Erro ao carregar áreas.</p>}
+          {error && (
+            <p className="text-destructive">
+              {getApiErrorMessage(error, "Erro ao carregar áreas.")}
+            </p>
+          )}
           {!isLoading && !error && items.length === 0 && (
             <p className="text-muted-foreground">Nenhuma área cadastrada.</p>
           )}

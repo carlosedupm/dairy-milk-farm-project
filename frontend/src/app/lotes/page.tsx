@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { listByFazenda } from "@/services/lotes";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListCardLayout } from "@/components/layout/ListCardLayout";
+import { QueryListContent } from "@/components/layout/QueryListContent";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -30,23 +31,25 @@ function LotesContent() {
 
   return (
     <PageContainer variant="default">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>Lotes – {fazendaAtiva.nome}</CardTitle>
+      <ListCardLayout
+        title={`Lotes – ${fazendaAtiva.nome}`}
+        action={
           <Button asChild>
             <Link href="/lotes/novo">
               <Plus className="mr-2 h-4 w-4" />
               Novo Lote
             </Link>
           </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-          {error && <p className="text-destructive">Erro ao carregar lotes.</p>}
-          {!isLoading && !error && items.length === 0 && (
+        }
+      >
+        <QueryListContent
+          isLoading={isLoading}
+          error={error}
+          errorFallback="Erro ao carregar lotes."
+        >
+          {items.length === 0 ? (
             <p className="text-muted-foreground">Nenhum lote cadastrado.</p>
-          )}
-          {!isLoading && !error && items.length > 0 && (
+          ) : (
             <ul className="space-y-2">
               {items.map((l) => (
                 <li key={l.id} className="flex items-center justify-between border-b pb-2">
@@ -56,8 +59,8 @@ function LotesContent() {
               ))}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </QueryListContent>
+      </ListCardLayout>
     </PageContainer>
   );
 }

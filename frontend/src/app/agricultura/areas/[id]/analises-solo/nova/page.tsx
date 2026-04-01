@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 
 function NovaAnaliseSoloContent() {
   const params = useParams<{ id?: string }>();
@@ -81,20 +82,20 @@ function NovaAnaliseSoloContent() {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="data_coleta">Data da coleta *</Label>
-            <Input
+            <DatePicker
               id="data_coleta"
-              type="date"
-              value={dataColeta}
-              onChange={(e) => setDataColeta(e.target.value)}
+              value={dataColeta || undefined}
+              onChange={setDataColeta}
+              placeholder="Data da coleta"
             />
           </div>
           <div>
             <Label htmlFor="data_resultado">Data do resultado (opcional)</Label>
-            <Input
+            <DatePicker
               id="data_resultado"
-              type="date"
-              value={dataResultado}
-              onChange={(e) => setDataResultado(e.target.value)}
+              value={dataResultado || undefined}
+              onChange={setDataResultado}
+              placeholder="Data do resultado"
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

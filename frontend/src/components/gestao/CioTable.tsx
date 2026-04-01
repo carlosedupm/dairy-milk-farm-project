@@ -25,22 +25,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { formatDateTimePtBrOptional } from "@/lib/format";
 
 type Props = {
   items: Cio[];
   fazendaId: number | undefined;
 };
-
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export function CioTable({ items, fazendaId }: Props) {
   const queryClient = useQueryClient();
@@ -87,7 +77,7 @@ export function CioTable({ items, fazendaId }: Props) {
                 <TableCell className="font-medium">
                   {animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`}
                 </TableCell>
-                <TableCell>{formatDate(item.data_detectado)}</TableCell>
+                <TableCell>{formatDateTimePtBrOptional(item.data_detectado)}</TableCell>
                 <TableCell>{item.metodo_deteccao ?? "—"}</TableCell>
                 <TableCell>{item.intensidade ?? "—"}</TableCell>
                 <TableCell className="text-right">

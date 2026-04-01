@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { RequireAdminRoute } from '@/components/layout/RequireAdminRoute'
+import { PageContainer } from '@/components/layout/PageContainer'
 
 export default function AdminPage() {
   const router = useRouter()
@@ -13,9 +14,9 @@ export default function AdminPage() {
 
   return (
     <RequireAdminRoute>
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <PageContainer variant="centered">
         <p className="text-muted-foreground">Redirecionando…</p>
-      </div>
+      </PageContainer>
     </RequireAdminRoute>
   )
 }

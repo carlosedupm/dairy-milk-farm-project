@@ -8,6 +8,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { GestaoListLayout } from "@/components/gestao/GestaoListLayout";
 import { PartoTable } from "@/components/gestao/PartoTable";
+import { getApiErrorMessage } from "@/lib/errors";
 
 function Content() {
   const { fazendaAtiva } = useFazendaAtiva();
@@ -35,7 +36,11 @@ function Content() {
       newHref="/gestao/partos/novo"
     >
       {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-      {error && <p className="text-destructive">Erro ao carregar.</p>}
+      {error && (
+        <p className="text-destructive">
+          {getApiErrorMessage(error, "Erro ao carregar.")}
+        </p>
+      )}
       {!isLoading && !error && <PartoTable items={items} fazendaId={fazendaId} />}
     </GestaoListLayout>
   );

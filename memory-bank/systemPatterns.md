@@ -39,6 +39,8 @@
 └─────────────────────────────────────────────────┘
 ```
 
+**Onde entra a reutilização**: primitivos em `components/ui/`, blocos por domínio em `components/<área>/`, **lógica de rede e contratos** em `services/`, **helpers** em `lib/`, **hooks** em `hooks/` (ou junto ao domínio quando específicos). Detalhes na subseção **Frontend: DRY, composição e abstração de lógica** (abaixo, após a árvore de pastas).
+
 ### **Estrutura atual do projeto**
 
 **Backend** (`/backend`):
@@ -90,9 +92,52 @@ components/
 ├── layout/                     # Header, ConditionalHeader, AssistenteFab, AssistenteDialog, ProtectedRoute, Providers
 └── ui/                         # Shadcn: button, card, dialog, input, label, table
 services/                       # api.ts (Axios + interceptors), auth, fazendas, devStudio
+hooks/                          # useGeminiLive, useVoiceRecognition, useMinhasFazendas (lógica reutilizável)
 contexts/                       # AuthContext, AssistenteContext, FazendaContext, ThemeContext
-lib/utils.ts
+lib/                            # utils.ts, errors.ts (getApiErrorMessage), etc.
 ```
+
+### **Frontend: DRY, composição e abstração de lógica**
+
+O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (React) e **abstração de lógica** em camadas. Objetivo: menos duplicação, componentes enxutos e regras fáceis de testar e alterar.
+
+#### **DRY — uma única fonte de verdade**
+
+- **HTTP e contratos de API**: funções em `frontend/src/services/*` (Axios, `withCredentials`); não repetir URLs, headers ou parsing bruto em componentes.
+- **Erros de API**: sempre `getApiErrorMessage` (`lib/errors.ts`) em formulários, mutações e listagens com `useQuery` — evitar `err.response?.data` espalhado.
+- **UI genérica**: Shadcn em `components/ui/`; não recriar botão/card/dialog ad hoc quando já existe primitivo.
+- **Layouts e shells repetidos**: `PageContainer`, `GestaoListLayout`, `GestaoFormLayout`, `BackLink` — nova listagem de gestão deve reutilizar o layout em vez de copiar Card + header.
+- **Formatação e regras puras**: datas em `lib/format.ts` (`formatDatePtBr`, `formatDateTimePtBr`, `formatDateTimePtBrOptional`); labels e maps (ex. `useAnimaisMap`, `folgas-utils`, `folgas-rodizio-utils`) em hooks ou módulos `.ts` compartilhados, não duplicados em cada página.
+
+#### **Composition — compor em vez de inflar props**
+
+- **Páginas (`app/*/page.tsx`)**: orquestram Query + layout + componentes de domínio; mantêm-se finas — a maior parte da UI vem de componentes filhos.
+- **Containers com `children`**: layouts (`GestaoListLayout`, `PageContainer`) e Cards envolvem conteúdo variável; evitar componentes “god” com muitas flags (`showX`, `modeA`, `modeB`).
+- **Encaixe de primitivos + domínio**: compor `Button`, `Dialog`, `Table` com componentes como `CioTable` ou `FazendaForm` em vez de um único arquivo gigante por rota.
+- **Quando extrair**: se o JSX se repete entre duas rotas com a mesma estrutura, extrair um componente ou um layout; se só muda o corpo, usar `children`.
+
+#### **Abstração de lógica — o que fica onde**
+
+| Responsabilidade | Onde colocar |
+|------------------|--------------|
+| Chamadas HTTP, tipos de payload/resposta | `services/` |
+| Cache, loading, erro, invalidação de dados remotos | TanStack Query nas páginas (ou hook dedicado se o fluxo crescer) |
+| Estado global (auth, tema, fazenda ativa, assistente) | `contexts/` |
+| Efeitos colaterais reutilizáveis (WebSocket, voz, lista de fazendas) | `hooks/` |
+| Funções puras (datas, validações leves, mapeamentos) | `lib/format.ts`, `lib/errors.ts`, `lib/utils.ts` ou `components/<domínio>/*-utils.ts` |
+| Apresentação e eventos locais | Componentes em `components/` |
+
+- **Regra prática**: componente visual não deve embutir lógica de serialização de API ou regras de negócio extensas; delegar a service + hook/query e receber dados ou callbacks já prontos via props.
+- **Anti-padrão**: copiar um bloco inteiro de `useQuery` + Card + tratamento de erro para cada página sem extrair padrão comum (quando já existir analogia clara, preferir layout/hook compartilhado).
+
+#### **Referências no código**
+
+- Composição + DRY de layout: `GestaoListLayout`, `GestaoFormLayout`, `PageContainer`, `ListCardLayout` (`components/layout/ListCardLayout.tsx` — card com título + ação opcional).
+- Listagens com TanStack Query: `QueryListContent` (`components/layout/QueryListContent.tsx` — carregando / erro via `getApiErrorMessage` / children).
+- DRY de erro: `getApiErrorMessage`.
+- Abstração de domínio: `useAnimaisMap`, utilitários em `components/folgas/*-utils.ts`.
+- Composition no Dev Studio: `ChatInterface`, `HistoryPanel`, `CodePreview` como blocos separados na página.
+- Folgas (`/folgas`): lógica de queries, mutações, memos e estado de diálogos em `hooks/useFolgasPage.ts`; `app/folgas/page.tsx` compõe apenas layout e componentes de `components/folgas/`.
 
 **Rotas API (referência)**:
 
@@ -432,7 +477,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 - **Hook useAnimaisMap**: Em `components/gestao/useAnimaisMap.ts` — busca animais da fazenda e retorna `Map<animal_id, identificacao>` para exibir nome do animal nas tabelas em vez do ID. Usa `Array.isArray(data) ? data : []` para garantir que sempre itera sobre um array (evita "animais is not iterable" quando a query está desabilitada ou retorna formato inesperado).
 - **Tabelas**: CioTable, PartoTable, LactacaoTable, etc. em `components/gestao/` — usam `useAnimaisMap`, Table Shadcn, formatDate em pt-BR. CioTable inclui Editar e Excluir (Dialog de confirmação).
 - **Formulários**: Select Shadcn para enums (tipo, resultado, método, intensidade); AnimalSelect para seleção de animal; `getApiErrorMessage` para erros da API.
-- **Campos de data**: Quando for apenas **data** (ex.: início de lactação, data de secagem), usar **DatePicker** (`components/ui/date-picker`). Quando for **data e hora** (ex.: cio detectado, cobertura, toque, parto), usar `Input type="datetime-local"`.
+- **Campos de data**: Quando for apenas **data** (ex.: início de lactação, data de secagem, **data de fundação da fazenda**, **plantio/colheita**, custos/produções/receitas agrícolas, **análises de solo**), usar **DatePicker** (`components/ui/date-picker`) com `value`/`onChange` em `YYYY-MM-DD`. **Não** usar `Input type="date"`. Quando for **data e hora** (ex.: cio detectado, cobertura, toque, parto), usar `Input type="datetime-local"`.
 - **Edição/exclusão**: Atualmente apenas Cios tem fluxo completo (página editar + Dialog de confirmação para excluir). Próximo passo: estender para coberturas, toques e secagens usando Cios como referência (backend PUT/DELETE + frontend página editar e coluna Ações na tabela).
 
 ### **Layout de Página (PageContainer)**
@@ -504,6 +549,6 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Versão dos Padrões**: 2.15 (Go + Next.js) — Folgas: grade mobile enxuta + dialog de dia + regra de geração pelo mês visível.
+**Versão dos Padrões**: 2.18 (Go + Next.js) — `lib/format.ts`, listagens DRY, `useFolgasPage` para Folgas.
 
-**Última atualização**: 2026-04-01
+**Última atualização**: 2026-04-01 (campos de data: DatePicker em fazenda/agricultura; sem `Input type="date"`)

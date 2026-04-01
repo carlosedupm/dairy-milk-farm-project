@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function NovaProducaoContent() {
@@ -83,7 +84,7 @@ function NovaProducaoContent() {
           </div>
           <div>
             <Label htmlFor="data">Data *</Label>
-            <Input id="data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+            <DatePicker id="data" value={data} onChange={setData} placeholder="Data da produção" />
           </div>
           <div>
             <Label htmlFor="observacoes">Observações (opcional)</Label>

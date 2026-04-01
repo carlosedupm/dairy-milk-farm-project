@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BarChart3, Truck } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/errors";
 
 function ComparativoContent() {
   const { fazendaAtiva } = useFazendaAtiva();
@@ -67,7 +68,11 @@ function ComparativoContent() {
             </div>
           </div>
           {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-          {error && <p className="text-destructive">Erro ao carregar comparativo.</p>}
+          {error && (
+            <p className="text-destructive">
+              {getApiErrorMessage(error, "Erro ao carregar comparativo.")}
+            </p>
+          )}
           {!isLoading && !error && list.length === 0 && (
             <p className="text-muted-foreground">Nenhum dado de custos ou receitas por fornecedor nesta safra.</p>
           )}

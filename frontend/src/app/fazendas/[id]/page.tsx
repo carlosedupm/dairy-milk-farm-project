@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { get as getFazenda } from "@/services/fazendas";
+import { formatDatePtBr } from "@/lib/format";
 import { RequireAdminRoute } from "@/components/layout/RequireAdminRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -24,11 +25,6 @@ function FazendaDetailContent() {
     queryFn: () => getFazenda(id),
     enabled: !Number.isNaN(id),
   });
-
-  const formatDate = (date?: string | null) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleDateString("pt-BR");
-  };
 
   if (Number.isNaN(id)) {
     return (
@@ -80,7 +76,7 @@ function FazendaDetailContent() {
                 <dt className="text-sm font-medium text-muted-foreground">
                   Fundação
                 </dt>
-                <dd className="mt-0.5">{formatDate(fazenda.fundacao)}</dd>
+                <dd className="mt-0.5">{formatDatePtBr(fazenda.fundacao)}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">

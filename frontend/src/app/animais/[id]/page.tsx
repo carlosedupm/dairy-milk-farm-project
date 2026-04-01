@@ -15,6 +15,7 @@ import type { OrigemAquisicao } from "@/services/animais";
 import type { Sexo, StatusSaude } from "@/services/animais";
 import { get as getFazenda } from "@/services/fazendas";
 import { getResumoByAnimal } from "@/services/producao";
+import { formatDatePtBr } from "@/lib/format";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -82,11 +83,6 @@ function AnimalDetailContent() {
       router.push("/animais");
     },
   });
-
-  const formatDate = (date?: string | null) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleDateString("pt-BR");
-  };
 
   if (Number.isNaN(id)) {
     return (
@@ -157,19 +153,19 @@ function AnimalDetailContent() {
                 <dt className="text-sm font-medium text-muted-foreground">
                   Data de nascimento
                 </dt>
-                <dd className="mt-0.5">{formatDate(animal.data_nascimento)}</dd>
+                <dd className="mt-0.5">{formatDatePtBr(animal.data_nascimento)}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">
                   Data de entrada
                 </dt>
-                <dd className="mt-0.5">{formatDate(animal.data_entrada)}</dd>
+                <dd className="mt-0.5">{formatDatePtBr(animal.data_entrada)}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">
                   Data de saída
                 </dt>
-                <dd className="mt-0.5">{formatDate(animal.data_saida)}</dd>
+                <dd className="mt-0.5">{formatDatePtBr(animal.data_saida)}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">

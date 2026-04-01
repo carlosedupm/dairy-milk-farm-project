@@ -8,8 +8,9 @@ import { get as getFazenda } from "@/services/fazendas";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
+import { ListCardLayout } from "@/components/layout/ListCardLayout";
+import { QueryListContent } from "@/components/layout/QueryListContent";
 import { AnimalTable } from "@/components/animais/AnimalTable";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -37,8 +38,7 @@ function FazendaAnimaisContent() {
     enabled: !Number.isNaN(fazendaId),
   });
 
-  const isLoading = loadingFazenda || loadingAnimais;
-  const error = errorFazenda || errorAnimais;
+  const listLoading = loadingFazenda || loadingAnimais;
 
   if (Number.isNaN(fazendaId)) {
     return (
@@ -63,28 +63,25 @@ function FazendaAnimaisContent() {
       <div className="mb-4">
         <BackLink href="/fazendas">Voltar às fazendas</BackLink>
       </div>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>Animais da fazenda {fazenda.nome}</CardTitle>
+      <ListCardLayout
+        title={`Animais da fazenda ${fazenda.nome}`}
+        action={
           <Button asChild>
             <Link href={`/animais/novo?fazenda_id=${fazendaId}`}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Animal
             </Link>
           </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-          {errorAnimais && (
-            <p className="text-destructive">
-              Erro ao carregar animais. Tente novamente.
-            </p>
-          )}
-          {!isLoading && !errorAnimais && (
-            <AnimalTable items={items} showFazenda={false} />
-          )}
-        </CardContent>
-      </Card>
+        }
+      >
+        <QueryListContent
+          isLoading={listLoading}
+          error={errorAnimais}
+          errorFallback="Erro ao carregar animais. Tente novamente."
+        >
+          <AnimalTable items={items} showFazenda={false} />
+        </QueryListContent>
+      </ListCardLayout>
     </PageContainer>
   );
 }

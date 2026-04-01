@@ -10,22 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDateTimePtBrOptional } from "@/lib/format";
 
 type Props = {
   items: Parto[];
   fazendaId: number | undefined;
 };
-
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export function PartoTable({ items, fazendaId }: Props) {
   const animaisMap = useAnimaisMap(fazendaId);
@@ -56,7 +46,7 @@ export function PartoTable({ items, fazendaId }: Props) {
                 <TableCell className="font-medium">
                   {animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`}
                 </TableCell>
-                <TableCell>{formatDate(item.data)}</TableCell>
+                <TableCell>{formatDateTimePtBrOptional(item.data)}</TableCell>
                 <TableCell className="text-right">{item.numero_crias}</TableCell>
               </TableRow>
             ))

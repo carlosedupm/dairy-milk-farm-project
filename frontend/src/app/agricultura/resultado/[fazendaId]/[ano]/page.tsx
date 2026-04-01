@@ -8,6 +8,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BackLink } from "@/components/layout/BackLink";
 import { BarChart3 } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/errors";
 
 function ResultadoContent() {
   const params = useParams();
@@ -43,7 +44,11 @@ function ResultadoContent() {
         </CardHeader>
         <CardContent>
           {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-          {error && <p className="text-destructive">Erro ao carregar resultado.</p>}
+          {error && (
+            <p className="text-destructive">
+              {getApiErrorMessage(error, "Erro ao carregar resultado.")}
+            </p>
+          )}
           {data && (
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-3">

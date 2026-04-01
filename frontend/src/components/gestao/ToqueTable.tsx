@@ -11,22 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDateTimePtBrOptional } from "@/lib/format";
 
 type Props = {
   items: DiagnosticoGestacao[];
   fazendaId: number | undefined;
 };
-
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function getResultadoVariant(
   resultado: string
@@ -65,7 +55,7 @@ export function ToqueTable({ items, fazendaId }: Props) {
                 <TableCell className="font-medium">
                   {animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`}
                 </TableCell>
-                <TableCell>{formatDate(item.data)}</TableCell>
+                <TableCell>{formatDateTimePtBrOptional(item.data)}</TableCell>
                 <TableCell>
                   <Badge variant={getResultadoVariant(item.resultado)}>
                     {item.resultado}

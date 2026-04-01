@@ -4,6 +4,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import * as devStudioService from '@/services/devStudio'
 import type { DevStudioRequest } from '@/services/devStudio'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -13,7 +20,13 @@ type HistoryPanelProps = {
   refreshTrigger?: number // Quando muda, força refresh
 }
 
-type StatusFilter = 'all' | 'pending' | 'validated' | 'implemented' | 'error'
+type StatusFilter =
+  | 'all'
+  | 'pending'
+  | 'validated'
+  | 'implemented'
+  | 'cancelled'
+  | 'error'
 
 export function HistoryPanel({ onSelectRequest, refreshTrigger }: HistoryPanelProps) {
   const [history, setHistory] = useState<DevStudioRequest[]>([])
@@ -129,18 +142,22 @@ export function HistoryPanel({ onSelectRequest, refreshTrigger }: HistoryPanelPr
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1"
           />
-          <select
+          <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="px-3 py-2 border rounded-md text-sm"
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
           >
-            <option value="all">Todos os status</option>
-            <option value="pending">Pendente</option>
-            <option value="validated">Validado</option>
-            <option value="implemented">PR Criado</option>
-            <option value="cancelled">Cancelado</option>
-            <option value="error">Erro</option>
-          </select>
+            <SelectTrigger className="w-full min-h-[44px] text-base sm:w-[220px]">
+              <SelectValue placeholder="Filtrar por status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="validated">Validado</SelectItem>
+              <SelectItem value="implemented">PR Criado</SelectItem>
+              <SelectItem value="cancelled">Cancelado</SelectItem>
+              <SelectItem value="error">Erro</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {error && (

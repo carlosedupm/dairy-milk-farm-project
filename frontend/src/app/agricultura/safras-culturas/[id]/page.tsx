@@ -15,6 +15,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Wheat, DollarSign, Package, TrendingUp } from "lucide-react";
+import { formatDatePtBr } from "@/lib/format";
 
 function SafraCulturaDetailContent() {
   const params = useParams();
@@ -47,7 +48,6 @@ function SafraCulturaDetailContent() {
   const totalCustos = custos.reduce((s, c) => s + c.valor, 0);
   const totalReceitas = receitas.reduce((s, r) => s + r.valor, 0);
   const resultado = totalReceitas - totalCustos;
-  const formatDate = (d: string) => new Date(d).toLocaleDateString("pt-BR");
   const formatCurrency = (v: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
@@ -78,9 +78,6 @@ function SafraCulturaDetailContent() {
     );
   }
 
-  const plantioDate = sc.data_plantio ? new Date(sc.data_plantio).toLocaleDateString("pt-BR") : "—";
-  const colheitaDate = sc.data_colheita ? new Date(sc.data_colheita).toLocaleDateString("pt-BR") : "—";
-
   return (
     <PageContainer variant="default">
       <div className="mb-4">
@@ -101,11 +98,11 @@ function SafraCulturaDetailContent() {
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">Data plantio</dt>
-              <dd>{plantioDate}</dd>
+              <dd>{formatDatePtBr(sc.data_plantio)}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">Data colheita</dt>
-              <dd>{colheitaDate}</dd>
+              <dd>{formatDatePtBr(sc.data_colheita)}</dd>
             </div>
           </dl>
         </CardContent>
@@ -163,7 +160,7 @@ function SafraCulturaDetailContent() {
               <ul className="space-y-2 text-sm">
                 {custos.map((c) => (
                   <li key={c.id} className="flex justify-between border-b pb-2">
-                    <span>{formatDate(c.data)} {c.tipo} {c.subcategoria ?? ""}</span>
+                    <span>{formatDatePtBr(c.data)} {c.tipo} {c.subcategoria ?? ""}</span>
                     <span>{formatCurrency(c.valor)}</span>
                   </li>
                 ))}
@@ -182,7 +179,7 @@ function SafraCulturaDetailContent() {
               <ul className="space-y-2 text-sm">
                 {producoes.map((p) => (
                   <li key={p.id} className="flex justify-between border-b pb-2">
-                    <span>{formatDate(p.data)} {p.destino}</span>
+                    <span>{formatDatePtBr(p.data)} {p.destino}</span>
                     <span>{p.quantidade_kg} kg</span>
                   </li>
                 ))}
@@ -201,7 +198,7 @@ function SafraCulturaDetailContent() {
               <ul className="space-y-2 text-sm">
                 {receitas.map((r) => (
                   <li key={r.id} className="flex justify-between border-b pb-2">
-                    <span>{formatDate(r.data)}</span>
+                    <span>{formatDatePtBr(r.data)}</span>
                     <span>{formatCurrency(r.valor)}</span>
                   </li>
                 ))}

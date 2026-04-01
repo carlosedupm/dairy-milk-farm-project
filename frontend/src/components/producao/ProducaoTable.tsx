@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { ProducaoLeite } from '@/services/producao'
 import { remove } from '@/services/producao'
+import { formatDateTimePtBr } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -56,17 +57,6 @@ export function ProducaoTable({ items, showAnimal = true }: Props) {
     deleteMutation.mutate(id)
   }
 
-  const formatDateTime = (dateTime: string) => {
-    const date = new Date(dateTime)
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
-
   const formatLitros = (litros: number) => {
     return litros.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
@@ -92,7 +82,7 @@ export function ProducaoTable({ items, showAnimal = true }: Props) {
         ) : (
           items.map((p) => (
             <TableRow key={p.id}>
-              <TableCell className="font-medium">{formatDateTime(p.data_hora)}</TableCell>
+              <TableCell className="font-medium">{formatDateTimePtBr(p.data_hora)}</TableCell>
               <TableCell className="text-right font-mono">
                 {formatLitros(p.quantidade)} L
               </TableCell>
@@ -114,7 +104,7 @@ export function ProducaoTable({ items, showAnimal = true }: Props) {
                       <DialogHeader>
                         <DialogTitle>Excluir registro</DialogTitle>
                         <DialogDescription>
-                          Tem certeza que deseja excluir este registro de produção de {formatDateTime(p.data_hora)}? 
+                          Tem certeza que deseja excluir este registro de produção de {formatDateTimePtBr(p.data_hora)}? 
                           Esta ação não pode ser desfeita.
                         </DialogDescription>
                       </DialogHeader>

@@ -6,8 +6,9 @@ import { listUsuarios } from '@/services/admin'
 import { RequireAdminRoute } from '@/components/layout/RequireAdminRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { BackLink } from '@/components/layout/BackLink'
+import { ListCardLayout } from '@/components/layout/ListCardLayout'
+import { QueryListContent } from '@/components/layout/QueryListContent'
 import { UsuarioTable } from '@/components/admin/UsuarioTable'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 
@@ -23,24 +24,25 @@ function AdminUsuariosContent() {
   return (
     <PageContainer variant="default">
       <BackLink href="/">Voltar</BackLink>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>Usuários ({total})</CardTitle>
+      <ListCardLayout
+        title={`Usuários (${total})`}
+        action={
           <Button asChild>
             <Link href="/admin/usuarios/novo">
               <Plus className="mr-2 h-4 w-4" />
               Novo Usuário
             </Link>
           </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-          {error && (
-            <p className="text-destructive">Erro ao carregar usuários. Tente novamente.</p>
-          )}
-          {!isLoading && !error && <UsuarioTable items={usuarios} />}
-        </CardContent>
-      </Card>
+        }
+      >
+        <QueryListContent
+          isLoading={isLoading}
+          error={error}
+          errorFallback="Erro ao carregar usuários. Tente novamente."
+        >
+          <UsuarioTable items={usuarios} />
+        </QueryListContent>
+      </ListCardLayout>
     </PageContainer>
   )
 }

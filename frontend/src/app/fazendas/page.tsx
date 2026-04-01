@@ -14,6 +14,7 @@ import { EmptyFazendasState } from '@/components/fazendas/EmptyFazendasState'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
+import { getApiErrorMessage } from '@/lib/errors'
 
 function FazendasContent() {
   const { user } = useAuth()
@@ -97,7 +98,10 @@ function FazendasContent() {
         <Card>
           <CardContent className="py-8">
             <p className="text-destructive text-center">
-              Erro ao carregar fazendas. Tente novamente.
+              {getApiErrorMessage(
+                error,
+                'Erro ao carregar fazendas. Tente novamente.'
+              )}
             </p>
           </CardContent>
         </Card>

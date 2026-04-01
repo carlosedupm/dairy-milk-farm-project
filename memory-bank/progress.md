@@ -59,7 +59,7 @@
 - [x] **Memory bank**: Atualizado (incl. Folgas 5x1 — regras de negócio, UX mobile, geração pelo mês visível — 2026-04-01)
   - [x] `activeContext.md`: Estado atual refletindo migração
   - [x] `techContext.md`: Stack Go + Next.js documentada
-  - [x] `systemPatterns.md`: Padrões atualizados
+  - [x] `systemPatterns.md`: Padrões atualizados (incl. DRY + composition + abstração de lógica no frontend, v2.16)
   - [x] `deploy-notes.md`: Deploy atualizado
 - [x] **AGENTS.md**: Diretrizes atualizadas para nova stack
 
@@ -96,6 +96,8 @@
 - [x] **Fluxos de acesso e onboarding**: Header oculto em `/registro`; botão "Voltar para login" no onboarding faz logout; restrição de acesso às páginas de fazenda para USER (gateway em `/fazendas`, `/fazendas/[id]` admin-only); correção de erro no `AnimalForm` ao iniciar nova criação
 - [x] **Módulo Agricultura no App Router**: dashboard `/agricultura`, CRUD de fornecedores e áreas, análises de solo, safras/culturas, custos, produções, receitas, resultado por fazenda/ano e comparativo de fornecedores, com serviços dedicados em `src/services/agricultura.ts`
 - [x] **Folgas UX mobile (refatoração + polimento)**: layout mobile reorganizado mantendo grade mensal; alertas/equidade colapsáveis; célula tocável no mobile (sem rótulo “Ver detalhes” repetido; botão explícito só `md+`); `FolgasDiaDetalhesDialog`; grade com texto mínimo e indicador compacto para fora do rodízio no celular; histórico em cards no mobile e tabela no desktop
+- [x] **Consistência com padrões de UI/erros**: `HistoryPanel` (Dev Studio) com Select Shadcn em vez de `<select>` nativo; `/admin` com `PageContainer`; erros de `useQuery` em listagens usando `getApiErrorMessage` onde havia mensagem fixa
+- [x] **DRY frontend (Fase plano)**: `QueryListContent` + `ListCardLayout`; `lib/format.ts`; hook `useFolgasPage` para `/folgas` (página só UI)
 
 ## 📋 Próximos Passos
 

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { BackLink } from "@/components/layout/BackLink";
 import Link from "next/link";
 import { Plus, TestTube } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/errors";
+import { formatDatePtBr } from "@/lib/format";
 
 function AnalisesSoloContent() {
   const params = useParams<{ id?: string }>();
@@ -47,8 +49,6 @@ function AnalisesSoloContent() {
     );
   }
 
-  const formatDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("pt-BR") : "—");
-
   return (
     <PageContainer variant="default">
       <div className="mb-4">
@@ -69,7 +69,11 @@ function AnalisesSoloContent() {
         </CardHeader>
         <CardContent>
           {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-          {error && <p className="text-destructive">Erro ao carregar análises.</p>}
+          {error && (
+            <p className="text-destructive">
+              {getApiErrorMessage(error, "Erro ao carregar análises.")}
+            </p>
+          )}
           {!isLoading && !error && items.length === 0 && (
             <p className="text-muted-foreground">Nenhuma análise de solo cadastrada.</p>
           )}
@@ -77,7 +81,7 @@ function AnalisesSoloContent() {
             <ul className="space-y-3">
               {items.map((a) => (
                 <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-                  <span className="font-medium">{formatDate(a.data_coleta)}</span>
+                  <span className="font-medium">{formatDatePtBr(a.data_coleta)}</span>
                   <span className="text-sm text-muted-foreground">
                     pH {a.ph ?? "—"} | P {a.fosforo_p ?? "—"} | K {a.potassio_k ?? "—"} | MO {a.materia_organica ?? "—"}
                   </span>

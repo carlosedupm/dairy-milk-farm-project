@@ -65,6 +65,9 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 10. ✅ **Navegação Agricultura** no frontend e rotas no backend.
 11. ✅ **Admin Usuários** — `Select` Shadcn, perfil `GERENTE`, correções de estado.
 12. ✅ **Auto-vínculo de fazenda única** no backend (register, admin, login/validate).
+13. ✅ **Alinhamento frontend aos padrões (`systemPatterns`)**: filtro de status do **Dev Studio** (`HistoryPanel`) migrado de `<select>` nativo para **Shadcn Select**; rota `/admin` envolvida em **PageContainer** (`centered`); listagens com **TanStack Query** passam a exibir falhas da API via **`getApiErrorMessage`** (gestão pecuária, agricultura, lotes, animais, produção, fazendas, admin usuários).
+14. ✅ **DRY + composição no frontend**: `QueryListContent` e `ListCardLayout` (`components/layout/`); **`lib/format.ts`** (`formatDatePtBr`, `formatDateTimePtBr`, `formatDateTimePtBrOptional`); tabelas gestão/animais/produção e rotas agricultura/detalhes usando format centralizado; **`useFolgasPage`** (`hooks/useFolgasPage.ts`) extrai estado e dados remotos da página `/folgas`.
+15. ✅ **Campos de data (padrão Shadcn)**: formulários que ainda usavam `Input type="date"` migrados para **`DatePicker`** — `FazendaForm` (fundação), agricultura (nova análise de solo, custos/receitas/produções por safra, `CreateSafraCulturaDialog`). `systemPatterns` reforça proibição de `type="date"` para data pura.
 
 ### 📋 Próximos passos imediatos:
 
@@ -83,6 +86,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 - ✅ **Decidido**: **React 19.2.3** para melhor performance e novas features
 - ✅ **Decidido**: Banco de dados **PostgreSQL** mantido (schema existente)
 - ✅ **Decidido**: Estrutura **Monorepo** com `/backend` e `/frontend`
+- ✅ **Documentado**: Padrão de frontend **DRY + composition (React) + abstração de lógica** (`services/`, `lib/`, `hooks/`, layouts compartilhados, Shadcn em `ui/`) — ver `memory-bank/systemPatterns.md` (subseção após a árvore do frontend).
 
 ### **Segurança**
 
