@@ -10,7 +10,12 @@
   ],
   "containerEnv": {
     "DATABASE_URL": "postgres://ceialmilk:password@db:5432/ceialmilk?sslmode=disable",
-    "PORT": "8080"
+    "PORT": "8080",
+    "HOME": "/home/vscode",
+    "XDG_CONFIG_HOME": "/home/vscode/.config",
+    "XDG_DATA_HOME": "/home/vscode/.local/share",
+    "XDG_CACHE_HOME": "/home/vscode/.cache",
+    "NPM_CONFIG_PREFIX": "/usr"
   },
   "remoteEnv": {
     "GEMINI_API_KEY": "${localEnv:GEMINI_API_KEY}",

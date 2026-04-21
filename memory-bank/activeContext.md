@@ -68,6 +68,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 13. ✅ **Alinhamento frontend aos padrões (`systemPatterns`)**: filtro de status do **Dev Studio** (`HistoryPanel`) migrado de `<select>` nativo para **Shadcn Select**; rota `/admin` envolvida em **PageContainer** (`centered`); listagens com **TanStack Query** passam a exibir falhas da API via **`getApiErrorMessage`** (gestão pecuária, agricultura, lotes, animais, produção, fazendas, admin usuários).
 14. ✅ **DRY + composição no frontend**: `QueryListContent` e `ListCardLayout` (`components/layout/`); **`lib/format.ts`** (`formatDatePtBr`, `formatDateTimePtBr`, `formatDateTimePtBrOptional`); tabelas gestão/animais/produção e rotas agricultura/detalhes usando format centralizado; **`useFolgasPage`** (`hooks/useFolgasPage.ts`) extrai estado e dados remotos da página `/folgas`.
 15. ✅ **Campos de data (padrão Shadcn)**: formulários que ainda usavam `Input type="date"` migrados para **`DatePicker`** — `FazendaForm` (fundação), agricultura (nova análise de solo, custos/receitas/produções por safra, `CreateSafraCulturaDialog`). `systemPatterns` reforça proibição de `type="date"` para data pura.
+16. ✅ **TestSprite (API backend)**: Plano em `testsprite_tests/testsprite_backend_test_plan.json`; scripts Python `TC001`–`TC009` com envelope `data` alinhado à API; `testsprite_api_helpers.py` (BASE_URL, seed `TESTSPRITE_ADMIN_*`, login); TC006 com fluxo **FUNCIONARIO** (registo+login); fixture canónico + `scripts/testsprite-restore-tc007.sh` após `generateCodeAndExecute` (o MCP pode sobrescrever `TC*.py`); `README_TESTSPRITE.md` com âmbito e opção de excluir TC007 do MCP; relatórios em `testsprite_tests/tmp/raw_report.md` e `testsprite-mcp-test-report.md`.
 
 ### 📋 Próximos passos imediatos:
 
@@ -124,15 +125,15 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ## 📊 Métricas de Progresso
 
-### **Completude Geral**: 95%
+### **Completude Geral**: 96%
 
 - **Infraestrutura**: 95% ✅ (backend + frontend em produção + Dev Studio)
 - **Documentação**: 95% ✅ (incluindo Dev Studio)
 - **Implementação**: 95% ✅ (CRUD Animais, Produção, Registro, Prometheus, vínculo usuário–fazenda)
-- **Testes**: 70% ✅ (testes unitários backend + E2E frontend configurados)
+- **Testes**: 75% ✅ (testes unitários backend + E2E frontend + **scripts TestSprite** `TC001`–`TC009` contra a API local; ver `testsprite_tests/`)
 - **Deploy**: 90% ✅ (backend Render + frontend Vercel; login e CRUD validados no ar)
 
 ---
 
-**Última atualização**: 2026-04-01
-**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Módulo Folgas 5x1 (UX mobile enxuta na grade + dialog de detalhes; geração pelo mês visível; GERENTE com gestão) | Módulo Agrícola em consolidação | Assistente FAB + Live | Fazenda ativa | Dev Studio Fase 0–3
+**Última atualização**: 2026-04-21
+**Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Módulo Folgas 5x1 (UX mobile enxuta na grade + dialog de detalhes; geração pelo mês visível; GERENTE com gestão) | Módulo Agrícola em consolidação | Assistente FAB + Live | Fazenda ativa | Dev Studio Fase 0–3 | TestSprite API (`testsprite_tests/`, MCP `generateCodeAndExecute`)

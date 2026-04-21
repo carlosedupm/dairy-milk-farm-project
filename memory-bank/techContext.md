@@ -154,6 +154,15 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 - **Referência de CRUD**: Fazenda (handler → service → repository → model). Ver `memory-bank/systemPatterns.md` para padrões e estrutura detalhada.
 - **Dev Studio**: `GitHubService.GetFileContent(ctx, branch, path)` obtém conteúdo de arquivos na branch de produção (GitHub Contents API). Usado para contexto da IA quando `GITHUB_*` configurados.
 
+## Testes de API (TestSprite / MCP)
+
+- **Pasta**: `testsprite_tests/` — plano `testsprite_backend_test_plan.json`, scripts `TC001_*.py` … `TC009_*.py`, `testsprite_api_helpers.py`, relatórios em `tmp/raw_report.md` e `testsprite-mcp-test-report.md`.
+- **Config MCP**: `.testsprite/config.json` (`type: backend`, `localEndpoint` típico `http://localhost:8080/`).
+- **Variáveis opcionais** (local e scripts): `TESTSPRITE_BASE_URL`, `TESTSPRITE_TIMEOUT`, `TESTSPRITE_ADMIN_EMAIL`, `TESTSPRITE_ADMIN_PASSWORD` — ver `.env.example` e `README_TESTSPRITE.md`.
+- **Execução local**: `cd testsprite_tests && for f in TC*.py; do python3 "$f"; done` (requer API na porta configurada + Postgres com migrações, incl. seed admin `admin@ceialmilk.com` / `password`).
+- **MCP Cursor**: ferramenta TestSprite `testsprite_generate_code_and_execute`; o CLI pode sobrescrever `TC*.py` — após a run usar `scripts/testsprite-restore-tc007.sh` ou excluir `TC007` de `testIds` se se quiser evitar regressão gerada.
+- **Frontend TestSprite**: `testsprite_frontend_test_plan.json` mantido vazio (`[]`); âmbito TestSprite neste repo é a API Go.
+
 ## Módulo Folgas (escala 5x1)
 
 - **Migração**: `backend/migrations/16_add_folgas_escala.up.sql` — `folgas_escala_config`, `escala_folgas`, `folgas_justificativas`, `folgas_excecoes_dia`, `folgas_alteracoes`.
@@ -242,5 +251,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-04-01
-**Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub)
+**Última atualização**: 2026-04-21
+**Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub), testes API TestSprite (`testsprite_tests/`)

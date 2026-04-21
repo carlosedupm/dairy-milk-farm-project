@@ -1,0 +1,17 @@
+{
+  "status": "init",
+  "scope": "codebase",
+  "type": "backend",
+  "localEndpoint": "http://localhost:8080/",
+  "serverPort": 37025,
+  "executionArgs": {
+    "projectName": "workspace",
+    "projectPath": "/workspace",
+    "testIds": [],
+    "additionalInstruction": "CeialMilk API: login response JSON MUST use body['data']['access_token'] and body['data']['refresh_token'] — NEVER root access_token or access. Seed admin: admin@ceialmilk.com password \"password\". Register: nome+email+password. POST animais: fazenda_id, identificacao, data_nascimento. POST producao: animal_id, quantidade.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-2n3u05Mklk-Ciyg4f7sV7KS6MzztxmgOexWLmkkbBerLm_VbqyQN6_2CcVC-vQ-u5d_7erObsmCVWZ1Or8JbUr_Yp6Ul1dCd8NvqmxB0W6KuUlkXFMp-MdjLn1QhhKyU7P4"
+    }
+  }
+}

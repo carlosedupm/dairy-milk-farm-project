@@ -1,0 +1,146 @@
+version: "2"
+type: backend
+tech_stack:
+  - Go
+  - Gin
+  - PostgreSQL
+  - JWT RS256
+  - Prometheus metrics
+features:
+  - name: Health and observability
+    description: Liveness and Prometheus metrics for operations
+    files:
+      - backend/cmd/api/main.go
+      - backend/internal/middleware/metrics.go
+    endpoints:
+      - method: GET
+        path: /health
+        description: Service health check
+        auth_required: false
+        response_schema:
+          "200": "{ status, service, timestamp }"
+      - method: GET
+        path: /metrics
+        description: Prometheus exposition format
+        auth_required: false
+        response_schema:
+          "200": Prometheus text
+    depends_on: []
+  - name: Authentication API
+    description: Register, login, logout, refresh and validate JWT sessions
+    files:
+      - backend/internal/handlers/auth_handler.go
+      - backend/internal/auth/jwt.go
+    endpoints:
+      - method: POST
+        path: /api/auth/register
+        description: Create a new user account
+        auth_required: false
+        request_schema:
+          body: "{ email, password, ... }"
+        response_schema:
+          "201": User or tokens
+          "400": Validation error
+      - method: POST
+        path: /api/auth/login
+        description: Authenticate and issue tokens
+        auth_required: false
+        response_schema:
+          "200": Tokens
+      - method: POST
+        path: /api/auth/refresh
+        description: Refresh access token
+        auth_required: false
+        response_schema:
+          "200": New tokens
+    depends_on: []
+  - name: Fazendas and animals
+    description: Farm CRUD, search, and nested animals per farm
+    files:
+      - backend/internal/handlers/fazenda_handler.go
+      - backend/internal/handlers/animal_handler.go
+    endpoints:
+      - method: GET
+        path: /api/v1/me/fazendas
+        description: List farms linked to current user
+        auth_required: true
+        response_schema:
+          "200": Fazenda[]
+      - method: GET
+        path: /api/v1/fazendas
+        description: List farms (scoped)
+        auth_required: true
+        response_schema:
+          "200": Fazenda[]
+      - method: GET
+        path: /api/v1/fazendas/:id
+        description: Get farm by id
+        auth_required: true
+        response_schema:
+          "200": Fazenda
+      - method: GET
+        path: /api/v1/fazendas/:id/animais
+        description: List animals for a farm
+        auth_required: true
+        response_schema:
+          "200": Animal[]
+      - method: GET
+        path: /api/v1/animais/:id
+        description: Get animal by id
+        auth_required: true
+        response_schema:
+          "200": Animal
+      - method: POST
+        path: /api/v1/animais
+        description: Create animal
+        auth_required: true
+        response_schema:
+          "201": Animal
+    depends_on:
+      - Authentication API
+  - name: Milk production
+    description: Daily milk production records CRUD
+    files:
+      - backend/internal/handlers/producao_handler.go
+    endpoints:
+      - method: GET
+        path: /api/v1/producao
+        description: List production records
+        auth_required: true
+        response_schema:
+          "200": Producao[]
+      - method: POST
+        path: /api/v1/producao
+        description: Create production record
+        auth_required: true
+        response_schema:
+          "201": Producao
+    depends_on:
+      - Authentication API
+      - Fazendas and animals
+  - name: Admin users
+    description: Admin-only user and farm assignment management
+    files:
+      - backend/internal/handlers/admin_handler.go
+    endpoints:
+      - method: GET
+        path: /api/v1/admin/usuarios
+        description: List users
+        auth_required: true
+        response_schema:
+          "200": Usuario[]
+      - method: POST
+        path: /api/v1/admin/usuarios
+        description: Create user as admin
+        auth_required: true
+        response_schema:
+          "201": Usuario
+    depends_on:
+      - Authentication API
+known_limitations:
+  - issue: API routes return 503 if DATABASE_URL or JWT keys are not configured
+    location: backend/cmd/api/main.go
+    impact: E2E and integration tests need Postgres and JWT dev keys or env
+  - issue: Dev Studio and Gemini-backed features require GEMINI_API_KEY
+    location: backend/cmd/api/main.go
+    impact: Optional routes disabled when key missing

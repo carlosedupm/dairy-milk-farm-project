@@ -1,0 +1,47 @@
+[
+  {
+    "id": "TC001",
+    "title": "get_health_endpoint_returns_service_status",
+    "description": "Verify that GET /health returns 200 with service status, service name, and timestamp when the service is properly configured."
+  },
+  {
+    "id": "TC002",
+    "title": "get_metrics_endpoint_returns_prometheus_text",
+    "description": "Verify that GET /metrics returns 200 with Prometheus metrics in text exposition format."
+  },
+  {
+    "id": "TC003",
+    "title": "post_api_auth_register_creates_new_user",
+    "description": "Verify POST /api/auth/register with JSON { nome, email, password (min 6) } returns 201 and envelope { data: { id, nome, email } }. Register does not return JWT; tokens only from login."
+  },
+  {
+    "id": "TC004",
+    "title": "post_api_auth_login_returns_tokens",
+    "description": "Verify POST /api/auth/login returns 200 with SuccessResponse: data.access_token and data.refresh_token (not root-level keys)."
+  },
+  {
+    "id": "TC005",
+    "title": "post_api_auth_refresh_returns_new_tokens",
+    "description": "After register (with nome) and login, POST /api/auth/refresh with JSON { refresh_token } from login data returns 200 and data.access_token in the standard envelope."
+  },
+  {
+    "id": "TC006",
+    "title": "get_api_v1_me_fazendas_lists_user_farms",
+    "description": "With token from login (FUNCIONARIO allowed on /api/v1/me/*), GET /api/v1/me/fazendas returns 200; farm list is in response.data (array), not a bare JSON array at root."
+  },
+  {
+    "id": "TC007",
+    "title": "post_api_v1_animais_creates_animal",
+    "description": "POST /api/v1/animais requires elevated user (seed admin@ceialmilk.com password exactly password after migrations). CRITICAL login JSON: tokens are ONLY inside body['data']['access_token'] and body['data']['refresh_token'] — the API never returns access_token at the JSON root; do not use body.get('access') or body.get('access_token') at root. Use Authorization: Bearer <data.access_token>. GET /api/v1/fazendas returns list in body['data']. CreateAnimalRequest: fazenda_id, identificacao, data_nascimento (required for NASCIDO); optional raca, sexo. POST response 201: animal id in body['data']['id']."
+  },
+  {
+    "id": "TC008",
+    "title": "post_api_v1_producao_creates_production_record",
+    "description": "Same elevated user as TC007. Create or reuse a fazenda, create animal with valid schema, then POST /api/v1/producao with { animal_id, quantidade } (optional data_hora ISO). Response 201; production fields use quantidade not liters."
+  },
+  {
+    "id": "TC009",
+    "title": "get_api_v1_admin_usuarios_lists_users_for_admin",
+    "description": "GET /api/v1/admin/usuarios requires ADMIN or DEVELOPER (seed user; migration 6 may set DEVELOPER). Response 200 with data.usuarios (array) and data.total (int). Cannot self-promote via public register JSON."
+  }
+]

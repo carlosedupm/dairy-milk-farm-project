@@ -1,0 +1,35 @@
+[
+  {
+    "id": "TC001",
+    "title": "Health check retorna 200",
+    "description": "GET /health deve responder status ok sem autenticação",
+    "category": "smoke",
+    "priority": "High",
+    "steps": [
+      { "type": "action", "description": "GET http://localhost:8080/health" },
+      { "type": "assert", "description": "status HTTP 200 e JSON contém status ok" }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Login com credenciais válidas",
+    "description": "POST /api/auth/login com email e senha válidos retorna tokens",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      { "type": "action", "description": "POST /api/auth/login com corpo JSON de credenciais de teste" },
+      { "type": "assert", "description": "Resposta 200 e presença de access token ou cookie de sessão conforme implementação" }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Rota protegida sem token retorna 401",
+    "description": "GET /api/v1/me/fazendas sem Authorization deve falhar",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      { "type": "action", "description": "GET /api/v1/me/fazendas sem header Bearer" },
+      { "type": "assert", "description": "status 401 Unauthorized" }
+    ]
+  }
+]

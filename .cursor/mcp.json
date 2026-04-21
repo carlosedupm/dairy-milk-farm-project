@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "TestSprite": {
+      "command": "npx",
+      "args": ["-y", "@testsprite/testsprite-mcp@latest"],
+      "env": {
+        "API_KEY": "sk-user-2n3u05Mklk-Ciyg4f7sV7KS6MzztxmgOexWLmkkbBerLm_VbqyQN6_2CcVC-vQ-u5d_7erObsmCVWZ1Or8JbUr_Yp6Ul1dCd8NvqmxB0W6KuUlkXFMp-MdjLn1QhhKyU7P4",
+        "HOME": "/home/vscode",
+        "XDG_DATA_HOME": "/home/vscode/.local/share",
+        "NPM_CONFIG_PREFIX": "/usr"
+      }
+    }
+  }
+}

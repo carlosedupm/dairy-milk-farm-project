@@ -159,9 +159,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	auth.SetSecureCookie(c, "ceialmilk_refresh_token", refreshToken.Token, 7*24*60*60, h.cookieSameSite)
 
 	loginData := gin.H{
-		"email":  user.Email,
-		"perfil": user.Perfil,
-		"nome":   user.Nome,
+		"email":          user.Email,
+		"perfil":         user.Perfil,
+		"nome":           user.Nome,
+		"access_token":   accessToken,
+		"refresh_token":  refreshToken.Token,
 	}
 	response.SuccessOK(c, loginData, "Login realizado com sucesso")
 }
@@ -293,9 +295,11 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	auth.SetSecureCookie(c, "ceialmilk_token", accessToken, 15*60, h.cookieSameSite) // 15 minutos
 
 	refreshData := gin.H{
-		"email":  user.Email,
-		"perfil": user.Perfil,
-		"nome":   user.Nome,
+		"email":          user.Email,
+		"perfil":         user.Perfil,
+		"nome":           user.Nome,
+		"access_token":   accessToken,
+		"refresh_token":  refreshTokenStr,
 	}
 	response.SuccessOK(c, refreshData, "Token renovado com sucesso")
 }

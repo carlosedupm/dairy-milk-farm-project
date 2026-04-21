@@ -8,7 +8,7 @@
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 96% ✅ (memory bank alinhado a Folgas mobile + regras de negócio)
 💻  Implementação: 96% ✅ (CRUD Animais, Produção, Gestão Pecuária, Módulo Agrícola avançado no código local, em consolidação)
-🧪  Testes: 70% ✅ (unitários backend + E2E frontend)
+🧪  Testes: 75% ✅ (unitários backend + E2E frontend + scripts TestSprite TC001–TC009 API)
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
 ```
 
@@ -56,7 +56,7 @@
 ### **Documentação (✅ 96%)**
 
 - [x] **README.md**: Atualizado para nova stack
-- [x] **Memory bank**: Atualizado (incl. Folgas 5x1 — regras de negócio, UX mobile, geração pelo mês visível — 2026-04-01)
+- [x] **Memory bank**: Atualizado (incl. Folgas 5x1 — regras de negócio, UX mobile, geração pelo mês visível — 2026-04-01; TestSprite API — 2026-04-21)
   - [x] `activeContext.md`: Estado atual refletindo migração
   - [x] `techContext.md`: Stack Go + Next.js documentada
   - [x] `systemPatterns.md`: Padrões atualizados (incl. DRY + composition + abstração de lógica no frontend, v2.16)
@@ -221,6 +221,14 @@
 - ✅ **Texto na grade**: rótulo curto do previsto (nome ou `#id`); sem “folga(s)” genérico duplicado; `—` quando não há folga; “Exceção” curto no grid; fora do rodízio como ponto âmbar no mobile e badge no desktop.
 - ✅ **Regra de negócio documentada**: “Gerar mês automático” preenche o **mês visível** no calendário (intervalo início–fim do mês navegado), preservando registros `MANUAL`.
 - ✅ **Memory bank**: `activeContext`, `progress`, `systemPatterns`, `techContext`, `productContext`, `projectbrief` atualizados.
+
+### **2026-04-21 - TestSprite (testes de API / MCP)**
+
+- ✅ **Plano e scripts**: `testsprite_tests/testsprite_backend_test_plan.json` alinhado a rotas e envelope `SuccessResponse`; `TC001`–`TC009` em Python; `testsprite_api_helpers.py` com `BASE_URL`/`TIMEOUT` e seed admin via env (`TESTSPRITE_ADMIN_*`).
+- ✅ **TC006**: fluxo registo+login **FUNCIONARIO** + `GET /api/v1/me/fazendas` (coerente com `RequirePerfilAPIAccess`).
+- ✅ **TC007 e MCP**: fixture canónico `testsprite_tests/fixtures/TC007_post_api_v1_animais_creates_animal.canonical.py` + `scripts/testsprite-restore-tc007.sh` para repor o ficheiro após `generateCodeAndExecute` (o gerador cloud tende a ignorar `data.access_token`).
+- ✅ **Documentação**: `testsprite_tests/README_TESTSPRITE.md` (âmbito só API, frontend plan vazio, aviso de overwrite); relatórios MCP em `tmp/raw_report.md` e `testsprite-mcp-test-report.md`.
+- ✅ **Execução local**: `cd testsprite_tests && for f in TC*.py; do python3 "$f"; done` valida os 9 cenários contra `http://localhost:8080` (API + migrações com seed admin).
 
 ### **2026-03-26 - Admin usuários: padrão UI + auto-vínculo de fazenda única**
 
@@ -472,6 +480,6 @@
 
 ---
 
-**Última atualização**: 2026-04-01
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live | CRUD Fazendas, Animais, Produção | Testes unitários e E2E configurados
-**Próxima revisão**: 2026-04-08
+**Última atualização**: 2026-04-21
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
+**Próxima revisão**: 2026-04-28

@@ -5,6 +5,9 @@ export type LoginResponse = {
     email: string
     perfil: string
     nome?: string
+    /** Presente para clientes/programáticos; o SPA usa cookies HttpOnly. */
+    access_token?: string
+    refresh_token?: string
   }
   message: string
   timestamp: string
