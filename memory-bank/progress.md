@@ -109,6 +109,7 @@
 - [x] Backend Go básico
 - [x] Frontend Next.js básico
 - [x] Sistema de migrações (golang-migrate)
+- [x] **Migração 19 — RLS em `public`**: Row Level Security em todas as tabelas de domínio (alertas PostgREST/Supabase); sem políticas para `anon`/`authenticated`; API Go com `DATABASE_URL` como dono das tabelas permanece equivalente
 - [x] Autenticação (login, validate) + JWT
 - [x] Backend Render configurado (render.yaml, Dockerfile, CI Docker build)
 - [x] ✅ **Deploy Backend em produção** (Render - configuração manual com banco PostgreSQL e chaves JWT)
@@ -480,6 +481,6 @@
 
 ---
 
-**Última atualização**: 2026-04-21
+**Última atualização**: 2026-05-05
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
 **Próxima revisão**: 2026-04-28

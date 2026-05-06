@@ -90,7 +90,7 @@ require (
 ### Backend (Go)
 
 1. **Build**: `go build -o bin/api ./cmd/api` (multi-stage Docker)
-2. **Migrações**: `golang-migrate` executa antes do servidor iniciar
+2. **Migrações**: `golang-migrate` executa antes do servidor iniciar (inclui **19**: RLS em tabelas `public` de domínio, sem políticas PostgREST)
 3. **Startup**: `./bin/api` (binário único, startup instantâneo)
 
 ### Frontend (Next.js)
@@ -251,5 +251,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-04-21
+**Última atualização**: 2026-05-05
 **Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub), testes API TestSprite (`testsprite_tests/`)

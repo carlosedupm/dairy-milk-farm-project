@@ -58,6 +58,8 @@ O arquivo `render.yaml` define:
 
 **Formato**: `{version}_{descrição}.up.sql` e `{version}_{descrição}.down.sql` (ex.: `1_add_remaining_tables.up.sql`, `2_add_indexes_to_fazendas.up.sql`, `3_seed_admin.up.sql`, `4_add_refresh_tokens.up.sql`)
 
+**Row Level Security (RLS)**: A migração `19_enable_row_level_security_public_tables` ativa RLS em todas as tabelas de domínio em `public`, sem políticas para `anon`/`authenticated`. Isso alinha com linters de ambientes que expõem `public` ao PostgREST (ex.: Supabase). O backend CeialMilk usa `DATABASE_URL` com usuário que **é dono das tabelas**: no PostgreSQL, o dono ignora RLS por padrão (salvo `FORCE ROW LEVEL SECURITY`), portanto a API Go/sqlx segue inalterada. Se no futuro um cliente usar papel não-dono com menos privilégios, será preciso criar políticas RLS ou `GRANT` adequados.
+
 ### Dockerfile
 
 O `Dockerfile` na **raiz do repositório** é usado pelo Render (`dockerfilePath: ./Dockerfile`, `dockerContext: .`). Utiliza multi-stage build:
@@ -354,7 +356,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 ---
 
-**Última atualização**: 2026-02-08 (CORS_ORIGIN usada no WebSocket do Assistente Live)
+**Última atualização**: 2026-05-05 (migração 19 — RLS em tabelas `public`)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.
