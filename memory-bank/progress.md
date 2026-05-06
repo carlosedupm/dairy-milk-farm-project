@@ -6,8 +6,8 @@
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
-📚  Documentação: 96% ✅ (memory bank alinhado a Folgas mobile + regras de negócio)
-💻  Implementação: 96% ✅ (CRUD Animais, Produção, Gestão Pecuária, Módulo Agrícola avançado no código local, em consolidação)
+📚  Documentação: 95% ✅ (memory bank alinhado e em revisão contínua de consistência)
+💻  Implementação: 95% ✅ (CRUD Animais, Produção, Gestão Pecuária e Módulo Agrícola em consolidação)
 🧪  Testes: 75% ✅ (unitários backend + E2E frontend + scripts TestSprite TC001–TC009 API)
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
 ```
@@ -118,9 +118,9 @@
 ### **Sprint 2 (Funcionalidades Core)**
 
 - [x] Login + CRUD de Fazendas no frontend
-- [ ] Autenticação completa (registro, refresh tokens)
-- [ ] CRUD de Animais (backend + frontend)
-- [ ] CRUD de Produção de Leite (backend + frontend)
+- [x] Autenticação completa (registro, refresh tokens)
+- [x] CRUD de Animais (backend + frontend)
+- [x] CRUD de Produção de Leite (backend + frontend)
 - [ ] Validações e tratamento de erros
 
 ### **Sprint 4 (Consolidação Módulo Agrícola)**
@@ -481,6 +481,6 @@
 
 ---
 
-**Última atualização**: 2026-05-05
+**Última atualização**: 2026-05-06
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
-**Próxima revisão**: 2026-04-28
+**Próxima revisão**: 2026-05-13

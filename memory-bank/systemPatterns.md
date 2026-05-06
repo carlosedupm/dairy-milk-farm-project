@@ -293,6 +293,9 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 
 ### **Response Format**
 
+- **Escopo**: padrão oficial para respostas de sucesso das rotas de domínio (`/api/auth/*` e `/api/v1/*`) via `internal/response`.
+- **Exceções técnicas documentadas**: `GET /health` e fallback degradado de `/api/*` em `cmd/api/main.go` usam payload técnico simplificado (fora do envelope `data/message/timestamp`) por objetivo operacional.
+
 ```json
 {
   "data": { ... },
@@ -302,6 +305,9 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 ```
 
 ### **Error Response Format**
+
+- **Escopo**: padrão oficial para erros das rotas de domínio (`/api/auth/*` e `/api/v1/*`) via `internal/response`.
+- **Exceções técnicas documentadas**: `GET /health` e fallback degradado de `/api/*` em `cmd/api/main.go` seguem payload técnico simplificado para diagnóstico de disponibilidade.
 
 ```json
 {
@@ -547,8 +553,22 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 - **Threshold-based**: Alertas baseados em thresholds (futuro)
 - **Notification Channels**: Email, Slack (futuro)
 
+## Fluxo de sincronização do Memory Bank
+
+### **Checklist pós-entrega (obrigatório em mudança relevante)**
+
+- **`activeContext.md`**: atualizar estado atual (o que funciona, em andamento, próximos passos e problemas conhecidos).
+- **`progress.md`**: alinhar completude, sprint/backlog e histórico sem contradições com `activeContext`.
+- **`systemPatterns.md`**: registrar padrões novos ou exceções técnicas intencionais.
+- **`techContext.md`**: refletir dependências/versões/configurações efetivamente presentes no código.
+- **`Última atualização`**: atualizar data em todos os arquivos alterados no mesmo PR.
+
+### **Regra operacional**
+
+- Toda alteração de comportamento relevante deve atualizar documentação no mesmo PR para evitar drift entre código e memória do projeto.
+
 ---
 
-**Versão dos Padrões**: 2.18 (Go + Next.js) — `lib/format.ts`, listagens DRY, `useFolgasPage` para Folgas.
+**Versão dos Padrões**: 2.19 (Go + Next.js) — escopo do envelope de resposta/erro explicitado + checklist operacional de sincronização do memory bank.
 
-**Última atualização**: 2026-04-01 (campos de data: DatePicker em fazenda/agricultura; sem `Input type="date"`)
+**Última atualização**: 2026-05-06

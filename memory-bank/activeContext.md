@@ -10,8 +10,8 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 - **Backend Go**: API com Gin, health, auth (login/logout/refresh/validate) e CRUD + search de fazendas
 - **Autenticação**: JWT RS256, middleware, bcrypt; refresh tokens no banco; cookies HttpOnly (SameSite=Strict em dev, SameSite=None em produção cross-origin Vercel+Render)
-- **Formato de Resposta**: Padronizado com `data`, `message`, `timestamp` em todas as respostas
-- **Formato de Erro**: Padronizado com `error.code`, `error.message`, `error.details`, `timestamp`
+- **Formato de Resposta**: Padronizado com `data`, `message`, `timestamp` nas rotas de domínio (`/api/auth/*` e `/api/v1/*`)
+- **Formato de Erro**: Padronizado com `error.code`, `error.message`, `error.details`, `timestamp` nas rotas de domínio (`/api/auth/*` e `/api/v1/*`)
 - **Observabilidade**:
   - Correlation IDs automáticos para cada request (UUID)
   - Logging estruturado JSON com correlation IDs, método, path, status, latency
@@ -77,6 +77,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 3. Implementar validações adicionais nos handlers (go-playground/validator), priorizando novas rotas agrícolas.
 4. Implementar recuperação de senha (requer configuração SMTP).
 5. Evoluir dashboard com gráficos de produção (pecuária + agrícola).
+6. Aplicar checklist de sincronização do memory bank em toda entrega relevante (activeContext/progress/systemPatterns/techContext no mesmo PR).
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -135,5 +136,5 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ---
 
-**Última atualização**: 2026-05-05
+**Última atualização**: 2026-05-06
 **Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Módulo Folgas 5x1 (UX mobile enxuta na grade + dialog de detalhes; geração pelo mês visível; GERENTE com gestão) | Módulo Agrícola em consolidação | Assistente FAB + Live | Fazenda ativa | Dev Studio Fase 0–3 | TestSprite API (`testsprite_tests/`, MCP `generateCodeAndExecute`)

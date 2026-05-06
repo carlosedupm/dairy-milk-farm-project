@@ -22,9 +22,9 @@
 - **Linguagem**: TypeScript 5.7.2
 - **Estilização**: Tailwind CSS 3.4.17
 - **Componentes**: Shadcn/UI (compatível com React 19)
-- **Gerenciamento de Estado**: TanStack Query 5.90.20
+- **Gerenciamento de Estado**: TanStack Query 5.x
 - **Cliente HTTP**: Axios 1.7.9
-- **Logging**: Pino (server-side)
+- **Logging**: logs do runtime do Next.js e `console` no app (sem logger estruturado dedicado no frontend)
 
 ### Infraestrutura
 
@@ -251,5 +251,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-05
+**Última atualização**: 2026-05-06
 **Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub), testes API TestSprite (`testsprite_tests/`)
