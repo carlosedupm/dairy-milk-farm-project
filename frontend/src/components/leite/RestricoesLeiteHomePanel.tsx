@@ -19,6 +19,7 @@ import {
   type RestricaoLeiteAtiva,
 } from "@/services/restricoesLeite";
 import { QueryListContent } from "@/components/layout/QueryListContent";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -150,6 +151,13 @@ export function RestricoesLeiteHomePanel() {
     },
   });
 
+  const openLiberarDialog = (row: RestricaoLeiteAtiva) => {
+    setLiberarErro(null);
+    setLiberadoEm("");
+    setLiberadoObs("");
+    setDialogLiberar(row);
+  };
+
   const mutLiberar = useMutation({
     mutationFn: (restricao: RestricaoLeiteAtiva) => {
       if (!fazendaId) throw new Error("Fazenda não selecionada");
@@ -231,62 +239,123 @@ export function RestricoesLeiteHomePanel() {
                 Nenhum animal nesta situação no momento.
               </p>
             ) : (
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Animal</TableHead>
-                      <TableHead>Motivo</TableHead>
-                      <TableHead>Desde</TableHead>
-                      <TableHead>Observação</TableHead>
-                      <TableHead className="text-right w-[1%] whitespace-nowrap">
-                        Ações
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {lista.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell className="font-medium">
-                          <Link
-                            href={`/animais/${row.animal_id}`}
-                            className="text-primary underline-offset-4 hover:underline"
+              <>
+                {/* Mobile: cards empilhados — status e ação sempre visíveis sem scroll horizontal */}
+                <ul className="flex flex-col gap-3 md:hidden" aria-label="Animais aguardando laboratório">
+                  {lista.map((row) => (
+                    <li
+                      key={row.id}
+                      className="rounded-lg border border-amber-500/25 bg-card p-4 shadow-sm"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2 gap-y-3">
+                        <Link
+                          href={`/animais/${row.animal_id}`}
+                          className="min-h-[44px] min-w-0 flex-1 text-base font-semibold text-primary underline-offset-4 hover:underline"
+                        >
+                          {row.identificacao}
+                        </Link>
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 border-amber-500/40 bg-amber-500/15 text-amber-950 dark:text-amber-100"
+                        >
+                          Aguardando laboratório
+                        </Badge>
+                      </div>
+                      <dl className="mt-3 space-y-2 text-sm">
+                        <div>
+                          <dt className="text-muted-foreground">Motivo</dt>
+                          <dd className="font-medium text-foreground">
+                            {motivoLabel(row.motivo)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-muted-foreground">Desde</dt>
+                          <dd className="text-foreground">
+                            {formatDatePtBr(row.inicio_em)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-muted-foreground">Observação</dt>
+                          <dd className="break-words text-foreground">
+                            {row.observacao?.trim() ? row.observacao : "—"}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div className="mt-4 border-t border-border pt-4">
+                        {podeLiberar ? (
+                          <Button
+                            type="button"
+                            variant="default"
+                            className="h-12 w-full text-base"
+                            onClick={() => openLiberarDialog(row)}
                           >
-                            {row.identificacao}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{motivoLabel(row.motivo)}</TableCell>
-                        <TableCell>{formatDatePtBr(row.inicio_em)}</TableCell>
-                        <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                          {row.observacao?.trim() ? row.observacao : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {podeLiberar ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="min-h-[40px]"
-                              onClick={() => {
-                                setLiberarErro(null);
-                                setLiberadoEm("");
-                                setLiberadoObs("");
-                                setDialogLiberar(row);
-                              }}
-                            >
-                              Liberar
-                            </Button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              —
-                            </span>
-                          )}
-                        </TableCell>
+                            Liberar após laboratório
+                          </Button>
+                        ) : (
+                          <p className="rounded-md bg-muted/60 px-3 py-3 text-center text-sm leading-snug text-muted-foreground">
+                            Liberação após o resultado do laboratório é feita pela{" "}
+                            <span className="font-medium text-foreground">gestão</span>
+                            {" "}(este perfil consulta e registra descarte).
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Desktop: tabela */}
+                <div className="hidden overflow-x-auto rounded-md border md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Animal</TableHead>
+                        <TableHead>Motivo</TableHead>
+                        <TableHead>Desde</TableHead>
+                        <TableHead>Observação</TableHead>
+                        <TableHead className="w-[1%] whitespace-nowrap text-right">
+                          Ações
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {lista.map((row) => (
+                        <TableRow key={row.id}>
+                          <TableCell className="font-medium">
+                            <Link
+                              href={`/animais/${row.animal_id}`}
+                              className="text-primary underline-offset-4 hover:underline"
+                            >
+                              {row.identificacao}
+                            </Link>
+                          </TableCell>
+                          <TableCell>{motivoLabel(row.motivo)}</TableCell>
+                          <TableCell>{formatDatePtBr(row.inicio_em)}</TableCell>
+                          <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                            {row.observacao?.trim() ? row.observacao : "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {podeLiberar ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="min-h-[40px]"
+                                onClick={() => openLiberarDialog(row)}
+                              >
+                                Liberar
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                Gestão libera
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </QueryListContent>
         </CardContent>
