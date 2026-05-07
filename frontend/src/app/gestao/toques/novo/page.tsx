@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
+import { nowDatetimeLocalInputValue } from "@/lib/format";
 
 const RESULTADOS = ["POSITIVO", "NEGATIVO", "INCONCLUSIVO"];
 
@@ -29,7 +30,7 @@ function NovoContent() {
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
   const [animalId, setAnimalId] = useState("");
-  const [data, setData] = useState(new Date().toISOString().slice(0, 16));
+  const [data, setData] = useState(nowDatetimeLocalInputValue());
   const [resultado, setResultado] = useState("POSITIVO");
 
   const { data: animais = [] } = useQuery({

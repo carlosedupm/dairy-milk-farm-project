@@ -5,6 +5,7 @@
 /* Design system CeialMilk: paleta rural, modo claro e escuro, WCAG AA */
 @layer base {
   :root {
+    color-scheme: light;
     /* Modo claro: pastagem, terra, sol */
     --background: 40 18% 97%;
     --foreground: 24 12% 12%;
@@ -34,6 +35,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     /* Modo escuro: mesma identidade rural, contraste preservado */
     --background: 152 18% 11%;
     --foreground: 40 15% 95%;
@@ -68,5 +70,10 @@
   }
   body {
     @apply bg-background text-foreground text-base antialiased;
+  }
+
+  /* Inputs nativos (ex.: datetime-local): cor de destaque alinhada ao primário rural */
+  input[type="datetime-local"] {
+    accent-color: hsl(var(--primary));
   }
 }

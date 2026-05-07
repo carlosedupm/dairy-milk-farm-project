@@ -30,23 +30,28 @@ alwaysApply: true
    - Métricas de progresso
 
 4. **`memory-bank/techContext.md`**: Stack e configurações técnicas
-   - Dependências e versões
-   - Configurações do Spring Boot
-   - Configurações de banco de dados
+   - Dependências e versões (Go, Next.js)
+   - Configurações de banco de dados e ambiente
    - Configurações de segurança
+
+## Catálogo de negócio (`docs/business/`)
+
+**Quando a tarefa alterar regras de domínio, políticas de produto ou UX que materialize decisão de negócio**, consulte e atualize o catálogo:
+
+- Leia **`docs/business/README.md`** e o arquivo do módulo afetado (ex.: `docs/business/folgas.md`).
+- No mesmo trabalho (mesmo PR / mesma entrega), **atualize ou crie** as regras com IDs estáveis (`BR-<DOMINIO>-NNN`) e ponteiros ao código.
+- **`memory-bank/productContext.md`** resume visão de produto; o **detalhe das regras** fica em `docs/business/`.
 
 ## Princípios Fundamentais
 
 ### 1. Consistência Arquitetural
 - **SEMPRE** siga os padrões documentados em `memory-bank/systemPatterns.md`
 - **NUNCA** introduza padrões que contradigam os estabelecidos sem atualizar a documentação primeiro
-- **MANTENHA** a estrutura de camadas: Controller → Service → Repository
+- **MANTENHA** a estrutura de camadas backend: **Handlers → Services → Repositories → PostgreSQL** (Go + Gin)
 
-### 2. Programação Reativa
-- Use `Mono<>` e `Flux<>` do Project Reactor
-- Operações não-bloqueantes com R2DBC
-- Tratamento de erros reativo
-- Backpressure adequado
+### 2. Programação no backend
+- **Go**: handlers HTTP com Gin; lógica de negócio em services; persistência em repositories (pgx/sql).
+- **Erros**: retornar explicitamente; respostas HTTP padronizadas conforme `systemPatterns.md`.
 
 ### 3. Atualização de Documentação
 Após mudanças significativas, atualize:
@@ -54,39 +59,32 @@ Após mudanças significativas, atualize:
 - `progress.md`: Se completou tarefas ou atingiu marcos
 - `systemPatterns.md`: Se estabeleceu novos padrões
 - `techContext.md`: Se adicionou tecnologias ou dependências
+- **`docs/business/`**: Se mudou **comportamento de produto** ou **regra de domínio**
 
 ## Stack Tecnológica (Referência Rápida)
 
-- **Spring Boot**: 3.3.0
-- **WebFlux**: Programação reativa
-- **R2DBC**: Acesso reativo ao PostgreSQL
-- **PostgreSQL**: 15
-- **JWT**: Autenticação stateless
-- **Java**: 17
+- **Backend**: Go 1.21+, Gin, PostgreSQL 15, pgx, JWT RS256
+- **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind, Shadcn/UI, TanStack Query
 
 **Para detalhes completos, consulte `memory-bank/techContext.md`**
 
 ## Estado Atual (Resumo)
 
-- Infraestrutura: 95% ✅
-- Documentação: 80% ✅
-- Implementação: 30% 🚧
-- Testes: 0% 🚧
-- Deploy: 70% ✅
-
-**Para status detalhado, consulte `memory-bank/activeContext.md` e `memory-bank/progress.md`**
+Consulte sempre **`memory-bank/activeContext.md`** e **`memory-bank/progress.md`** para percentuais e foco atuais (os números mudam com o tempo).
 
 ## Quando Consultar Documentação Específica
 
-- **Implementando nova funcionalidade**: `activeContext.md` + `systemPatterns.md`
+- **Implementando nova funcionalidade**: `activeContext.md` + `systemPatterns.md` + `docs/business/` se houver regras de domínio
 - **Adicionando nova dependência**: `techContext.md` + `systemPatterns.md`
 - **Criando novo endpoint**: `systemPatterns.md` + `docs/postman/`
 - **Resolvendo problema**: `activeContext.md` (problemas conhecidos)
 - **Atualizando deploy**: `deploy-notes.md` + `techContext.md`
+- **Mudança de comportamento de produto**: `docs/business/` (obrigatório manter alinhado ao código)
 
 ## Referências Principais
 
 - **AGENTS.md**: Visão geral e guia principal
+- **docs/business/README.md**: Catálogo de negócio
 - **memory-bank/activeContext.md**: Estado atual e contexto ativo
 - **memory-bank/systemPatterns.md**: Padrões arquiteturais
 - **memory-bank/progress.md**: Progresso e métricas

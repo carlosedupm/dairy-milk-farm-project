@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
+import { toDatetimeLocalInputValue } from "@/lib/format";
 
 const METODOS = ["VISUAL", "PEDOMETRO", "RUFIAO", "OUTRO"] as const;
 const INTENSIDADES = ["FRACO", "MODERADO", "FORTE"] as const;
@@ -30,7 +31,9 @@ const INTENSIDADES = ["FRACO", "MODERADO", "FORTE"] as const;
 function initialFormState(cio: Cio) {
   return {
     animalId: cio.animal_id.toString(),
-    dataDetectado: cio.data_detectado?.slice(0, 16) ?? "",
+    dataDetectado: cio.data_detectado
+      ? toDatetimeLocalInputValue(cio.data_detectado)
+      : "",
     metodo: cio.metodo_deteccao ?? "",
     intensidade: cio.intensidade ?? "",
   };

@@ -26,6 +26,13 @@ func (r *LactacaoRepository) Create(ctx context.Context, l *models.Lactacao) err
 		Scan(&l.ID, &l.CreatedAt, &l.UpdatedAt)
 }
 
+func (r *LactacaoRepository) CreateTx(ctx context.Context, tx pgx.Tx, l *models.Lactacao) error {
+	query := `INSERT INTO lactacoes (animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at, updated_at`
+	return tx.QueryRow(ctx, query, l.AnimalID, l.NumeroLactacao, l.PartoID, l.DataInicio, l.DataFim, l.DiasLactacao, l.ProducaoTotal, l.MediaDiaria, l.Status, l.FazendaID).
+		Scan(&l.ID, &l.CreatedAt, &l.UpdatedAt)
+}
+
 func (r *LactacaoRepository) GetByID(ctx context.Context, id int64) (*models.Lactacao, error) {
 	query := `SELECT id, animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id, created_at, updated_at FROM lactacoes WHERE id = $1`
 	var l models.Lactacao
@@ -103,5 +110,11 @@ func (r *LactacaoRepository) GetEmAndamentoByAnimalID(ctx context.Context, anima
 func (r *LactacaoRepository) CountByAnimalID(ctx context.Context, animalID int64) (int, error) {
 	var n int
 	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM lactacoes WHERE animal_id = $1`, animalID).Scan(&n)
+	return n, err
+}
+
+func (r *LactacaoRepository) CountByAnimalIDTx(ctx context.Context, tx pgx.Tx, animalID int64) (int, error) {
+	var n int
+	err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM lactacoes WHERE animal_id = $1`, animalID).Scan(&n)
 	return n, err
 }

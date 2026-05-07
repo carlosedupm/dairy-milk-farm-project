@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
+import { nowDatetimeLocalInputValue } from "@/lib/format";
 
 const TIPOS = ["IA", "IATF", "MONTA_NATURAL", "TE"];
 
@@ -30,7 +31,7 @@ function NovoContent() {
   const queryClient = useQueryClient();
   const [animalId, setAnimalId] = useState("");
   const [tipo, setTipo] = useState("IA");
-  const [data, setData] = useState(new Date().toISOString().slice(0, 16));
+  const [data, setData] = useState(nowDatetimeLocalInputValue());
   const [touroAnimalId, setTouroAnimalId] = useState("");
   const [touroInfo, setTouroInfo] = useState("");
 

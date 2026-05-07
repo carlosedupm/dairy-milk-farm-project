@@ -463,6 +463,51 @@
 - ✅ **useAnimaisMap**: Garantia de array iterável (`Array.isArray(data) ? data : []`) para evitar "animais is not iterable" em rotas como `/gestao/toques`
 - ✅ **Assistente Virtual (modo Live)**: Resposta exibida como texto puro (sem ReactMarkdown), sem negrito a partir de `*`; usuário não precisa "falar" asterisco; TTS e visual consistentes
 
+### **2026-05-06 - Animais: usabilidade de datas históricas**
+
+- ✅ **DatePicker com entrada manual**: suporte a digitação com autoformatação `DD/MM/AAAA` (usuário pode focar em digitar os números), conversão para `YYYY-MM-DD`, validação de data inválida e manutenção de compatibilidade com `onChange`.
+- ✅ **Navegação rápida de ano**: calendário do DatePicker configurado com dropdown de anos (faixa configurável), reduzindo cliques para datas antigas.
+- ✅ **Formulário de Animal**: campos `data_nascimento`, `data_entrada` e `data_saida` em novo/editar animal usando modo manual (`manualInput`) para acelerar registros retroativos.
+- ✅ **Correção de offset de fuso em data pura**: `formatDatePtBr` no frontend passou a tratar `YYYY-MM-DD` sem deslocamento de timezone (evita exibir/gravar um dia anterior em cenários como `01/01/2022` → `31/12/2021`).
+
+### **2026-05-06 - Gestão Pecuária: animal automático da cria**
+
+- ✅ **Backend `CriaService`**: animal gerado com `data_nascimento` = `parto.Data`, `origem_aquisicao` NASCIDO, `raca` opcional; identificação custom ou padrão automático com prefixo **FILHO** (macho) / **FILHA** (fêmea), identMae, data, parto e índice; `ExistsByIdentificacao`; duplicata → `ErrAnimalIdentificacaoDuplicada` / HTTP 409 no handler.
+- ✅ **`models.Cria`**: `animal_identificacao`, `animal_raca` com `db:"-"` (só entrada JSON).
+- ✅ **Frontend**: `CriaCreatePayload` + campos por linha em `PartoFormFields` e em `PartoEditCriasPanel`; placeholder de raça com raça da mãe.
+
+### **2026-05-06 - Gestão Pecuária: crias no fluxo de parto**
+
+- ✅ **`services/crias.ts`**: `create` + tipos alinhados ao handler (`sexo`, `condicao`, `peso`, `parto_id`).
+- ✅ **Novo parto**: `PartoFormFields` com seção dinâmica por número de crias (`sexo` M/F, situação Vivo/Natimorto, peso opcional); envio ao backend passou a ser **um único** `POST /api/v1/partos` com `crias[]` (ver histórico “transações parto + crias”).
+- ✅ **Editar parto**: `PartoEditCriasPanel` — listagem (`GET ?parto_id=`), alerta se quantidade ≠ `numero_crias`, formulário para registrar cria em falta; invalidação de queries `crias` e `animais`.
+- ✅ **Constantes**: `components/gestao/cria-constants.ts` para enums exibidos em pt-BR.
+
+### **2026-05-06 - Gestão Pecuária: transações parto + crias + animal**
+
+- ✅ **`CriaService.Create`**: `pgxpool.Pool.Begin` + `INSERT crias` / `INSERT animais` / `UPDATE crias` na mesma transação para cria VIVO com animal automático; `PartoRepository.GetByIDForUpdateTx` para serializar por `parto_id`; variantes `*Tx` em repositórios de cria, animal, parto.
+- ✅ **`POST /api/v1/partos`**: campo opcional `crias[]` (mesmo tamanho que `numero_crias`) → `PartoService.CreateWithCrias` — parto, efeitos na matriz (categoria/status/gestação) e lactação + todas as crias na **mesma** transação.
+- ✅ **Frontend `novo/page.tsx`**: `createParto` com `crias` no payload; tipo `PartoCriaInput` em `services/partos.ts`.
+- ✅ **`DELETE /api/v1/partos/:id`**: numa transação, remove animais ligados a crias vivas (regra: não COMPRADO; `mae_id` nil ou matriz do parto) e em seguida o parto; `CriaRepository.GetByPartoIDTx`, `AnimalRepository.DeleteTx`, `CriaService.DeleteAnimaisGeradosPorCriasDoPartoTx`.
+
+### **2026-05-06 - Gestão Pecuária: UX «animais na cria» e cache**
+
+- ✅ **Copy**: campo **Número de animais na cria** (`PartoFormFields`); listagem coluna **Animais na cria** (`PartoTable`); textos de alerta em `PartoEditCriasPanel`.
+- ✅ **TanStack Query**: ao excluir parto, invalidar `animais` (fazenda + global), `crias`, `fazendas/:id/animais` além de `partos` — evita animal removido no backend ainda aparecer na UI.
+- ✅ **Ident automática macho**: prefixo provisório **FILHO-** (fêmea mantém **FILHA-**) em `CriaService.resolveIdentificacaoCriaVivaTx`.
+
+### **2026-05-06 - Gestão Pecuária: edição de partos**
+
+- ✅ **Backend Partos**: adicionados `GET /api/v1/partos/:id` e `PUT /api/v1/partos/:id` nas rotas, com atualização completa do registro no repositório (`animal_id`, `gestacao_id`, `data`, `tipo`, `numero_crias`, `complicacoes`, `observacoes`, `fazenda_id`) e tratamento de não encontrado.
+- ✅ **Validações de domínio no update**: `PartoService.Update` passou a validar obrigatórios, número mínimo de crias, compatibilidade animal↔fazenda, sexo fêmea e tipo de parto válido.
+- ✅ **Frontend Gestão/Partos**: listagem agora exibe ação **Editar** e nova página `/gestao/partos/[id]/editar` com formulário de manutenção (animal, data/hora, número de crias, tipo, gestação opcional, complicações e observações), com invalidação de cache TanStack Query após salvar.
+
+### **2026-05-06 - Gestão Pecuária: CRUD completo de partos**
+
+- ✅ **`DELETE /api/v1/partos/:id`**: verificação de acesso à fazenda; `PartoService.Delete` transacional (remoção de animais gerados + `DeleteTx` do parto) — detalhe no histórico «transações parto + crias + animal».
+- ✅ **Cadastro alinhado à edição**: `/gestao/partos/novo` usa os mesmos campos opcionais (`tipo`, `gestacao_id`, `complicações`, `observações`) via componente compartilhado `PartoFormFields`.
+- ✅ **Listagem**: botão **Excluir** com confirmação (Dialog), seguindo o padrão de Cios; serviço `remove(id)` no frontend.
+
 ### **2026-02-03 - Assistente: contexto fazendas do usuário e fallback uma fazenda**
 
 - ✅ **Interpretar**: Fazendas vinculadas ao usuário (GetByUsuarioID) em vez de GetAll; prompt com regra para cadastrar_animal, listar_animais_fazenda e consultar_animais_fazenda: quando o usuário tem apenas UMA fazenda e não menciona fazenda, incluir fazenda_id no payload

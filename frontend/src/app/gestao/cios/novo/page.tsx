@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
+import { nowDatetimeLocalInputValue } from "@/lib/format";
 
 const METODOS = ["VISUAL", "PEDOMETRO", "RUFIAO", "OUTRO"] as const;
 const INTENSIDADES = ["FRACO", "MODERADO", "FORTE"] as const;
@@ -30,7 +31,7 @@ function NovoContent() {
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
   const [animalId, setAnimalId] = useState("");
-  const [dataDetectado, setDataDetectado] = useState(new Date().toISOString().slice(0, 16));
+  const [dataDetectado, setDataDetectado] = useState(nowDatetimeLocalInputValue());
   const [metodo, setMetodo] = useState<string>("");
   const [intensidade, setIntensidade] = useState<string>("");
 

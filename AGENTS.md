@@ -20,6 +20,12 @@ O projeto mantém documentação estruturada no diretório `memory-bank/`. **SEM
 
 - **`docs/postman/`**: Coleção Postman com exemplos de uso da API, endpoints documentados e variáveis de ambiente (será atualizada para nova API Go)
 
+### Catálogo de negócio (`docs/business/`)
+
+Catálogo **versionado** de regras de domínio (IDs estáveis, escopo, perfis, bloqueio vs informativo, ponteiros ao código). **`memory-bank/productContext.md`** mantém visão de produto e jornada; o **detalhe operacional** das regras fica em `docs/business/*.md`.
+
+**Obrigatório:** qualquer **mudança de comportamento de produto** (nova regra, alteração de política de domínio ou UX que reflita decisão de negócio) deve incluir **no mesmo trabalho** a atualização do arquivo correspondente em `docs/business/` (novo módulo = novo `.md` + entrada no índice em `docs/business/README.md`). Para contexto no chat do Cursor, use `@docs/business/...` quando implementar aquele domínio.
+
 ## 🎯 Visão Geral do Projeto
 
 CeialMilk é um sistema de gestão completo para fazendas leiteiras que combina alta performance técnica com funcionalidades práticas para o agronegócio, utilizando arquitetura moderna com Go e Next.js.
@@ -149,6 +155,11 @@ Pages/App → Components → Services → API (Backend)
    - Ao adicionar novas variáveis de ambiente
    - Ao documentar processos de deploy
 
+6. **`docs/business/`** (catálogo de negócio):
+   - **Sempre** que alterar ou criar **comportamento de produto** / regra de domínio visível na API ou na UI
+   - Ao introduzir um novo módulo com políticas próprias: novo arquivo sob `docs/business/` + índice em `docs/business/README.md`
+   - Ao mudar invariantes garantidas por migração ou constraint: cite o identificador da migration ou da constraint na regra afetada
+
 **Consulte a regra `.cursor/rules/documentation-maintenance.mdc` para instruções detalhadas.**
 
 ## 🚀 Fluxo de Trabalho Recomendado
@@ -157,6 +168,7 @@ Pages/App → Components → Services → API (Backend)
    - Leia `memory-bank/activeContext.md` para entender o estado atual
    - Consulte `memory-bank/systemPatterns.md` para padrões relevantes
    - Verifique `memory-bank/progress.md` para contexto de progresso
+   - Se a tarefa tocar **regras de domínio**: leia `docs/business/README.md` e o módulo relevante (ex.: `docs/business/folgas.md`)
 
 2. **Durante o desenvolvimento**:
    - Siga os padrões estabelecidos em `systemPatterns.md`
@@ -169,9 +181,11 @@ Pages/App → Components → Services → API (Backend)
    - Atualize `progress.md` se completou tarefas
    - Atualize `systemPatterns.md` se estabeleceu novos padrões
    - Atualize `techContext.md` se adicionou tecnologias
+   - Atualize **`docs/business/`** se mudou **comportamento de produto** ou política de domínio (mesmo PR / mesmo ciclo de tarefa)
 
 ## 📖 Referências Rápidas
 
+- **Catálogo de negócio**: `docs/business/README.md`
 - **Estado Atual**: `memory-bank/activeContext.md`
 - **Padrões Arquiteturais**: `memory-bank/systemPatterns.md`
 - **Stack Tecnológica**: `memory-bank/techContext.md`
@@ -185,11 +199,12 @@ Pages/App → Components → Services → API (Backend)
 - **NUNCA** faça mudanças que contradigam padrões estabelecidos sem primeiro atualizar a documentação
 - **SEMPRE** consulte a documentação antes de tomar decisões técnicas
 - **SEMPRE** atualize a documentação quando fizer mudanças significativas
+- **SEMPRE** atualize **`docs/business/`** quando a mudança for de **comportamento de produto** ou **regra de negócio** (definição de “pronto” inclui o catálogo alinhado ao código)
 - **MANTENHA** consistência com os padrões arquiteturais documentados
 - **USE** TypeScript strict mode no frontend
 - **USE** error handling explícito no backend Go
 
 ---
 
-**Última atualização**: 2026-01-24
-**Versão**: 2.0 (Go + Next.js)
+**Última atualização**: 2026-05-06
+**Versão**: 2.1 (Go + Next.js — catálogo `docs/business/`)

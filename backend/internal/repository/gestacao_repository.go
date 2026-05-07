@@ -88,3 +88,28 @@ func (r *GestacaoRepository) Update(ctx context.Context, g *models.Gestacao) err
 	}
 	return nil
 }
+
+func (r *GestacaoRepository) GetByIDTx(ctx context.Context, tx pgx.Tx, id int64) (*models.Gestacao, error) {
+	query := `SELECT id, animal_id, cobertura_id, data_confirmacao, data_prevista_parto, status, observacoes, fazenda_id, created_at, updated_at FROM gestacoes WHERE id = $1`
+	var g models.Gestacao
+	err := tx.QueryRow(ctx, query, id).Scan(&g.ID, &g.AnimalID, &g.CoberturaID, &g.DataConfirmacao, &g.DataPrevistaParto, &g.Status, &g.Observacoes, &g.FazendaID, &g.CreatedAt, &g.UpdatedAt)
+	if err == pgx.ErrNoRows {
+		return nil, pgx.ErrNoRows
+	}
+	return &g, err
+}
+
+func (r *GestacaoRepository) UpdateTx(ctx context.Context, tx pgx.Tx, g *models.Gestacao) error {
+	if g.ID <= 0 {
+		return fmt.Errorf("id invalido: %d", g.ID)
+	}
+	query := `UPDATE gestacoes SET data_prevista_parto = $1, status = $2, observacoes = $3, updated_at = $4 WHERE id = $5`
+	cmd, err := tx.Exec(ctx, query, g.DataPrevistaParto, g.Status, g.Observacoes, time.Now(), g.ID)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return errors.New("nenhuma linha atualizada")
+	}
+	return nil
+}

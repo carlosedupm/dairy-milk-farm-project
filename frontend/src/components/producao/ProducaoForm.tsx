@@ -27,6 +27,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getApiErrorMessage } from "@/lib/errors";
+import {
+  nowDatetimeLocalInputValue,
+  toDatetimeLocalInputValue,
+} from "@/lib/format";
 
 type Props = {
   initial?: ProducaoLeite | null;
@@ -60,8 +64,8 @@ export function ProducaoForm({
   );
   const [dataHora, setDataHora] = useState(
     initial?.data_hora
-      ? initial.data_hora.slice(0, 16) // YYYY-MM-DDTHH:mm
-      : new Date().toISOString().slice(0, 16)
+      ? toDatetimeLocalInputValue(initial.data_hora)
+      : nowDatetimeLocalInputValue()
   );
   const [quantidade, setQuantidade] = useState<string>(
     initial?.quantidade?.toString() ?? ""

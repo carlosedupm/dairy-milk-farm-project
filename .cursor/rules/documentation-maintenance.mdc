@@ -66,9 +66,9 @@ alwaysApply: true
 ### `memory-bank/techContext.md`
 
 **Atualize quando:**
-- Adicionar novas dependências ao `pom.xml`
-- Mudar versões de dependências
-- Adicionar novas configurações no `application.yml`
+- Adicionar ou atualizar dependências Go (`backend/go.mod`) ou npm (`frontend/package.json`)
+- Mudar versões relevantes da stack (Go, Gin, pgx, Next.js, etc.)
+- Alterar configurações importantes (`application`/env, URLs de deploy, CORS)
 - Documentar novas decisões técnicas
 - Adicionar novas ferramentas ou tecnologias
 
@@ -81,9 +81,9 @@ alwaysApply: true
 **Exemplo:**
 ```markdown
 ### Nova Dependência Adicionada
-- **SpringDoc OpenAPI**: Versão 2.5.0
-  - Motivo: Documentação automática da API
-  - Configuração: `OpenAPIConfig.java`
+- **biblioteca X**: versão Y no backend Go
+  - Motivo: ...
+  - Onde: `backend/go.mod` / pacote importado em ...
 ```
 
 ### `memory-bank/systemPatterns.md`
@@ -102,10 +102,10 @@ alwaysApply: true
 
 **Exemplo:**
 ```markdown
-### **Novo Padrão: Global Exception Handler**
-- Implementado: `GlobalExceptionHandler.java`
-- Motivo: Tratamento centralizado de exceções
-- Padrão: Usar `@RestControllerAdvice` com métodos reativos
+### Novo padrão: resposta de erro HTTP padronizada
+- Implementado: `backend/internal/response/response.go`
+- Motivo: JSON uniforme para cliente e observabilidade
+- Uso: handlers chamam `response.ErrorValidation`, etc.
 ```
 
 ### `memory-bank/deploy-notes.md`
@@ -143,6 +143,26 @@ alwaysApply: true
 - Roadmap e timeline
 - Métricas de sucesso
 - Diferenciais competitivos
+
+**Nota:** Detalhe operacional de **regras de domínio** não deve ser duplicado em parágrafos longos aqui — mantenha resumo + link para `docs/business/<modulo>.md`.
+
+### `docs/business/` (catálogo de negócio)
+
+**Atualize obrigatoriamente quando:**
+- Implementar ou alterar **comportamento de produto** (API, validações de domínio, fluxos de UI que materializem política de negócio)
+- Mudar quem pode fazer o quê por perfil **no domínio** (alinhado a `systemPatterns` / `appAccess` / middleware Go quando aplicável)
+- Alterar regras que tenham contrapartida em banco (constraints, migrations): cite na regra o arquivo de migration ou o nome da constraint
+
+**O que incluir em cada regra (modelo mínimo):**
+- **ID estável**: `BR-<DOMINIO>-NNN` (não renumere IDs ao editar texto; crie novo ID se for regra nova)
+- **Enunciado**: o que o usuário/sistema garante
+- **Escopo**: fazenda, período, entidades
+- **Perfis / permissões**
+- **Efeito**: bloqueio no servidor vs apenas alerta/UI informativa
+- **Implementação**: handlers/services/arquivos frontend relevantes (caminhos no repo)
+- **Estado**: implementado | parcial | planejado (quando útil)
+
+**Índice:** mantenha `docs/business/README.md` atualizado com a lista de módulos e convenções.
 
 ## Processo de Atualização
 
@@ -196,6 +216,7 @@ Após fazer mudanças significativas, verifique:
 - [ ] `techContext.md` atualizado se adicionou tecnologias?
 - [ ] `systemPatterns.md` atualizado se estabeleceu novos padrões?
 - [ ] `deploy-notes.md` atualizado se mudou deploy?
+- [ ] **`docs/business/`** atualizado se houve **mudança de comportamento de produto** ou **regra de domínio**?
 - [ ] Data de "Última atualização" atualizada?
 - [ ] Exemplos e código de exemplo atualizados?
 
@@ -208,5 +229,6 @@ Após fazer mudanças significativas, verifique:
 ## Referências
 
 - **AGENTS.md**: Visão geral do projeto e referências
+- **docs/business/README.md**: Catálogo de negócio e índice de módulos
 - **memory-bank/activeContext.md**: Estado atual do projeto
 - **memory-bank/progress.md**: Progresso e métricas

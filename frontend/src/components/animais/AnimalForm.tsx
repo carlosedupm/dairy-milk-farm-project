@@ -231,6 +231,7 @@ export function AnimalForm({
                   value={dataNascimento || undefined}
                   onChange={(v) => setDataNascimento(v)}
                   placeholder="Selecione a data"
+                  manualInput
                 />
               </div>
             )}
@@ -248,6 +249,7 @@ export function AnimalForm({
                 value={dataEntrada || undefined}
                 onChange={(v) => setDataEntrada(v)}
                 placeholder="Selecione a data"
+                manualInput
               />
             </div>
             <div className="space-y-2">
@@ -257,6 +259,7 @@ export function AnimalForm({
                 value={dataSaida || undefined}
                 onChange={(v) => setDataSaida(v)}
                 placeholder="Selecione a data"
+                manualInput
               />
             </div>
           </div>

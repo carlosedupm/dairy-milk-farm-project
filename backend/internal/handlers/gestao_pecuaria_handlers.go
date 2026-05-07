@@ -118,7 +118,76 @@ func (h *PartoHandler) GetByFazendaID(c *gin.Context) {
 	if err != nil { response.ErrorInternal(c, "Erro ao listar partos", err.Error()); return }
 	response.SuccessOK(c, list, "OK")
 }
+func (h *PartoHandler) GetByID(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	parto, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrPartoNotFound) { response.ErrorNotFound(c, "Parto nao encontrado"); return }
+		response.ErrorInternal(c, "Erro ao buscar parto", err.Error()); return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, parto.FazendaID) { return }
+	response.SuccessOK(c, parto, "OK")
+}
 func (h *PartoHandler) Create(c *gin.Context) {
+	var req struct {
+		AnimalID int64 `json:"animal_id" binding:"required"`
+		Data string `json:"data" binding:"required"`
+		FazendaID int64 `json:"fazenda_id" binding:"required"`
+		GestacaoID *int64 `json:"gestacao_id"`
+		Tipo *string `json:"tipo"`
+		NumeroCrias *int `json:"numero_crias"`
+		Complicacoes *string `json:"complicacoes"`
+		Observacoes *string `json:"observacoes"`
+		Crias []struct {
+			Sexo                 string   `json:"sexo" binding:"required"`
+			Condicao             string   `json:"condicao" binding:"required"`
+			Peso                 *float64 `json:"peso"`
+			Observacoes          *string  `json:"observacoes"`
+			AnimalIdentificacao *string  `json:"animal_identificacao"`
+			AnimalRaca           *string  `json:"animal_raca"`
+		} `json:"crias"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil { response.ErrorValidation(c, "Dados invalidos", err.Error()); return }
+	if !ValidateFazendaAccess(c, h.fazendaSvc, req.FazendaID) { return }
+	t, err := time.Parse(time.RFC3339, req.Data)
+	if err != nil { response.ErrorValidation(c, "data invalida", err.Error()); return }
+	p := &models.Parto{AnimalID: req.AnimalID, Data: t, FazendaID: req.FazendaID, GestacaoID: req.GestacaoID, Tipo: req.Tipo, Complicacoes: req.Complicacoes, Observacoes: req.Observacoes, NumeroCrias: 1}
+	if req.NumeroCrias != nil && *req.NumeroCrias > 0 { p.NumeroCrias = *req.NumeroCrias }
+	if len(req.Crias) > 0 {
+		if len(req.Crias) != p.NumeroCrias {
+			response.ErrorBadRequest(c, "crias deve ter exatamente numero_crias elementos", nil)
+			return
+		}
+		crias := make([]*models.Cria, len(req.Crias))
+		for i := range req.Crias {
+			row := req.Crias[i]
+			crias[i] = &models.Cria{
+				Sexo: row.Sexo, Condicao: row.Condicao, Peso: row.Peso, Observacoes: row.Observacoes,
+				AnimalIdentificacao: row.AnimalIdentificacao, AnimalRaca: row.AnimalRaca,
+			}
+		}
+		if err := h.svc.CreateWithCrias(c.Request.Context(), p, crias); err != nil {
+			if errors.Is(err, service.ErrPartoCriasCountMismatch) {
+				response.ErrorBadRequest(c, err.Error(), nil)
+				return
+			}
+			if errors.Is(err, service.ErrAnimalIdentificacaoDuplicada) {
+				response.ErrorConflict(c, "Ja existe um animal com essa identificacao", nil)
+				return
+			}
+			response.ErrorInternal(c, "Erro ao registrar parto", err.Error())
+			return
+		}
+	} else {
+		if err := h.svc.Create(c.Request.Context(), p); err != nil {
+			response.ErrorInternal(c, "Erro ao registrar parto", err.Error())
+			return
+		}
+	}
+	response.SuccessCreated(c, p, "Parto registrado")
+}
+func (h *PartoHandler) Update(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	var req struct {
 		AnimalID int64 `json:"animal_id" binding:"required"`
 		Data string `json:"data" binding:"required"`
@@ -131,12 +200,53 @@ func (h *PartoHandler) Create(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil { response.ErrorValidation(c, "Dados invalidos", err.Error()); return }
 	if !ValidateFazendaAccess(c, h.fazendaSvc, req.FazendaID) { return }
+	parto, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrPartoNotFound) { response.ErrorNotFound(c, "Parto nao encontrado"); return }
+		response.ErrorInternal(c, "Erro ao buscar parto", err.Error()); return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, parto.FazendaID) { return }
 	t, err := time.Parse(time.RFC3339, req.Data)
 	if err != nil { response.ErrorValidation(c, "data invalida", err.Error()); return }
-	p := &models.Parto{AnimalID: req.AnimalID, Data: t, FazendaID: req.FazendaID, GestacaoID: req.GestacaoID, Tipo: req.Tipo, Complicacoes: req.Complicacoes, Observacoes: req.Observacoes, NumeroCrias: 1}
-	if req.NumeroCrias != nil && *req.NumeroCrias > 0 { p.NumeroCrias = *req.NumeroCrias }
-	if err := h.svc.Create(c.Request.Context(), p); err != nil { response.ErrorInternal(c, "Erro ao registrar parto", err.Error()); return }
-	response.SuccessCreated(c, p, "Parto registrado")
+	parto.AnimalID = req.AnimalID
+	parto.Data = t
+	parto.FazendaID = req.FazendaID
+	parto.GestacaoID = req.GestacaoID
+	parto.Tipo = req.Tipo
+	parto.Complicacoes = req.Complicacoes
+	parto.Observacoes = req.Observacoes
+	parto.NumeroCrias = 1
+	if req.NumeroCrias != nil && *req.NumeroCrias > 0 { parto.NumeroCrias = *req.NumeroCrias }
+	if err := h.svc.Update(c.Request.Context(), parto); err != nil {
+		if errors.Is(err, service.ErrPartoNotFound) { response.ErrorNotFound(c, "Parto nao encontrado"); return }
+		response.ErrorInternal(c, "Erro ao atualizar parto", err.Error()); return
+	}
+	response.SuccessOK(c, parto, "Parto atualizado")
+}
+
+func (h *PartoHandler) Delete(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	parto, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrPartoNotFound) {
+			response.ErrorNotFound(c, "Parto nao encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar parto", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, parto.FazendaID) {
+		return
+	}
+	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
+		if errors.Is(err, service.ErrPartoNotFound) {
+			response.ErrorNotFound(c, "Parto nao encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao excluir parto", err.Error())
+		return
+	}
+	response.SuccessOK(c, nil, "Parto excluido")
 }
 
 // CriaHandler
@@ -151,15 +261,32 @@ func (h *CriaHandler) GetByPartoID(c *gin.Context) {
 }
 func (h *CriaHandler) Create(c *gin.Context) {
 	var req struct {
-		PartoID int64 `json:"parto_id" binding:"required"`
-		Sexo string `json:"sexo" binding:"required"`
-		Condicao string `json:"condicao" binding:"required"`
-		Peso *float64 `json:"peso"`
-		Observacoes *string `json:"observacoes"`
+		PartoID              int64    `json:"parto_id" binding:"required"`
+		Sexo                 string   `json:"sexo" binding:"required"`
+		Condicao             string   `json:"condicao" binding:"required"`
+		Peso                 *float64 `json:"peso"`
+		Observacoes          *string  `json:"observacoes"`
+		AnimalIdentificacao *string  `json:"animal_identificacao"`
+		AnimalRaca           *string  `json:"animal_raca"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil { response.ErrorValidation(c, "Dados invalidos", err.Error()); return }
-	cria := &models.Cria{PartoID: req.PartoID, Sexo: req.Sexo, Condicao: req.Condicao, Peso: req.Peso, Observacoes: req.Observacoes}
-	if err := h.svc.Create(c.Request.Context(), cria); err != nil { response.ErrorInternal(c, "Erro ao registrar cria", err.Error()); return }
+	cria := &models.Cria{
+		PartoID:              req.PartoID,
+		Sexo:                 req.Sexo,
+		Condicao:             req.Condicao,
+		Peso:                 req.Peso,
+		Observacoes:          req.Observacoes,
+		AnimalIdentificacao: req.AnimalIdentificacao,
+		AnimalRaca:           req.AnimalRaca,
+	}
+	if err := h.svc.Create(c.Request.Context(), cria); err != nil {
+		if errors.Is(err, service.ErrAnimalIdentificacaoDuplicada) {
+			response.ErrorConflict(c, "Ja existe um animal com essa identificacao", nil)
+			return
+		}
+		response.ErrorInternal(c, "Erro ao registrar cria", err.Error())
+		return
+	}
 	response.SuccessCreated(c, cria, "Cria registrada")
 }
 

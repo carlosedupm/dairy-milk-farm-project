@@ -163,8 +163,8 @@ func main() {
 					coberturaSvc := service.NewCoberturaService(coberturaRepo, animalRepo, fazendaRepo)
 					diagnosticoGestacaoSvc := service.NewDiagnosticoGestacaoService(diagnosticoGestacaoRepo, animalRepo, gestacaoRepo, coberturaRepo, fazendaRepo)
 					gestacaoSvc := service.NewGestacaoService(gestacaoRepo, animalRepo, fazendaRepo)
-					partoSvc := service.NewPartoService(partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo)
-					criaSvc := service.NewCriaService(criaRepo, partoRepo, animalRepo)
+					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
+					partoSvc := service.NewPartoService(pool, partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo, criaSvc)
 					secagemSvc := service.NewSecagemService(secagemRepo, animalRepo, fazendaRepo)
 					lactacaoSvc := service.NewLactacaoService(lactacaoRepo, animalRepo, fazendaRepo)
 					coberturaHandler := handlers.NewCoberturaHandler(coberturaSvc, fazendaSvc)
@@ -321,7 +321,10 @@ func main() {
 					partos := api.Group("/v1/partos", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						partos.GET("", partoHandler.GetByFazendaID)
+						partos.GET("/:id", partoHandler.GetByID)
 						partos.POST("", partoHandler.Create)
+						partos.PUT("/:id", partoHandler.Update)
+						partos.DELETE("/:id", partoHandler.Delete)
 					}
 					// Crias
 					crias := api.Group("/v1/crias", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())

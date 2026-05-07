@@ -33,7 +33,7 @@ export function GestaoFormLayout({
         <CardHeader>
           <CardTitle>{title}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           {children}
           <Button
             onClick={onSubmit}

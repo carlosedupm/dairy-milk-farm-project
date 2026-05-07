@@ -50,6 +50,34 @@ func (r *AnimalRepository) Create(ctx context.Context, animal *models.Animal) er
 	return err
 }
 
+func (r *AnimalRepository) CreateTx(ctx context.Context, tx pgx.Tx, animal *models.Animal) error {
+	query := `
+		INSERT INTO animais (identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, origem_aquisicao)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		RETURNING id, created_at, updated_at
+	`
+	return tx.QueryRow(
+		ctx,
+		query,
+		animal.Identificacao,
+		animal.Raca,
+		animal.DataNascimento,
+		animal.Sexo,
+		animal.StatusSaude,
+		animal.FazendaID,
+		animal.Categoria,
+		animal.StatusReprodutivo,
+		animal.MaeID,
+		animal.PaiInfo,
+		animal.LoteID,
+		animal.PesoNascimento,
+		animal.DataEntrada,
+		animal.DataSaida,
+		animal.MotivoSaida,
+		animal.OrigemAquisicao,
+	).Scan(&animal.ID, &animal.CreatedAt, &animal.UpdatedAt)
+}
+
 func (r *AnimalRepository) GetByID(ctx context.Context, id int64) (*models.Animal, error) {
 	query := `
 		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, origem_aquisicao, created_at, updated_at
@@ -84,6 +112,40 @@ func (r *AnimalRepository) GetByID(ctx context.Context, id int64) (*models.Anima
 		return nil, pgx.ErrNoRows
 	}
 
+	return &animal, err
+}
+
+func (r *AnimalRepository) GetByIDTx(ctx context.Context, tx pgx.Tx, id int64) (*models.Animal, error) {
+	query := `
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, origem_aquisicao, created_at, updated_at
+		FROM animais
+		WHERE id = $1
+	`
+	var animal models.Animal
+	err := tx.QueryRow(ctx, query, id).Scan(
+		&animal.ID,
+		&animal.Identificacao,
+		&animal.Raca,
+		&animal.DataNascimento,
+		&animal.Sexo,
+		&animal.StatusSaude,
+		&animal.FazendaID,
+		&animal.Categoria,
+		&animal.StatusReprodutivo,
+		&animal.MaeID,
+		&animal.PaiInfo,
+		&animal.LoteID,
+		&animal.PesoNascimento,
+		&animal.DataEntrada,
+		&animal.DataSaida,
+		&animal.MotivoSaida,
+		&animal.OrigemAquisicao,
+		&animal.CreatedAt,
+		&animal.UpdatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, pgx.ErrNoRows
+	}
 	return &animal, err
 }
 
@@ -185,6 +247,12 @@ func (r *AnimalRepository) Delete(ctx context.Context, id int64) error {
 	return err
 }
 
+func (r *AnimalRepository) DeleteTx(ctx context.Context, tx pgx.Tx, id int64) error {
+	query := `DELETE FROM animais WHERE id = $1`
+	_, err := tx.Exec(ctx, query, id)
+	return err
+}
+
 func (r *AnimalRepository) SearchByIdentificacao(ctx context.Context, identificacao string) ([]*models.Animal, error) {
 	query := `
 		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, origem_aquisicao, created_at, updated_at
@@ -227,9 +295,21 @@ func (r *AnimalRepository) UpdateStatusReprodutivo(ctx context.Context, animalID
 	return err
 }
 
+func (r *AnimalRepository) UpdateStatusReprodutivoTx(ctx context.Context, tx pgx.Tx, animalID int64, status *string) error {
+	query := `UPDATE animais SET status_reprodutivo = $1, updated_at = $2 WHERE id = $3`
+	_, err := tx.Exec(ctx, query, status, time.Now(), animalID)
+	return err
+}
+
 func (r *AnimalRepository) UpdateCategoria(ctx context.Context, animalID int64, categoria *string) error {
 	query := `UPDATE animais SET categoria = $1, updated_at = $2 WHERE id = $3`
 	_, err := r.db.Exec(ctx, query, categoria, time.Now(), animalID)
+	return err
+}
+
+func (r *AnimalRepository) UpdateCategoriaTx(ctx context.Context, tx pgx.Tx, animalID int64, categoria *string) error {
+	query := `UPDATE animais SET categoria = $1, updated_at = $2 WHERE id = $3`
+	_, err := tx.Exec(ctx, query, categoria, time.Now(), animalID)
 	return err
 }
 
@@ -261,6 +341,12 @@ func (r *AnimalRepository) CountByFazenda(ctx context.Context, fazendaID int64) 
 func (r *AnimalRepository) ExistsByIdentificacao(ctx context.Context, identificacao string) (bool, error) {
 	var exists bool
 	err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM animais WHERE identificacao = $1)`, identificacao).Scan(&exists)
+	return exists, err
+}
+
+func (r *AnimalRepository) ExistsByIdentificacaoTx(ctx context.Context, tx pgx.Tx, identificacao string) (bool, error) {
+	var exists bool
+	err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM animais WHERE identificacao = $1)`, identificacao).Scan(&exists)
 	return exists, err
 }
 
