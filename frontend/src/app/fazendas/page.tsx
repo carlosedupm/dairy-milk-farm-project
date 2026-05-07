@@ -45,10 +45,10 @@ function FazendasContent() {
       return
     }
 
-    // Se tem apenas uma fazenda (USER), redirecionar para detalhes
+    // Se tem apenas uma fazenda (USER), redirecionar para a home
     if (items.length === 1) {
       hasRedirected.current = true
-      window.location.href = `/fazendas/${items[0].id}/animais`
+      window.location.href = '/'
       return
     }
 
@@ -59,10 +59,10 @@ function FazendasContent() {
       return
     }
 
-    // Se tem fazenda ativa, redirecionar para detalhes dela
+    // Se tem fazenda ativa, redirecionar para a home
     if (fazendaAtiva) {
       hasRedirected.current = true
-      window.location.href = `/fazendas/${fazendaAtiva.id}/animais`
+      window.location.href = '/'
       return
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

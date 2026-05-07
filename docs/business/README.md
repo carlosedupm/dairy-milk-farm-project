@@ -27,6 +27,7 @@ Qualquer **mudança de comportamento de produto** ou **política de domínio** d
 | Folgas (escala 5x1) | [folgas.md](./folgas.md) |
 | Coberturas (reprodução) | [coberturas.md](./coberturas.md) |
 | Cios (detecção) | [cios.md](./cios.md) |
+| Animais (busca inteligente) | [animais.md](./animais.md) |
 
 ---
 

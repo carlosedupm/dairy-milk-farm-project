@@ -148,7 +148,7 @@ func main() {
 					}
 					authHandler := handlers.NewAuthHandler(userRepo, fazendaSvc, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
-					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, reclassificacaoCategoriaSvc)
+					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc)
 					producaoHandler := handlers.NewProducaoHandler(producaoSvc, animalSvc, fazendaSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
 					adminHandler := handlers.NewAdminHandler(usuarioSvc, fazendaSvc)
@@ -254,6 +254,7 @@ func main() {
 						animais.GET("/filter/by-categoria", animalHandler.GetByCategoria)
 						animais.GET("/filter/by-status-reprodutivo", animalHandler.GetByStatusReprodutivo)
 						animais.POST("/reclassificar-categoria", animalHandler.RunReclassificacaoPorIdade)
+						animais.GET("/:id/contexto", animalHandler.GetContextoByID)
 						animais.GET("/:id", animalHandler.GetByID)
 						animais.POST("", animalHandler.Create)
 						animais.PUT("/:id", animalHandler.Update)

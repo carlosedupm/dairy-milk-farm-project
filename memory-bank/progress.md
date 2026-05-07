@@ -515,6 +515,13 @@
 - ✅ **Frontend cios**: `CioFormFields` compartilhado (`DateTimePickerPtBr`); edição com validação de fazenda ativa.
 - ✅ **Documentação**: `docs/business/coberturas.md`, `docs/business/cios.md` e índice atualizado.
 
+### **2026-05-07 - Animais: busca inteligente na home**
+
+- ✅ **Backend animais**: novo endpoint `GET /api/v1/animais/:id/contexto` (dados do animal + `resumo_producao`) e ajuste de segurança em `GET /api/v1/animais/search/by-identificacao` para filtrar resultados apenas das fazendas vinculadas ao usuário logado.
+- ✅ **Frontend home**: componente `AnimalSearchHome` adicionado à página inicial (`/`) com pesquisa por identificação, seleção de resultado e exibição contextual (saúde, status reprodutivo, nascimento e indicadores de produção).
+- ✅ **Serviços frontend**: `services/animais.ts` expandido com `searchByIdentificacao` e `getContexto`.
+- ✅ **Catálogo de negócio**: novo módulo `docs/business/animais.md` com regras `BR-ANIMAIS-001` e `BR-ANIMAIS-002`; índice atualizado em `docs/business/README.md`.
+
 ### **2026-02-03 - Assistente: contexto fazendas do usuário e fallback uma fazenda**
 
 - ✅ **Interpretar**: Fazendas vinculadas ao usuário (GetByUsuarioID) em vez de GetAll; prompt com regra para cadastrar_animal, listar_animais_fazenda e consultar_animais_fazenda: quando o usuário tem apenas UMA fazenda e não menciona fazenda, incluir fazenda_id no payload

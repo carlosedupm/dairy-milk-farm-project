@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, List, Droplets } from "lucide-react";
+import { AnimalSearchHome } from "@/components/animais/AnimalSearchHome";
 
 export default function Home() {
   const { user, isAuthenticated, isReady } = useAuth();
@@ -101,6 +102,7 @@ export default function Home() {
           O que você precisa fazer hoje?
         </p>
       </div>
+      <AnimalSearchHome />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {atalhos.map(({ href, title, description, icon: Icon }) => (
           <Card key={href} className="transition-colors hover:bg-accent/50">

@@ -12,13 +12,14 @@ import (
 )
 
 type AnimalHandler struct {
-	service           *service.AnimalService
-	fazendaSvc        *service.FazendaService
+	service            *service.AnimalService
+	fazendaSvc         *service.FazendaService
+	producaoSvc        *service.ProducaoService
 	reclassificacaoSvc *service.ReclassificacaoCategoriaService
 }
 
-func NewAnimalHandler(service *service.AnimalService, fazendaSvc *service.FazendaService, reclassificacaoSvc *service.ReclassificacaoCategoriaService) *AnimalHandler {
-	return &AnimalHandler{service: service, fazendaSvc: fazendaSvc, reclassificacaoSvc: reclassificacaoSvc}
+func NewAnimalHandler(service *service.AnimalService, fazendaSvc *service.FazendaService, producaoSvc *service.ProducaoService, reclassificacaoSvc *service.ReclassificacaoCategoriaService) *AnimalHandler {
+	return &AnimalHandler{service: service, fazendaSvc: fazendaSvc, producaoSvc: producaoSvc, reclassificacaoSvc: reclassificacaoSvc}
 }
 
 type CreateAnimalRequest struct {
@@ -342,12 +343,81 @@ func (h *AnimalHandler) SearchByIdentificacao(c *gin.Context) {
 		response.ErrorBadRequest(c, "parâmetro identificacao é obrigatório", nil)
 		return
 	}
+
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		response.ErrorUnauthorized(c, "Usuário não identificado")
+		return
+	}
+	userID, ok := userIDVal.(int64)
+	if !ok {
+		response.ErrorInternal(c, "ID de usuário inválido", nil)
+		return
+	}
+
 	list, err := h.service.SearchByIdentificacao(c.Request.Context(), identificacao)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao buscar", err.Error())
 		return
 	}
-	response.SuccessOK(c, list, "Busca realizada com sucesso")
+
+	fazendas, err := h.fazendaSvc.GetByUsuarioID(c.Request.Context(), userID)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao validar acesso à fazenda", err.Error())
+		return
+	}
+
+	allowedFazendas := make(map[int64]struct{}, len(fazendas))
+	for _, f := range fazendas {
+		allowedFazendas[f.ID] = struct{}{}
+	}
+
+	filtered := make([]*models.Animal, 0, len(list))
+	for _, animal := range list {
+		if _, allowed := allowedFazendas[animal.FazendaID]; allowed {
+			filtered = append(filtered, animal)
+		}
+	}
+
+	response.SuccessOK(c, filtered, "Busca realizada com sucesso")
+}
+
+func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+
+	animal, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
+		return
+	}
+
+	resumo, err := h.producaoSvc.GetResumoByAnimal(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar contexto do animal", err.Error())
+		return
+	}
+
+	response.SuccessOK(c, gin.H{
+		"animal":          animal,
+		"resumo_producao": resumo,
+	}, "Contexto do animal carregado com sucesso")
 }
 
 func (h *AnimalHandler) GetByStatusSaude(c *gin.Context) {

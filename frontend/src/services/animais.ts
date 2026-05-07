@@ -43,6 +43,17 @@ export type AnimalCreate = {
 
 export type AnimalUpdate = AnimalCreate
 
+export type ProducaoResumo = {
+  total_litros: number
+  media_litros: number
+  total_registros: number
+}
+
+export type AnimalContexto = {
+  animal: Animal
+  resumo_producao: ProducaoResumo
+}
+
 // Origem de aquisição (nascido na propriedade vs comprado)
 export const ORIGENS_AQUISICAO = ['NASCIDO', 'COMPRADO'] as const
 export type OrigemAquisicao = (typeof ORIGENS_AQUISICAO)[number]
@@ -151,6 +162,18 @@ export async function count(): Promise<number> {
 export async function countByFazenda(fazendaId: number): Promise<number> {
   const { data } = await api.get<ApiResponse<{ count: number }>>(`/api/v1/fazendas/${fazendaId}/animais/count`)
   return data.data?.count ?? 0
+}
+
+export async function searchByIdentificacao(identificacao: string): Promise<Animal[]> {
+  const { data } = await api.get<ApiResponse<Animal[]>>('/api/v1/animais/search/by-identificacao', {
+    params: { identificacao },
+  })
+  return data.data ?? []
+}
+
+export async function getContexto(id: number): Promise<AnimalContexto | null> {
+  const { data } = await api.get<ApiResponse<AnimalContexto>>(`/api/v1/animais/${id}/contexto`)
+  return data.data ?? null
 }
 
 export async function listByLote(loteId: number): Promise<Animal[]> {
