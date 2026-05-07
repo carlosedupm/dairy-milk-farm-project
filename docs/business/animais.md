@@ -32,6 +32,7 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
   - status de saúde e status reprodutivo;
   - data de nascimento (quando disponível);
   - resumo de produção (`total_litros`, `media_litros`, `total_registros`).
+- **Regra de exibição da fazenda na busca**: na lista de resultados da home, **não** exibir nome/ID da fazenda, pois o contexto já é da fazenda ativa do usuário logado.
 - **Implementação**: payload `data.animal` + `data.resumo_producao` do endpoint `GET /api/v1/animais/:id/contexto`.
 - **Estado**: Implementado.
 

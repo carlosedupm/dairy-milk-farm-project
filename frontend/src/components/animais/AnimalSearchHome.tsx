@@ -121,7 +121,7 @@ export function AnimalSearchHome() {
                   onClick={() => handleSelecionarAnimal(animal.id)}
                   disabled={loadingContexto}
                 >
-                  {animal.identificacao} (Fazenda #{animal.fazenda_id})
+                  {animal.identificacao}
                 </Button>
               ))}
             </div>

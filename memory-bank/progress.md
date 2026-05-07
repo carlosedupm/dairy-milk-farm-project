@@ -519,6 +519,7 @@
 
 - ✅ **Backend animais**: novo endpoint `GET /api/v1/animais/:id/contexto` (dados do animal + `resumo_producao`) e ajuste de segurança em `GET /api/v1/animais/search/by-identificacao` para filtrar resultados apenas das fazendas vinculadas ao usuário logado.
 - ✅ **Frontend home**: componente `AnimalSearchHome` adicionado à página inicial (`/`) com pesquisa por identificação, seleção de resultado e exibição contextual (saúde, status reprodutivo, nascimento e indicadores de produção).
+- ✅ **Regra de UX da busca**: lista de resultados da pesquisa inteligente não exibe nome/ID da fazenda, pois o usuário já opera no contexto da fazenda ativa.
 - ✅ **Serviços frontend**: `services/animais.ts` expandido com `searchByIdentificacao` e `getContexto`.
 - ✅ **Catálogo de negócio**: novo módulo `docs/business/animais.md` com regras `BR-ANIMAIS-001` e `BR-ANIMAIS-002`; índice atualizado em `docs/business/README.md`.
 
