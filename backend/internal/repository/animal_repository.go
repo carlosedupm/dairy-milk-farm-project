@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ceialmilk/api/internal/models"
@@ -354,6 +355,101 @@ func (r *AnimalRepository) CountByFazenda(ctx context.Context, fazendaID int64) 
 	var n int64
 	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM animais WHERE fazenda_id = $1`, fazendaID).Scan(&n)
 	return n, err
+}
+
+// AnimalListFilters critérios opcionais para listagem paginada (FazendaIDs não vazio).
+type AnimalListFilters struct {
+	FazendaIDs         []int64
+	IdentificacaoTerms []string
+	Categoria          *string
+	Sexo               *string
+	StatusSaude        *string
+	LoteID             *int64
+	StatusReprodutivo  *string
+}
+
+// ListAnimaisFilteredPaginated lista animais com filtros; total reflete o COUNT antes do LIMIT.
+func (r *AnimalRepository) ListAnimaisFilteredPaginated(ctx context.Context, f AnimalListFilters, limit, offset int) ([]*models.Animal, int64, error) {
+	if len(f.FazendaIDs) == 0 {
+		return []*models.Animal{}, 0, nil
+	}
+	if limit <= 0 {
+		limit = 25
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	whereSQL, args := buildAnimalListWhereClause(f)
+	countSQL := fmt.Sprintf(`SELECT COUNT(*) FROM animais WHERE %s`, whereSQL)
+	var total int64
+	if err := r.db.QueryRow(ctx, countSQL, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	nPlace := len(args) + 1
+	listSQL := fmt.Sprintf(`
+		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, origem_aquisicao, created_at, updated_at
+		FROM animais
+		WHERE %s
+		ORDER BY created_at DESC
+		LIMIT $%d OFFSET $%d`, whereSQL, nPlace, nPlace+1)
+
+	listArgs := append(append([]interface{}{}, args...), limit, offset)
+	list, err := r.queryList(ctx, listSQL, listArgs...)
+	if err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
+}
+
+func buildAnimalListWhereClause(f AnimalListFilters) (string, []interface{}) {
+	var parts []string
+	var args []interface{}
+
+	parts = append(parts, fmt.Sprintf("fazenda_id = ANY($%d::bigint[])", len(args)+1))
+	args = append(args, f.FazendaIDs)
+
+	var terms []string
+	for _, t := range f.IdentificacaoTerms {
+		if s := strings.TrimSpace(t); s != "" {
+			terms = append(terms, s)
+		}
+	}
+	if len(terms) == 1 {
+		parts = append(parts, fmt.Sprintf("identificacao ILIKE '%%' || $%d || '%%'", len(args)+1))
+		args = append(args, terms[0])
+	} else if len(terms) > 1 {
+		var ors []string
+		for _, t := range terms {
+			ors = append(ors, fmt.Sprintf("identificacao ILIKE '%%' || $%d || '%%'", len(args)+1))
+			args = append(args, t)
+		}
+		parts = append(parts, "("+strings.Join(ors, " OR ")+")")
+	}
+
+	if f.Categoria != nil && *f.Categoria != "" {
+		parts = append(parts, fmt.Sprintf("categoria = $%d", len(args)+1))
+		args = append(args, *f.Categoria)
+	}
+	if f.Sexo != nil && *f.Sexo != "" {
+		parts = append(parts, fmt.Sprintf("sexo = $%d", len(args)+1))
+		args = append(args, *f.Sexo)
+	}
+	if f.StatusSaude != nil && *f.StatusSaude != "" {
+		parts = append(parts, fmt.Sprintf("status_saude = $%d", len(args)+1))
+		args = append(args, *f.StatusSaude)
+	}
+	if f.LoteID != nil && *f.LoteID > 0 {
+		parts = append(parts, fmt.Sprintf("lote_id = $%d", len(args)+1))
+		args = append(args, *f.LoteID)
+	}
+	if f.StatusReprodutivo != nil && *f.StatusReprodutivo != "" {
+		parts = append(parts, fmt.Sprintf("status_reprodutivo = $%d", len(args)+1))
+		args = append(args, *f.StatusReprodutivo)
+	}
+
+	return strings.Join(parts, " AND "), args
 }
 
 func (r *AnimalRepository) ExistsByIdentificacao(ctx context.Context, identificacao string) (bool, error) {

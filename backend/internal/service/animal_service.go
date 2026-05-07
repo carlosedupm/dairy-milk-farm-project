@@ -270,3 +270,79 @@ func (s *AnimalService) GetByStatusReprodutivo(ctx context.Context, fazendaID in
 	}
 	return s.repo.GetByStatusReprodutivo(ctx, fazendaID, status)
 }
+
+// AnimalListQuery parâmetros de listagem paginada e filtros opcionais (strings vazias ignoradas).
+type AnimalListQuery struct {
+	Limit             int
+	Offset            int
+	Identificacao     string
+	Categoria         string
+	Sexo              string
+	StatusSaude       string
+	LoteID            int64 // 0 = sem filtro
+	StatusReprodutivo string
+}
+
+// ListAnimaisPaginatedForFazendas lista animais restritos às fazendas informadas (já validadas no handler).
+func (s *AnimalService) ListAnimaisPaginatedForFazendas(ctx context.Context, fazendaIDs []int64, q AnimalListQuery) ([]*models.Animal, int64, error) {
+	if len(fazendaIDs) == 0 {
+		return []*models.Animal{}, 0, nil
+	}
+
+	limit := q.Limit
+	if limit <= 0 {
+		limit = 25
+	}
+	offset := q.Offset
+	if offset < 0 {
+		offset = 0
+	}
+
+	var terms []string
+	if t := strings.TrimSpace(q.Identificacao); t != "" {
+		terms = append(terms, t)
+		if eq := equivalenteIdentificacao(t); eq != "" && !strings.EqualFold(eq, t) {
+			terms = append(terms, eq)
+		}
+	}
+
+	f := repository.AnimalListFilters{
+		FazendaIDs:         fazendaIDs,
+		IdentificacaoTerms: terms,
+	}
+
+	if q.Categoria != "" {
+		if !models.IsValidCategoria(q.Categoria) {
+			return nil, 0, errors.New("categoria inválida")
+		}
+		c := q.Categoria
+		f.Categoria = &c
+	}
+	if q.Sexo != "" {
+		if !models.IsValidSexo(q.Sexo) {
+			return nil, 0, errors.New("sexo inválido (deve ser 'M' ou 'F')")
+		}
+		sx := q.Sexo
+		f.Sexo = &sx
+	}
+	if q.StatusSaude != "" {
+		if !models.IsValidStatusSaude(q.StatusSaude) {
+			return nil, 0, errors.New("status de saúde inválido")
+		}
+		ss := q.StatusSaude
+		f.StatusSaude = &ss
+	}
+	if q.LoteID > 0 {
+		lid := q.LoteID
+		f.LoteID = &lid
+	}
+	if q.StatusReprodutivo != "" {
+		if !models.IsValidStatusReprodutivo(q.StatusReprodutivo) {
+			return nil, 0, errors.New("status reprodutivo inválido")
+		}
+		sr := q.StatusReprodutivo
+		f.StatusReprodutivo = &sr
+	}
+
+	return s.repo.ListAnimaisFilteredPaginated(ctx, f, limit, offset)
+}

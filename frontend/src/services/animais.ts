@@ -104,6 +104,25 @@ export const CATEGORIA_LABELS: Record<Categoria, string> = {
   BOI: 'Boi',
 }
 
+/** Status reprodutivo (API / filtros). */
+export const STATUS_REPRODUTIVO_OPTIONS = [
+  'VAZIA',
+  'SERVIDA',
+  'PRENHE',
+  'PARIDA',
+  'SECA',
+] as const
+
+export type StatusReprodutivo = (typeof STATUS_REPRODUTIVO_OPTIONS)[number]
+
+export const STATUS_REPRODUTIVO_LABELS: Record<StatusReprodutivo, string> = {
+  VAZIA: 'Vazia',
+  SERVIDA: 'Servida',
+  PRENHE: 'Prenhe',
+  PARIDA: 'Parida',
+  SECA: 'Seca',
+}
+
 /** Indica se o animal é bezerra (categoria BEZERRA). */
 export function isBezerra(animal: Animal): boolean {
   return animal.categoria === 'BEZERRA'
@@ -125,9 +144,60 @@ export function getCategoriaLabel(categoria?: string | null): string {
   return CATEGORIA_LABELS[categoria as Categoria] ?? categoria
 }
 
-export async function list(): Promise<Animal[]> {
-  const { data } = await api.get<ApiResponse<Animal[]>>('/api/v1/animais')
-  return data.data ?? []
+export type AnimaisPaginatedResult = {
+  animais: Animal[]
+  total: number
+}
+
+export type AnimaisListParams = {
+  limit?: number
+  offset?: number
+  fazenda_id?: number
+  identificacao?: string
+  categoria?: string
+  sexo?: string
+  status_saude?: string
+  lote_id?: number
+  status_reprodutivo?: string
+}
+
+function appendAnimaisListParams(
+  sp: URLSearchParams,
+  p: AnimaisListParams,
+  options?: { includeFazendaId?: boolean }
+) {
+  if (p.limit != null) sp.set('limit', String(p.limit))
+  if (p.offset != null) sp.set('offset', String(p.offset))
+  if (options?.includeFazendaId !== false && p.fazenda_id != null) {
+    sp.set('fazenda_id', String(p.fazenda_id))
+  }
+  if (p.identificacao?.trim()) sp.set('identificacao', p.identificacao.trim())
+  if (p.categoria) sp.set('categoria', p.categoria)
+  if (p.sexo) sp.set('sexo', p.sexo)
+  if (p.status_saude) sp.set('status_saude', p.status_saude)
+  if (p.lote_id != null && p.lote_id > 0) sp.set('lote_id', String(p.lote_id))
+  if (p.status_reprodutivo) sp.set('status_reprodutivo', p.status_reprodutivo)
+}
+
+/** Listagem paginada (fazendas do usuário; `fazenda_id` opcional para filtrar). */
+export async function listPaginated(
+  params: AnimaisListParams = {}
+): Promise<AnimaisPaginatedResult> {
+  const sp = new URLSearchParams()
+  appendAnimaisListParams(sp, {
+    ...params,
+    limit: params.limit ?? 25,
+    offset: params.offset ?? 0,
+  })
+  const qs = sp.toString()
+  const { data } = await api.get<
+    ApiResponse<{ animais: Animal[]; total: number }>
+  >(`/api/v1/animais${qs ? `?${qs}` : ''}`)
+  const payload = data.data
+  return {
+    animais: payload?.animais ?? [],
+    total: payload?.total ?? 0,
+  }
 }
 
 export async function get(id: number): Promise<Animal | null> {
@@ -138,6 +208,32 @@ export async function get(id: number): Promise<Animal | null> {
 export async function listByFazenda(fazendaId: number): Promise<Animal[]> {
   const { data } = await api.get<ApiResponse<Animal[]>>(`/api/v1/fazendas/${fazendaId}/animais`)
   return data.data ?? []
+}
+
+/** Listagem paginada por fazenda (use query `limit` na API). */
+export async function listByFazendaPaginated(
+  fazendaId: number,
+  params: Omit<AnimaisListParams, 'fazenda_id'> = {}
+): Promise<AnimaisPaginatedResult> {
+  const sp = new URLSearchParams()
+  appendAnimaisListParams(
+    sp,
+    {
+      ...params,
+      limit: params.limit ?? 25,
+      offset: params.offset ?? 0,
+    },
+    { includeFazendaId: false }
+  )
+  const qs = sp.toString()
+  const { data } = await api.get<
+    ApiResponse<{ animais: Animal[]; total: number }>
+  >(`/api/v1/fazendas/${fazendaId}/animais${qs ? `?${qs}` : ''}`)
+  const payload = data.data
+  return {
+    animais: payload?.animais ?? [],
+    total: payload?.total ?? 0,
+  }
 }
 
 /** Animais com lactação ativa na fazenda (ordenha / descarte de leite). */

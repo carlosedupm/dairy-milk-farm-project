@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ceialmilk/api/internal/models"
@@ -152,13 +153,78 @@ func (h *AnimalHandler) GetByID(c *gin.Context) {
 }
 
 func (h *AnimalHandler) GetAll(c *gin.Context) {
-	animais, err := h.service.GetAll(c.Request.Context())
-	if err != nil {
-		response.ErrorInternal(c, "Erro ao buscar animais", err.Error())
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		response.ErrorUnauthorized(c, "Usuário não identificado")
+		return
+	}
+	userID, ok := userIDVal.(int64)
+	if !ok {
+		response.ErrorInternal(c, "ID de usuário inválido", nil)
 		return
 	}
 
-	response.SuccessOK(c, animais, "Animais listados com sucesso")
+	fazendas, err := h.fazendaSvc.GetByUsuarioID(c.Request.Context(), userID)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao listar fazendas do usuário", err.Error())
+		return
+	}
+	fazendaIDs := make([]int64, 0, len(fazendas))
+	for _, fz := range fazendas {
+		fazendaIDs = append(fazendaIDs, fz.ID)
+	}
+
+	if s := c.Query("fazenda_id"); s != "" {
+		fid, err := strconv.ParseInt(s, 10, 64)
+		if err != nil || fid <= 0 {
+			response.ErrorBadRequest(c, "fazenda_id inválido", nil)
+			return
+		}
+		allowed := false
+		for _, id := range fazendaIDs {
+			if id == fid {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			response.ErrorForbidden(c, "Você não tem acesso a esta fazenda")
+			return
+		}
+		fazendaIDs = []int64{fid}
+	}
+
+	limit := parseQueryIntPositiveDef(c.DefaultQuery("limit", "25"), 25)
+	offset := parseQueryIntNonNeg(c.DefaultQuery("offset", "0"), 0)
+	if limit > 100 {
+		limit = 100
+	}
+
+	q := service.AnimalListQuery{
+		Limit:             limit,
+		Offset:            offset,
+		Identificacao:     c.Query("identificacao"),
+		Categoria:         c.Query("categoria"),
+		Sexo:              c.Query("sexo"),
+		StatusSaude:       c.Query("status_saude"),
+		StatusReprodutivo: c.Query("status_reprodutivo"),
+	}
+	if ls := c.Query("lote_id"); ls != "" {
+		lid, err := strconv.ParseInt(ls, 10, 64)
+		if err != nil || lid <= 0 {
+			response.ErrorBadRequest(c, "lote_id inválido", nil)
+			return
+		}
+		q.LoteID = lid
+	}
+
+	animais, total, err := h.service.ListAnimaisPaginatedForFazendas(c.Request.Context(), fazendaIDs, q)
+	if err != nil {
+		response.ErrorValidation(c, err.Error(), nil)
+		return
+	}
+
+	response.SuccessOK(c, gin.H{"animais": animais, "total": total}, "Animais listados com sucesso")
 }
 
 func (h *AnimalHandler) GetByFazendaID(c *gin.Context) {
@@ -174,17 +240,52 @@ func (h *AnimalHandler) GetByFazendaID(c *gin.Context) {
 		return
 	}
 
-	animais, err := h.service.GetByFazendaID(c.Request.Context(), fazendaID)
-	if err != nil {
-		if errors.Is(err, service.ErrFazendaNotFound) {
-			response.ErrorNotFound(c, "Fazenda não encontrada")
+	if c.Query("limit") == "" {
+		animais, err := h.service.GetByFazendaID(c.Request.Context(), fazendaID)
+		if err != nil {
+			if errors.Is(err, service.ErrFazendaNotFound) {
+				response.ErrorNotFound(c, "Fazenda não encontrada")
+				return
+			}
+			response.ErrorInternal(c, "Erro ao buscar animais", err.Error())
 			return
 		}
-		response.ErrorInternal(c, "Erro ao buscar animais", err.Error())
+
+		response.SuccessOK(c, animais, "Animais da fazenda listados com sucesso")
 		return
 	}
 
-	response.SuccessOK(c, animais, "Animais da fazenda listados com sucesso")
+	limit := parseQueryIntPositiveDef(c.Query("limit"), 25)
+	offset := parseQueryIntNonNeg(c.DefaultQuery("offset", "0"), 0)
+	if limit > 100 {
+		limit = 100
+	}
+
+	q := service.AnimalListQuery{
+		Limit:             limit,
+		Offset:            offset,
+		Identificacao:     c.Query("identificacao"),
+		Categoria:         c.Query("categoria"),
+		Sexo:              c.Query("sexo"),
+		StatusSaude:       c.Query("status_saude"),
+		StatusReprodutivo: c.Query("status_reprodutivo"),
+	}
+	if ls := c.Query("lote_id"); ls != "" {
+		lid, err := strconv.ParseInt(ls, 10, 64)
+		if err != nil || lid <= 0 {
+			response.ErrorBadRequest(c, "lote_id inválido", nil)
+			return
+		}
+		q.LoteID = lid
+	}
+
+	animais, total, err := h.service.ListAnimaisPaginatedForFazendas(c.Request.Context(), []int64{fazendaID}, q)
+	if err != nil {
+		response.ErrorValidation(c, err.Error(), nil)
+		return
+	}
+
+	response.SuccessOK(c, gin.H{"animais": animais, "total": total}, "Animais da fazenda listados com sucesso")
 }
 
 func (h *AnimalHandler) GetEmLactacaoByFazendaID(c *gin.Context) {
@@ -581,6 +682,30 @@ func (h *AnimalHandler) RunReclassificacaoPorIdade(c *gin.Context) {
 		return
 	}
 	response.SuccessOK(c, res, "Reclassificação por idade concluída")
+}
+
+func parseQueryIntPositiveDef(s string, def int) int {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return def
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n <= 0 {
+		return def
+	}
+	return n
+}
+
+func parseQueryIntNonNeg(s string, def int) int {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return def
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 0 {
+		return def
+	}
+	return n
 }
 
 // parseDate converte string ISO YYYY-MM-DD para *time.Time
