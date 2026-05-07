@@ -169,6 +169,13 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 - **Backend**: `folgas_repository.go`, `folgas_service.go`, `folgas_handler.go`; `auth.RequireGestaoFolgas()`; `ValidateFazendaAccessOrGestao` em `handlers/access_helper.go`; escala com `excecao_motivo_dia` (JOIN `folgas_excecoes_dia`).
 - **Frontend**: `frontend/src/app/folgas/page.tsx`, `frontend/src/services/folgas.ts`, `frontend/src/components/folgas/*` (`FolgasCalendarioDia`, `FolgasDiaDetalhesDialog`, `FolgasHistoricoTable`, utilitários); `useMinhasFazendas` para ADMIN/DEVELOPER/GERENTE na página (não usar lista global de fazendas); filtro opcional por funcionário para gestão; **`FazendaContext`** com regras 0 / 1 / N fazendas. **Gerar mês automático**: envia `inicio`/`fim` do **mês exibido** no estado `month` da página (primeiro e último dia desse mês), não o mês calendário do sistema.
 
+## Restrições de leite (laboratório / descarte)
+
+- **Migração**: `backend/migrations/20_add_restricoes_leite.up.sql` — tabela `restricoes_leite` (motivos enum, status `AGUARDANDO_LAB` | `LIBERADO` | `CANCELADO`), índice único parcial por animal em `AGUARDANDO_LAB`, RLS habilitado.
+- **Backend**: `restricao_leite_repository.go`, `restricao_leite_service.go`, `restricao_leite_handler.go`; rotas `GET/POST /api/v1/fazendas/:id/restricoes-leite`, `GET .../ativas`, `PATCH .../:restricaoId/liberar`; `GET /api/v1/fazendas/:id/animais/em-lactacao` em `animal_handler.go` + `AnimalRepository.ListEmLactacaoByFazendaID`; validação de lactação ativa com `LactacaoRepository.ExistsAtivaNaFazenda`; contexto animal enriquecido em `animal_handler.go`.
+- **Frontend**: `frontend/src/services/restricoesLeite.ts`, `frontend/src/services/animais.ts` (`listEmLactacaoByFazenda`), `frontend/src/components/leite/RestricoesLeiteHomePanel.tsx`, integração na home (`app/page.tsx`).
+- **Negócio**: `docs/business/leite-restricoes.md` (BR-LEITE-005).
+
 ## Módulo Agrícola (Contexto Técnico)
 
 ### Backend (Go)
@@ -251,5 +258,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-06
-**Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub), testes API TestSprite (`testsprite_tests/`)
+**Última atualização**: 2026-05-07
+**Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), restrições de leite (migration 20; `GET .../animais/em-lactacao` + BR-LEITE-005), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub), testes API TestSprite (`testsprite_tests/`)

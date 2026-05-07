@@ -12,14 +12,15 @@ import (
 )
 
 type AnimalHandler struct {
-	service            *service.AnimalService
-	fazendaSvc         *service.FazendaService
-	producaoSvc        *service.ProducaoService
-	reclassificacaoSvc *service.ReclassificacaoCategoriaService
+	service              *service.AnimalService
+	fazendaSvc           *service.FazendaService
+	producaoSvc          *service.ProducaoService
+	reclassificacaoSvc   *service.ReclassificacaoCategoriaService
+	restricaoLeiteSvc    *service.RestricaoLeiteService
 }
 
-func NewAnimalHandler(service *service.AnimalService, fazendaSvc *service.FazendaService, producaoSvc *service.ProducaoService, reclassificacaoSvc *service.ReclassificacaoCategoriaService) *AnimalHandler {
-	return &AnimalHandler{service: service, fazendaSvc: fazendaSvc, producaoSvc: producaoSvc, reclassificacaoSvc: reclassificacaoSvc}
+func NewAnimalHandler(service *service.AnimalService, fazendaSvc *service.FazendaService, producaoSvc *service.ProducaoService, reclassificacaoSvc *service.ReclassificacaoCategoriaService, restricaoLeiteSvc *service.RestricaoLeiteService) *AnimalHandler {
+	return &AnimalHandler{service: service, fazendaSvc: fazendaSvc, producaoSvc: producaoSvc, reclassificacaoSvc: reclassificacaoSvc, restricaoLeiteSvc: restricaoLeiteSvc}
 }
 
 type CreateAnimalRequest struct {
@@ -184,6 +185,28 @@ func (h *AnimalHandler) GetByFazendaID(c *gin.Context) {
 	}
 
 	response.SuccessOK(c, animais, "Animais da fazenda listados com sucesso")
+}
+
+func (h *AnimalHandler) GetEmLactacaoByFazendaID(c *gin.Context) {
+	fazendaIDStr := c.Param("id")
+	fazendaID, err := strconv.ParseInt(fazendaIDStr, 10, 64)
+	if err != nil {
+		response.ErrorBadRequest(c, "ID da fazenda inválido", nil)
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, fazendaID) {
+		return
+	}
+	animais, err := h.service.ListEmLactacaoByFazendaID(c.Request.Context(), fazendaID)
+	if err != nil {
+		if errors.Is(err, service.ErrFazendaNotFound) {
+			response.ErrorNotFound(c, "Fazenda não encontrada")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animais em lactação", err.Error())
+		return
+	}
+	response.SuccessOK(c, animais, "Animais em lactação listados com sucesso")
 }
 
 func (h *AnimalHandler) Update(c *gin.Context) {
@@ -414,10 +437,22 @@ func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
 		return
 	}
 
-	response.SuccessOK(c, gin.H{
+	payload := gin.H{
 		"animal":          animal,
 		"resumo_producao": resumo,
-	}, "Contexto do animal carregado com sucesso")
+	}
+	if h.restricaoLeiteSvc != nil {
+		rl, err := h.restricaoLeiteSvc.GetAtivaByAnimalID(c.Request.Context(), id)
+		if err != nil {
+			response.ErrorInternal(c, "Erro ao buscar restrição de leite", err.Error())
+			return
+		}
+		if rl != nil {
+			payload["restricao_leite_ativa"] = rl
+		}
+	}
+
+	response.SuccessOK(c, payload, "Contexto do animal carregado com sucesso")
 }
 
 func (h *AnimalHandler) GetByStatusSaude(c *gin.Context) {

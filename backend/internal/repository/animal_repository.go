@@ -170,6 +170,24 @@ func (r *AnimalRepository) GetByFazendaID(ctx context.Context, fazendaID int64) 
 	return r.queryList(ctx, query, fazendaID)
 }
 
+// ListEmLactacaoByFazendaID retorna animais com lactação em andamento (data_fim nula e status EM_ANDAMENTO ou nulo).
+func (r *AnimalRepository) ListEmLactacaoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	query := `
+		SELECT a.id, a.identificacao, a.raca, a.data_nascimento, a.sexo, a.status_saude, a.fazenda_id, a.categoria, a.status_reprodutivo, a.mae_id, a.pai_info, a.lote_id, a.peso_nascimento, a.data_entrada, a.data_saida, a.motivo_saida, a.origem_aquisicao, a.created_at, a.updated_at
+		FROM animais a
+		WHERE a.fazenda_id = $1
+		AND EXISTS (
+			SELECT 1 FROM lactacoes l
+			WHERE l.animal_id = a.id
+			AND l.fazenda_id = a.fazenda_id
+			AND l.data_fim IS NULL
+			AND (l.status IS NULL OR l.status = 'EM_ANDAMENTO')
+		)
+		ORDER BY a.identificacao ASC
+	`
+	return r.queryList(ctx, query, fazendaID)
+}
+
 func (r *AnimalRepository) GetByLoteID(ctx context.Context, loteID int64) ([]*models.Animal, error) {
 	query := `
 		SELECT id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, origem_aquisicao, created_at, updated_at

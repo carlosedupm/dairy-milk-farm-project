@@ -6,7 +6,7 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 - Frontend: `frontend/src/config/appAccess.ts`, `frontend/src/components/layout/RouteAccessGuard.tsx`, `frontend/src/app/page.tsx`, `frontend/src/app/gestao/page.tsx`, `frontend/src/app/animais/page.tsx`, `frontend/src/components/animais/AnimalTable.tsx`, `frontend/src/app/animais/[id]/page.tsx`.
 - Backend: `backend/internal/auth/perfil_access.go` (middleware `RequirePerfilAPIAccess` aplicado em `/api/v1/*` autenticado).
-- Rotas de domínio envolvidas: `backend/cmd/api/main.go` (`/api/v1/animais`, `/api/v1/cios`, `/api/v1/coberturas`, `/api/v1/partos`, `/api/v1/secagens`, `/api/v1/fazendas/:id/folgas/*`).
+- Rotas de domínio envolvidas: `backend/cmd/api/main.go` (`/api/v1/animais`, `/api/v1/cios`, `/api/v1/coberturas`, `/api/v1/partos`, `/api/v1/secagens`, `/api/v1/fazendas/:id/folgas/*`, `/api/v1/fazendas/:id/restricoes-leite*`, `/api/v1/fazendas/:id/animais/em-lactacao`).
 
 ---
 
@@ -57,6 +57,15 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**:
   - API permitida: `GET /api/v1/me/*` e `/api/v1/fazendas/:id/folgas/*`.
   - UI: rota `/folgas` e seus fluxos já existentes.
+- **Estado**: Implementado.
+
+### BR-ACESSO-005 — Restrições de leite (FUNCIONARIO: registrar, não liberar)
+
+- **Enunciado**: O perfil `FUNCIONARIO` pode listar restrições ativas e **registrar** novo episódio de descarte/amostra na fazenda; não pode encerrar (`liberar`) após o laboratório.
+- **Escopo**: API sob `/api/v1/fazendas/:id/restricoes-leite`.
+- **Perfis / permissões**: `FUNCIONARIO` vs demais (ver [leite-restricoes.md](./leite-restricoes.md) — BR-LEITE-003).
+- **Efeito**: bloqueio no servidor (`PATCH .../liberar` → 403 para FUNCIONARIO); `GET`/`POST` permitidos na whitelist.
+- **Implementação**: `backend/internal/auth/perfil_access.go` (`funcionarioRestricoesLeitePath`); UI em `RestricoesLeiteHomePanel` oculta ação Liberar para FUNCIONARIO.
 - **Estado**: Implementado.
 
 ---

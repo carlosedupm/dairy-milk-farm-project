@@ -6,6 +6,7 @@ import { Search } from 'lucide-react'
 import { getApiErrorMessage } from '@/lib/errors'
 import { formatDatePtBr } from '@/lib/format'
 import { type Animal, type AnimalContexto, getContexto, searchByIdentificacao } from '@/services/animais'
+import { MOTIVO_RESTRICAO_LEITE_LABELS, type MotivoRestricaoLeite } from '@/services/restricoesLeite'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -132,6 +133,22 @@ export function AnimalSearchHome() {
 
         {contexto ? (
           <div className="rounded-lg border p-4 space-y-2">
+            {contexto.restricao_leite_ativa ? (
+              <div
+                className="rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100"
+                role="status"
+              >
+                <p className="font-medium">Leite para descarte (aguardando laboratório)</p>
+                <p className="mt-1">
+                  Motivo:{' '}
+                  {MOTIVO_RESTRICAO_LEITE_LABELS[contexto.restricao_leite_ativa.motivo as MotivoRestricaoLeite] ??
+                    contexto.restricao_leite_ativa.motivo}
+                  {contexto.restricao_leite_ativa.observacao
+                    ? ` — ${contexto.restricao_leite_ativa.observacao}`
+                    : null}
+                </p>
+              </div>
+            ) : null}
             <p className="font-medium text-foreground">
               Animal: {contexto.animal.identificacao}
             </p>

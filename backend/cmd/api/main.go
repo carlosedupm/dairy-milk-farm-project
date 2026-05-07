@@ -141,6 +141,8 @@ func main() {
 					animalSvc := service.NewAnimalService(animalRepo, fazendaRepo)
 					reclassificacaoCategoriaSvc := service.NewReclassificacaoCategoriaService(animalRepo)
 					producaoSvc := service.NewProducaoService(producaoRepo, animalRepo)
+					restricaoLeiteRepo := repository.NewRestricaoLeiteRepository(pool)
+					restricaoLeiteSvc := service.NewRestricaoLeiteService(restricaoLeiteRepo, animalRepo, lactacaoRepo)
 					refreshTokenSvc := service.NewRefreshTokenService(refreshTokenRepo)
 					cookieSameSite := http.SameSiteStrictMode
 					if !strings.Contains(cfg.CORSOrigin, "localhost") {
@@ -148,7 +150,8 @@ func main() {
 					}
 					authHandler := handlers.NewAuthHandler(userRepo, fazendaSvc, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
-					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc)
+					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc)
+					restricaoLeiteHandler := handlers.NewRestricaoLeiteHandler(restricaoLeiteSvc, fazendaSvc)
 					producaoHandler := handlers.NewProducaoHandler(producaoSvc, animalSvc, fazendaSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
 					adminHandler := handlers.NewAdminHandler(usuarioSvc, fazendaSvc)
@@ -223,6 +226,11 @@ func main() {
 						// Animais por fazenda
 						v1.GET("/:id/animais", animalHandler.GetByFazendaID)
 						v1.GET("/:id/animais/count", animalHandler.CountByFazenda)
+						v1.GET("/:id/animais/em-lactacao", animalHandler.GetEmLactacaoByFazendaID)
+						// Restrições de leite (descarte / laboratório)
+						v1.GET("/:id/restricoes-leite/ativas", restricaoLeiteHandler.GetAtivas)
+						v1.POST("/:id/restricoes-leite", restricaoLeiteHandler.Create)
+						v1.PATCH("/:id/restricoes-leite/:restricaoId/liberar", restricaoLeiteHandler.Liberar)
 						// Módulo agrícola: fornecedores e áreas por fazenda
 						v1.GET("/:id/fornecedores/comparativo/:ano", resultadoAgricolaHandler.GetComparativoFornecedores)
 						v1.GET("/:id/fornecedores", fornecedorHandler.GetByFazendaID)

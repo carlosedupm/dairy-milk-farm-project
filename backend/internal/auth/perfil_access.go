@@ -13,7 +13,8 @@ import (
 // Regras de acesso à API por perfil. Manter alinhado com frontend/src/config/appAccess.ts.
 
 var funcionarioFolgasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/folgas/`)
-var funcionarioFazendaAnimaisPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/animais(/count)?$`)
+var funcionarioRestricoesLeitePath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/restricoes-leite(/ativas)?$`)
+var funcionarioFazendaAnimaisPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/animais(/count|/em-lactacao)?$`)
 var funcionarioGestaoPath = regexp.MustCompile(`^/api/v1/(cios|coberturas|partos|secagens)(/.*)?$`)
 var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
 
@@ -27,6 +28,9 @@ func requestAllowedForFuncionario(method, path string) bool {
 		return true
 	}
 	if funcionarioFolgasPath.MatchString(path) {
+		return true
+	}
+	if (method == http.MethodGet || method == http.MethodPost) && funcionarioRestricoesLeitePath.MatchString(path) {
 		return true
 	}
 	if method == http.MethodGet && funcionarioFazendaAnimaisPath.MatchString(path) {

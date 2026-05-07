@@ -1,4 +1,5 @@
 import api, { type ApiResponse } from './api'
+import type { RestricaoLeite } from './restricoesLeite'
 
 export type Animal = {
   id: number
@@ -52,6 +53,7 @@ export type ProducaoResumo = {
 export type AnimalContexto = {
   animal: Animal
   resumo_producao: ProducaoResumo
+  restricao_leite_ativa?: RestricaoLeite | null
 }
 
 // Origem de aquisição (nascido na propriedade vs comprado)
@@ -135,6 +137,12 @@ export async function get(id: number): Promise<Animal | null> {
 
 export async function listByFazenda(fazendaId: number): Promise<Animal[]> {
   const { data } = await api.get<ApiResponse<Animal[]>>(`/api/v1/fazendas/${fazendaId}/animais`)
+  return data.data ?? []
+}
+
+/** Animais com lactação ativa na fazenda (ordenha / descarte de leite). */
+export async function listEmLactacaoByFazenda(fazendaId: number): Promise<Animal[]> {
+  const { data } = await api.get<ApiResponse<Animal[]>>(`/api/v1/fazendas/${fazendaId}/animais/em-lactacao`)
   return data.data ?? []
 }
 

@@ -152,6 +152,8 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 - `GET /api/v1/fazendas/:id/fornecedores/comparativo/:ano`
 - `GET /api/v1/fazendas/:id/usuarios-vinculados` (usuários com vínculo N:N à fazenda; acesso: vínculo ou gestão/admin/dev via `ValidateFazendaAccessOrGestao`)
 - `GET|PUT /api/v1/fazendas/:id/folgas/config` | `GET /api/v1/fazendas/:id/folgas/escala` (resposta: `linhas` + `rodizio_por_dia` por data) | `GET /api/v1/fazendas/:id/folgas/resumo-equidade?inicio&fim` (GESTAO/ADMIN/DEVELOPER: registradas vs previstas do 5x1 por slot) | `POST /api/v1/fazendas/:id/folgas/gerar` | `POST /api/v1/fazendas/:id/folgas/alteracoes` | `POST /api/v1/fazendas/:id/folgas/justificativas` | `GET /api/v1/fazendas/:id/folgas/alteracoes` | `GET /api/v1/fazendas/:id/folgas/alertas`
+- `GET /api/v1/fazendas/:id/animais/em-lactacao` (animais com lactação ativa; mesma autorização que listagem por fazenda)
+- `GET /api/v1/fazendas/:id/restricoes-leite/ativas` | `POST /api/v1/fazendas/:id/restricoes-leite` | `PATCH /api/v1/fazendas/:id/restricoes-leite/:restricaoId/liberar` (descarte até laboratório; ver `docs/business/leite-restricoes.md`)
 - `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`
 
 **Dev Studio – contexto da IA**:
@@ -334,7 +336,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 
 - **Role-Based**: Controle de acesso baseado em roles (USER, FUNCIONARIO, GESTAO, ADMIN, DEVELOPER)
 - **USER**: Perfil geral; acesso a Fazendas e Assistente.
-- **FUNCIONARIO**: Pode acessar a home (`/`), visualizar Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`); também acessa Gestão parcial (Cios/Coberturas/Partos/Secagens) e Animais em modo consulta. Escritas de Animais seguem bloqueadas por matriz configurável (ver abaixo).
+- **FUNCIONARIO**: Pode acessar a home (`/`), visualizar Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`); também acessa Gestão parcial (Cios/Coberturas/Partos/Secagens) e Animais em modo consulta; na home pode **registrar** restrição de leite (`POST .../restricoes-leite`) e listar ativas, mas **não** liberar após laboratório (`PATCH .../liberar` → 403). Escritas de Animais seguem bloqueadas por matriz configurável (ver abaixo).
 - **GESTAO**: Pode **configurar**, **gerar** e **alterar** escala de folgas (`RequireGestaoFolgas` = GESTAO, ADMIN ou DEVELOPER), com acesso a fazendas existentes mesmo sem vínculo N:N (via `ValidateFazendaAccessOrGestao`).
 - **ADMIN**: Perfil para acesso à área administrativa (`/api/v1/admin/*`); requer `auth.RequireAdmin()` (ADMIN ou DEVELOPER).
 - **DEVELOPER**: Perfil único no sistema (constraint no banco garante 1 apenas); acesso ao Dev Studio (`/api/v1/dev-studio/*`) e área Admin; requer `auth.RequireDeveloper()` para Dev Studio, `auth.RequireAdmin()` para Admin.
@@ -349,7 +351,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 ### **Matriz de acesso por perfil (configurável)**
 
 - **Frontend**: `frontend/src/config/appAccess.ts` — mapa `PERFIL_AREAS` (FUNCIONARIO com `animais`, `gestao`, `folgas`) + whitelist de caminhos por perfil em `isPathAllowedForPerfil` (inclui home e sub-rotas de Gestão permitidas). Helpers: `getNavAreasForPerfil`, `getDefaultLandingPath`, `showAssistenteForPerfil`. `RouteAccessGuard` (`Providers.tsx`) redireciona utilizadores autenticados quando a rota não está autorizada. Rotas utilitárias: `/login`, `/registro`, `/onboarding`, `/fazendas/selecionar`.
-- **Backend**: `backend/internal/auth/perfil_access.go` — `RequirePerfilAPIAccess()` aplicado após `AuthMiddleware` em todos os grupos `/api/v1/*` autenticados. Para **FUNCIONARIO**, whitelist por **path + método**: `/api/v1/me/*`, `/api/v1/fazendas/:id/folgas/*`, `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/partos*`, `/api/v1/secagens*` e apenas `GET` em `/api/v1/animais*`; demais endpoints retornam 403. Manter regras alinhadas ao TypeScript.
+- **Backend**: `backend/internal/auth/perfil_access.go` — `RequirePerfilAPIAccess()` aplicado após `AuthMiddleware` em todos os grupos `/api/v1/*` autenticados. Para **FUNCIONARIO**, whitelist por **path + método**: `/api/v1/me/*`, `/api/v1/fazendas/:id/folgas/*`, `GET|POST /api/v1/fazendas/:id/restricoes-leite` e `/ativas`, `GET /api/v1/fazendas/:id/animais` incl. `/count` e `/em-lactacao`, `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/partos*`, `/api/v1/secagens*` e apenas `GET` em `/api/v1/animais*`; demais endpoints retornam 403. Manter regras alinhadas ao TypeScript.
 
 ### **Pós-login (resolução de destino por perfil)**
 

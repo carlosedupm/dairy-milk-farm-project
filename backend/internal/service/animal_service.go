@@ -127,6 +127,17 @@ func (s *AnimalService) GetByFazendaID(ctx context.Context, fazendaID int64) ([]
 	return s.repo.GetByFazendaID(ctx, fazendaID)
 }
 
+func (s *AnimalService) ListEmLactacaoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	_, err := s.fazendaRepo.GetByID(ctx, fazendaID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrFazendaNotFound
+		}
+		return nil, err
+	}
+	return s.repo.ListEmLactacaoByFazendaID(ctx, fazendaID)
+}
+
 func (s *AnimalService) Update(ctx context.Context, animal *models.Animal) error {
 	// Validações básicas
 	if animal.Identificacao == "" {

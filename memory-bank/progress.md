@@ -193,6 +193,20 @@
 
 ## 🔄 Histórico de Progresso
 
+### **2026-05-07 - Restrições de leite: combo só com lactação ativa**
+
+- ✅ **API**: `GET /api/v1/fazendas/:id/animais/em-lactacao` (lista animais com lactação aberta na fazenda); `POST .../restricoes-leite` rejeita animal sem lactação ativa (validação alinhada à UI).
+- ✅ **Backend**: `AnimalRepository.ListEmLactacaoByFazendaID`, `LactacaoRepository.ExistsAtivaNaFazenda`, `RestricaoLeiteService` com `lactacaoRepo`; `perfil_access` estende `GET` em animais por fazenda para `/em-lactacao`.
+- ✅ **Frontend**: `listEmLactacaoByFazenda` em `services/animais.ts`; `RestricoesLeiteHomePanel` usa essa lista no dialog de registro.
+- ✅ **Negócio**: **BR-LEITE-005** em `docs/business/leite-restricoes.md`; `acessos-perfil.md` e `systemPatterns.md` ajustados.
+
+### **2026-05-07 - Restrições de leite (descarte até laboratório)**
+
+- ✅ **Banco**: migration V20 `restricoes_leite` com RLS, índices e único parcial (um `AGUARDANDO_LAB` por animal).
+- ✅ **Backend**: handlers/services/repository/model; rotas por fazenda; `GET /api/v1/animais/:id/contexto` inclui `restricao_leite_ativa` quando aplicável; whitelist FUNCIONARIO em `perfil_access.go` para `GET|POST` em `/restricoes-leite` (sem `PATCH` liberar).
+- ✅ **Frontend**: `RestricoesLeiteHomePanel` na home, `restricoesLeite.ts`, alerta na `AnimalSearchHome` quando há restrição ativa.
+- ✅ **Documentação**: `docs/business/leite-restricoes.md`, `BR-ACESSO-005`, atualizações em `animais.md`, `README` do catálogo, `systemPatterns.md`.
+
 ### **2026-05-07 - RBAC FUNCIONARIO ampliado (home + gestão parcial + animais consulta)**
 
 - ✅ **Frontend RBAC**: `appAccess.ts` passou a permitir `FUNCIONARIO` em `/`, `folgas`, `gestao` e `animais`, com whitelist de sub-rotas em `isPathAllowedForPerfil` (Gestão: Cios/Coberturas/Partos/Secagens; Animais: listagem e detalhe).
