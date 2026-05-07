@@ -16,7 +16,7 @@ type AuthContextValue = {
   user: User | null
   isAuthenticated: boolean
   isReady: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<User | null>
   logout: () => Promise<void>
 }
 
@@ -46,14 +46,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     await authService.login(email, password)
     const full = await authService.validate()
-    if (full) {
-      setUser({
-        id: full.user_id,
-        email: full.email,
-        perfil: full.perfil,
-        nome: full.nome ?? '',
-      })
+    if (!full) return null
+    const next: User = {
+      id: full.user_id,
+      email: full.email,
+      perfil: full.perfil,
+      nome: full.nome ?? '',
     }
+    setUser(next)
+    return next
   }, [])
 
   const logout = useCallback(async () => {

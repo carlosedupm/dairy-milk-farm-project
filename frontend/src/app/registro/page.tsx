@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/card'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { getApiErrorMessage } from '@/lib/errors'
+import { getAreasMode, getDefaultLandingPath } from '@/config/appAccess'
 
 function RegistroForm() {
   const [nome, setNome] = useState('')
@@ -26,17 +27,20 @@ function RegistroForm() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { isAuthenticated, isReady } = useAuth()
+  const { user, isAuthenticated, isReady } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') ?? '/login'
 
-  // Redirecionar se já estiver autenticado
+  // Redirecionar se já estiver autenticado, respeitando o perfil
   useEffect(() => {
-    if (isReady && isAuthenticated) {
-      router.replace('/fazendas')
-    }
-  }, [isReady, isAuthenticated, router])
+    if (!isReady || !isAuthenticated || !user?.perfil) return
+    const target =
+      getAreasMode(user.perfil) === 'full'
+        ? '/fazendas'
+        : getDefaultLandingPath(user.perfil)
+    router.replace(target)
+  }, [isReady, isAuthenticated, user?.perfil, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

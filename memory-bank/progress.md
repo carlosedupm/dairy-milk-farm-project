@@ -193,6 +193,13 @@
 
 ## 🔄 Histórico de Progresso
 
+### **2026-05-07 - Login/landing por perfil + FUNCIONARIO sem fazenda → /onboarding**
+
+- ✅ **Login respeita o perfil**: `LoginForm` deixou de mandar todo usuário autenticado para `/fazendas`. Perfis com áreas restritas (FUNCIONARIO) vão direto para `getDefaultLandingPath(perfil)`; perfis com acesso pleno mantêm o fluxo legado por `/fazendas`. `?redirect=` é validado contra o perfil via `isPathAllowedForPerfil`. `RegistroForm` segue a mesma regra.
+- ✅ **`AuthContext.login` retorna `User | null`** para o caller decidir o destino sem esperar re-render.
+- ✅ **`FazendaContext` recarrega após login (sem hard reload)**: o guard `hasLoaded` deixou de ser marcado no ramo deslogado, então a transição `isAuthenticated: false → true` dispara o carregamento das fazendas vinculadas; durante a carga autenticada, `isReady` volta a `false` para evitar UI vazia.
+- ✅ **FUNCIONARIO sem fazenda vai para `/onboarding`**: `useFolgasPage` chama `useMinhasFazendas` para qualquer perfil, expõe `semFazendaVinculada` e a página `/folgas` redireciona automaticamente; `LoginForm.handleSubmit` faz pré-checagem (`maybeRedirectToOnboarding`) para evitar o flash. Para o cenário de **2+ fazendas sem ativa** (não-admin), a mensagem em `/folgas` foi reescrita para orientar o uso do seletor no header.
+
 ### **2026-03-25 - Folgas e fazenda ativa (UX)**
 
 - ✅ **`/folgas` — filtro por funcionário**: Gestão (ADMIN/DEVELOPER/GESTAO) pode usar “Visualizar folgas de” para destacar apenas os dias de folga do usuário selecionado e esmaecer os demais; contagem de dias no mês.

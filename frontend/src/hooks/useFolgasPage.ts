@@ -40,13 +40,18 @@ import {
   startOfWeek,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const ESCALA_VAZIA: EscalaFolga[] = [];
 
 export function useFolgasPage() {
   const { user } = useAuth();
-  const { fazendaAtiva, setFazendaAtiva } = useFazendaAtiva();
+  const {
+    fazendaAtiva,
+    setFazendaAtiva,
+    isReady: fazendaContextReady,
+  } = useFazendaAtiva();
   const queryClient = useQueryClient();
   const canManage = podeGerenciarFolgas(user?.perfil);
   const isFuncionario = user?.perfil === "FUNCIONARIO";
@@ -57,9 +62,24 @@ export function useFolgasPage() {
     user?.perfil === "GERENTE";
 
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
+  const router = useRouter();
 
+  // Carregar lista de fazendas vinculadas para qualquer perfil — usado para
+  // detectar "0 fazendas" e roteá-lo ao /onboarding (mesma tela padrão usada
+  // para outros usuários sem vínculo).
   const { fazendas: minhasFazendas, isLoading: loadingMinhasFazendas } =
-    useMinhasFazendas({ enabled: isAdminLike });
+    useMinhasFazendas();
+
+  const semFazendaVinculada =
+    fazendaContextReady && !loadingMinhasFazendas && minhasFazendas.length === 0;
+
+  const onboardingRedirected = useRef(false);
+  useEffect(() => {
+    if (onboardingRedirected.current) return;
+    if (!semFazendaVinculada) return;
+    onboardingRedirected.current = true;
+    router.replace("/onboarding");
+  }, [semFazendaVinculada, router]);
 
   const fazendaId = useMemo(() => {
     if (isAdminLike) {
@@ -404,6 +424,8 @@ export function useFolgasPage() {
     user,
     fazendaAtiva,
     setFazendaAtiva,
+    fazendaContextReady,
+    semFazendaVinculada,
     canManage,
     isFuncionario,
     hasAlternativeLanding,

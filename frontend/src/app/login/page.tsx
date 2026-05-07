@@ -16,22 +16,59 @@ import {
 } from '@/components/ui/card'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { getApiErrorMessage } from '@/lib/errors'
+import {
+  getAreasMode,
+  getDefaultLandingPath,
+  isPathAllowedForPerfil,
+} from '@/config/appAccess'
+import { getMinhasFazendas } from '@/services/fazendas'
 
-function getPostLoginRedirect(
-  fazendasCount: number,
-  primeiraFazendaId: number | null,
-  fazendaAtivaId: number | null
+function resolvePostLoginTarget(
+  perfil: string | undefined,
+  explicitRedirect: string | null
 ): string {
-  if (fazendasCount === 0) {
-    return '/onboarding'
+  if (
+    explicitRedirect &&
+    explicitRedirect !== '/login' &&
+    isPathAllowedForPerfil(perfil, explicitRedirect)
+  ) {
+    return explicitRedirect
   }
-  if (fazendasCount === 1 && primeiraFazendaId) {
-    return `/fazendas/${primeiraFazendaId}`
+  // Perfis com acesso pleno mantêm o fluxo legado por /fazendas
+  // (a página decide entre /, /onboarding e /fazendas/selecionar).
+  // Perfis restritos (ex.: FUNCIONARIO) vão direto para sua landing.
+  if (getAreasMode(perfil) === 'full') {
+    return '/fazendas'
   }
-  if (fazendaAtivaId) {
-    return `/fazendas/${fazendaAtivaId}`
+  return getDefaultLandingPath(perfil)
+}
+
+/**
+ * Para perfis com áreas restritas (ex.: FUNCIONARIO), pré-checa se há
+ * fazenda vinculada antes de mandar para a landing. Sem vínculo, vai
+ * direto para `/onboarding`, evitando o flash da landing → onboarding.
+ * Falhas na pré-checagem não bloqueiam o login (cai no fluxo padrão).
+ */
+async function maybeRedirectToOnboarding(
+  perfil: string | undefined,
+  explicitRedirect: string | null
+): Promise<string | null> {
+  if (!perfil) return null
+  if (getAreasMode(perfil) === 'full') return null
+  if (
+    explicitRedirect &&
+    explicitRedirect !== '/login' &&
+    isPathAllowedForPerfil(perfil, explicitRedirect)
+  ) {
+    return null
   }
-  return '/fazendas/selecionar'
+  try {
+    const fazendas = await getMinhasFazendas()
+    if (fazendas.length === 0) return '/onboarding'
+  } catch {
+    return null
+  }
+  return null
 }
 
 function LoginForm() {
@@ -39,7 +76,7 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login, isAuthenticated, isReady } = useAuth()
+  const { login, user, isAuthenticated, isReady } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -49,28 +86,32 @@ function LoginForm() {
   // Redirecionar usuário já autenticado que acessa /login (apenas uma vez)
   useEffect(() => {
     if (hasRedirected.current) return
-    if (!isReady || !isAuthenticated) return
+    if (!isReady || !isAuthenticated || !user?.perfil) return
     if (pathname !== '/login') return
 
     hasRedirected.current = true
-    const target = explicitRedirect || '/fazendas'
+    const target = resolvePostLoginTarget(user.perfil, explicitRedirect)
     if (target !== '/login') {
       // Usar window.location para evitar loops do Next.js router
       window.location.href = target
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady, isAuthenticated])
+  }, [isReady, isAuthenticated, user?.perfil])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      await login(email, password)
-      // Reset flag para permitir redirecionamento após login
-      hasRedirected.current = false
-      // Redirecionar para /fazendas - a página de fazendas fará o redirecionamento inteligente
-      const target = explicitRedirect || '/fazendas'
+      const logged = await login(email, password)
+      hasRedirected.current = true
+      const onboardingTarget = await maybeRedirectToOnboarding(
+        logged?.perfil,
+        explicitRedirect
+      )
+      const target =
+        onboardingTarget ??
+        resolvePostLoginTarget(logged?.perfil, explicitRedirect)
       router.replace(target)
     } catch (err: unknown) {
       setError(

@@ -43,23 +43,32 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
     [isAuthenticated]
   )
 
-  // Carregar fazenda ativa do localStorage e validar (apenas uma vez)
+  // Carregar fazenda ativa do localStorage e validar.
+  // hasLoaded é por-sessão-autenticada: não é marcado quando o usuário está
+  // deslogado, garantindo que após o login o carregamento ocorra.
   const hasLoaded = useRef(false)
-  
+
   useEffect(() => {
-    if (hasLoaded.current) return
     if (!authReady) return
 
-    const loadFazendaAtiva = async () => {
-      if (!isAuthenticated) {
-        // Limpar localStorage se não autenticado
-        localStorage.removeItem(STORAGE_KEY)
-        setFazendaAtivaState(null)
-        setIsReady(true)
-        hasLoaded.current = true
-        return
-      }
+    if (!isAuthenticated) {
+      // Estado deslogado: limpar e marcar pronto, mas sem consumir hasLoaded,
+      // para que ao logar (transição false → true) o carregamento dispare.
+      localStorage.removeItem(STORAGE_KEY)
+      setFazendaAtivaState(null)
+      setIsValidating(false)
+      setIsReady(true)
+      hasLoaded.current = false
+      return
+    }
 
+    if (hasLoaded.current) return
+    hasLoaded.current = true
+
+    const loadFazendaAtiva = async () => {
+      // Início da carga autenticada: voltar a "não pronto" para evitar
+      // que a UI exiba estado vazio enquanto a fazenda é resolvida.
+      setIsReady(false)
       setIsValidating(true)
       try {
         const fazendas = await getMinhasFazendas()
@@ -67,9 +76,6 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
         if (fazendas.length === 0) {
           localStorage.removeItem(STORAGE_KEY)
           setFazendaAtivaState(null)
-          setIsReady(true)
-          setIsValidating(false)
-          hasLoaded.current = true
           return
         }
 
@@ -77,9 +83,6 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
         if (fazendas.length === 1) {
           localStorage.setItem(STORAGE_KEY, fazendas[0].id.toString())
           setFazendaAtivaState(fazendas[0])
-          setIsReady(true)
-          setIsValidating(false)
-          hasLoaded.current = true
           return
         }
 
@@ -87,22 +90,13 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
         if (savedId) {
           const fazendaId = parseInt(savedId, 10)
           if (!isNaN(fazendaId)) {
-            // Validar que ainda está vinculada
-            const isValid = await validateFazenda(fazendaId)
-            if (isValid) {
-              // Buscar dados completos da fazenda
-              const fazenda = fazendas.find((f) => f.id === fazendaId)
-              if (fazenda) {
-                setFazendaAtivaState(fazenda)
-                setIsReady(true)
-                setIsValidating(false)
-                hasLoaded.current = true
-                return
-              }
-            } else {
-              // Remover se não estiver mais vinculada
-              localStorage.removeItem(STORAGE_KEY)
+            const fazenda = fazendas.find((f) => f.id === fazendaId)
+            if (fazenda) {
+              setFazendaAtivaState(fazenda)
+              return
             }
+            // Salvo não está mais vinculado
+            localStorage.removeItem(STORAGE_KEY)
           }
         }
       } catch (error) {
@@ -111,21 +105,11 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
       } finally {
         setIsReady(true)
         setIsValidating(false)
-        hasLoaded.current = true
       }
     }
 
     loadFazendaAtiva()
-  }, [authReady, isAuthenticated, validateFazenda])
-
-  // Invalidar fazenda ativa quando usuário fizer logout
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setFazendaAtivaState(null)
-      localStorage.removeItem(STORAGE_KEY)
-      hasLoaded.current = false // Reset para permitir recarregar após novo login
-    }
-  }, [isAuthenticated])
+  }, [authReady, isAuthenticated])
 
   const setFazendaAtiva = useCallback(
     async (fazenda: Fazenda | null) => {

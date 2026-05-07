@@ -41,6 +41,8 @@ function FolgasContent() {
     user,
     fazendaAtiva,
     setFazendaAtiva,
+    fazendaContextReady,
+    semFazendaVinculada,
     canManage,
     isFuncionario,
     hasAlternativeLanding,
@@ -133,19 +135,33 @@ function FolgasContent() {
         {hasAlternativeLanding && <BackLink href="/">Voltar</BackLink>}
       </div>
 
-      {!fazendaId && !(isAdminLike && loadingMinhasFazendas) && (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-base text-muted-foreground">
-              {isAdminLike && minhasFazendas.length === 0
-                ? "Não há fazendas vinculadas à sua conta."
-                : isAdminLike && minhasFazendas.length > 1
-                  ? "Selecione uma fazenda abaixo ou no menu superior."
-                  : "Não foi possível determinar a fazenda ativa. Verifique o vínculo da sua conta ou selecione uma fazenda no menu superior."}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {!fazendaId &&
+        !(isAdminLike && loadingMinhasFazendas) &&
+        !semFazendaVinculada &&
+        (isAdminLike || fazendaContextReady) && (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-base text-muted-foreground">
+                {isAdminLike && minhasFazendas.length === 0
+                  ? "Não há fazendas vinculadas à sua conta."
+                  : minhasFazendas.length > 1
+                    ? "Selecione uma fazenda no menu superior para visualizar as folgas."
+                    : "Não foi possível determinar a fazenda ativa. Verifique o vínculo da sua conta ou selecione uma fazenda no menu superior."}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+      {!fazendaId &&
+        (semFazendaVinculada ||
+          (!isAdminLike && !fazendaContextReady) ||
+          (isAdminLike && loadingMinhasFazendas)) && (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-base text-muted-foreground">Carregando…</p>
+            </CardContent>
+          </Card>
+        )}
 
       {fazendaId && (
         <>
