@@ -28,6 +28,7 @@ Qualquer **mudança de comportamento de produto** ou **política de domínio** d
 | Coberturas (reprodução) | [coberturas.md](./coberturas.md) |
 | Cios (detecção) | [cios.md](./cios.md) |
 | Animais (busca inteligente) | [animais.md](./animais.md) |
+| Acessos por perfil (RBAC) | [acessos-perfil.md](./acessos-perfil.md) |
 
 ---
 

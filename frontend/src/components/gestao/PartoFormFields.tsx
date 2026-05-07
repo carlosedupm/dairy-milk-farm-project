@@ -60,25 +60,34 @@ export function PartoFormFields({
   setFormState,
   includeCriasRepeater = true,
 }: Props) {
+  const animaisSafe = useMemo(
+    () => (Array.isArray(animais) ? animais : []),
+    [animais]
+  );
+  const gestacoesSafe = useMemo(
+    () => (Array.isArray(gestacoes) ? gestacoes : []),
+    [gestacoes]
+  );
+
   const identificacaoPorAnimalId = useMemo(() => {
     const m = new Map<number, string>();
-    for (const a of animais) {
+    for (const a of animaisSafe) {
       m.set(a.id, a.identificacao);
     }
     return m;
-  }, [animais]);
+  }, [animaisSafe]);
 
   const racaMae = useMemo(() => {
     const id = Number(formState.animalId);
     if (!id) return "";
-    const a = animais.find((x) => x.id === id);
+    const a = animaisSafe.find((x) => x.id === id);
     return (a?.raca ?? "").trim();
-  }, [animais, formState.animalId]);
+  }, [animaisSafe, formState.animalId]);
 
   return (
     <>
       <AnimalSelect
-        animais={animais}
+        animais={animaisSafe}
         value={formState.animalId}
         onValueChange={(value) => setFormState((s) => ({ ...s, animalId: value }))}
         label="Animal (mãe)"
@@ -287,7 +296,7 @@ export function PartoFormFields({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={PARTO_SELECT_NONE}>Nenhuma</SelectItem>
-            {gestacoes.map((g) => {
+            {gestacoesSafe.map((g) => {
               const nomeMatriz =
                 identificacaoPorAnimalId.get(g.animal_id) ?? `nº ${g.animal_id}`;
               return (

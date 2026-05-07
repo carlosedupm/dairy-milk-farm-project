@@ -33,13 +33,10 @@ export default function Home() {
       window.location.href = "/login";
       return;
     }
-    const mode = getAreasMode(user?.perfil);
-    if (mode !== "full") {
-      const landing = getDefaultLandingPath(user?.perfil);
-      if (landing !== "/") {
-        hasRedirected.current = true;
-        router.replace(landing);
-      }
+    const landing = getDefaultLandingPath(user?.perfil);
+    if (landing !== "/") {
+      hasRedirected.current = true;
+      router.replace(landing);
     }
   }, [isReady, isAuthenticated, router, user?.perfil]);
 
@@ -59,40 +56,55 @@ export default function Home() {
     );
   }
 
-  if (getAreasMode(user?.perfil) !== "full") {
-    return (
-      <PageContainer variant="centered">
-        <p className="text-muted-foreground">Redirecionando…</p>
-      </PageContainer>
-    );
-  }
+  const restrictedMode = getAreasMode(user?.perfil) !== "full";
 
-  const atalhos = [
-    {
-      href:
-        isSingleFazenda && fazendaUnica
-          ? `/fazendas/${fazendaUnica.id}`
-          : "/fazendas",
-      title: "Ver fazendas",
-      description: "Ver e gerenciar suas fazendas",
-      icon: Building2,
-    },
-    {
-      href:
-        isSingleFazenda && fazendaUnica
-          ? `/fazendas/${fazendaUnica.id}/animais`
-          : "/animais",
-      title: "Ver animais",
-      description: "Consultar e cadastrar animais do rebanho",
-      icon: List,
-    },
-    {
-      href: "/producao/novo",
-      title: "Registrar produção",
-      description: "Registrar produção de leite",
-      icon: Droplets,
-    },
-  ];
+  const atalhos = restrictedMode
+    ? [
+        {
+          href: "/animais",
+          title: "Ver animais",
+          description: "Consultar animais e histórico de produção",
+          icon: List,
+        },
+        {
+          href: "/gestao",
+          title: "Gestão reprodutiva",
+          description: "Cios, coberturas, partos e secagens",
+          icon: Building2,
+        },
+        {
+          href: "/folgas",
+          title: "Folgas",
+          description: "Consultar escala e registrar justificativas",
+          icon: Droplets,
+        },
+      ]
+    : [
+        {
+          href:
+            isSingleFazenda && fazendaUnica
+              ? `/fazendas/${fazendaUnica.id}`
+              : "/fazendas",
+          title: "Ver fazendas",
+          description: "Ver e gerenciar suas fazendas",
+          icon: Building2,
+        },
+        {
+          href:
+            isSingleFazenda && fazendaUnica
+              ? `/fazendas/${fazendaUnica.id}/animais`
+              : "/animais",
+          title: "Ver animais",
+          description: "Consultar e cadastrar animais do rebanho",
+          icon: List,
+        },
+        {
+          href: "/producao/novo",
+          title: "Registrar produção",
+          description: "Registrar produção de leite",
+          icon: Droplets,
+        },
+      ];
 
   return (
     <PageContainer variant="default">

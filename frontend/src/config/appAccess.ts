@@ -51,7 +51,7 @@ export const AREA_LABEL: Record<AppArea, string> = {
  * Perfis com lista explícita: apenas essas áreas. Ausente = acesso a todas as áreas.
  */
 export const PERFIL_AREAS: Partial<Record<string, AppArea[]>> = {
-  FUNCIONARIO: ["folgas"],
+  FUNCIONARIO: ["animais", "gestao", "folgas"],
 };
 
 export type AreasMode = AppArea[] | "full";
@@ -71,11 +71,30 @@ export function getNavAreasForPerfil(perfil: string | undefined): AppArea[] {
 }
 
 export function getDefaultLandingPath(perfil: string | undefined): string {
+  if (perfil === "FUNCIONARIO") return "/";
   const mode = getAreasMode(perfil);
   if (mode === "full") return "/";
   if (mode.length === 0) return "/folgas";
   const first = MAIN_NAV_AREA_ORDER.find((a) => mode.includes(a));
   return first ? AREA_PATH_PREFIX[first] : `/${mode[0]}`;
+}
+
+const FUNCIONARIO_GESTAO_PATHS = [
+  "/gestao",
+  "/gestao/cios",
+  "/gestao/coberturas",
+  "/gestao/partos",
+  "/gestao/secagens",
+] as const;
+
+function isFuncionarioAllowedPath(path: string): boolean {
+  if (path === "/") return true;
+  if (path === "/animais") return true;
+  if (/^\/animais\/\d+$/.test(path)) return true;
+  if (path === "/folgas" || path.startsWith("/folgas/")) return true;
+  return FUNCIONARIO_GESTAO_PATHS.some(
+    (base) => path === base || path.startsWith(`${base}/`)
+  );
 }
 
 const PUBLIC_PATHS = new Set(["/login", "/registro"]);
@@ -102,6 +121,7 @@ export function isPathAllowedForPerfil(
   const path = pathname.split("?")[0] ?? pathname;
   if (isPublicPath(path)) return true;
   if (isAuthUtilityPath(path)) return true;
+  if (perfil === "FUNCIONARIO") return isFuncionarioAllowedPath(path);
 
   const mode = getAreasMode(perfil);
   if (mode === "full") return true;

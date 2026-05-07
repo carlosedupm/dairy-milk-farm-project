@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ const links = [
 
 function GestaoContent() {
   const { fazendaAtiva } = useFazendaAtiva();
+  const { user } = useAuth();
 
   if (!fazendaAtiva) {
     return (
@@ -29,11 +31,18 @@ function GestaoContent() {
     );
   }
 
+  const allowedLinks =
+    user?.perfil === "FUNCIONARIO"
+      ? links.filter(({ href }) =>
+          ["/gestao/cios", "/gestao/coberturas", "/gestao/partos", "/gestao/secagens"].includes(href)
+        )
+      : links;
+
   return (
     <PageContainer variant="default">
       <h1 className="text-2xl font-bold mb-6">Gestão Pecuária – {fazendaAtiva.nome}</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {links.map(({ href, label, icon: Icon }) => (
+        {allowedLinks.map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href}>
             <Card className="hover:bg-accent/50 transition-colors h-full">
               <CardHeader className="pb-2">

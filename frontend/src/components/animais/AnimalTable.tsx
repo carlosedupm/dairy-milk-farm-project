@@ -38,6 +38,7 @@ import { formatDatePtBr } from "@/lib/format";
 type Props = {
   items: Animal[];
   showFazenda?: boolean;
+  canManage?: boolean;
 };
 
 const STATUS_VARIANT: Record<
@@ -49,7 +50,11 @@ const STATUS_VARIANT: Record<
   EM_TRATAMENTO: "secondary",
 };
 
-export function AnimalTable({ items, showFazenda = false }: Props) {
+export function AnimalTable({
+  items,
+  showFazenda = false,
+  canManage = true,
+}: Props) {
   const queryClient = useQueryClient();
   const deleteMutation = useMutation({
     mutationFn: remove,
@@ -126,40 +131,44 @@ export function AnimalTable({ items, showFazenda = false }: Props) {
                     <Button variant="outline" size="default" asChild>
                       <Link href={`/animais/${a.id}`}>Ver</Link>
                     </Button>
-                    <Button variant="outline" size="default" asChild>
-                      <Link href={`/animais/${a.id}/editar`}>Editar</Link>
-                    </Button>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="destructive" size="default">
-                          Excluir
+                    {canManage && (
+                      <>
+                        <Button variant="outline" size="default" asChild>
+                          <Link href={`/animais/${a.id}/editar`}>Editar</Link>
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Excluir animal</DialogTitle>
-                          <DialogDescription>
-                            Tem certeza que deseja excluir &quot;
-                            {a.identificacao}&quot;? Esta ação não pode ser
-                            desfeita.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <DialogClose asChild>
-                            <Button variant="outline">Cancelar</Button>
-                          </DialogClose>
-                          <Button
-                            variant="destructive"
-                            onClick={() => handleDelete(a.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            {deleteMutation.isPending
-                              ? "Excluindo…"
-                              : "Excluir"}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="destructive" size="default">
+                              Excluir
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Excluir animal</DialogTitle>
+                              <DialogDescription>
+                                Tem certeza que deseja excluir &quot;
+                                {a.identificacao}&quot;? Esta ação não pode ser
+                                desfeita.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button variant="outline">Cancelar</Button>
+                              </DialogClose>
+                              <Button
+                                variant="destructive"
+                                onClick={() => handleDelete(a.id)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                {deleteMutation.isPending
+                                  ? "Excluindo…"
+                                  : "Excluir"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

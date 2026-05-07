@@ -33,6 +33,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Beef, Edit, Trash2, PlusCircle, Milk } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const STATUS_VARIANT: Record<
   StatusSaude,
@@ -44,6 +45,7 @@ const STATUS_VARIANT: Record<
 };
 
 function AnimalDetailContent() {
+  const { user } = useAuth();
   const params = useParams();
   const id = Number(params.id);
   const router = useRouter();
@@ -112,6 +114,7 @@ function AnimalDetailContent() {
 
   const statusSaude = animal.status_saude as StatusSaude | undefined;
   const sexo = animal.sexo as Sexo | undefined;
+  const canManageAnimal = user?.perfil !== "FUNCIONARIO";
 
   return (
     <PageContainer variant="narrow">
@@ -199,44 +202,46 @@ function AnimalDetailContent() {
               </div>
             </dl>
 
-            <div className="flex flex-wrap gap-2 pt-2">
-              <Button variant="outline" size="default" asChild>
-                <Link href={`/animais/${id}/editar`}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </Link>
-              </Button>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="destructive" size="default">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Excluir
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Excluir animal</DialogTitle>
-                    <DialogDescription>
-                      Tem certeza que deseja excluir &quot;
-                      {animal.identificacao}&quot;? Esta ação não pode ser
-                      desfeita.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="outline">Cancelar</Button>
-                    </DialogClose>
-                    <Button
-                      variant="destructive"
-                      onClick={() => deleteMutation.mutate()}
-                      disabled={deleteMutation.isPending}
-                    >
-                      {deleteMutation.isPending ? "Excluindo…" : "Excluir"}
+            {canManageAnimal && (
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button variant="outline" size="default" asChild>
+                  <Link href={`/animais/${id}/editar`}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
+                  </Link>
+                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="destructive" size="default">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Excluir animal</DialogTitle>
+                      <DialogDescription>
+                        Tem certeza que deseja excluir &quot;
+                        {animal.identificacao}&quot;? Esta ação não pode ser
+                        desfeita.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancelar</Button>
+                      </DialogClose>
+                      <Button
+                        variant="destructive"
+                        onClick={() => deleteMutation.mutate()}
+                        disabled={deleteMutation.isPending}
+                      >
+                        {deleteMutation.isPending ? "Excluindo…" : "Excluir"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -247,11 +252,13 @@ function AnimalDetailContent() {
             </CardHeader>
             <CardContent>
               <p className="font-medium">{fazenda.nome}</p>
-              <Button variant="link" className="h-auto p-0 mt-1" asChild>
-                <Link href={`/fazendas/${animal.fazenda_id}/animais`}>
-                  Ver todos os animais desta fazenda
-                </Link>
-              </Button>
+              {canManageAnimal && (
+                <Button variant="link" className="h-auto p-0 mt-1" asChild>
+                  <Link href={`/fazendas/${animal.fazenda_id}/animais`}>
+                    Ver todos os animais desta fazenda
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
@@ -262,12 +269,14 @@ function AnimalDetailContent() {
               <Milk className="h-4 w-4" />
               Produção de leite
             </CardTitle>
-            <Button size="sm" asChild>
-              <Link href={`/producao/novo?animal_id=${id}`}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Registrar produção
-              </Link>
-            </Button>
+            {canManageAnimal && (
+              <Button size="sm" asChild>
+                <Link href={`/producao/novo?animal_id=${id}`}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Registrar produção
+                </Link>
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {resumo ? (

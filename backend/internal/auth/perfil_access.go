@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"net/http"
 	"regexp"
 	"strings"
 
@@ -12,17 +13,32 @@ import (
 // Regras de acesso à API por perfil. Manter alinhado com frontend/src/config/appAccess.ts.
 
 var funcionarioFolgasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/folgas/`)
+var funcionarioFazendaAnimaisPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/animais(/count)?$`)
+var funcionarioGestaoPath = regexp.MustCompile(`^/api/v1/(cios|coberturas|partos|secagens)(/.*)?$`)
+var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
 
 // PerfilTemAcessoAPICompleta indica se o perfil pode usar todos os endpoints /api/v1 autenticados.
 func PerfilTemAcessoAPICompleta(perfil string) bool {
 	return perfil != models.PerfilFuncionario
 }
 
-func requestAllowedForFuncionario(path string) bool {
+func requestAllowedForFuncionario(method, path string) bool {
 	if strings.HasPrefix(path, "/api/v1/me/") {
 		return true
 	}
-	return funcionarioFolgasPath.MatchString(path)
+	if funcionarioFolgasPath.MatchString(path) {
+		return true
+	}
+	if method == http.MethodGet && funcionarioFazendaAnimaisPath.MatchString(path) {
+		return true
+	}
+	if funcionarioGestaoPath.MatchString(path) {
+		return true
+	}
+	if method == http.MethodGet && funcionarioAnimaisPath.MatchString(path) {
+		return true
+	}
+	return false
 }
 
 // RequirePerfilAPIAccess restringe perfis limitados (ex.: FUNCIONARIO) a um subconjunto de rotas.
@@ -40,7 +56,8 @@ func RequirePerfilAPIAccess() gin.HandlerFunc {
 			return
 		}
 		path := c.Request.URL.Path
-		if requestAllowedForFuncionario(path) {
+		method := c.Request.Method
+		if requestAllowedForFuncionario(method, path) {
 			c.Next()
 			return
 		}

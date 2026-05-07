@@ -10,8 +10,11 @@ import { QueryListContent } from '@/components/layout/QueryListContent'
 import { AnimalTable } from '@/components/animais/AnimalTable'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 function AnimaisContent() {
+  const { user } = useAuth()
+  const canManageAnimais = user?.perfil !== 'FUNCIONARIO'
   const { data: items = [], isLoading, error } = useQuery({
     queryKey: ['animais'],
     queryFn: list,
@@ -22,12 +25,14 @@ function AnimaisContent() {
       <ListCardLayout
         title="Animais"
         action={
+          canManageAnimais ? (
           <Button asChild>
             <Link href="/animais/novo">
               <Plus className="mr-2 h-4 w-4" />
               Novo Animal
             </Link>
           </Button>
+          ) : null
         }
       >
         <QueryListContent
@@ -35,7 +40,7 @@ function AnimaisContent() {
           error={error}
           errorFallback="Erro ao carregar animais. Tente novamente."
         >
-          <AnimalTable items={items} />
+          <AnimalTable items={items} canManage={canManageAnimais} />
         </QueryListContent>
       </ListCardLayout>
     </PageContainer>

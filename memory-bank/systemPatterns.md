@@ -334,7 +334,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 
 - **Role-Based**: Controle de acesso baseado em roles (USER, FUNCIONARIO, GESTAO, ADMIN, DEVELOPER)
 - **USER**: Perfil geral; acesso a Fazendas e Assistente.
-- **FUNCIONARIO**: Pode visualizar módulo Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`). Fora de Folgas, o acesso à UI e à API é **restrito** por matriz configurável (ver abaixo).
+- **FUNCIONARIO**: Pode acessar a home (`/`), visualizar Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`); também acessa Gestão parcial (Cios/Coberturas/Partos/Secagens) e Animais em modo consulta. Escritas de Animais seguem bloqueadas por matriz configurável (ver abaixo).
 - **GESTAO**: Pode **configurar**, **gerar** e **alterar** escala de folgas (`RequireGestaoFolgas` = GESTAO, ADMIN ou DEVELOPER), com acesso a fazendas existentes mesmo sem vínculo N:N (via `ValidateFazendaAccessOrGestao`).
 - **ADMIN**: Perfil para acesso à área administrativa (`/api/v1/admin/*`); requer `auth.RequireAdmin()` (ADMIN ou DEVELOPER).
 - **DEVELOPER**: Perfil único no sistema (constraint no banco garante 1 apenas); acesso ao Dev Studio (`/api/v1/dev-studio/*`) e área Admin; requer `auth.RequireDeveloper()` para Dev Studio, `auth.RequireAdmin()` para Admin.
@@ -344,19 +344,19 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
   - **USER**: não acessa manutenção de fazendas; `/fazendas` funciona como gateway de redirecionamento (onboarding/seleção/animais).
   - **ADMIN/DEVELOPER**: acesso completo às páginas de fazendas (listar/detalhar/criar/editar); em **`/folgas`** a fazenda efetiva vem das **fazendas vinculadas** (`GET /api/v1/me/fazendas` / `useMinhasFazendas`): uma única → sem seletor na página; várias → seletor na página + `setFazendaAtiva` (alinhado ao `FazendaSelector` no header).
   - **GESTAO**: em `/folgas`, mesmas ações de gestão da escala que admin/dev (usa fazenda ativa / vínculo).
-  - **FUNCIONARIO**: em `/folgas`, apenas visualização e botão de justificativa no próprio dia de folga; **menu e rotas** limitados à área Folgas (`frontend/src/config/appAccess.ts`), com `RouteAccessGuard` redirecionando outras URLs e FAB do assistente oculto quando o perfil só tem Folgas.
+  - **FUNCIONARIO**: acesso a `/`, `/folgas`, Gestão parcial (`/gestao/cios*`, `/gestao/coberturas*`, `/gestao/partos*`, `/gestao/secagens*`) e Animais em consulta (`/animais`, `/animais/:id`); UI oculta ações de criar/editar/excluir em Animais e rotas fora da whitelist são redirecionadas pelo `RouteAccessGuard`.
 
 ### **Matriz de acesso por perfil (configurável)**
 
-- **Frontend**: `frontend/src/config/appAccess.ts` — mapa `PERFIL_AREAS` (ex.: `FUNCIONARIO: ['folgas']`), helpers `getNavAreasForPerfil`, `isPathAllowedForPerfil`, `getDefaultLandingPath`, `showAssistenteForPerfil`. O `Header` monta o menu a partir dessa lista; `RouteAccessGuard` (`Providers.tsx`) redireciona utilizadores autenticados para a landing permitida se a rota não estiver autorizada. Rotas utilitárias: `/login`, `/registro`, `/onboarding`, `/fazendas/selecionar`.
-- **Backend**: `backend/internal/auth/perfil_access.go` — `RequirePerfilAPIAccess()` aplicado após `AuthMiddleware` em todos os grupos `/api/v1/*` autenticados. Para **FUNCIONARIO**, apenas `GET /api/v1/me/*` e caminhos que casam com `/api/v1/fazendas/:id/folgas/...` (regex); demais endpoints retornam 403. Manter regras alinhadas ao TypeScript ao adicionar perfis ou áreas.
+- **Frontend**: `frontend/src/config/appAccess.ts` — mapa `PERFIL_AREAS` (FUNCIONARIO com `animais`, `gestao`, `folgas`) + whitelist de caminhos por perfil em `isPathAllowedForPerfil` (inclui home e sub-rotas de Gestão permitidas). Helpers: `getNavAreasForPerfil`, `getDefaultLandingPath`, `showAssistenteForPerfil`. `RouteAccessGuard` (`Providers.tsx`) redireciona utilizadores autenticados quando a rota não está autorizada. Rotas utilitárias: `/login`, `/registro`, `/onboarding`, `/fazendas/selecionar`.
+- **Backend**: `backend/internal/auth/perfil_access.go` — `RequirePerfilAPIAccess()` aplicado após `AuthMiddleware` em todos os grupos `/api/v1/*` autenticados. Para **FUNCIONARIO**, whitelist por **path + método**: `/api/v1/me/*`, `/api/v1/fazendas/:id/folgas/*`, `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/partos*`, `/api/v1/secagens*` e apenas `GET` em `/api/v1/animais*`; demais endpoints retornam 403. Manter regras alinhadas ao TypeScript.
 
 ### **Pós-login (resolução de destino por perfil)**
 
 - **Frontend**: `frontend/src/app/login/page.tsx` (`resolvePostLoginTarget` + `maybeRedirectToOnboarding`):
   - `?redirect=` é honrado **apenas** quando passa em `isPathAllowedForPerfil`.
   - Perfis com **acesso pleno** (`getAreasMode === 'full'`: USER, GERENTE, GESTAO, ADMIN, DEVELOPER) seguem o fluxo legado por `/fazendas`, que decide entre `/`, `/onboarding` e `/fazendas/selecionar` conforme vínculos.
-  - Perfis com **áreas restritas** (ex.: FUNCIONARIO) vão direto para `getDefaultLandingPath(perfil)` (FUNCIONARIO → `/folgas`). Antes de redirecionar, é feita uma pré-checagem: se `getMinhasFazendas()` devolver 0, vai direto para `/onboarding`, evitando o flash `landing → onboarding`. Falhas da pré-checagem caem no fluxo padrão.
+  - Perfis com **áreas restritas** (ex.: FUNCIONARIO) vão direto para `getDefaultLandingPath(perfil)` (FUNCIONARIO → `/`). Antes de redirecionar, é feita uma pré-checagem: se `getMinhasFazendas()` devolver 0, vai direto para `/onboarding`, evitando o flash `landing → onboarding`. Falhas da pré-checagem caem no fluxo padrão.
 - **Defesa em segunda camada**: a página `/folgas` (via `useFolgasPage`) também observa `semFazendaVinculada` (`fazendaContextReady && !loadingMinhasFazendas && minhasFazendas.length === 0`) e dispara `router.replace("/onboarding")`, cobrindo casos como refresh com vínculo removido no meio da sessão.
 - `AuthContext.login` retorna `User | null` para que o caller possa decidir o destino imediatamente, sem aguardar re-render.
 

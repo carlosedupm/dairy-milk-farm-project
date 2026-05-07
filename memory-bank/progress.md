@@ -193,6 +193,14 @@
 
 ## 🔄 Histórico de Progresso
 
+### **2026-05-07 - RBAC FUNCIONARIO ampliado (home + gestão parcial + animais consulta)**
+
+- ✅ **Frontend RBAC**: `appAccess.ts` passou a permitir `FUNCIONARIO` em `/`, `folgas`, `gestao` e `animais`, com whitelist de sub-rotas em `isPathAllowedForPerfil` (Gestão: Cios/Coberturas/Partos/Secagens; Animais: listagem e detalhe).
+- ✅ **Home para perfil restrito**: página inicial (`/`) deixou de redirecionar automaticamente perfis restritos e passou a exibir atalhos permitidos para FUNCIONARIO (Animais consulta, Gestão parcial, Folgas).
+- ✅ **UI de Animais (somente consulta)**: remoção de ações de criar/editar/excluir e de registrar produção para FUNCIONARIO em listagem e detalhe.
+- ✅ **Backend RBAC por método**: `RequirePerfilAPIAccess` agora combina método HTTP + path para FUNCIONARIO (GET em `/api/v1/animais*`; whitelist de `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/partos*`, `/api/v1/secagens*`, `/api/v1/fazendas/:id/folgas/*` e `/api/v1/me/*`).
+- ✅ **Catálogo de negócio**: novo módulo `docs/business/acessos-perfil.md` com regras `BR-ACESSO-001` até `BR-ACESSO-004`.
+
 ### **2026-05-07 - Login/landing por perfil + FUNCIONARIO sem fazenda → /onboarding**
 
 - ✅ **Login respeita o perfil**: `LoginForm` deixou de mandar todo usuário autenticado para `/fazendas`. Perfis com áreas restritas (FUNCIONARIO) vão direto para `getDefaultLandingPath(perfil)`; perfis com acesso pleno mantêm o fluxo legado por `/fazendas`. `?redirect=` é validado contra o perfil via `isPathAllowedForPerfil`. `RegistroForm` segue a mesma regra.
