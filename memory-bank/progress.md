@@ -2,7 +2,7 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 96%
+### **Completude Geral**: 97%
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
@@ -508,6 +508,13 @@
 - ✅ **Cadastro alinhado à edição**: `/gestao/partos/novo` usa os mesmos campos opcionais (`tipo`, `gestacao_id`, `complicações`, `observações`) via componente compartilhado `PartoFormFields`.
 - ✅ **Listagem**: botão **Excluir** com confirmação (Dialog), seguindo o padrão de Cios; serviço `remove(id)` no frontend.
 
+### **2026-05-07 - Gestão Pecuária: CRUD coberturas e formularios cios**
+
+- ✅ **Backend coberturas**: `PUT|DELETE /api/v1/coberturas/:id`; exclusão com checagem de vínculos (`gestacoes` / `diagnosticos_gestacao`) → `ErrCoberturaTemVinculos` (409); `Update` com validação de tipo e matriz fêmea alinhada ao create.
+- ✅ **Frontend coberturas**: `update`/`remove` em `services/coberturas.ts`; `CoberturaFormFields` + páginas novo/editar; `CoberturaTable` com Editar/Excluir.
+- ✅ **Frontend cios**: `CioFormFields` compartilhado (`DateTimePickerPtBr`); edição com validação de fazenda ativa.
+- ✅ **Documentação**: `docs/business/coberturas.md`, `docs/business/cios.md` e índice atualizado.
+
 ### **2026-02-03 - Assistente: contexto fazendas do usuário e fallback uma fazenda**
 
 - ✅ **Interpretar**: Fazendas vinculadas ao usuário (GetByUsuarioID) em vez de GetAll; prompt com regra para cadastrar_animal, listar_animais_fazenda e consultar_animais_fazenda: quando o usuário tem apenas UMA fazenda e não menciona fazenda, incluir fazenda_id no payload
@@ -526,6 +533,6 @@
 
 ---
 
-**Última atualização**: 2026-05-06
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
+**Última atualização**: 2026-05-07
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável (partos, cios, coberturas CRUD) | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
 **Próxima revisão**: 2026-05-13

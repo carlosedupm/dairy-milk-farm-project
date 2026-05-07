@@ -78,6 +78,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 23. ✅ **Excluir parto desfaz o nascimento**: `PartoService.Delete` em transação chama `CriaService.DeleteAnimaisGeradosPorCriasDoPartoTx` — remove animais ligados a **crias VIVAS** (mesma fazenda, não a matriz, origem **não** `COMPRADO`; `mae_id` nil ou igual à matriz do parto). Depois `DeleteTx` do parto (cascade nas crias).
 24. ✅ **UX e cache (partos)**: rótulo de campo **«Número de animais na cria»**; tabela de partos coluna **«Animais na cria»**; após excluir parto, `PartoTable` invalida TanStack Query em `partos`, `animais` (por fazenda e global), `crias` e `fazendas/:id/animais` para a lista de animais refletir o backend.
 25. ✅ **Catálogo de negócio (`docs/business/`)**: regras de domínio versionadas com IDs (`BR-*`), índice em `docs/business/README.md`, primeiro módulo **Folgas** em `docs/business/folgas.md`; `AGENTS.md`, `.cursor/rules` e template de PR passam a exigir atualização do catálogo quando houver mudança de comportamento de produto; `productContext.md` aponta para o catálogo em vez de duplicar o detalhe.
+26. ✅ **Gestão Pecuária — Coberturas e Cios (CRUD alinhado a Partos)**: backend coberturas com `PUT|DELETE /api/v1/coberturas/:id` (exclusão bloqueada por vínculo em gestação/diagnóstico → 409); frontend `CoberturaFormFields` + `/gestao/coberturas/[id]/editar`, `CoberturaTable` com Editar/Excluir; `CioFormFields` compartilhado entre novo/editar cio; catálogo `docs/business/coberturas.md` e `docs/business/cios.md`.
 
 ### 📋 Próximos passos imediatos:
 
@@ -145,5 +146,5 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ---
 
-**Última atualização**: 2026-05-06 (partos/crias + catálogo `docs/business/` e regras Cursor/PR)
+**Última atualização**: 2026-05-07 (CRUD coberturas/cios + catálogo `docs/business/coberturas.md`, `cios.md`)
 **Contexto Ativo**: Go + Next.js 16 | Backend (Render) + Frontend (Vercel) em produção | Módulo Folgas 5x1 (UX mobile enxuta na grade + dialog de detalhes; geração pelo mês visível; GERENTE com gestão) | Módulo Agrícola em consolidação | Assistente FAB + Live | Fazenda ativa | Dev Studio Fase 0–3 | TestSprite API (`testsprite_tests/`, MCP `generateCodeAndExecute`)

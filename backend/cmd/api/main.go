@@ -160,7 +160,7 @@ func main() {
 					movimentacaoLoteHandler := handlers.NewMovimentacaoLoteHandler(movimentacaoLoteSvc, animalSvc, fazendaSvc)
 					cioHandler := handlers.NewCioHandler(cioSvc, fazendaSvc)
 					protocoloIatfSvc := service.NewProtocoloIATFService(protocoloIatfRepo, fazendaRepo)
-					coberturaSvc := service.NewCoberturaService(coberturaRepo, animalRepo, fazendaRepo)
+					coberturaSvc := service.NewCoberturaService(coberturaRepo, animalRepo, fazendaRepo, gestacaoRepo, diagnosticoGestacaoRepo)
 					diagnosticoGestacaoSvc := service.NewDiagnosticoGestacaoService(diagnosticoGestacaoRepo, animalRepo, gestacaoRepo, coberturaRepo, fazendaRepo)
 					gestacaoSvc := service.NewGestacaoService(gestacaoRepo, animalRepo, fazendaRepo)
 					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
@@ -305,6 +305,8 @@ func main() {
 						coberturas.GET("", coberturaHandler.GetByFazendaID)
 						coberturas.GET("/:id", coberturaHandler.GetByID)
 						coberturas.POST("", coberturaHandler.Create)
+						coberturas.PUT("/:id", coberturaHandler.Update)
+						coberturas.DELETE("/:id", coberturaHandler.Delete)
 					}
 					// Toques (diagnosticos de gestacao)
 					toques := api.Group("/v1/toques", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())

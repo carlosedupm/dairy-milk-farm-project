@@ -11,14 +11,31 @@ import (
 
 var ErrCoberturaNotFound = errors.New("cobertura nao encontrada")
 
+// ErrCoberturaTemVinculos impede exclusão quando há gestação ou diagnóstico ligados.
+var ErrCoberturaTemVinculos = errors.New("cobertura possui gestacao ou diagnostico vinculado")
+
 type CoberturaService struct {
-	repo        *repository.CoberturaRepository
-	animalRepo  *repository.AnimalRepository
-	fazendaRepo *repository.FazendaRepository
+	repo                    *repository.CoberturaRepository
+	animalRepo              *repository.AnimalRepository
+	fazendaRepo             *repository.FazendaRepository
+	gestacaoRepo            *repository.GestacaoRepository
+	diagnosticoGestacaoRepo *repository.DiagnosticoGestacaoRepository
 }
 
-func NewCoberturaService(repo *repository.CoberturaRepository, animalRepo *repository.AnimalRepository, fazendaRepo *repository.FazendaRepository) *CoberturaService {
-	return &CoberturaService{repo: repo, animalRepo: animalRepo, fazendaRepo: fazendaRepo}
+func NewCoberturaService(
+	repo *repository.CoberturaRepository,
+	animalRepo *repository.AnimalRepository,
+	fazendaRepo *repository.FazendaRepository,
+	gestacaoRepo *repository.GestacaoRepository,
+	diagnosticoGestacaoRepo *repository.DiagnosticoGestacaoRepository,
+) *CoberturaService {
+	return &CoberturaService{
+		repo:                    repo,
+		animalRepo:              animalRepo,
+		fazendaRepo:             fazendaRepo,
+		gestacaoRepo:            gestacaoRepo,
+		diagnosticoGestacaoRepo: diagnosticoGestacaoRepo,
+	}
 }
 
 func (s *CoberturaService) Create(ctx context.Context, c *models.Cobertura) error {
@@ -97,6 +114,22 @@ func (s *CoberturaService) Update(ctx context.Context, c *models.Cobertura) erro
 	if c.ID <= 0 {
 		return errors.New("id invalido")
 	}
+	if !models.IsValidTipoCobertura(c.Tipo) {
+		return errors.New("tipo de cobertura invalido")
+	}
+	animal, err := s.animalRepo.GetByID(ctx, c.AnimalID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrAnimalNotFound
+		}
+		return err
+	}
+	if animal.FazendaID != c.FazendaID {
+		return errors.New("animal deve ser da mesma fazenda")
+	}
+	if animal.Sexo != nil && *animal.Sexo != "F" {
+		return errors.New("apenas femeas podem ter cobertura")
+	}
 	// Para monta natural, exige reprodutor (touro_animal_id ou touro_info)
 	if c.Tipo == models.CoberturaTipoMontaNatural {
 		hasReprodutor := (c.TouroAnimalID != nil && *c.TouroAnimalID > 0) || (c.TouroInfo != nil && *c.TouroInfo != "")
@@ -123,7 +156,7 @@ func (s *CoberturaService) Update(ctx context.Context, c *models.Cobertura) erro
 			return errors.New("reprodutor deve ser touro ou boi")
 		}
 	}
-	_, err := s.repo.GetByID(ctx, c.ID)
+	_, err = s.repo.GetByID(ctx, c.ID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrCoberturaNotFound
@@ -140,6 +173,20 @@ func (s *CoberturaService) Delete(ctx context.Context, id int64) error {
 			return ErrCoberturaNotFound
 		}
 		return err
+	}
+	hasGest, err := s.gestacaoRepo.ExistsByCoberturaID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if hasGest {
+		return ErrCoberturaTemVinculos
+	}
+	hasDiag, err := s.diagnosticoGestacaoRepo.ExistsByCoberturaID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if hasDiag {
+		return ErrCoberturaTemVinculos
 	}
 	return s.repo.Delete(ctx, id)
 }

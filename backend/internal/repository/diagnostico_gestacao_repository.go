@@ -71,6 +71,16 @@ func (r *DiagnosticoGestacaoRepository) GetByFazendaID(ctx context.Context, faze
 	return list, rows.Err()
 }
 
+// ExistsByCoberturaID retorna true se algum diagnóstico (toque) referencia a cobertura.
+func (r *DiagnosticoGestacaoRepository) ExistsByCoberturaID(ctx context.Context, coberturaID int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM diagnosticos_gestacao WHERE cobertura_id = $1)`,
+		coberturaID,
+	).Scan(&exists)
+	return exists, err
+}
+
 func (r *DiagnosticoGestacaoRepository) Delete(ctx context.Context, id int64) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM diagnosticos_gestacao WHERE id = $1`, id)
 	return err

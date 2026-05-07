@@ -74,6 +74,16 @@ func (r *GestacaoRepository) GetByFazendaID(ctx context.Context, fazendaID int64
 	return list, rows.Err()
 }
 
+// ExistsByCoberturaID retorna true se alguma gestação referencia a cobertura.
+func (r *GestacaoRepository) ExistsByCoberturaID(ctx context.Context, coberturaID int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM gestacoes WHERE cobertura_id = $1)`,
+		coberturaID,
+	).Scan(&exists)
+	return exists, err
+}
+
 func (r *GestacaoRepository) Update(ctx context.Context, g *models.Gestacao) error {
 	if g.ID <= 0 {
 		return fmt.Errorf("id invalido: %d", g.ID)

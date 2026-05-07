@@ -25,7 +25,9 @@ Qualquer **mudança de comportamento de produto** ou **política de domínio** d
 | Módulo | Arquivo |
 |--------|---------|
 | Folgas (escala 5x1) | [folgas.md](./folgas.md) |
+| Coberturas (reprodução) | [coberturas.md](./coberturas.md) |
+| Cios (detecção) | [cios.md](./cios.md) |
 
 ---
 
-**Última atualização**: 2026-05-06
+**Última atualização**: 2026-05-07

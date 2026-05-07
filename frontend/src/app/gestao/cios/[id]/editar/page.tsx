@@ -12,23 +12,15 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
-import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  CioFormFields,
+  cioFormSubmitDisabled,
+  type CioFormState,
+} from "@/components/gestao/CioFormFields";
 import { getApiErrorMessage } from "@/lib/errors";
 import { toDatetimeLocalInputValue } from "@/lib/format";
 
-const METODOS = ["VISUAL", "PEDOMETRO", "RUFIAO", "OUTRO"] as const;
-const INTENSIDADES = ["FRACO", "MODERADO", "FORTE"] as const;
-
-function initialFormState(cio: Cio) {
+function initialFormState(cio: Cio): CioFormState {
   return {
     animalId: cio.animal_id.toString(),
     dataDetectado: cio.data_detectado
@@ -74,68 +66,11 @@ function CioEditForm({ cio, animais, fazendaId }: CioEditFormProps) {
       onSubmit={() => mutation.mutate()}
       isPending={mutation.isPending}
       error={
-        mutation.isError
-          ? getApiErrorMessage(mutation.error, "Erro ao salvar.")
-          : undefined
+        mutation.isError ? getApiErrorMessage(mutation.error, "Erro ao salvar.") : undefined
       }
-      submitDisabled={!formState.animalId}
+      submitDisabled={cioFormSubmitDisabled(formState)}
     >
-      <AnimalSelect
-        animais={animais}
-        value={formState.animalId}
-        onValueChange={(v) => setFormState((s) => ({ ...s, animalId: v }))}
-        label="Animal"
-        placeholder="Selecione"
-        femeasOnly
-      />
-      <div>
-        <Label>Data/hora detectado</Label>
-        <Input
-          type="datetime-local"
-          value={formState.dataDetectado}
-          onChange={(e) =>
-            setFormState((s) => ({ ...s, dataDetectado: e.target.value }))
-          }
-        />
-      </div>
-      <div>
-        <Label>Método (opcional)</Label>
-        <Select
-          value={formState.metodo}
-          onValueChange={(v) => setFormState((s) => ({ ...s, metodo: v }))}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o método" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Nenhum</SelectItem>
-            {METODOS.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label>Intensidade (opcional)</Label>
-        <Select
-          value={formState.intensidade}
-          onValueChange={(v) => setFormState((s) => ({ ...s, intensidade: v }))}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione a intensidade" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Nenhuma</SelectItem>
-            {INTENSIDADES.map((i) => (
-              <SelectItem key={i} value={i}>
-                {i}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <CioFormFields animais={animais} formState={formState} setFormState={setFormState} />
     </GestaoFormLayout>
   );
 }
@@ -184,13 +119,17 @@ function EditarContent() {
     );
   }
 
+  if (cio.fazenda_id !== fazendaAtiva.id) {
+    return (
+      <PageContainer variant="narrow">
+        <BackLink href="/gestao/cios">Voltar</BackLink>
+        <p className="text-destructive mt-4">Registro não encontrado.</p>
+      </PageContainer>
+    );
+  }
+
   return (
-    <CioEditForm
-      key={cio.id}
-      cio={cio}
-      animais={animais}
-      fazendaId={fazendaAtiva.id}
-    />
+    <CioEditForm key={cio.id} cio={cio} animais={animais} fazendaId={fazendaAtiva.id} />
   );
 }
 
