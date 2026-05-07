@@ -13,9 +13,25 @@ Variáveis opcionais: ver [testsprite_api_helpers.py](testsprite_api_helpers.py)
 cd testsprite_tests && for f in TC*.py; do python3 "$f" || exit 1; done
 ```
 
+### Execução canônica (recomendada para Partos)
+
+Para evitar falsos negativos de credenciais causados por sobrescrita do MCP:
+
+```bash
+python3 /workspace/testsprite_tests/partos_canonical_suite.py
+```
+
+Credenciais seed oficiais usadas pelos scripts canônicos:
+- `admin@ceialmilk.com`
+- `password`
+
+E extração de token **sempre** em `response.data.access_token`.
+
 ## Aviso
 
 `testsprite_generate_code_and_execute` pode **sobrescrever** ficheiros `TC*.py` gerados na cloud. Após cada run MCP, rever `git diff testsprite_tests/`.
+
+Quando o MCP sobrescrever `TC001`-`TC006` com credenciais inválidas (`admin@example.com`, `admin@seed.local`, etc.), use a suíte canônica (`partos_canonical_suite.py`) como gate de validação efetiva.
 
 ## TC007 falha na cloud mas passa localmente — porquê e como resolver
 

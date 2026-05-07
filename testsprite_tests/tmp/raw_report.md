@@ -5,80 +5,111 @@
 
 ## 1️⃣ Document Metadata
 - **Project Name:** workspace
-- **Date:** 2026-04-21
+- **Date:** 2026-05-07
 - **Prepared by:** TestSprite AI Team
 
 ---
 
 ## 2️⃣ Requirement Validation Summary
 
-#### Test TC001 get_health_endpoint_returns_service_status
-- **Test Code:** [TC001_get_health_endpoint_returns_service_status.py](./TC001_get_health_endpoint_returns_service_status.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/755a072f-bafb-4ae6-8826-ea143d212db7/fcfa58db-e00b-4644-aeaf-18c35b41235a
-- **Status:** ✅ Passed
+#### Test TC001 post_api_auth_login_returns_tokens_in_standard_envelope
+- **Test Code:** [TC001_post_api_auth_login_returns_tokens_in_standard_envelope.py](./TC001_post_api_auth_login_returns_tokens_in_standard_envelope.py)
+- **Test Error:** Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 35, in <module>
+  File "<string>", line 21, in test_post_api_auth_login_returns_tokens_in_standard_envelope
+AssertionError: Expected status 200 but got 401
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/3361c3a1-779c-476f-bb03-f986ba7a12cc/a8a68e24-85c4-4eb3-8fe2-0a6eaebdb6d3
+- **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC002 get_metrics_endpoint_returns_prometheus_text
-- **Test Code:** [TC002_get_metrics_endpoint_returns_prometheus_text.py](./TC002_get_metrics_endpoint_returns_prometheus_text.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/755a072f-bafb-4ae6-8826-ea143d212db7/4016c772-3b3a-4c92-b6f5-2168914e1c4b
-- **Status:** ✅ Passed
+#### Test TC002 post_api_v1_partos_creates_parto_with_crias_in_single_transaction
+- **Test Code:** [TC002_post_api_v1_partos_creates_parto_with_crias_in_single_transaction.py](./TC002_post_api_v1_partos_creates_parto_with_crias_in_single_transaction.py)
+- **Test Error:** Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 167, in <module>
+  File "<string>", line 25, in test_post_api_v1_partos_creates_parto_with_crias_in_single_transaction
+AssertionError: Login failed: {"error":{"code":"UNAUTHORIZED","message":"Credenciais inválidas"},"timestamp":"2026-05-07T14:51:31Z"}
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/3361c3a1-779c-476f-bb03-f986ba7a12cc/f1405416-a700-49d2-91da-f58003b61e52
+- **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC003 post_api_auth_register_creates_new_user
-- **Test Code:** [TC003_post_api_auth_register_creates_new_user.py](./TC003_post_api_auth_register_creates_new_user.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/755a072f-bafb-4ae6-8826-ea143d212db7/12e2a912-e647-4a9c-83db-b0302ed125db
-- **Status:** ✅ Passed
+#### Test TC003 get_api_v1_partos_and_get_by_id_return_created_record
+- **Test Code:** [TC003_get_api_v1_partos_and_get_by_id_return_created_record.py](./TC003_get_api_v1_partos_and_get_by_id_return_created_record.py)
+- **Test Error:** Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 163, in <module>
+  File "<string>", line 102, in test_get_api_v1_partos_and_get_by_id_return_created_record
+  File "<string>", line 21, in login_as_admin
+  File "/var/lang/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://localhost:8080/api/auth/login
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/3361c3a1-779c-476f-bb03-f986ba7a12cc/71e12480-6205-41c7-8120-9b3ec0b0ee5c
+- **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC004 post_api_auth_login_returns_tokens
-- **Test Code:** [TC004_post_api_auth_login_returns_tokens.py](./TC004_post_api_auth_login_returns_tokens.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/755a072f-bafb-4ae6-8826-ea143d212db7/8258c009-d54a-4507-a3f3-d4a9158d177e
-- **Status:** ✅ Passed
+#### Test TC004 put_api_v1_partos_updates_parto_fields_and_validates_domain
+- **Test Code:** [TC004_put_api_v1_partos_updates_parto_fields_and_validates_domain.py](./TC004_put_api_v1_partos_updates_parto_fields_and_validates_domain.py)
+- **Test Error:** Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 149, in <module>
+  File "<string>", line 94, in put_api_v1_partos_updates_parto_fields_and_validates_domain
+  File "<string>", line 18, in login
+  File "/var/lang/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://localhost:8080/api/auth/login
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/3361c3a1-779c-476f-bb03-f986ba7a12cc/0bb0e687-eb00-4261-8c01-50f5fb8fd77b
+- **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC005 post_api_auth_refresh_returns_new_tokens
-- **Test Code:** [TC005_post_api_auth_refresh_returns_new_tokens.py](./TC005_post_api_auth_refresh_returns_new_tokens.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/755a072f-bafb-4ae6-8826-ea143d212db7/e1a7578f-088a-414a-a9b0-b5cf8f20d5ef
-- **Status:** ✅ Passed
+#### Test TC005 delete_api_v1_partos_removes_parto_and_generated_animais
+- **Test Code:** [TC005_delete_api_v1_partos_removes_parto_and_generated_animais.py](./TC005_delete_api_v1_partos_removes_parto_and_generated_animais.py)
+- **Test Error:** Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 145, in <module>
+  File "<string>", line 90, in test_delete_api_v1_partos_removes_parto_and_generated_animais
+  File "<string>", line 16, in login
+AssertionError: Login failed
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/3361c3a1-779c-476f-bb03-f986ba7a12cc/99e14eef-b5fd-45c1-8456-fc2595b208dd
+- **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
-#### Test TC006 get_api_v1_me_fazendas_lists_user_farms
-- **Test Code:** [TC006_get_api_v1_me_fazendas_lists_user_farms.py](./TC006_get_api_v1_me_fazendas_lists_user_farms.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/755a072f-bafb-4ae6-8826-ea143d212db7/44b83cf2-b313-4d08-848b-a71a28b8f873
-- **Status:** ✅ Passed
-- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
----
+#### Test TC006 post_api_v1_crias_on_existing_parto_supports_edit_flow_completion
+- **Test Code:** [TC006_post_api_v1_crias_on_existing_parto_supports_edit_flow_completion.py](./TC006_post_api_v1_crias_on_existing_parto_supports_edit_flow_completion.py)
+- **Test Error:** Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 150, in <module>
+  File "<string>", line 109, in test_post_api_v1_crias_on_existing_parto_supports_edit_flow_completion
+  File "<string>", line 18, in get_auth_tokens
+  File "/var/lang/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://localhost:8080/api/auth/login
 
-#### Test TC007 post_api_v1_animais_creates_animal
-- **Test Code:** [TC007_post_api_v1_animais_creates_animal.py](./TC007_post_api_v1_animais_creates_animal.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/755a072f-bafb-4ae6-8826-ea143d212db7/ac744ce2-b283-4a60-8803-d0f6211ade89
-- **Status:** ✅ Passed
-- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
----
-
-#### Test TC008 post_api_v1_producao_creates_production_record
-- **Test Code:** [TC008_post_api_v1_producao_creates_production_record.py](./TC008_post_api_v1_producao_creates_production_record.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/755a072f-bafb-4ae6-8826-ea143d212db7/6aaddbb6-a0b2-47f1-be7b-bc0cf8add4e2
-- **Status:** ✅ Passed
-- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
----
-
-#### Test TC009 get_api_v1_admin_usuarios_lists_users_for_admin
-- **Test Code:** [TC009_get_api_v1_admin_usuarios_lists_users_for_admin.py](./TC009_get_api_v1_admin_usuarios_lists_users_for_admin.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/755a072f-bafb-4ae6-8826-ea143d212db7/6509adee-fc98-4c67-a1ea-72ee89eb1a80
-- **Status:** ✅ Passed
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/3361c3a1-779c-476f-bb03-f986ba7a12cc/b383a6d8-ebd2-41ad-8828-9922f94b64e1
+- **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 
 ## 3️⃣ Coverage & Matching Metrics
 
-- **100.00** of tests passed
+- **0.00** of tests passed
 
 | Requirement        | Total Tests | ✅ Passed | ❌ Failed  |
 |--------------------|-------------|-----------|------------|

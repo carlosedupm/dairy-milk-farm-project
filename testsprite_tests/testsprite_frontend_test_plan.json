@@ -1,1 +1,71 @@
-[]
+[
+  {
+    "id": "TC001",
+    "title": "gestao_partos_login_and_open_list",
+    "description": "Login as admin/developer in /login and navigate to Gestão > Partos list page. Assert the list renders and contains column 'Animais na cria'.",
+    "category": "Gestao Partos",
+    "steps": [
+      { "type": "action", "description": "Navigate to /login" },
+      { "type": "action", "description": "Fill email with {{LOGIN_USER}}" },
+      { "type": "action", "description": "Fill password with {{LOGIN_PASSWORD}}" },
+      { "type": "action", "description": "Submit login form" },
+      { "type": "action", "description": "Open menu Gestão and navigate to Partos list" },
+      { "type": "assertion", "description": "Verify partos list is visible and has 'Animais na cria' column" }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "gestao_partos_create_new_parto_with_crias",
+    "description": "Create a new parto from Gestão > Partos > Novo, filling animal, data/hora, numero de animais na cria and crias details (sexo and situacao). Assert success and presence in list.",
+    "category": "Gestao Partos",
+    "steps": [
+      { "type": "action", "description": "Navigate to /gestao/partos/novo after login" },
+      { "type": "action", "description": "Select matriz fêmea no campo Animal" },
+      { "type": "action", "description": "Fill data/hora do parto" },
+      { "type": "action", "description": "Fill 'Número de animais na cria' with 2" },
+      { "type": "action", "description": "Fill cria 1 and cria 2 with valid sexo/situação values" },
+      { "type": "action", "description": "Submit form" },
+      { "type": "assertion", "description": "Verify success feedback and new parto appears in list with expected 'Animais na cria'" }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "gestao_partos_edit_existing_parto",
+    "description": "From Partos list, open Editar on an existing parto, update numero de animais na cria and observações, submit and assert updated values on return list.",
+    "category": "Gestao Partos",
+    "steps": [
+      { "type": "action", "description": "Open /gestao/partos and click Editar on a parto row" },
+      { "type": "action", "description": "Change 'Número de animais na cria' and observações" },
+      { "type": "action", "description": "Submit edit form" },
+      { "type": "assertion", "description": "Verify update success and list reflects new values" }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "gestao_partos_delete_parto_with_confirmation_dialog",
+    "description": "From Partos list, click Excluir, confirm in dialog, and assert row is removed. Validate destructive action requires explicit confirmation.",
+    "category": "Gestao Partos",
+    "steps": [
+      { "type": "action", "description": "Open /gestao/partos and click Excluir on a parto row" },
+      { "type": "assertion", "description": "Verify confirmation dialog is shown" },
+      { "type": "action", "description": "Confirm exclusion in dialog" },
+      { "type": "assertion", "description": "Verify parto row is removed from list" }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "gestao_partos_form_validation_required_fields",
+    "description": "Try to submit new parto form without required data and assert validation errors are displayed (animal, data/hora e número mínimo de crias).",
+    "category": "Gestao Partos",
+    "steps": [
+      { "type": "action", "description": "Navigate to /gestao/partos/novo" },
+      { "type": "action", "description": "Submit without filling required fields" },
+      { "type": "assertion", "description": "Verify validation error messages are shown and no parto is created" }
+    ],
+    "priority": "Medium"
+  }
+]
