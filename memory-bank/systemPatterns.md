@@ -108,6 +108,7 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 - **UI genérica**: Shadcn em `components/ui/`; não recriar botão/card/dialog ad hoc quando já existe primitivo.
 - **Layouts e shells repetidos**: `PageContainer`, `GestaoListLayout`, `GestaoFormLayout`, `BackLink` — nova listagem de gestão deve reutilizar o layout em vez de copiar Card + header.
 - **Paginação**: usar `ListPaginationBar` (`frontend/src/components/ui/pagination.tsx`) com `total`, `pageSize`, `offset` e callbacks; opcional troca de tamanho de página. APIs offset/limit — ver `listPaginated` / `listByFazendaPaginated` em `services/animais.ts`. Para debounce em busca (ex.: identificação), usar `useDebouncedValue` (`hooks/useDebouncedValue.ts`). Na **listagem global** `/animais`, o parâmetro `fazenda_id` deve vir **apenas** de `useFazendaAtiva()` (`FazendaContext` / seletor do header), sem segundo controle de fazenda na toolbar — alinhado ao escopo “tudo ligado à fazenda ativa”.
+- **Listagens com muitos filtros (mobile-first)**: manter o critério principal (ex.: **identificação**) sempre na vista; demais filtros num painel secundário — **`Popover`** a partir de `md` e **`Dialog`** em viewport estreita — com **`Badge`** indicando quantos filtros avançados estão ativos, **chips** para remover um critério sem reabrir o painel e ações “Limpar filtros avançados” / “Limpar tudo”. Breakpoint: `useMediaQuery("(min-width: 768px)")` em `hooks/useMediaQuery.ts`. Implementação de referência: `AnimaisListToolbar`.
 - **Formatação e regras puras**: datas em `lib/format.ts` (`formatDatePtBr`, `formatDateTimePtBr`, `formatDateTimePtBrOptional`); labels e maps (ex. `useAnimaisMap`, `folgas-utils`, `folgas-rodizio-utils`) em hooks ou módulos `.ts` compartilhados, não duplicados em cada página.
 
 #### **Composition — compor em vez de inflar props**
@@ -124,7 +125,7 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 | Chamadas HTTP, tipos de payload/resposta | `services/` |
 | Cache, loading, erro, invalidação de dados remotos | TanStack Query nas páginas (ou hook dedicado se o fluxo crescer) |
 | Estado global (auth, tema, fazenda ativa, assistente) | `contexts/` |
-| Efeitos colaterais reutilizáveis (WebSocket, voz, lista de fazendas) | `hooks/` |
+| Efeitos colaterais reutilizáveis (WebSocket, voz, lista de fazendas, breakpoint) | `hooks/` |
 | Funções puras (datas, validações leves, mapeamentos) | `lib/format.ts`, `lib/errors.ts`, `lib/utils.ts` ou `components/<domínio>/*-utils.ts` |
 | Apresentação e eventos locais | Componentes em `components/` |
 
@@ -137,6 +138,7 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 - Listagens com TanStack Query: `QueryListContent` (`components/layout/QueryListContent.tsx` — carregando / erro via `getApiErrorMessage` / children).
 - DRY de erro: `getApiErrorMessage`.
 - Abstração de domínio: `useAnimaisMap`, utilitários em `components/folgas/*-utils.ts`.
+- Filtros em listagem: `AnimaisListToolbar` (`components/animais/AnimaisListToolbar.tsx`) — busca + painel responsivo; `useMediaQuery`.
 - Composition no Dev Studio: `ChatInterface`, `HistoryPanel`, `CodePreview` como blocos separados na página.
 - Folgas (`/folgas`): lógica de queries, mutações, memos e estado de diálogos em `hooks/useFolgasPage.ts`; `app/folgas/page.tsx` compõe apenas layout e componentes de `components/folgas/`.
 
@@ -585,4 +587,4 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 **Versão dos Padrões**: 2.19 (Go + Next.js) — escopo do envelope de resposta/erro explicitado + checklist operacional de sincronização do memory bank.
 
-**Última atualização**: 2026-05-07
+**Última atualização**: 2026-05-07 (padrão filtros primário/secundário — Animais)
