@@ -138,7 +138,7 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 - Listagens com TanStack Query: `QueryListContent` (`components/layout/QueryListContent.tsx` — carregando / erro via `getApiErrorMessage` / children).
 - DRY de erro: `getApiErrorMessage`.
 - Abstração de domínio: `useAnimaisMap`, utilitários em `components/folgas/*-utils.ts`.
-- Filtros em listagem: `AnimaisListToolbar` (`components/animais/AnimaisListToolbar.tsx`) — busca + painel responsivo; `useMediaQuery`.
+- Filtros em listagem: `AnimaisListToolbar` (`components/animais/AnimaisListToolbar.tsx`) — busca + Popover/Dialog (`useMediaQuery`); `resultCount`/`listLoading` só para resumo no Dialog mobile.
 - Composition no Dev Studio: `ChatInterface`, `HistoryPanel`, `CodePreview` como blocos separados na página.
 - Folgas (`/folgas`): lógica de queries, mutações, memos e estado de diálogos em `hooks/useFolgasPage.ts`; `app/folgas/page.tsx` compõe apenas layout e componentes de `components/folgas/`.
 
@@ -587,4 +587,4 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 **Versão dos Padrões**: 2.19 (Go + Next.js) — escopo do envelope de resposta/erro explicitado + checklist operacional de sincronização do memory bank.
 
-**Última atualização**: 2026-05-07 (padrão filtros primário/secundário — Animais)
+**Última atualização**: 2026-05-08 (Animais toolbar — total só no modal mobile; Popover compacto)

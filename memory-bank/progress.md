@@ -552,6 +552,13 @@
 - ✅ **Serviços frontend**: `services/animais.ts` expandido com `searchByIdentificacao` e `getContexto`.
 - ✅ **Catálogo de negócio**: novo módulo `docs/business/animais.md` com regras `BR-ANIMAIS-001` e `BR-ANIMAIS-002`; índice atualizado em `docs/business/README.md`.
 
+### **2026-05-08 - Animais: UX da toolbar de filtros na listagem**
+
+- ✅ **`AnimaisListToolbar`**: busca principal sempre visível; filtros avançados em **`Popover`** (`md+`) ou **`Dialog`** (viewport estreita); hook **`useMediaQuery`** (`frontend/src/hooks/useMediaQuery.ts`); chips «Filtros aplicados» + limpar avançados / limpar tudo.
+- ✅ **Total após filtro só no mobile**: props **`resultCount`** e **`listLoading`** nas páginas `/animais` e `/fazendas/[id]/animais`; componente **`FilterResultSummary`** apenas no rodapé do **Dialog** — desktop não duplica o total no Popover.
+- ✅ **Popover desktop**: `max-h` + scroll na zona do formulário + `collisionPadding` para evitar conteúdo cortado.
+- ✅ **Mobile**: rótulo da busca **`max-sm:sr-only`** (acessível a leitores de ecrã), placeholder «Identificação ou brinco…» na vista.
+
 ### **2026-05-07 - Animais: listagem global e fazenda ativa**
 
 - ✅ **`/animais`**: `listPaginated` com `fazenda_id` implícito da fazenda ativa (`useFazendaAtiva`); removido filtro explícito de fazenda na `AnimaisListToolbar`; query habilitada só com fazenda pronta; mensagens distintas para “nenhuma fazenda vinculada” vs “escolher fazenda no header” quando há várias.
@@ -575,6 +582,6 @@
 
 ---
 
-**Última atualização**: 2026-05-07
+**Última atualização**: 2026-05-08
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável (partos, cios, coberturas CRUD) | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
 **Próxima revisão**: 2026-05-13
