@@ -6,7 +6,7 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 - Frontend: `frontend/src/config/appAccess.ts`, `frontend/src/components/layout/RouteAccessGuard.tsx`, `frontend/src/app/page.tsx`, `frontend/src/app/gestao/page.tsx`, `frontend/src/app/animais/page.tsx`, `frontend/src/components/animais/AnimalTable.tsx`, `frontend/src/app/animais/[id]/page.tsx`.
 - Backend: `backend/internal/auth/perfil_access.go` (middleware `RequirePerfilAPIAccess` aplicado em `/api/v1/*` autenticado).
-- Rotas de domínio envolvidas: `backend/cmd/api/main.go` (`/api/v1/animais`, `/api/v1/cios`, `/api/v1/coberturas`, `/api/v1/partos`, `/api/v1/secagens`, `/api/v1/fazendas/:id/folgas/*`, `/api/v1/fazendas/:id/restricoes-leite*`, `/api/v1/fazendas/:id/animais/em-lactacao`).
+- Rotas de domínio envolvidas: `backend/cmd/api/main.go` (`/api/v1/animais`, `/api/v1/cios`, `/api/v1/coberturas`, `/api/v1/partos`, `/api/v1/secagens`, `/api/v1/fazendas/:id/folgas/*`, `/api/v1/fazendas/:id/restricoes-leite*`, `/api/v1/fazendas/:id/animais/em-lactacao`, `/api/v1/assistente/*`).
 
 ---
 
@@ -68,6 +68,21 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**: `backend/internal/auth/perfil_access.go` (`funcionarioRestricoesLeitePath`); UI em `RestricoesLeiteHomePanel` oculta ação Liberar para FUNCIONARIO.
 - **Estado**: Implementado.
 
+### BR-ACESSO-006 — Assistente virtual bloqueado para FUNCIONARIO (com evolução por capacidades)
+
+- **Enunciado**: O perfil `FUNCIONARIO` não visualiza nem aciona o Assistente Virtual no estado atual do produto.
+- **Escopo**: Frontend (visibilidade do FAB/modal) e backend (rotas `/api/v1/assistente/*`).
+- **Perfis / permissões**: `FUNCIONARIO` bloqueado; demais perfis seguem regra vigente.
+- **Efeito**:
+  - UI: FAB e modal do assistente não são renderizados para `FUNCIONARIO`.
+  - API: acesso direto/manual às rotas do assistente retorna 403 para `FUNCIONARIO`.
+- **Implementação**:
+  - Frontend: `frontend/src/config/appAccess.ts` (`showAssistenteForPerfil`, `isAssistenteEnabledForPerfil`, `PERFIL_ASSISTENTE_CAPABILITIES`) e `frontend/src/components/layout/ConditionalHeader.tsx`.
+  - Backend: `backend/internal/auth/perfil_access.go` (`funcionarioAssistentePath` + bloqueio explícito em `requestAllowedForFuncionario`).
+  - UX de erro Live: `frontend/src/hooks/useGeminiLive.ts` (`RECONNECT_FAIL_MESSAGE` neutra).
+- **Evolução planejada**: a liberação para `FUNCIONARIO` será incremental por capacidades de negócio (capability-based), sem liberar o assistente completo de uma só vez.
+- **Estado**: Implementado (bloqueio atual + base preparada para evolução).
+
 ---
 
-**Última atualização**: 2026-05-07
+**Última atualização**: 2026-05-08

@@ -5,7 +5,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 const BACKOFF_MS = [1000, 2000, 4000];
 const MAX_RECONNECT_ATTEMPTS = 3;
 const RECONNECT_FAIL_MESSAGE =
-  "Não foi possível reconectar. Verifique a internet e tente abrir o assistente de novo.";
+  "Não foi possível reconectar ao assistente agora. Tente novamente em instantes.";
 
 export type CloseRequestPayload = { message: string; redirect?: string };
 

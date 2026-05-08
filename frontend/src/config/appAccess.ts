@@ -135,7 +135,42 @@ export function isPathAllowedForPerfil(
 }
 
 export function showAssistenteForPerfil(perfil: string | undefined): boolean {
+  return isAssistenteEnabledForPerfil(perfil);
+}
+
+/**
+ * Capacidades futuras do assistente para liberação gradual por negócio.
+ * Neste momento não há capacidades liberadas para FUNCIONARIO.
+ */
+export type AssistenteCapability =
+  | "assistente.consulta"
+  | "assistente.folgas"
+  | "assistente.gestao";
+
+const PERFIL_ASSISTENTE_CAPABILITIES: Partial<
+  Record<string, AssistenteCapability[]>
+> = {
+  FUNCIONARIO: [],
+};
+
+export function isAssistenteEnabledForPerfil(
+  perfil: string | undefined,
+  requiredCapabilities: AssistenteCapability[] = []
+): boolean {
+  if (!perfil) return false;
+  if (perfil === "ADMIN" || perfil === "DEVELOPER") return true;
+
+  const allowed = PERFIL_ASSISTENTE_CAPABILITIES[perfil];
+  if (perfil === "FUNCIONARIO") {
+    if (!allowed || allowed.length === 0) return false;
+    return requiredCapabilities.every((cap) => allowed.includes(cap));
+  }
+
   const mode = getAreasMode(perfil);
-  if (mode === "full") return true;
-  return mode.some((a) => a !== "folgas");
+  const baseAllowed = mode === "full" ? true : mode.some((a) => a !== "folgas");
+  if (!baseAllowed) return false;
+
+  if (!requiredCapabilities.length) return true;
+  if (!allowed || allowed.length === 0) return false;
+  return requiredCapabilities.every((cap) => allowed.includes(cap));
 }

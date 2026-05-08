@@ -17,6 +17,13 @@ var funcionarioRestricoesLeitePath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]
 var funcionarioFazendaAnimaisPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/animais(/count|/em-lactacao)?$`)
 var funcionarioGestaoPath = regexp.MustCompile(`^/api/v1/(cios|coberturas|partos|secagens)(/.*)?$`)
 var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
+var funcionarioAssistentePath = regexp.MustCompile(`^/api/v1/assistente(/.*)?$`)
+
+// TODO(capabilities-assistente): liberar rotas de assistente para FUNCIONARIO
+// de forma granular por capacidade, conforme regras de negócio.
+func funcionarioAssistenteCapabilityEnabled(_ string, _ string) bool {
+	return false
+}
 
 // PerfilTemAcessoAPICompleta indica se o perfil pode usar todos os endpoints /api/v1 autenticados.
 func PerfilTemAcessoAPICompleta(perfil string) bool {
@@ -24,6 +31,14 @@ func PerfilTemAcessoAPICompleta(perfil string) bool {
 }
 
 func requestAllowedForFuncionario(method, path string) bool {
+	// Bloqueio explícito: a liberação do assistente para FUNCIONARIO
+	// será feita futuramente por capacidades específicas de negócio.
+	if funcionarioAssistentePath.MatchString(path) {
+		if funcionarioAssistenteCapabilityEnabled(method, path) {
+			return true
+		}
+		return false
+	}
 	if strings.HasPrefix(path, "/api/v1/me/") {
 		return true
 	}
