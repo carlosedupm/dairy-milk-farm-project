@@ -53,7 +53,47 @@ type Props = {
   values: AnimaisFilterFormState;
   onChange: (next: AnimaisFilterFormState) => void;
   onClear?: () => void;
+  /** Total da consulta (com filtros); exibido só no painel em mobile (Dialog), junto a Fechar. */
+  resultCount?: number;
+  /** Lista em carregamento no servidor */
+  listLoading?: boolean;
 };
+
+function FilterResultSummary({
+  total,
+  loading,
+}: {
+  total?: number;
+  loading?: boolean;
+}) {
+  if (loading) {
+    return (
+      <p
+        className="text-center text-sm text-muted-foreground"
+        role="status"
+        aria-live="polite"
+      >
+        Atualizando resultados…
+      </p>
+    );
+  }
+  if (typeof total !== "number") return null;
+  const label =
+    total === 0
+      ? "Nenhum animal encontrado"
+      : total === 1
+        ? "1 animal encontrado"
+        : `${total} animais encontrados`;
+  return (
+    <p
+      className="rounded-md border border-border/60 bg-muted/50 px-3 py-2 text-center text-sm font-medium tabular-nums text-foreground"
+      role="status"
+      aria-live="polite"
+    >
+      {label}
+    </p>
+  );
+}
 
 function loteAtivo(loteId: string): boolean {
   const n = loteId ? Number.parseInt(loteId, 10) : 0;
@@ -209,6 +249,8 @@ export function AnimaisListToolbar({
   values,
   onChange,
   onClear,
+  resultCount,
+  listLoading = false,
 }: Props) {
   const isMd = useMediaQuery("(min-width: 768px)");
   const [panelOpen, setPanelOpen] = useState(false);
@@ -356,6 +398,13 @@ export function AnimaisListToolbar({
                         id="animais-filtros-avancados"
                       >
                         {advancedForm}
+                      </div>
+                      <div className="shrink-0 space-y-2 border-t border-border pt-2">
+                        {/* Total só no mobile: no desktop o Popover não cobre o título/lista */}
+                        <FilterResultSummary
+                          total={resultCount}
+                          loading={listLoading}
+                        />
                       </div>
                       <DialogFooter className="gap-2 sm:gap-0">
                         {footerActions}

@@ -135,6 +135,8 @@ function FazendaAnimaisContent() {
           <AnimaisListToolbar
             values={filters}
             onChange={setFilters}
+            resultCount={total}
+            listLoading={listLoading}
             onClear={() => {
               setFilters(emptyAnimaisFilterForm());
               setOffset(0);

@@ -137,6 +137,8 @@ function AnimaisContent() {
             <AnimaisListToolbar
               values={filters}
               onChange={setFilters}
+              resultCount={total}
+              listLoading={!fazendaReady || isLoading}
               onClear={() => {
                 setFilters(emptyAnimaisFilterForm());
                 setOffset(0);
