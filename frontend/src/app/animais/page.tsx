@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listPaginated } from "@/services/animais";
 import { getMinhasFazendas } from "@/services/fazendas";
@@ -75,18 +75,12 @@ function AnimaisContent() {
   const items = data?.animais ?? [];
   const total = data?.total ?? 0;
 
-  useEffect(() => {
+  const filterKey = `${debouncedIdent}|${fazendaId ?? ""}|${filters.categoria}|${filters.sexo}|${filters.status_saude}|${filters.status_reprodutivo}|${filters.lote_id}|${pageSize}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
     setOffset(0);
-  }, [
-    debouncedIdent,
-    fazendaId,
-    filters.categoria,
-    filters.sexo,
-    filters.status_saude,
-    filters.status_reprodutivo,
-    filters.lote_id,
-    pageSize,
-  ]);
+  }
 
   const titleBase = fazendaAtiva
     ? `Animais — ${fazendaAtiva.nome}`

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listByFazendaPaginated } from "@/services/animais";
 import { get as getFazenda } from "@/services/fazendas";
@@ -82,18 +82,12 @@ function FazendaAnimaisContent() {
   const items = paginated?.animais ?? [];
   const total = paginated?.total ?? 0;
 
-  useEffect(() => {
+  const filterKey = `${debouncedIdent}|${fazendaId}|${filters.categoria}|${filters.sexo}|${filters.status_saude}|${filters.status_reprodutivo}|${filters.lote_id}|${pageSize}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
     setOffset(0);
-  }, [
-    debouncedIdent,
-    filters.categoria,
-    filters.sexo,
-    filters.status_saude,
-    filters.status_reprodutivo,
-    filters.lote_id,
-    pageSize,
-    fazendaId,
-  ]);
+  }
 
   const listLoading = loadingFazenda || loadingAnimais;
 

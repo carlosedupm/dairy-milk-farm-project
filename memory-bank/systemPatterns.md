@@ -490,6 +490,32 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
   - Ao salvar com sucesso: invalidar a query e `setDirty(false)` para voltar a exibir os dados do servidor.
 - **Exemplo**: Admin editar usuário → seção "Fazendas vinculadas" (`frontend/src/app/admin/usuarios/[id]/editar/page.tsx`).
 
+### **Reset de estado quando deps mudam (não usar `useEffect` + `setState`)**
+
+- **Problema**: o lint `react-hooks/set-state-in-effect` (CI Frontend - Lint) bloqueia o anti-padrão `useEffect(() => setOffset(0), [filtros…])`, porque `setState` síncrono dentro de efeito provoca render em cascata.
+- **Padrão recomendado** (React docs — *Storing information from previous renders*): construir uma chave (string) com as deps que devem disparar o reset, guardar a chave anterior em `useState` e comparar **durante a renderização**:
+
+  ```tsx
+  const filterKey = `${debouncedIdent}|${fazendaId ?? ""}|${filters.categoria}|...|${pageSize}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
+    setOffset(0);
+  }
+  ```
+
+- **Exemplos**: `frontend/src/app/animais/page.tsx` e `frontend/src/app/fazendas/[id]/animais/page.tsx` (reset de paginação ao mudar filtros, busca ou fazenda ativa).
+- **Quando o reset é local a um handler** (ex.: trocar `pageSize` numa única ação do usuário), basta chamar `setPageSize(n); setOffset(0)` no mesmo callback — sem efeito.
+
+### **Subscrição a fonte externa do navegador (`useSyncExternalStore`)**
+
+- **Padrão**: Para hooks que acompanham fontes externas mantidas pelo navegador (`window.matchMedia`, `localStorage`, eventos globais, etc.), preferir **`useSyncExternalStore`** em vez de `useEffect` + `setState`. Isso elimina o anti-padrão `set-state-in-effect`, evita re-render desnecessário e dá compatibilidade nativa com SSR.
+- **Estrutura**:
+  - `subscribe(callback)`: registra listener na fonte externa e retorna função de unsubscribe (em `useCallback` com as deps relevantes).
+  - `getSnapshot()`: lê o valor síncrono atual do navegador.
+  - `getServerSnapshot()`: valor seguro para SSR/hidratação inicial (geralmente neutro, ex.: `false`).
+- **Exemplo**: `frontend/src/hooks/useMediaQuery.ts` — assinatura de `window.matchMedia(query)` para alternar UI mobile/desktop sem `setState` em efeito.
+
 ### **Módulo Gestão Pecuária**
 
 - **Layout de listagem**: `GestaoListLayout` em `components/gestao/GestaoListLayout.tsx` — encapsula PageContainer, BackLink, Card, título e botão Novo (opcional via prop `newHref`).

@@ -1,20 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 /**
- * Subscribes to `window.matchMedia` (client-only). Initial render is `false` until mounted.
+ * Subscribes to `window.matchMedia` (client-only) using `useSyncExternalStore`.
+ * Initial render is `false` no SSR e durante a hidratação inicial.
  */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  const subscribe = useCallback(
+    (callback: () => void) => {
+      const m = window.matchMedia(query);
+      m.addEventListener("change", callback);
+      return () => m.removeEventListener("change", callback);
+    },
+    [query]
+  );
 
-  useEffect(() => {
-    const m = window.matchMedia(query);
-    setMatches(m.matches);
-    const handler = () => setMatches(m.matches);
-    m.addEventListener("change", handler);
-    return () => m.removeEventListener("change", handler);
-  }, [query]);
+  const getSnapshot = useCallback(
+    () => window.matchMedia(query).matches,
+    [query]
+  );
 
-  return matches;
+  const getServerSnapshot = () => false;
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

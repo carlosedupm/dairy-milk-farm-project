@@ -209,7 +209,7 @@ export function RestricoesLeiteHomePanel() {
               Leite para descarte (aguardando laboratório)
             </CardTitle>
             <CardDescription>
-              Animais com leite apenas no "balde ao pé" até liberação do
+              Animais com leite apenas no &ldquo;balde ao pé&rdquo; até liberação do
               laticínio. Corda no pescoço, amostra pós-parto ou sintomas na
               ordenha — registre aqui para todos verem na ordenha.
             </CardDescription>
