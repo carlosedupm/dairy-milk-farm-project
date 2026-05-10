@@ -1,39 +1,23 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
-import { getAreasMode, getDefaultLandingPath } from "@/config/appAccess";
+import { getDefaultLandingPath } from "@/config/appAccess";
 import { PageContainer } from "@/components/layout/PageContainer";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Building2, List, Droplets } from "lucide-react";
-import { AnimalSearchHome } from "@/components/animais/AnimalSearchHome";
-import { RestricoesLeiteHomePanel } from "@/components/leite/RestricoesLeiteHomePanel";
+import { LandingPage } from "@/components/landing/LandingPage";
+import { Dashboard } from "@/components/dashboard/Dashboard";
 
 export default function Home() {
   const { user, isAuthenticated, isReady } = useAuth();
   const router = useRouter();
-  const { isSingleFazenda, fazendaUnica } = useMinhasFazendas();
   const hasRedirected = useRef(false);
 
   useEffect(() => {
     if (hasRedirected.current) return;
-    if (!isReady) return;
-    if (!isAuthenticated) {
-      hasRedirected.current = true;
-      // Usar window.location para evitar loops do Next.js router
-      window.location.href = "/login";
-      return;
-    }
+    if (!isReady || !isAuthenticated) return;
+    
+    // Se está autenticado, verificar se o landing path padrão não é "/"
     const landing = getDefaultLandingPath(user?.perfil);
     if (landing !== "/") {
       hasRedirected.current = true;
@@ -50,100 +34,9 @@ export default function Home() {
   }
 
   if (!isAuthenticated) {
-    return (
-      <PageContainer variant="centered">
-        <p className="text-muted-foreground">Redirecionando…</p>
-      </PageContainer>
-    );
+    return <LandingPage />;
   }
 
-  const restrictedMode = getAreasMode(user?.perfil) !== "full";
-
-  const atalhos = restrictedMode
-    ? [
-        {
-          href: "/animais",
-          title: "Ver animais",
-          description: "Consultar animais e histórico de produção",
-          icon: List,
-        },
-        {
-          href: "/gestao",
-          title: "Gestão reprodutiva",
-          description: "Cios, coberturas, partos e secagens",
-          icon: Building2,
-        },
-        {
-          href: "/folgas",
-          title: "Folgas",
-          description: "Consultar escala e registrar justificativas",
-          icon: Droplets,
-        },
-      ]
-    : [
-        {
-          href:
-            isSingleFazenda && fazendaUnica
-              ? `/fazendas/${fazendaUnica.id}`
-              : "/fazendas",
-          title: "Ver fazendas",
-          description: "Ver e gerenciar suas fazendas",
-          icon: Building2,
-        },
-        {
-          href:
-            isSingleFazenda && fazendaUnica
-              ? `/fazendas/${fazendaUnica.id}/animais`
-              : "/animais",
-          title: "Ver animais",
-          description: "Consultar e cadastrar animais do rebanho",
-          icon: List,
-        },
-        {
-          href: "/producao/novo",
-          title: "Registrar produção",
-          description: "Registrar produção de leite",
-          icon: Droplets,
-        },
-      ];
-
-  return (
-    <PageContainer variant="default">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">Início</h1>
-        <p className="text-muted-foreground mt-1">
-          O que você precisa fazer hoje?
-        </p>
-      </div>
-      <RestricoesLeiteHomePanel />
-      <AnimalSearchHome />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {atalhos.map(({ href, title, description, icon: Icon }) => (
-          <Card key={href} className="transition-colors hover:bg-accent/50">
-            <CardHeader className="pb-2">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2">
-                <Icon className="h-6 w-6" aria-hidden />
-              </div>
-              <CardTitle className="text-lg">
-                <Link
-                  href={href}
-                  className="flex min-h-[44px] items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {title}
-                </Link>
-              </CardTitle>
-              <CardDescription className="text-base">
-                {description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild size="lg" className="w-full min-h-[44px]">
-                <Link href={href}>{title}</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </PageContainer>
-  );
+  // Para usuários autenticados cujo default path é "/"
+  return <Dashboard />;
 }

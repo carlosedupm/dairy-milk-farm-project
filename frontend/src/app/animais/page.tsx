@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
 import { listPaginated } from "@/services/animais";
 import { getMinhasFazendas } from "@/services/fazendas";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
@@ -26,12 +27,50 @@ function AnimaisContent() {
   const { user } = useAuth();
   const canManageAnimais = user?.perfil !== "FUNCIONARIO";
   const { fazendaAtiva, isReady: fazendaReady } = useFazendaAtiva();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [pageSize, setPageSize] = useState(25);
   const [offset, setOffset] = useState(0);
   const [filters, setFilters] = useState<AnimaisFilterFormState>(() =>
     emptyAnimaisFilterForm()
   );
+
+  const queryString = searchParams.toString();
+
+  useEffect(() => {
+    const params = new URLSearchParams(queryString);
+    const focusFlag = params.get("focusSearch") === "1";
+    const qRaw = params.get("q");
+    const q = qRaw ? decodeURIComponent(qRaw.trim()) : "";
+    if (!focusFlag && !q) return;
+
+    let inner: number | undefined;
+    const outer = window.setTimeout(() => {
+      if (q) {
+        setFilters((prev) => ({ ...prev, identificacao: q }));
+      }
+      inner = window.setTimeout(() => {
+        const el = document.getElementById(
+          "animais-filter-ident",
+        ) as HTMLInputElement | null;
+        el?.focus();
+        if (q) el?.select();
+
+        params.delete("focusSearch");
+        params.delete("q");
+        const next = params.toString();
+        router.replace(next ? `/animais?${next}` : "/animais", {
+          scroll: false,
+        });
+      }, q ? 120 : 0);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(outer);
+      if (inner !== undefined) window.clearTimeout(inner);
+    };
+  }, [queryString, router]);
 
   const debouncedIdent = useDebouncedValue(filters.identificacao.trim(), 400);
 
@@ -168,7 +207,15 @@ function AnimaisContent() {
 export default function AnimaisPage() {
   return (
     <ProtectedRoute>
-      <AnimaisContent />
+      <Suspense
+        fallback={
+          <PageContainer variant="default">
+            <p className="text-muted-foreground">Carregando…</p>
+          </PageContainer>
+        }
+      >
+        <AnimaisContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

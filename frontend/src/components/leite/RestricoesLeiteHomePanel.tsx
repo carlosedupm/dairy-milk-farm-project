@@ -185,7 +185,7 @@ export function RestricoesLeiteHomePanel() {
 
   if (!fazendaId) {
     return (
-      <Card className="mb-6 border-amber-500/40">
+      <Card className="border-amber-500/40">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" aria-hidden />
@@ -200,46 +200,59 @@ export function RestricoesLeiteHomePanel() {
     );
   }
 
+  const listaCarregada = !isLoading && !error;
+  const temItens = lista.length > 0;
+
   return (
     <>
-      <Card className="mb-6 border-amber-500/30">
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 pb-2">
-          <div>
-            <CardTitle className="text-lg">
-              Leite para descarte (aguardando laboratório)
-            </CardTitle>
-            <CardDescription>
+      <Card className="border-amber-500/30">
+        <CardHeader className="space-y-3 pb-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="min-w-0 space-y-1">
+              <CardTitle className="text-lg">
+                Leite para descarte (aguardando laboratório)
+              </CardTitle>
+              {listaCarregada ? (
+                <p className="text-sm text-muted-foreground">
+                  {temItens
+                    ? `${lista.length} animal(is) aguardando resultado do laboratório.`
+                    : "Nenhum animal nesta situação no momento."}
+                </p>
+              ) : null}
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="shrink-0 min-h-[44px] sm:self-start"
+              onClick={() => {
+                setFormErro(null);
+                setDialogNova(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" aria-hidden />
+              Registrar
+            </Button>
+          </div>
+          <details className="group rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm">
+            <summary className="cursor-pointer font-medium text-foreground outline-none marker:text-muted-foreground group-open:mb-2">
+              Como funciona o descarte
+            </summary>
+            <p className="text-muted-foreground leading-relaxed">
               Animais com leite apenas no &ldquo;balde ao pé&rdquo; até liberação do
               laticínio. Corda no pescoço, amostra pós-parto ou sintomas na
               ordenha — registre aqui para todos verem na ordenha.
-            </CardDescription>
-          </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="shrink-0 min-h-[44px]"
-            onClick={() => {
-              setFormErro(null);
-              setDialogNova(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Registrar
-          </Button>
+            </p>
+          </details>
         </CardHeader>
-        <CardContent>
+        <CardContent className={listaCarregada && !temItens ? "hidden" : ""}>
           <QueryListContent
             isLoading={isLoading}
             error={error}
             errorFallback="Não foi possível carregar a lista."
           >
-            {lista.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Nenhum animal nesta situação no momento.
-              </p>
-            ) : (
-              <>
+            {temItens ? (
+              <div className="max-h-[min(60vh,26rem)] overflow-y-auto rounded-md">
                 {/* Mobile: cards empilhados — status e ação sempre visíveis sem scroll horizontal */}
                 <ul className="flex flex-col gap-3 md:hidden" aria-label="Animais aguardando laboratório">
                   {lista.map((row) => (
@@ -355,8 +368,8 @@ export function RestricoesLeiteHomePanel() {
                     </TableBody>
                   </Table>
                 </div>
-              </>
-            )}
+              </div>
+            ) : null}
           </QueryListContent>
         </CardContent>
       </Card>

@@ -44,8 +44,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} suppressHydrationWarning />
+      </head>
       <body className={inter.className}>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <Providers>
           <div className="min-h-screen bg-background">
             <ConditionalHeader />

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -22,12 +23,14 @@ import {
   X,
   Wheat,
   CalendarDays,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 import {
   getNavAreasForPerfil,
   getAreaHref,
   AREA_LABEL,
+  isPathAllowedForPerfil,
   type AppArea,
 } from "@/config/appAccess";
 
@@ -53,6 +56,9 @@ export function Header() {
     !!user && (isAdmin || (!fazendasLoading && fazendas.length > 0));
 
   const navAreas = getNavAreasForPerfil(user?.perfil);
+  const showBuscaAnimal =
+    !!user && isPathAllowedForPerfil(user.perfil, "/animais");
+  const animalSearch = useAnimalSearchDialog();
 
   const isActive = (path: string) =>
     pathname === path || pathname?.startsWith(path + "/");
@@ -152,20 +158,53 @@ export function Header() {
 
           {/* Desktop right block - hidden on mobile */}
           <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1 justify-end">
-            <FazendaSelector />
+            {showBuscaAnimal && animalSearch ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Buscar animal por identificação"
+                onClick={() => animalSearch.openDialog()}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            ) : null}
             <ThemeToggle />
-            {user && (
-              <span className="text-sm text-muted-foreground truncate">
-                {user.nome?.trim() || user.email}
-              </span>
+            {user ? (
+              <>
+                <FazendaSelector />
+                <span className="text-sm text-muted-foreground truncate">
+                  {user.nome?.trim() || user.email}
+                </span>
+                <Button variant="outline" size="sm" onClick={logout}>
+                  Sair
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button size="sm" asChild>
+                  <Link href="/registro">Criar conta</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/login">Entrar</Link>
+                </Button>
+              </>
             )}
-            <Button variant="outline" size="sm" onClick={logout}>
-              Sair
-            </Button>
           </div>
 
-          {/* Mobile: hamburger button */}
-          <div className="flex lg:hidden items-center gap-2">
+          {/* Mobile: busca rápida a animais + menu */}
+          <div className="flex lg:hidden items-center gap-1">
+            {showBuscaAnimal && animalSearch ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Buscar animal por identificação"
+                onClick={() => animalSearch.openDialog()}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            ) : null}
             <Button
               variant="ghost"
               size="icon"
@@ -205,36 +244,74 @@ export function Header() {
               </Button>
             </div>
             <nav className="flex flex-col gap-1 p-4 overflow-auto">
-              <div className="py-2">
-                <FazendaSelector />
-              </div>
               <div className="flex items-center gap-2 py-2 px-3">
                 <ThemeToggle />
                 <span className="text-sm text-muted-foreground">
                   Alternar tema
                 </span>
               </div>
+              {showBuscaAnimal && animalSearch ? (
+                <button
+                  type="button"
+                  className="flex min-h-[44px] w-full items-center gap-2 rounded-md py-3 px-3 text-left text-foreground hover:bg-accent"
+                  onClick={() => {
+                    closeMobileMenu();
+                    animalSearch.openDialog();
+                  }}
+                >
+                  <Search
+                    className="h-5 w-5 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                  Buscar animal
+                </button>
+              ) : null}
               {showNavLinks && (
                 <>
                   {renderMainNavLinks({ onNavigate: closeMobileMenu })}
                 </>
               )}
-              {user && (
-                <p className="py-2 px-3 text-sm text-muted-foreground truncate">
-                  {user.nome?.trim() || user.email}
-                </p>
+              {user ? (
+                <>
+                  <div className="py-2">
+                    <FazendaSelector />
+                  </div>
+                  <p className="py-2 px-3 text-sm text-muted-foreground truncate">
+                    {user.nome?.trim() || user.email}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 justify-center"
+                    onClick={() => {
+                      closeMobileMenu();
+                      logout();
+                    }}
+                  >
+                    Sair
+                  </Button>
+                </>
+              ) : (
+                <div className="mt-2 flex flex-col gap-2">
+                  <Button
+                    size="sm"
+                    className="justify-center"
+                    asChild
+                    onClick={closeMobileMenu}
+                  >
+                    <Link href="/registro">Criar conta</Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-center"
+                    asChild
+                    onClick={closeMobileMenu}
+                  >
+                    <Link href="/login">Entrar</Link>
+                  </Button>
+                </div>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2 justify-center"
-                onClick={() => {
-                  closeMobileMenu();
-                  logout();
-                }}
-              >
-                Sair
-              </Button>
             </nav>
           </div>
         </>

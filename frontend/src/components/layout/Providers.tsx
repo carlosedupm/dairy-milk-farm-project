@@ -8,6 +8,7 @@ import { FazendaProvider } from '@/contexts/FazendaContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { RouteAccessGuard } from '@/components/layout/RouteAccessGuard'
 import { ServiceWorkerRegistration } from './ServiceWorkerRegistration'
+import { AnimalSearchDialogProvider } from '@/contexts/AnimalSearchDialogContext'
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -26,7 +27,9 @@ export function Providers({ children }: { children: ReactNode }) {
         <AuthProvider>
           <RouteAccessGuard>
             <AssistenteProvider>
-              <FazendaProvider>{children}</FazendaProvider>
+              <FazendaProvider>
+                <AnimalSearchDialogProvider>{children}</AnimalSearchDialogProvider>
+              </FazendaProvider>
             </AssistenteProvider>
           </RouteAccessGuard>
         </AuthProvider>

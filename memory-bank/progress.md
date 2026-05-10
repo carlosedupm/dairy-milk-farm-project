@@ -98,6 +98,8 @@
 - [x] **Folgas UX mobile (refatoração + polimento)**: layout mobile reorganizado mantendo grade mensal; alertas/equidade colapsáveis; célula tocável no mobile (sem rótulo “Ver detalhes” repetido; botão explícito só `md+`); `FolgasDiaDetalhesDialog`; grade com texto mínimo e indicador compacto para fora do rodízio no celular; histórico em cards no mobile e tabela no desktop
 - [x] **Consistência com padrões de UI/erros**: `HistoryPanel` (Dev Studio) com Select Shadcn em vez de `<select>` nativo; `/admin` com `PageContainer`; erros de `useQuery` em listagens usando `getApiErrorMessage` onde havia mensagem fixa
 - [x] **DRY frontend (Fase plano)**: `QueryListContent` + `ListCardLayout`; `lib/format.ts`; hook `useFolgasPage` para `/folgas` (página só UI)
+- [x] **Landing pública + CTA no header**: `LandingPage.tsx` com copy focada em gestão leiteira e Brasil, marca no hero, bento sem promessas de offline/sync ou “projeções inteligentes”; mock do painel com `role="img"` + `aria-label` e ações ilustrativas não focáveis; `Header.tsx` com **Criar conta** (`/registro`) para visitantes (desktop e menu mobile)
+- [x] **Home logada (Dashboard)**: `Dashboard.tsx` + `RestricoesLeiteHomePanel.tsx` + `AnimalSearchHome.tsx` — hierarquia visual, progressive disclosure e atalhos sem CTA duplicado
 
 ## 📋 Próximos Passos
 
@@ -199,6 +201,31 @@
 - ✅ **Backend**: `AnimalRepository.ListEmLactacaoByFazendaID`, `LactacaoRepository.ExistsAtivaNaFazenda`, `RestricaoLeiteService` com `lactacaoRepo`; `perfil_access` estende `GET` em animais por fazenda para `/em-lactacao`.
 - ✅ **Frontend**: `listEmLactacaoByFazenda` em `services/animais.ts`; `RestricoesLeiteHomePanel` usa essa lista no dialog de registro.
 - ✅ **Negócio**: **BR-LEITE-005** em `docs/business/leite-restricoes.md`; `acessos-perfil.md` e `systemPatterns.md` ajustados.
+
+### **2026-05-09 - Landing pública e header para visitantes**
+
+- ✅ **Landing** (`frontend/src/components/landing/LandingPage.tsx`): badge e texto alinhados a leite/rebanho/equipe; H1 com **CeialMilk**; cards “Produção e registro leiteiro”, “Reprodução sob controle”, “Feito para o Curral” com copy honesta (PWA/mobile, evolução em campo); ilustração com descrição para leitores de tela; imports mortos removidos.
+- ✅ **Header** (`frontend/src/components/layout/Header.tsx`): visitantes veem **Criar conta** + **Entrar** no desktop e no drawer mobile.
+
+### **2026-05-09 - Home logada (Dashboard) menos poluída**
+
+- ✅ **`Dashboard.tsx`**: secções com títulos de apoio (`sr-only` / “Acesso rápido”); atalhos em lista compacta (`md:hidden`) e grelha de cards clicáveis no desktop; ícone **Folgas** `CalendarDays`; gestão reprodutiva restrita com `ClipboardList`.
+- ✅ **`RestricoesLeiteHomePanel.tsx`**: resumo curto no cabeçalho; explicação longa em `<details>`; lista/tabela com altura máxima e scroll quando há registros; `CardContent` oculto quando não há itens após carga.
+- ✅ **`AnimalSearchHome.tsx`**: copy enxuto; painel de busca recolhível no mobile (`useMediaQuery` + botão Abrir/Recolher); desktop sempre expandido.
+
+### **2026-05-09 - Mobile: busca animal (home + header + deep link)**
+
+- ✅ **`Dashboard.tsx`**: `AnimalSearchHome` só em `md+`; lista mobile com atalho **Buscar animal** (evolução em **2026-05-10**: diálogo global alinhado à busca da home — ver secção seguinte); perfil restrito com **Folgas** primeiro; `safe-area` no padding inferior da home.
+- ✅ **`Header.tsx`**: atalhos de busca para animais com RBAC (`isPathAllowedForPerfil` em `/animais`) — evolução **2026-05-10**: `openDialog()` em vez de só navegar à lista.
+- ✅ **`/animais`**: `useSearchParams` + `Suspense`; foco e opcional `q` na identificação; limpeza da query na barra de endereços (`?focusSearch=1` continua útil para ir à lista com foco no filtro).
+
+### **2026-05-10 - Lupa e atalho mobile: mesma UX que «Busca por identificação»**
+
+- ✅ **`AnimalSearchPanel.tsx`** + **`AnimalSearchDialogContext.tsx`** + provider em **`Providers.tsx`**: diálogo global com resumo e «Abrir detalhes do animal».
+- ✅ **`Header.tsx`**: lupa mobile/desktop e item do drawer chamam `openDialog()` (em vez de só ir à lista).
+- ✅ **`Dashboard.tsx`**: primeira linha «Buscar animal» na lista mobile abre o mesmo diálogo (com `isPathAllowedForPerfil` em `/animais`).
+- ✅ **`AnimalSearchHome.tsx`**: removido `useEffect` que sincronizava estado com breakpoint (lint `react-hooks/set-state-in-effect`).
+- ✅ **`AnimalSearchPanel.tsx`**: busca por debounce (~400 ms) + sequência contra resposta atrasada; **Enter** força busca imediata; botão «Pesquisar» removido.
 
 ### **2026-05-07 - Restrições de leite (descarte até laboratório)**
 
@@ -589,6 +616,6 @@
 
 ---
 
-**Última atualização**: 2026-05-08
+**Última atualização**: 2026-05-10
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável (partos, cios, coberturas CRUD) | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live (bloqueado para FUNCIONARIO) | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
 **Próxima revisão**: 2026-05-13
