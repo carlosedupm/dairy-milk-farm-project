@@ -573,6 +573,17 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 - **Formulários**: `space-y-5` entre grupos; botão de envio `size="lg"`; mensagens de erro em `text-base`; tabelas com `overflow-x-auto` em mobile; botões Editar/Excluir nas tabelas com `size="default"` para toque.
 - **Home autenticada**: Página inicial exibe atalhos grandes (Ver fazendas, Ver animais, Registrar produção) em cards com ícones e botão de ação; sem redirecionamento automático para listagem.
 
+#### **Zoom do navegador, escala de texto do sistema e reflow**
+
+- **Premissa**: Toda tela e todo componente de tela deve assumir **zoom do browser > 100%** e/ou **fonte do SO ampliada** (ex.: Android “tamanho da fonte”, iOS em apps WebView). Testar só breakpoints `sm`/`md`/`lg` **não** substitui este cenário; no **mobile** o ecrã útil encolhe depressa e conteúdo pode ficar **fora de vista ou cortado** se o layout for rígido.
+- **Objetivo**: Informação essencial **legível e alcançável** sem depender de um “viewport ideal”. Alinhar mentalmente a **WCAG 1.4.4** (redimensionar texto até 200% sem perda de conteúdo ou função) e a **reflow** (largura estreita + zoom como combinação comum).
+- **Layout fluido e rolagem**: Preferir fluxo que **reflow** verticalmente; evitar empilhar várias barras **`fixed`/`sticky`** que reduzam a área útil a quase zero com zoom alto. Onde houver painéis fixos (header, FAB, barras de ferramentas), garantir que o corpo principal ainda **role** e mostre o essencial.
+- **Flex/grid e overflow**: Se conteúdo “desaparece” ou fica clipado, rever a cadeia de **overflow** nos filhos; em flex aninhado, **`min-h-0`** (ou equivalente) nos filhos que devem encolher permite **scroll interno** em vez de corte silencioso.
+- **Modais, sheets e drawers**: Corpo com **altura máxima relativa ao viewport** (`max-h-[…dvh]` / `max-h-[…vh]` ou padrão Shadcn já usado) + **`overflow-y-auto`** na zona de conteúdo; ações críticas (confirmar, gravar) devem permanecer **alcançáveis após rolar** quando não couberem acima da dobra. Não assumir altura fixa de viewport nem diálogo “encaixado” só a 375px.
+- **Truncamento** (`truncate`, `line-clamp`): Reservado a texto **não crítico**; para dados importantes (identificações, datas, estados de negócio), oferecer **“ver mais”**, **tooltip** (desktop) ou **detalhe em dialog** — padrão já usado em módulos como Folgas.
+- **Tabelas**: Manter **`overflow-x-auto`** onde fizer sentido; com zoom alto o scroll horizontal pode ser inevitável — garantir **colunas essenciais** visíveis primeiro ou **vista alternativa em mobile** (cards, colunas prioritárias) para que o utilizador não dependa só de scroll lateral sem contexto.
+- **Checklist para IA e revisão**: Antes de dar por concluída uma UI nova ou alterada, validar mentalmente **zoom ~200%** + **largura estreita** (mobile); verificar que nada crítico fica só fora do ecrã sem rolagem ou ação para aceder.
+
 ## 📊 Padrões de Monitoramento
 
 ### **Observability**
@@ -612,6 +623,6 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Versão dos Padrões**: 2.19 (Go + Next.js) — escopo do envelope de resposta/erro explicitado + checklist operacional de sincronização do memory bank.
+**Versão dos Padrões**: 2.20 (Go + Next.js) — zoom do navegador, escala de texto do SO e reflow na secção UX.
 
-**Última atualização**: 2026-05-10 (`AnimalSearchPanel` — debounce + anti-resposta obsoleta; DRY home + diálogo global)
+**Última atualização**: 2026-05-11 (Padrões de UX: zoom, reflow e checklist para telas — `systemPatterns.md`)

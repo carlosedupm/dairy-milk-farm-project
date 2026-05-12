@@ -20,8 +20,8 @@ export function AnimalSearchHome() {
   const painelVisivel = isDesktop || mobilePainelAberto;
 
   return (
-    <Card>
-      <CardHeader className="space-y-3">
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="min-w-0 space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0 space-y-1">
             <CardTitle>Busca por identificação</CardTitle>
@@ -55,7 +55,7 @@ export function AnimalSearchHome() {
         </div>
       </CardHeader>
       {painelVisivel ? (
-        <CardContent>
+        <CardContent className="min-w-0">
           <AnimalSearchPanel />
         </CardContent>
       ) : null}

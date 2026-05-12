@@ -132,8 +132,8 @@ export function AnimalSearchPanel({
   }
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleSubmitRapido} className="space-y-1.5">
+    <div className="min-w-0 space-y-4">
+      <form onSubmit={handleSubmitRapido} className="min-w-0 space-y-1.5">
         <Input
           value={identificacao}
           onChange={(event) => setIdentificacao(event.target.value)}
@@ -141,6 +141,7 @@ export function AnimalSearchPanel({
           aria-label="Pesquisar animal por identificação"
           autoFocus={autoFocus}
           aria-busy={loadingBusca || loadingContexto}
+          className="min-w-0"
         />
         <p className="text-xs text-muted-foreground">
           {loadingBusca || loadingContexto
@@ -174,7 +175,7 @@ export function AnimalSearchPanel({
                 variant={
                   contexto?.animal.id === animal.id ? "default" : "outline"
                 }
-                className="justify-start"
+                className="h-auto min-h-11 justify-start whitespace-normal py-2.5 text-left break-words"
                 onClick={() => handleSelecionarAnimal(animal.id)}
                 disabled={loadingContexto}
               >
@@ -190,16 +191,16 @@ export function AnimalSearchPanel({
       ) : null}
 
       {contexto ? (
-        <div className="space-y-2 rounded-lg border p-4">
+        <div className="min-w-0 space-y-2 rounded-lg border p-4">
           {contexto.restricao_leite_ativa ? (
             <div
               className="rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100"
               role="status"
             >
-              <p className="font-medium">
+              <p className="font-medium break-words">
                 Leite para descarte (aguardando laboratório)
               </p>
-              <p className="mt-1">
+              <p className="mt-1 break-words">
                 Motivo:{" "}
                 {MOTIVO_RESTRICAO_LEITE_LABELS[
                   contexto.restricao_leite_ativa.motivo as MotivoRestricaoLeite
@@ -210,21 +211,21 @@ export function AnimalSearchPanel({
               </p>
             </div>
           ) : null}
-          <p className="font-medium text-foreground">
+          <p className="font-medium break-words text-foreground">
             Animal: {contexto.animal.identificacao}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="break-words text-sm text-muted-foreground">
             Saúde: {contexto.animal.status_saude ?? "Não informado"} |
             Reprodutivo:{" "}
             {contexto.animal.status_reprodutivo ?? "Não informado"}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="break-words text-sm text-muted-foreground">
             Data de nascimento:{" "}
             {contexto.animal.data_nascimento
               ? formatDatePtBr(contexto.animal.data_nascimento)
               : "Não informada"}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="break-words text-sm text-muted-foreground">
             Produção: {formatNumberPtBr(contexto.resumo_producao.total_litros)} L
             total | média{" "}
             {formatNumberPtBr(contexto.resumo_producao.media_litros)} L |

@@ -6,6 +6,8 @@ const config: Config = {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    // UI com classes Tailwind em providers (ex.: Dialog global em AnimalSearchDialogContext)
+    './src/contexts/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
   	extend: {

@@ -112,6 +112,7 @@ Pages/App → Components → Services → API (Backend)
 3. **API Calls**: Usar TanStack Query para gerenciamento de estado
 4. **Styling**: Tailwind CSS para estilização
 5. **Type Safety**: TypeScript strict mode habilitado
+6. **Zoom e reflow**: Toda UI deve assumir zoom do navegador e/ou fonte do SO ampliados; evitar layouts que cortem informação essencial (especialmente no mobile). Detalhe e checklist em `memory-bank/systemPatterns.md` — secção **Padrões de UX e Acessibilidade** (zoom, reflow, modais, tabelas).
 
 ### API Design
 
@@ -206,5 +207,5 @@ Pages/App → Components → Services → API (Backend)
 
 ---
 
-**Última atualização**: 2026-05-06
-**Versão**: 2.1 (Go + Next.js — catálogo `docs/business/`)
+**Última atualização**: 2026-05-11
+**Versão**: 2.1 (Go + Next.js — catálogo `docs/business/`; padrão de zoom/reflow na UX documentado em `systemPatterns.md`)

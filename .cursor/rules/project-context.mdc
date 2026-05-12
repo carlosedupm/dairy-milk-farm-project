@@ -74,7 +74,7 @@ Consulte sempre **`memory-bank/activeContext.md`** e **`memory-bank/progress.md`
 
 ## Quando Consultar Documentação Específica
 
-- **Implementando nova funcionalidade**: `activeContext.md` + `systemPatterns.md` + `docs/business/` se houver regras de domínio
+- **Implementando nova funcionalidade**: `activeContext.md` + `systemPatterns.md` + `docs/business/` se houver regras de domínio; em **frontend**, aplicar também **zoom do navegador, escala de texto e reflow** conforme `systemPatterns.md` (secção **Padrões de UX e Acessibilidade** — subtítulo zoom/reflow)
 - **Adicionando nova dependência**: `techContext.md` + `systemPatterns.md`
 - **Criando novo endpoint**: `systemPatterns.md` + `docs/postman/`
 - **Resolvendo problema**: `activeContext.md` (problemas conhecidos)

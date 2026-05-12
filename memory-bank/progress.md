@@ -56,10 +56,10 @@
 ### **Documentação (✅ 96%)**
 
 - [x] **README.md**: Atualizado para nova stack
-- [x] **Memory bank**: Atualizado (incl. Folgas 5x1 — regras de negócio, UX mobile, geração pelo mês visível — 2026-04-01; TestSprite API — 2026-04-21)
+- [x] **Memory bank**: Atualizado (incl. Folgas 5x1 — regras de negócio, UX mobile, geração pelo mês visível — 2026-04-01; TestSprite API — 2026-04-21; **zoom/reflow UX** — 2026-05-11)
   - [x] `activeContext.md`: Estado atual refletindo migração
   - [x] `techContext.md`: Stack Go + Next.js documentada
-  - [x] `systemPatterns.md`: Padrões atualizados (incl. DRY + composition + abstração de lógica no frontend, v2.16)
+  - [x] `systemPatterns.md`: Padrões atualizados (incl. DRY + composition + abstração de lógica no frontend; **zoom/reflow e checklist UX**, v2.20)
   - [x] `deploy-notes.md`: Deploy atualizado
 - [x] **AGENTS.md**: Diretrizes atualizadas para nova stack
 
@@ -226,6 +226,13 @@
 - ✅ **`Dashboard.tsx`**: primeira linha «Buscar animal» na lista mobile abre o mesmo diálogo (com `isPathAllowedForPerfil` em `/animais`).
 - ✅ **`AnimalSearchHome.tsx`**: removido `useEffect` que sincronizava estado com breakpoint (lint `react-hooks/set-state-in-effect`).
 - ✅ **`AnimalSearchPanel.tsx`**: busca por debounce (~400 ms) + sequência contra resposta atrasada; **Enter** força busca imediata; botão «Pesquisar» removido.
+
+### **2026-05-11 - Documentação: zoom, reflow e UX em telas**
+
+- ✅ **`memory-bank/systemPatterns.md`**: nova subsecção **Zoom do navegador, escala de texto do sistema e reflow** em **Padrões de UX e Acessibilidade** (premissa zoom/fonte SO, WCAG 1.4.4/reflow, layout fluido, flex/`min-h-0`, modais com scroll, truncamento, tabelas, checklist para IA); versão dos padrões **2.20**.
+- ✅ **`AGENTS.md`**: bullet em Código TypeScript/Next.js apontando para `systemPatterns.md`.
+- ✅ **`.cursor/rules/project-context.mdc`**: entrada em **Implementando nova funcionalidade** para aplicar zoom/reflow no frontend conforme `systemPatterns.md`.
+- ✅ **Fluxo «Buscar por identificação» (código)**: `AnimalSearchDialogContext` — ancoragem ao topo + `translate-y-0`, `max-h` com `dvh`, cabeçalho fixo e corpo com `min-h-0` + `overflow-y-auto`; `AnimalSearchPanel` / `AnimalSearchHome` — `min-w-0`, `break-words` no resumo, botões de resultado multilinha.
 
 ### **2026-05-07 - Restrições de leite (descarte até laboratório)**
 
@@ -616,6 +623,6 @@
 
 ---
 
-**Última atualização**: 2026-05-10
+**Última atualização**: 2026-05-11
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável (partos, cios, coberturas CRUD) | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live (bloqueado para FUNCIONARIO) | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
 **Próxima revisão**: 2026-05-13
