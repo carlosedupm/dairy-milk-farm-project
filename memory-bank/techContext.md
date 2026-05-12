@@ -21,6 +21,7 @@
 - **React**: 19.2.3 (compatível com Next.js 16)
 - **Linguagem**: TypeScript 5.7.2
 - **Estilização**: Tailwind CSS 3.4.17
+- **Tailwind `content`**: `frontend/tailwind.config.ts` inclui `src/app`, `src/components`, `src/pages` e **`src/contexts`** — ficheiros em `contexts/` com `className` (ex.: `AnimalSearchDialogContext`) devem estar no scan; caso contrário utilitários arbitrários não entram no CSS e `tailwind-merge` pode deixar o DOM sem `width`/`max-height` efetivos (diálogo “invisível” por cima do overlay).
 - **Componentes**: Shadcn/UI (compatível com React 19)
 - **Gerenciamento de Estado**: TanStack Query 5.x
 - **Cliente HTTP**: Axios 1.7.9
@@ -258,5 +259,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-07
+**Última atualização**: 2026-05-11
 **Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), restrições de leite (migration 20; `GET .../animais/em-lactacao` + BR-LEITE-005), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub), testes API TestSprite (`testsprite_tests/`)
