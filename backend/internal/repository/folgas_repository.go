@@ -29,7 +29,7 @@ func (r *FolgasRepository) UsuarioTemFazenda(ctx context.Context, usuarioID, faz
 }
 
 // UsuarioTemFazendaComPerfilPermitido valida se o usuário está vinculado à fazenda
-// e também se o perfil dele está entre FUNCIONARIO e GERENTE (ou GESTAO, para compatibilidade).
+// e também se o perfil dele está entre FUNCIONARIO, GERENTE, PROPRIETARIO (ou GESTAO, para compatibilidade).
 func (r *FolgasRepository) UsuarioTemFazendaComPerfilPermitido(ctx context.Context, usuarioID, fazendaID int64) (bool, error) {
 	var ok bool
 	err := r.db.QueryRow(ctx, `
@@ -40,7 +40,7 @@ func (r *FolgasRepository) UsuarioTemFazendaComPerfilPermitido(ctx context.Conte
 			WHERE uf.usuario_id = $1
 			  AND uf.fazenda_id = $2
 			  AND u.enabled = true
-			  AND u.perfil IN ('FUNCIONARIO', 'GERENTE', 'GESTAO')
+			  AND u.perfil IN ('FUNCIONARIO', 'GERENTE', 'GESTAO', 'PROPRIETARIO')
 		)
 	`, usuarioID, fazendaID).Scan(&ok)
 	return ok, err

@@ -64,7 +64,7 @@ func IsValidMotivoRestricaoLeite(m string) bool {
 // PodeLiberarRestricaoLeite perfis que podem encerrar episódio após laboratório (não FUNCIONARIO).
 func PodeLiberarRestricaoLeite(perfil string) bool {
 	switch perfil {
-	case PerfilUser, PerfilAdmin, PerfilDeveloper, PerfilGerente, PerfilGestao:
+	case PerfilUser, PerfilAdmin, PerfilDeveloper, PerfilGerente, PerfilGestao, PerfilProprietario:
 		return true
 	default:
 		return false

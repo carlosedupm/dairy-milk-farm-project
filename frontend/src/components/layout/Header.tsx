@@ -4,12 +4,23 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
+import {
+  UserIdentitySummary,
+  userIdentityAriaLabel,
+  userIdentityInitials,
+} from "@/components/layout/UserIdentitySummary";
 import { cn } from "@/lib/utils";
 import {
   Building2,
@@ -24,6 +35,8 @@ import {
   Wheat,
   CalendarDays,
   Search,
+  Plus,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -46,6 +59,7 @@ const AREA_ICON: Record<AppArea, LucideIcon> = {
 
 export function Header() {
   const { user, logout } = useAuth();
+  const { fazendaAtiva } = useFazendaAtiva();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER";
@@ -54,11 +68,17 @@ export function Header() {
   });
   const showNavLinks =
     !!user && (isAdmin || (!fazendasLoading && fazendas.length > 0));
+  const isProprietario = user?.perfil === "PROPRIETARIO";
 
   const navAreas = getNavAreasForPerfil(user?.perfil);
   const showBuscaAnimal =
     !!user && isPathAllowedForPerfil(user.perfil, "/animais");
   const animalSearch = useAnimalSearchDialog();
+
+  const fazendaNomeResumo = fazendaAtiva?.nome?.trim() || null;
+  const mobileIdentityLabel = user
+    ? userIdentityAriaLabel(user, fazendaNomeResumo)
+    : "";
 
   const isActive = (path: string) =>
     pathname === path || pathname?.startsWith(path + "/");
@@ -171,15 +191,86 @@ export function Header() {
             ) : null}
             <ThemeToggle />
             {user ? (
-              <>
-                <FazendaSelector />
-                <span className="text-sm text-muted-foreground truncate">
-                  {user.nome?.trim() || user.email}
-                </span>
-                <Button variant="outline" size="sm" onClick={logout}>
-                  Sair
-                </Button>
-              </>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="inline-flex h-9 max-w-[min(240px,28vw)] shrink-0 items-center gap-2 px-2 font-normal min-w-0"
+                    aria-label={userIdentityAriaLabel(user, fazendaNomeResumo)}
+                    aria-haspopup="dialog"
+                  >
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold uppercase text-foreground"
+                      aria-hidden
+                    >
+                      {userIdentityInitials(user)}
+                    </span>
+                    <span className="min-w-0 truncate text-left text-sm">
+                      {user.nome?.trim() || user.email}
+                    </span>
+                    <ChevronDown
+                      className="h-4 w-4 shrink-0 opacity-60"
+                      aria-hidden
+                    />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  sideOffset={8}
+                  className="z-50 w-[min(20rem,calc(100vw-2rem))] max-h-[min(32rem,72dvh)] overflow-y-auto p-4"
+                >
+                  <h2 className="sr-only">Conta e fazenda</h2>
+                  <div className="flex flex-col gap-4">
+                    <UserIdentitySummary
+                      user={user}
+                      variant="panel"
+                      fazendaAtivaNome={
+                        isAdmin
+                          ? fazendaNomeResumo
+                          : fazendasLoading
+                            ? null
+                            : fazendas.length === 0
+                              ? fazendaNomeResumo
+                              : null
+                      }
+                      withAccessibleLabel={false}
+                    />
+                    {!isAdmin &&
+                    (fazendasLoading ||
+                      fazendas.length > 0 ||
+                      isProprietario) ? (
+                      <>
+                        <FazendaSelector density="drawer" />
+                        {isProprietario ? (
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="h-10 w-full justify-center gap-1.5"
+                          >
+                            <Link href="/fazendas/criar-minha">
+                              <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                              Nova fazenda
+                            </Link>
+                          </Button>
+                        ) : null}
+                      </>
+                    ) : null}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-10 w-full"
+                      onClick={() => {
+                        void logout();
+                      }}
+                    >
+                      Sair
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             ) : (
               <>
                 <Button size="sm" asChild>
@@ -192,7 +283,7 @@ export function Header() {
             )}
           </div>
 
-          {/* Mobile: busca rápida a animais + menu */}
+          {/* Mobile: busca + identidade compacta + menu */}
           <div className="flex lg:hidden items-center gap-1">
             {showBuscaAnimal && animalSearch ? (
               <Button
@@ -204,6 +295,15 @@ export function Header() {
               >
                 <Search className="h-5 w-5" />
               </Button>
+            ) : null}
+            {user ? (
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-semibold uppercase text-foreground"
+                aria-label={mobileIdentityLabel}
+                title={mobileIdentityLabel}
+              >
+                {userIdentityInitials(user)}
+              </div>
             ) : null}
             <Button
               variant="ghost"
@@ -244,6 +344,35 @@ export function Header() {
               </Button>
             </div>
             <nav className="flex flex-col gap-1 p-4 overflow-auto">
+              {user ? (
+                <section
+                  className="mb-2 space-y-3 border-b border-border pb-4"
+                  aria-label="Conta e fazenda"
+                >
+                  <UserIdentitySummary
+                    user={user}
+                    variant="panel"
+                    fazendaAtivaNome={fazendaNomeResumo}
+                  />
+                  {!isAdmin ? (
+                    <FazendaSelector density="drawer" />
+                  ) : null}
+                  {isProprietario ? (
+                    <Link
+                      href="/fazendas/criar-minha"
+                      className="flex min-h-[44px] w-full items-center gap-2 rounded-md py-3 px-3 text-left text-foreground hover:bg-accent"
+                      onClick={closeMobileMenu}
+                    >
+                      <Plus
+                        className="h-5 w-5 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      Nova fazenda
+                    </Link>
+                  ) : null}
+                </section>
+              ) : null}
+
               <div className="flex items-center gap-2 py-2 px-3">
                 <ThemeToggle />
                 <span className="text-sm text-muted-foreground">
@@ -272,25 +401,17 @@ export function Header() {
                 </>
               )}
               {user ? (
-                <>
-                  <div className="py-2">
-                    <FazendaSelector />
-                  </div>
-                  <p className="py-2 px-3 text-sm text-muted-foreground truncate">
-                    {user.nome?.trim() || user.email}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 justify-center"
-                    onClick={() => {
-                      closeMobileMenu();
-                      logout();
-                    }}
-                  >
-                    Sair
-                  </Button>
-                </>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 justify-center"
+                  onClick={() => {
+                    closeMobileMenu();
+                    logout();
+                  }}
+                >
+                  Sair
+                </Button>
               ) : (
                 <div className="mt-2 flex flex-col gap-2">
                   <Button

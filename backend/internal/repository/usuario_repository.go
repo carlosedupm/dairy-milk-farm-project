@@ -119,6 +119,53 @@ func (r *UsuarioRepository) CountByPerfil(ctx context.Context, perfil string) (i
 	return n, err
 }
 
+// ListPendentesProvisao lista utilizadores USER ativos com contagem de fazendas vinculadas (fila de provisão para admin).
+func (r *UsuarioRepository) ListPendentesProvisao(ctx context.Context, limit int) ([]models.UsuarioPendenteProvisao, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	query := `
+		SELECT u.id, u.nome, u.email, COUNT(uf.fazenda_id)::bigint AS fazendas_count, u.created_at
+		FROM usuarios u
+		LEFT JOIN usuarios_fazendas uf ON uf.usuario_id = u.id
+		WHERE u.perfil = $1 AND u.enabled = true
+		GROUP BY u.id, u.nome, u.email, u.created_at
+		ORDER BY u.created_at DESC
+		LIMIT $2
+	`
+	rows, err := r.db.Query(ctx, query, models.PerfilUser, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []models.UsuarioPendenteProvisao
+	for rows.Next() {
+		var row models.UsuarioPendenteProvisao
+		if err := rows.Scan(&row.ID, &row.Nome, &row.Email, &row.FazendasCount, &row.CreatedAt); err != nil {
+			return nil, err
+		}
+		if row.FazendasCount == 0 {
+			row.TipoPendencia = "SEM_VINCULO_FAZENDA"
+		} else {
+			row.TipoPendencia = "PERFIL_OPERACIONAL"
+		}
+		out = append(out, row)
+	}
+	return out, rows.Err()
+}
+
+// CountPendentesProvisao conta utilizadores USER ativos (mesmo critério da fila de provisão).
+func (r *UsuarioRepository) CountPendentesProvisao(ctx context.Context) (int64, error) {
+	query := `SELECT COUNT(*) FROM usuarios WHERE perfil = $1 AND enabled = true`
+	var n int64
+	err := r.db.QueryRow(ctx, query, models.PerfilUser).Scan(&n)
+	return n, err
+}
+
 func (r *UsuarioRepository) ExistsByEmail(ctx context.Context, email string, excludeID int64) (bool, error) {
 	query := `SELECT EXISTS(SELECT 1 FROM usuarios WHERE email = $1 AND id != $2)`
 	var exists bool

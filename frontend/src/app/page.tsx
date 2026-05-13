@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getDefaultLandingPath } from "@/config/appAccess";
+import { getAreasMode, getDefaultLandingPath } from "@/config/appAccess";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { LandingPage } from "@/components/landing/LandingPage";
 import { Dashboard } from "@/components/dashboard/Dashboard";
@@ -17,7 +17,10 @@ export default function Home() {
     if (hasRedirected.current) return;
     if (!isReady || !isAuthenticated) return;
     
-    // Se está autenticado, verificar se o landing path padrão não é "/"
+    // USER pendente usa "/" (Dashboard de provisão); não empurrar para /onboarding senão entra em ciclo com /fazendas.
+    if (getAreasMode(user?.perfil) === "pending") {
+      return;
+    }
     const landing = getDefaultLandingPath(user?.perfil);
     if (landing !== "/") {
       hasRedirected.current = true;

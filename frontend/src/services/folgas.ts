@@ -75,7 +75,8 @@ export function podeGerenciarFolgas(perfil: string | undefined): boolean {
     perfil === "ADMIN" ||
     perfil === "DEVELOPER" ||
     perfil === "GERENTE" ||
-    perfil === "GESTAO"
+    perfil === "GESTAO" ||
+    perfil === "PROPRIETARIO"
   );
 }
 

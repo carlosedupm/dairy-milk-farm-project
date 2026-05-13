@@ -30,6 +30,37 @@ export type ListUsuariosResponse = {
   total: number;
 };
 
+export type TipoPendenciaProvisao =
+  | "SEM_VINCULO_FAZENDA"
+  | "PERFIL_OPERACIONAL";
+
+export type UsuarioPendenteProvisao = {
+  id: number;
+  nome: string;
+  email: string;
+  fazendas_count: number;
+  tipo_pendencia: TipoPendenciaProvisao;
+  created_at: string;
+};
+
+export type ListPendentesProvisaoResponse = {
+  pendentes: UsuarioPendenteProvisao[];
+  total: number;
+};
+
+export async function listPendentesProvisao(params?: {
+  limit?: number;
+}): Promise<ListPendentesProvisaoResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit != null) searchParams.set("limit", String(params.limit));
+  const qs = searchParams.toString();
+  const url = `/api/v1/admin/usuarios/pendentes-provisao${qs ? `?${qs}` : ""}`;
+  const { data } = await api.get<ApiResponse<ListPendentesProvisaoResponse>>(url);
+  const payload = data?.data;
+  if (!payload) return { pendentes: [], total: 0 };
+  return payload;
+}
+
 export async function listUsuarios(params?: {
   limit?: number;
   offset?: number;

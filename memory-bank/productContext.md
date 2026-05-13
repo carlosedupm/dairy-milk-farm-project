@@ -31,10 +31,16 @@ Ser a plataforma de referência em gestão leiteira no Brasil, atingindo 1.000+ 
 - **Performance**: Experiência rápida e responsiva
 - **Inovação**: Preparado para integração com IA e IoT
 
+### **Perfis e papéis (produto)**
+
+- **Administrador da plataforma** (perfis técnicos `ADMIN` / `DEVELOPER`): opera o CeialMilk ao nível do sistema — provisão de utilizadores, listagem global de fazendas, área `/admin`.
+- **Titular da exploração** (perfil técnico `PROPRIETARIO`): responsável pela fazenda no produto; acesso operacional completo **somente** às fazendas vinculadas em `usuarios_fazendas`. Pode registar **nova** exploração via `/fazendas/criar-minha` → `POST /api/v1/me/fazendas` quando já é titular, ou ser atribuído e vinculado pelo administrador da plataforma.
+- **Gerente** (`GERENTE`): gestão operacional por fazenda (vínculo obrigatório); não confundir com administrador da plataforma.
+
 ## 👥 Jornada do Usuário
 
 ### **Proprietário da Fazenda**
-1. **Cadastro**: Registro simples da fazenda e dados básicos
+1. **Cadastro**: Registo na aplicação; opcionalmente **registar a própria fazenda** (passa a titular `PROPRIETARIO`) ou aguardar vínculo pelo administrador da plataforma
 2. **Visão Geral**: Dashboard com indicadores-chave (produção, saúde, financeiro)
 3. **Relatórios**: Análises automáticas de performance
 4. **Decisões**: Insights para melhorar rentabilidade
@@ -125,5 +131,5 @@ Módulo para **organizar folgas da equipe por fazenda** com rodízio **5x1**. O 
 
 ---
 
-**Última atualização**: 2026-05-06
-**Versão do Contexto**: 2.2 (Go + Next.js — Folgas: detalhe em docs/business/folgas.md)
+**Última atualização**: 2026-05-12 (USER não regista fazenda; titular via admin + fluxo PROPRIETARIO)
+**Versão do Contexto**: 2.3 (perfil PROPRIETARIO; distinção admin da plataforma vs titular; ver `docs/business/acessos-perfil.md` BR-ACESSO-011 a 013)

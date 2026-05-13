@@ -25,7 +25,7 @@
 
 ### **Migração Arquitetural (✅ 65%)**
 
-- [x] **Vínculo usuário–fazenda**: Tabela `usuarios_fazendas` (N:N); GET /api/v1/me/fazendas; GET/PUT /api/v1/admin/usuarios/:id/fazendas; fazenda única automática em formulários e home; admin atribui fazendas na edição de usuário; perfil não editável para ADMIN/DEVELOPER
+- [x] **Vínculo usuário–fazenda**: Tabela `usuarios_fazendas` (N:N) com `papel` TITULAR|OPERACIONAL (migration 21); GET /api/v1/me/fazendas com `papel`; POST /api/v1/me/fazendas (apenas **PROPRIETARIO** — vínculo TITULAR); GET/PUT /api/v1/admin/usuarios/:id/fazendas (MVP: vínculos OPERACIONAL); fazenda única automática em formulários e home; admin atribui fazendas na edição de usuário; perfil não editável para ADMIN/DEVELOPER; perfil **PROPRIETARIO** no admin e isolamento em folgas (sem atalho sem vínculo para GERENTE/PROPRIETARIO)
 - [x] **Limpeza**: Remoção completa de código Java/Spring legado
 - [x] **Documentação**: Memory bank atualizado para nova stack
 - [x] **Estrutura Monorepo**: Pastas `/backend` e `/frontend` criadas
@@ -56,10 +56,10 @@
 ### **Documentação (✅ 96%)**
 
 - [x] **README.md**: Atualizado para nova stack
-- [x] **Memory bank**: Atualizado (incl. Folgas 5x1 — regras de negócio, UX mobile, geração pelo mês visível — 2026-04-01; TestSprite API — 2026-04-21; **zoom/reflow UX** — 2026-05-11)
+- [x] **Memory bank**: Atualizado (incl. Folgas 5x1 — regras de negócio, UX mobile, geração pelo mês visível — 2026-04-01; TestSprite API — 2026-04-21; **zoom/reflow UX** — 2026-05-11; **Header identidade + fazenda ativa** — 2026-05-12)
   - [x] `activeContext.md`: Estado atual refletindo migração
   - [x] `techContext.md`: Stack Go + Next.js documentada
-  - [x] `systemPatterns.md`: Padrões atualizados (incl. DRY + composition + abstração de lógica no frontend; **zoom/reflow e checklist UX**, v2.20)
+  - [x] `systemPatterns.md`: Padrões atualizados (incl. DRY + composition + abstração de lógica no frontend; **zoom/reflow e checklist UX**; **Header Responsivo** com `UserIdentitySummary` e `FazendaSelector` estendido — 2026-05-12)
   - [x] `deploy-notes.md`: Deploy atualizado
 - [x] **AGENTS.md**: Diretrizes atualizadas para nova stack
 
@@ -90,10 +90,10 @@
 - [x] **Assistente – feedback "pode falar"**: Faixa visual e aria-live quando o assistente está aguardando a fala (fluxo "Deseja mais?" e dialog de confirmação); estados aguardandoMaisOperacao, micAbreEmBreve, preparandoOuvirConfirmacao; TTS "Pode falar." opcional
 - [x] **Assistente em linguagem natural**: **FAB (botão flutuante)** no canto inferior direito, visível em telas autenticadas para perfis com acesso ao assistente (**`FUNCIONARIO` oculto/bloqueado** no estado atual); um toque abre o modal do assistente. Estado em `AssistenteContext`; modal em `AssistenteDialog` no layout; **assistente removido do Header** (desktop e mobile). AssistenteInput no Dialog — acessível em qualquer página permitida. **Contexto do usuário e do sistema**: backend Interpretar recebe user_id, perfil e nome; AssistenteService carrega **fazendas vinculadas ao usuário** (GetByUsuarioID) e injeta no prompt do Gemini (nome, perfil, lista de fazendas id+nome); quando o usuário tem apenas uma fazenda e não menciona fazenda em cadastrar_animal, listar_animais_fazenda ou consultar_animais_fazenda, o LLM inclui fazenda_id e o backend usa resolveFazendaForUser (fallback uma fazenda + validação de acesso); intents por perfil (USER só fazendas; ADMIN/DEVELOPER futuros intents admin). **Intents**: Fazendas: cadastrar, listar, buscar, editar, excluir. **Animais**: consultar_animais_fazenda, listar_animais_fazenda, detalhar_animal, **cadastrar_animal** (fazenda + identificação + opcionais), **editar_animal** (id ou identificação + campos), **excluir_animal**, **registrar_producao_animal** (animal + quantidade litros). Redirect: animal → /animais/:id; animal_id → /animais/:id; fazenda_id → /fazendas/:id/animais. Interpretar (Gemini) + executar (FazendaService + AnimalService para consulta de animais), dialog de confirmação, entrada por voz (Web Speech API pt-BR). **Voz em modo contínuo**: reconhecimento contínuo, acúmulo de transcrição, finalização por clique no microfone ou timeout de silêncio (2,5 s). **Retorno em voz (TTS)** e **confirmação por voz** (sim/não). Persistência na edição (repository RowsAffected + ID), erro exibido dentro do dialog (error.details)
 - [x] **Assistente Live sem fone (barge-in priorizado)**: cancelamento precoce do TTS ao detectar fala do usuário (interim), `getUserMedia` com `echoCancellation`/`noiseSuppression`/`autoGainControl`, janela anti-eco maior no mobile e reabertura do microfone sincronizada com fim do TTS; protocolo WS com `type: "interrupt"` + cancelamento de turno no backend para evitar respostas atrasadas.
-- [x] **Layout e DRY**: PageContainer (variantes default, narrow, wide, centered) em todas as páginas; BackLink para "Voltar"; getApiErrorMessage (lib/errors.ts) centralizado; ApiResponse<T> em api.ts; Header responsivo com menu hamburger em mobile
-- [x] **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER); constraint unicidade DEVELOPER (migração 8); área admin `/admin/usuarios` (listagem, criar, editar, ativar/desativar); RequireAdmin; link Admin no Header para ADMIN/DEVELOPER
+- [x] **Layout e DRY**: PageContainer (variantes default, narrow, wide, centered) em todas as páginas; BackLink para "Voltar"; getApiErrorMessage (lib/errors.ts) centralizado; ApiResponse<T> em api.ts; **Header** responsivo com menu hamburger em mobile, **`UserIdentitySummary`** (iniciais, e-mail secundário, fazenda no `aria-label`), **`FazendaSelector`** (uma fazenda = cartão só leitura; várias = Select com a11y; loading), secção **Conta e fazenda** no topo do drawer e avatar compacto na barra mobile
+- [x] **Módulo Administrador**: Perfis estruturados (USER, ADMIN, DEVELOPER); constraint unicidade DEVELOPER (migração 8); área admin `/admin/usuarios` (listagem, criar, editar, ativar/desativar); `GET /api/v1/admin/usuarios/pendentes-provisao` + painel de contas **USER** pendentes no topo da listagem; RequireAdmin; link Admin no Header para ADMIN/DEVELOPER
 - [x] **UX e Acessibilidade**: Paleta rural (modo claro e escuro) em globals.css; toggle tema no Header e menu mobile com persistência (ThemeContext, ThemeToggle); tipografia 16px e alvos de toque 44px; ícones no menu (Farm, Cow, Milk, Users, Code); formulários e listas padronizados (space-y-5, botão lg, tabelas overflow-x-auto); home com atalhos (Ver fazendas, Ver animais, Registrar produção)
-- [x] **Fluxos de acesso e onboarding**: Header oculto em `/registro`; botão "Voltar para login" no onboarding faz logout; restrição de acesso às páginas de fazenda para USER (gateway em `/fazendas`, `/fazendas/[id]` admin-only); correção de erro no `AnimalForm` ao iniciar nova criação
+- [x] **Fluxos de acesso e onboarding**: Header oculto em `/registro`; botão "Voltar para login" no onboarding faz logout; restrição de acesso às páginas de fazenda para USER (gateway em `/fazendas`, `/fazendas/[id]` admin-only); correção de erro no `AnimalForm` ao iniciar nova criação; `/onboarding` com passos numerados, FAQ (`details`) e prazos orientativos; card pós-registo e Dashboard (`USER` pending) alinhados; catálogo **BR-ACESSO-009** (fila admin) e **BR-ACESSO-010** (convites planejados) em `docs/business/acessos-perfil.md`
 - [x] **Módulo Agricultura no App Router**: dashboard `/agricultura`, CRUD de fornecedores e áreas, análises de solo, safras/culturas, custos, produções, receitas, resultado por fazenda/ano e comparativo de fornecedores, com serviços dedicados em `src/services/agricultura.ts`
 - [x] **Folgas UX mobile (refatoração + polimento)**: layout mobile reorganizado mantendo grade mensal; alertas/equidade colapsáveis; célula tocável no mobile (sem rótulo “Ver detalhes” repetido; botão explícito só `md+`); `FolgasDiaDetalhesDialog`; grade com texto mínimo e indicador compacto para fora do rodízio no celular; histórico em cards no mobile e tabela no desktop
 - [x] **Consistência com padrões de UI/erros**: `HistoryPanel` (Dev Studio) com Select Shadcn em vez de `<select>` nativo; `/admin` com `PageContainer`; erros de `useQuery` em listagens usando `getApiErrorMessage` onde havia mensagem fixa
@@ -299,7 +299,7 @@
 - ✅ **UI da rota `/admin/usuarios` padronizada**: campo de perfil no formulário de usuário migrado de `<select>` nativo para `Select` Shadcn.
 - ✅ **Perfis no admin alinhados**: inclusão de `GERENTE` no formulário de edição/criação e mapeamento completo de labels na tabela (USER, FUNCIONARIO, GERENTE, GESTAO, ADMIN, DEVELOPER).
 - ✅ **Correção de edição de perfil**: usuários com perfil `GERENTE` deixam de sofrer fallback indevido para `USER` no estado inicial do formulário.
-- ✅ **Auto-vínculo backend para fazenda única**: rotina idempotente aplicada em `POST /api/auth/register`, `POST /api/v1/admin/usuarios` e no fluxo de login/validate para backfill progressivo de usuários já cadastrados sem vínculo.
+- ✅ **Provisão de utilizadores (segurança)**: registo público → perfil `USER` sem `usuarios_fazendas`; sem auto-vínculo em login/validate/admin create; catálogo global de fazendas na API só **ADMIN/DEVELOPER**; `USER` com API mínima e UI `pending` até elevação de perfil (`docs/business/acessos-perfil.md` BR-ACESSO-007/008).
 
 ### **2026-02-15 - Melhorias Módulo Gestão Pecuária**
 
@@ -600,6 +600,12 @@
 - ✅ **UX de erro**: mensagem de falha de reconexão no Live ajustada para texto neutro/orientativo (sem afirmar internet como causa única).
 - ✅ **Catálogo de negócio**: nova regra BR-ACESSO-006 em `docs/business/acessos-perfil.md` formaliza bloqueio atual e evolução incremental por capacidades.
 
+### **2026-05-12 - Header: identidade do utilizador e fazenda ativa**
+
+- ✅ **`UserIdentitySummary`** (`frontend/src/components/layout/UserIdentitySummary.tsx`): avatar de iniciais, nome, e-mail secundário quando há nome, badge RBAC (`perfilLabels`); `userIdentityAriaLabel` e `userIdentityInitials` para reutilização no header mobile.
+- ✅ **`FazendaSelector`**: com **uma** fazenda, cartão só leitura «Fazenda ativa» + nome; com **várias**, `Select` com `sr-only`, `aria-label` no trigger e altura confortável; estado «A carregar fazendas…»; prop `density="drawer"`; não renderiza para **ADMIN**/**DEVELOPER**; `useMinhasFazendas` com `enabled` coerente.
+- ✅ **`Header.tsx`**: `useFazendaAtiva`; desktop com resumo compact + fazenda no `aria-label`; drawer com secção **Conta e fazenda** no topo (antes de tema/busca/links); avatar de iniciais na barra mobile entre busca e menu.
+
 ### **2026-05-07 - Animais: listagem global e fazenda ativa**
 
 - ✅ **`/animais`**: `listPaginated` com `fazenda_id` implícito da fazenda ativa (`useFazendaAtiva`); removido filtro explícito de fazenda na `AnimaisListToolbar`; query habilitada só com fazenda pronta; mensagens distintas para “nenhuma fazenda vinculada” vs “escolher fazenda no header” quando há várias.
@@ -623,6 +629,6 @@
 
 ---
 
-**Última atualização**: 2026-05-11
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável (partos, cios, coberturas CRUD) | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live (bloqueado para FUNCIONARIO) | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
-**Próxima revisão**: 2026-05-13
+**Última atualização**: 2026-05-12 (memory bank: Header identidade + fazenda ativa; `progress` / `systemPatterns` / `activeContext`)
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável (partos, cios, coberturas CRUD) | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live (bloqueado para FUNCIONARIO) | **Header** com identidade e fazenda ativa visíveis (mobile + desktop) | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
+**Próxima revisão**: 2026-05-19

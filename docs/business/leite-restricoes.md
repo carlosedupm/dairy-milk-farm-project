@@ -39,7 +39,7 @@ Operação em que o leite do animal **não deve ir para o tanque** (ordenha em b
 
 ### BR-LEITE-003 — Registrar vs liberar após laboratório
 
-- **Enunciado**: Qualquer usuário com acesso à fazenda pode **registrar** um novo episódio (`POST .../restricoes-leite`). Apenas perfis **não FUNCIONARIO** (USER, GERENTE, GESTAO, ADMIN, DEVELOPER) podem **liberar** o episódio após retorno do laboratório (`PATCH .../restricoes-leite/:restricaoId/liberar`), encerrando com status `LIBERADO` e preservando histórico.
+- **Enunciado**: Qualquer usuário com acesso à fazenda pode **registrar** um novo episódio (`POST .../restricoes-leite`). Apenas perfis **não FUNCIONARIO** (USER, GERENTE, GESTAO, PROPRIETARIO, ADMIN, DEVELOPER) podem **liberar** o episódio após retorno do laboratório (`PATCH .../restricoes-leite/:restricaoId/liberar`), encerrando com status `LIBERADO` e preservando histórico.
 - **Escopo**: Mesma fazenda da restrição; `liberado_em` opcional (default data atual no servidor).
 - **Efeito**: bloqueio no servidor (403 para FUNCIONARIO em liberar); registro mantido após liberação.
 - **Implementação**: `PodeLiberarRestricaoLeite` em `backend/internal/models/restricao_leite.go`; handler `RestricaoLeiteHandler.Liberar`.
@@ -55,4 +55,4 @@ Operação em que o leite do animal **não deve ir para o tanque** (ordenha em b
 
 ---
 
-**Última atualização**: 2026-05-07 (BR-LEITE-005: seleção só em lactação ativa)
+**Última atualização**: 2026-05-12 (BR-LEITE-003: inclusão de PROPRIETARIO em liberar)

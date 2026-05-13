@@ -33,4 +33,4 @@ Qualquer **mudança de comportamento de produto** ou **política de domínio** d
 
 ---
 
-**Última atualização**: 2026-05-07
+**Última atualização**: 2026-05-12

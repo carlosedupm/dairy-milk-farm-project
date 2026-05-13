@@ -413,7 +413,7 @@ function FolgasContent() {
                           <SelectItem key={u.id} value={String(u.id)}>
                             {u.perfil === "FUNCIONARIO"
                               ? u.nome
-                              : `${u.nome} (GERENTE)`}
+                              : `${u.nome} (${u.perfil === "GERENTE" ? "GERENTE" : u.perfil === "PROPRIETARIO" ? "PROPRIETÁRIO" : "GESTÃO"})`}
                           </SelectItem>
                         ))}
                     </SelectContent>

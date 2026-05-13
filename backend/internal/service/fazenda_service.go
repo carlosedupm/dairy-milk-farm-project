@@ -12,6 +12,7 @@ import (
 
 var ErrFazendaNotFound = errors.New("fazenda não encontrada")
 var ErrFazendaDuplicada = errors.New("já existe uma fazenda com esse nome e localização")
+var ErrCriarMinhaFazendaPerfil = errors.New("perfil não autorizado a criar fazenda neste fluxo")
 
 type FazendaService struct {
 	repo *repository.FazendaRepository
@@ -33,6 +34,26 @@ func (s *FazendaService) Create(ctx context.Context, fazenda *models.Fazenda) er
 		return ErrFazendaDuplicada
 	}
 	return s.repo.Create(ctx, fazenda)
+}
+
+// CreateMinhaFazenda cria nova fazenda e vincula ao utilizador apenas quando o perfil já é
+// PROPRIETARIO (titular). Perfil USER não utiliza este fluxo — provisão via administrador da plataforma.
+func (s *FazendaService) CreateMinhaFazenda(ctx context.Context, usuarioID int64, perfil string, fazenda *models.Fazenda) error {
+	if fazenda.Nome == "" {
+		return errors.New("nome é obrigatório")
+	}
+	exists, err := s.repo.ExistsByNomeAndLocalizacao(ctx, fazenda.Nome, fazenda.Localizacao)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return ErrFazendaDuplicada
+	}
+
+	if perfil != models.PerfilProprietario {
+		return ErrCriarMinhaFazendaPerfil
+	}
+	return s.repo.CreateFazendaAndLinkUsuario(ctx, fazenda, usuarioID, models.PapelVinculoTitular)
 }
 
 func (s *FazendaService) GetByID(ctx context.Context, id int64) (*models.Fazenda, error) {

@@ -17,7 +17,7 @@ var (
 	ErrFolgasConfigNotFound     = repository.ErrFolgasConfigNotFound
 	ErrFolgasSemPermissao       = errors.New("sem permissão para esta operação")
 	ErrFolgasSlotsInvalidos     = errors.New("os três usuários do rodízio devem ser distintos e vinculados à fazenda")
-	ErrFolgasPerfilNaoPermitido = errors.New("apenas usuários com perfil FUNCIONARIO e GERENTE (ou GESTAO) podem ser usados na escala de folgas")
+	ErrFolgasPerfilNaoPermitido = errors.New("apenas usuários com perfil FUNCIONARIO, GERENTE, PROPRIETARIO (ou GESTAO) podem ser usados na escala de folgas")
 	ErrFolgasConflitoFolgaDupla = errors.New("mais de um funcionário de folga neste dia: registre exceção do dia (motivo) ou justifique")
 	ErrFolgasNaoEFolga          = errors.New("você não está de folga nesta data")
 	ErrFolgasUsuarioJaFolgaDia = errors.New("já existe folga registrada para este usuário nesta data")
@@ -91,7 +91,7 @@ func UsuarioParaDia(cfg *models.FolgasEscalaConfig, d time.Time) (usuarioID int6
 }
 
 func (s *FolgasService) validarAcessoFazenda(ctx context.Context, fazendaID int64, perfil string, userID int64) error {
-	if models.PodeGerenciarFolgas(perfil) {
+	if models.PodeAcessarFazendaSemVinculoGestao(perfil) {
 		_, err := s.fazendaSvc.GetByID(ctx, fazendaID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {

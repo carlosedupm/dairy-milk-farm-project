@@ -8,6 +8,8 @@ export type Fazenda = {
   fundacao?: string | null;
   created_at: string;
   updated_at: string;
+  /** Papel no vínculo N:N (presente em GET /me/fazendas e listagens por utilizador). */
+  papel?: "TITULAR" | "OPERACIONAL" | string;
 };
 
 export type FazendaCreate = {
@@ -33,6 +35,15 @@ export async function get(id: number): Promise<Fazenda | null> {
 export async function create(payload: FazendaCreate): Promise<Fazenda> {
   const { data } = await api.post<ApiResponse<Fazenda>>(
     "/api/v1/fazendas",
+    payload
+  );
+  if (!data.data) throw new Error("Resposta inválida");
+  return data.data;
+}
+
+export async function createMinhaFazenda(payload: FazendaCreate): Promise<Fazenda> {
+  const { data } = await api.post<ApiResponse<Fazenda>>(
+    "/api/v1/me/fazendas",
     payload
   );
   if (!data.data) throw new Error("Resposta inválida");

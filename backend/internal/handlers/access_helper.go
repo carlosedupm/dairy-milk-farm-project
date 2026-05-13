@@ -42,7 +42,7 @@ func ValidateFazendaAccess(c *gin.Context, fazendaSvc *service.FazendaService, f
 }
 
 // ValidateFazendaAccessOrGestao permite ADMIN/DEVELOPER/GESTAO a qualquer fazenda existente;
-// demais perfis seguem o vínculo usuário–fazenda.
+// PROPRIETARIO, GERENTE e demais seguem apenas o vínculo em usuarios_fazendas.
 func ValidateFazendaAccessOrGestao(c *gin.Context, fazendaSvc *service.FazendaService, fazendaID int64) bool {
 	perfilVal, ok := c.Get("perfil")
 	if !ok {
@@ -50,7 +50,7 @@ func ValidateFazendaAccessOrGestao(c *gin.Context, fazendaSvc *service.FazendaSe
 		return false
 	}
 	p, _ := perfilVal.(string)
-	if models.PodeGerenciarFolgas(p) {
+	if models.PodeAcessarFazendaSemVinculoGestao(p) {
 		_, err := fazendaSvc.GetByID(c.Request.Context(), fazendaID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {

@@ -57,6 +57,26 @@ func (h *AdminHandler) ListUsuarios(c *gin.Context) {
 	response.SuccessOK(c, resp, "Usuários listados com sucesso")
 }
 
+// ListPendentesProvisao lista utilizadores USER ativos com pendência de provisão (fila para administradores).
+func (h *AdminHandler) ListPendentesProvisao(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	list, err := h.usuarioSvc.ListPendentesProvisao(c.Request.Context(), limit)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao listar contas pendentes de provisão", err.Error())
+		return
+	}
+	total, err := h.usuarioSvc.CountPendentesProvisao(c.Request.Context())
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao contar contas pendentes de provisão", err.Error())
+		return
+	}
+	resp := gin.H{
+		"pendentes": list,
+		"total":     total,
+	}
+	response.SuccessOK(c, resp, "Pendentes de provisão listados com sucesso")
+}
+
 func (h *AdminHandler) CreateUsuario(c *gin.Context) {
 	var req CreateUsuarioRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -86,10 +106,6 @@ func (h *AdminHandler) CreateUsuario(c *gin.Context) {
 			return
 		}
 		response.ErrorInternal(c, "Erro ao criar usuário", err.Error())
-		return
-	}
-	if err := h.fazendaSvc.VincularFazendaUnicaSeAplicavel(c.Request.Context(), u.ID); err != nil {
-		response.ErrorInternal(c, "Erro ao aplicar vínculo automático de fazenda", err.Error())
 		return
 	}
 

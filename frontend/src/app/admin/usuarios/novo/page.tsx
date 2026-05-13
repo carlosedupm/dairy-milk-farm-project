@@ -17,6 +17,9 @@ export default function AdminUsuarioNovoPage() {
     mutationFn: createUsuario,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'usuarios'] })
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'usuarios', 'pendentes-provisao'],
+      })
       router.push('/admin/usuarios')
     },
   })

@@ -22,6 +22,8 @@ var perfisAtribuiveisAPI = []string{
 	models.PerfilAdmin,
 	models.PerfilFuncionario,
 	models.PerfilGestao,
+	models.PerfilGerente,
+	models.PerfilProprietario,
 }
 
 func normalizarPerfilAPI(p string) string {
@@ -54,6 +56,16 @@ func (s *UsuarioService) List(ctx context.Context, limit, offset int) ([]*models
 
 func (s *UsuarioService) Count(ctx context.Context) (int64, error) {
 	return s.repo.Count(ctx)
+}
+
+// ListPendentesProvisao retorna contas USER ativas aguardando provisão (vínculo e/ou perfil operacional).
+func (s *UsuarioService) ListPendentesProvisao(ctx context.Context, limit int) ([]models.UsuarioPendenteProvisao, error) {
+	return s.repo.ListPendentesProvisao(ctx, limit)
+}
+
+// CountPendentesProvisao total de contas USER ativas na fila de provisão.
+func (s *UsuarioService) CountPendentesProvisao(ctx context.Context) (int64, error) {
+	return s.repo.CountPendentesProvisao(ctx)
 }
 
 func (s *UsuarioService) GetByID(ctx context.Context, id int64) (*models.Usuario, error) {

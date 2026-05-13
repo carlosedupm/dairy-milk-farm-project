@@ -14,6 +14,7 @@ test.describe('Autenticação', () => {
     await page.goto('/registro')
     
     await expect(page.getByRole('heading', { name: 'Criar conta' })).toBeVisible()
+    await expect(page.getByText(/perfil inicial|USER|administrador/i)).toBeVisible()
     await expect(page.getByLabel('Nome')).toBeVisible()
     await expect(page.getByLabel('Email')).toBeVisible()
     await expect(page.getByLabel('Senha')).toBeVisible()

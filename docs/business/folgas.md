@@ -5,7 +5,7 @@ Organização de folgas da **equipe por fazenda**, com rodízio **5x1** (três p
 **Implementação principal**
 
 - Backend: `backend/internal/service/folgas_service.go`, `backend/internal/handlers/folgas_handler.go`; rotas em `backend/cmd/api/main.go` sob `/api/v1/fazendas/:id/folgas/*`.
-- Permissões de escrita de escala/config: `backend/internal/models/perfil.go` (`PodeGerenciarFolgas`), middleware `RequireGestaoFolgas` em `backend/internal/auth/middleware.go`.
+- Permissões de escrita de escala/config: `backend/internal/models/perfil.go` (`PodeGerenciarFolgas`, `PodeAcessarFazendaSemVinculoGestao`), middleware `RequireGestaoFolgas` em `backend/internal/auth/middleware.go`; `backend/internal/handlers/access_helper.go` (`ValidateFazendaAccessOrGestao`).
 - Acesso restrito FUNCIONARIO ao restante da API: `backend/internal/auth/perfil_access.go` (alinhar com `frontend/src/config/appAccess.ts`).
 - Frontend: `frontend/src/app/folgas/page.tsx`, `frontend/src/components/folgas/*`, `frontend/src/hooks/useFolgasPage.ts`, `frontend/src/services/folgas.ts`.
 - Persistência (tabelas de domínio): migration `backend/migrations/16_add_folgas_escala.up.sql`; RLS em `backend/migrations/19_enable_row_level_security_public_tables.up.sql`.
@@ -23,7 +23,7 @@ Organização de folgas da **equipe por fazenda**, com rodízio **5x1** (três p
 ### BR-FOLGAS-002 — Configuração do rodízio
 
 - **Enunciado**: A escala depende de **data âncora** do ciclo e de **três usuários** nos slots do rodízio.
-- **Perfis elegíveis** (configuração na UI/API): principalmente **FUNCIONARIO** e **GERENTE**, com **GESTAO** como compatível (ver telas e contratos atuais).
+- **Perfis elegíveis** (configuração na UI/API): principalmente **FUNCIONARIO** e **GERENTE**, com **PROPRIETARIO** (titular) e **GESTAO** como compatível (ver telas e contratos atuais).
 - **Efeito**: Sem configuração válida, operações dependentes seguem comportamento documentado na API (ex.: mensagens ao obter config).
 - **Estado**: Implementado.
 
@@ -37,7 +37,7 @@ Organização de folgas da **equipe por fazenda**, com rodízio **5x1** (três p
 
 ### BR-FOLGAS-004 — Alteração pela gestão e natureza dos alertas
 
-- **Enunciado**: Perfis **GERENTE**, **GESTAO**, **ADMIN** e **DEVELOPER** podem alterar dia de folga (substituir dia inteiro ou adicionar segunda folga com motivo de exceção quando aplicável). **Equidade** e **alertas** são **informativos** — não bloqueiam a operação no backend.
+- **Enunciado**: Perfis **GERENTE**, **PROPRIETARIO**, **GESTAO**, **ADMIN** e **DEVELOPER** podem alterar dia de folga (substituir dia inteiro ou adicionar segunda folga com motivo de exceção quando aplicável), **desde que** tenham permissão de acesso à fazenda conforme `folgas_service` (vínculo em `usuarios_fazendas` para titular/gerente; **GESTAO**/**ADMIN**/**DEVELOPER** mantêm atalho operacional de plataforma em rotas que usam `ValidateFazendaAccessOrGestao`). **Equidade** e **alertas** são **informativos** — não bloqueiam a operação no backend.
 - **API**: Alterações e resumo de equidade sob `/folgas/alteracoes`, `/folgas/resumo-equidade`, `/folgas/alertas` (ver handler).
 - **Efeito**: Bloqueio apenas por perfil/autorização, não por “equidade” calculada.
 - **Estado**: Implementado.
@@ -62,4 +62,4 @@ Organização de folgas da **equipe por fazenda**, com rodízio **5x1** (três p
 
 ---
 
-**Última atualização**: 2026-05-06
+**Última atualização**: 2026-05-12

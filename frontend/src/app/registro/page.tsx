@@ -35,10 +35,9 @@ function RegistroForm() {
   // Redirecionar se já estiver autenticado, respeitando o perfil
   useEffect(() => {
     if (!isReady || !isAuthenticated || !user?.perfil) return
+    const mode = getAreasMode(user.perfil)
     const target =
-      getAreasMode(user.perfil) === 'full'
-        ? '/fazendas'
-        : getDefaultLandingPath(user.perfil)
+      mode === "full" ? "/fazendas" : getDefaultLandingPath(user.perfil)
     router.replace(target)
   }, [isReady, isAuthenticated, user?.perfil, router])
 
@@ -84,14 +83,44 @@ function RegistroForm() {
   if (success) {
     return (
       <PageContainer variant="centered">
-        <Card className="w-full max-w-sm">
+        <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle>Conta criada!</CardTitle>
+            <CardTitle>Conta criada</CardTitle>
             <CardDescription>
-              Sua conta foi criada com sucesso. Você será redirecionado para a página de login.
+              Faça login com seu email e senha. Enquanto um administrador não
+              vincular fazendas e não atribuir um perfil operacional (além de{' '}
+              <strong>USER</strong>), o acesso aos módulos do sistema permanece
+              limitado — isto é intencional para proteger os dados da exploração.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <section
+              aria-labelledby="apos-registro-passos"
+              className="rounded-lg border bg-muted/40 p-4 text-left"
+            >
+              <h2
+                id="apos-registro-passos"
+                className="text-sm font-semibold text-foreground"
+              >
+                Próximos passos para você
+              </h2>
+              <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+                <li>Fale com o administrador do CeialMilk na sua organização.</li>
+                <li>
+                  Aguarde a vinculação de pelo menos uma fazenda e a alteração do
+                  seu perfil (ex.: Funcionário, Gerente ou Gestão).
+                </li>
+                <li>
+                  Depois de fazer login, o sistema mostra o estado da sua conta;
+                  enquanto a provisão não estiver concluída, continue a ver as
+                  orientações nessa área (início ou onboarding).
+                </li>
+              </ol>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Prazo típico: muitas organizações respondem em até um dia útil;
+                o tempo exato depende da sua equipa.
+              </p>
+            </section>
             <p className="text-center text-sm text-muted-foreground">
               <Link href="/login" className="underline hover:text-foreground">
                 Ir para login agora
@@ -108,7 +137,11 @@ function RegistroForm() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Criar conta</CardTitle>
-          <CardDescription>Preencha os dados para se registrar</CardDescription>
+          <CardDescription>
+            Você receberá o perfil inicial <strong>USER</strong> (acesso limitado). Um
+            administrador do sistema deverá vincular fazendas e atribuir o perfil
+            operacional adequado antes de você usar animais, produção e demais módulos.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

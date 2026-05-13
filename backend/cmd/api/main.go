@@ -148,7 +148,7 @@ func main() {
 					if !strings.Contains(cfg.CORSOrigin, "localhost") {
 						cookieSameSite = http.SameSiteNoneMode // cross-origin (Vercel + Render)
 					}
-					authHandler := handlers.NewAuthHandler(userRepo, fazendaSvc, jwtSvc, refreshTokenSvc, cookieSameSite)
+					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
 					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc)
 					restricaoLeiteHandler := handlers.NewRestricaoLeiteHandler(restricaoLeiteSvc, fazendaSvc)
@@ -206,17 +206,18 @@ func main() {
 					me := api.Group("/v1/me", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						me.GET("/fazendas", fazendaHandler.GetMinhasFazendas)
+						me.POST("/fazendas", fazendaHandler.CreateMinha)
 					}
 
 					v1 := api.Group("/v1/fazendas", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
-						v1.GET("", fazendaHandler.GetAll)
-						v1.GET("/count", fazendaHandler.Count)
-						v1.GET("/exists", fazendaHandler.Exists)
-						v1.GET("/search/by-nome", fazendaHandler.SearchByNome)
-						v1.GET("/search/by-localizacao", fazendaHandler.SearchByLocalizacao)
-						v1.GET("/search/by-vacas-min", fazendaHandler.SearchByVacasMin)
-						v1.GET("/search/by-vacas-range", fazendaHandler.SearchByVacasRange)
+						v1.GET("", auth.RequireAdmin(), fazendaHandler.GetAll)
+						v1.GET("/count", auth.RequireAdmin(), fazendaHandler.Count)
+						v1.GET("/exists", auth.RequireAdmin(), fazendaHandler.Exists)
+						v1.GET("/search/by-nome", auth.RequireAdmin(), fazendaHandler.SearchByNome)
+						v1.GET("/search/by-localizacao", auth.RequireAdmin(), fazendaHandler.SearchByLocalizacao)
+						v1.GET("/search/by-vacas-min", auth.RequireAdmin(), fazendaHandler.SearchByVacasMin)
+						v1.GET("/search/by-vacas-range", auth.RequireAdmin(), fazendaHandler.SearchByVacasRange)
 						v1.GET("/:id/usuarios-vinculados", fazendaHandler.GetUsuariosVinculados)
 						v1.GET("/:id", fazendaHandler.GetByID)
 						// Criar, editar e excluir fazendas requerem perfil ADMIN ou DEVELOPER
@@ -398,6 +399,7 @@ func main() {
 					// Admin routes (perfil ADMIN ou DEVELOPER)
 					admin := api.Group("/v1/admin", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess(), auth.RequireAdmin())
 					{
+						admin.GET("/usuarios/pendentes-provisao", adminHandler.ListPendentesProvisao)
 						admin.GET("/usuarios", adminHandler.ListUsuarios)
 						admin.POST("/usuarios", adminHandler.CreateUsuario)
 						admin.PUT("/usuarios/:id", adminHandler.UpdateUsuario)

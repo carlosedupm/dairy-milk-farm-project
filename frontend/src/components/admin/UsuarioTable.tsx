@@ -22,6 +22,8 @@ function perfilLabel(perfil: string): string {
       return 'Funcionário'
     case 'GERENTE':
       return 'Gerente'
+    case 'PROPRIETARIO':
+      return 'Proprietário'
     case 'GESTAO':
       return 'Gestão'
     case 'ADMIN':
@@ -41,6 +43,9 @@ export function UsuarioTable({ items }: { items: Usuario[] }) {
     mutationFn: toggleUsuarioEnabled,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'usuarios'] })
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'usuarios', 'pendentes-provisao'],
+      })
       setError('')
     },
     onError: (err) => {

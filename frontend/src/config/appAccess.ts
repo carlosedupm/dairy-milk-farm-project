@@ -54,11 +54,12 @@ export const PERFIL_AREAS: Partial<Record<string, AppArea[]>> = {
   FUNCIONARIO: ["animais", "gestao", "folgas"],
 };
 
-export type AreasMode = AppArea[] | "full";
+export type AreasMode = AppArea[] | "full" | "pending";
 
 export function getAreasMode(perfil: string | undefined): AreasMode {
   if (!perfil) return "full";
   if (perfil === "ADMIN" || perfil === "DEVELOPER") return "full";
+  if (perfil === "USER") return "pending";
   const list = PERFIL_AREAS[perfil];
   if (!list || list.length === 0) return "full";
   return list;
@@ -67,12 +68,14 @@ export function getAreasMode(perfil: string | undefined): AreasMode {
 export function getNavAreasForPerfil(perfil: string | undefined): AppArea[] {
   const mode = getAreasMode(perfil);
   if (mode === "full") return [...MAIN_NAV_AREA_ORDER];
+  if (mode === "pending") return [];
   return MAIN_NAV_AREA_ORDER.filter((a) => mode.includes(a));
 }
 
 export function getDefaultLandingPath(perfil: string | undefined): string {
   if (perfil === "FUNCIONARIO") return "/";
   const mode = getAreasMode(perfil);
+  if (mode === "pending") return "/onboarding";
   if (mode === "full") return "/";
   if (mode.length === 0) return "/folgas";
   const first = MAIN_NAV_AREA_ORDER.find((a) => mode.includes(a));
@@ -124,6 +127,10 @@ export function isPathAllowedForPerfil(
   if (perfil === "FUNCIONARIO") return isFuncionarioAllowedPath(path);
 
   const mode = getAreasMode(perfil);
+  if (mode === "pending") {
+    return path === "/" || path === "/fazendas";
+  }
+
   if (mode === "full") return true;
 
   const prefixes = mode.map((a) => AREA_PATH_PREFIX[a]);
@@ -159,6 +166,7 @@ export function isAssistenteEnabledForPerfil(
 ): boolean {
   if (!perfil) return false;
   if (perfil === "ADMIN" || perfil === "DEVELOPER") return true;
+  if (perfil === "USER") return false;
 
   const allowed = PERFIL_ASSISTENTE_CAPABILITIES[perfil];
   if (perfil === "FUNCIONARIO") {
@@ -167,6 +175,7 @@ export function isAssistenteEnabledForPerfil(
   }
 
   const mode = getAreasMode(perfil);
+  if (mode === "pending") return false;
   const baseAllowed = mode === "full" ? true : mode.some((a) => a !== "folgas");
   if (!baseAllowed) return false;
 

@@ -11,6 +11,7 @@ import (
 )
 
 // Regras de acesso à API por perfil. Manter alinhado com frontend/src/config/appAccess.ts.
+// USER: whitelist em requestAllowedForUser — prefixo /api/v1/me/, exceto POST /api/v1/me/fazendas (apenas PROPRIETARIO; ver BR-ACESSO-008/012).
 
 var funcionarioFolgasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/folgas/`)
 var funcionarioRestricoesLeitePath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/restricoes-leite(/ativas)?$`)
@@ -27,7 +28,25 @@ func funcionarioAssistenteCapabilityEnabled(_ string, _ string) bool {
 
 // PerfilTemAcessoAPICompleta indica se o perfil pode usar todos os endpoints /api/v1 autenticados.
 func PerfilTemAcessoAPICompleta(perfil string) bool {
-	return perfil != models.PerfilFuncionario
+	return perfil != models.PerfilFuncionario && perfil != models.PerfilUser
+}
+
+func requestAllowedForUser(method, path string) bool {
+	if path == "/api/v1/me/fazendas" && method == http.MethodPost {
+		return false
+	}
+	return strings.HasPrefix(path, "/api/v1/me/")
+}
+
+func requestAllowedForLimitedAPI(perfil string, method, path string) bool {
+	switch perfil {
+	case models.PerfilFuncionario:
+		return requestAllowedForFuncionario(method, path)
+	case models.PerfilUser:
+		return requestAllowedForUser(method, path)
+	default:
+		return false
+	}
 }
 
 func requestAllowedForFuncionario(method, path string) bool {
@@ -76,7 +95,7 @@ func RequirePerfilAPIAccess() gin.HandlerFunc {
 		}
 		path := c.Request.URL.Path
 		method := c.Request.Method
-		if requestAllowedForFuncionario(method, path) {
+		if requestAllowedForLimitedAPI(perfil, method, path) {
 			c.Next()
 			return
 		}

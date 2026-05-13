@@ -59,7 +59,8 @@ export function useFolgasPage() {
   const isAdminLike =
     user?.perfil === "ADMIN" ||
     user?.perfil === "DEVELOPER" ||
-    user?.perfil === "GERENTE";
+    user?.perfil === "GERENTE" ||
+    user?.perfil === "PROPRIETARIO";
 
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const router = useRouter();
@@ -149,7 +150,8 @@ export function useFolgasPage() {
         (u) =>
           u.perfil === "FUNCIONARIO" ||
           u.perfil === "GERENTE" ||
-          u.perfil === "GESTAO"
+          u.perfil === "GESTAO" ||
+          u.perfil === "PROPRIETARIO"
       ),
     [usuariosVinc]
   );

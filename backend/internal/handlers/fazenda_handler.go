@@ -62,6 +62,58 @@ func (h *FazendaHandler) Create(c *gin.Context) {
 	response.SuccessCreated(c, fazenda, "Fazenda criada com sucesso")
 }
 
+// CreateMinha POST /api/v1/me/fazendas — apenas PROPRIETARIO (nova exploração vinculada).
+func (h *FazendaHandler) CreateMinha(c *gin.Context) {
+	var req CreateFazendaRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorValidation(c, "Dados inválidos", err.Error())
+		return
+	}
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		response.ErrorUnauthorized(c, "Usuário não identificado")
+		return
+	}
+	userID, ok := userIDVal.(int64)
+	if !ok {
+		response.ErrorInternal(c, "ID de usuário inválido", nil)
+		return
+	}
+	perfilVal, ok := c.Get("perfil")
+	if !ok {
+		response.ErrorUnauthorized(c, "Perfil não identificado")
+		return
+	}
+	perfil, _ := perfilVal.(string)
+
+	fazenda := &models.Fazenda{
+		Nome:            req.Nome,
+		Localizacao:     req.Localizacao,
+		QuantidadeVacas: 0,
+	}
+	if fundacao, err := parseFundacao(req.Fundacao); err != nil {
+		response.ErrorValidation(c, "Data de fundação inválida", err.Error())
+		return
+	} else if fundacao != nil {
+		fazenda.Fundacao = fundacao
+	}
+
+	if err := h.service.CreateMinhaFazenda(c.Request.Context(), userID, perfil, fazenda); err != nil {
+		if errors.Is(err, service.ErrFazendaDuplicada) {
+			response.ErrorConflict(c, "Já existe uma fazenda com esse nome e localização", nil)
+			return
+		}
+		if errors.Is(err, service.ErrCriarMinhaFazendaPerfil) {
+			response.ErrorForbidden(c, err.Error())
+			return
+		}
+		response.ErrorInternal(c, "Erro ao criar fazenda", err.Error())
+		return
+	}
+
+	response.SuccessCreated(c, fazenda, "Fazenda criada com sucesso")
+}
+
 // GetUsuariosVinculados GET /api/v1/fazendas/:id/usuarios-vinculados
 func (h *FazendaHandler) GetUsuariosVinculados(c *gin.Context) {
 	idStr := c.Param("id")

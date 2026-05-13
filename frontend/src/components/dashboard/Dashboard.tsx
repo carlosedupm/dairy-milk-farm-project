@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Building2,
   List,
@@ -19,6 +20,7 @@ import {
   ChevronRight,
   ClipboardList,
   Search,
+  Plus,
   type LucideIcon,
 } from "lucide-react";
 import { AnimalSearchHome } from "@/components/animais/AnimalSearchHome";
@@ -37,13 +39,18 @@ export function Dashboard() {
   const { user } = useAuth();
   const { isSingleFazenda, fazendaUnica } = useMinhasFazendas();
   const animalSearch = useAnimalSearchDialog();
+  const areasMode = getAreasMode(user?.perfil);
+  const isUserPending = areasMode === "pending";
+
   const showBuscaRapida =
     !!user && isPathAllowedForPerfil(user.perfil, "/animais") && animalSearch;
 
-  const restrictedMode = getAreasMode(user?.perfil) !== "full";
+  const restrictedMode = areasMode !== "full" && areasMode !== "pending";
+
+  const isProprietario = user?.perfil === "PROPRIETARIO";
 
   /* Mobile-first: perfil restrito prioriza Folgas (curral) antes de animais/gestão */
-  const atalhos: Atalho[] = restrictedMode
+  const baseAtalhos: Atalho[] = restrictedMode
     ? [
         {
           href: "/folgas",
@@ -91,8 +98,63 @@ export function Dashboard() {
         },
       ];
 
+  const atalhos: Atalho[] =
+    isProprietario && !restrictedMode
+      ? [
+          baseAtalhos[0],
+          {
+            href: "/fazendas/criar-minha",
+            title: "Nova fazenda",
+            description: "Registar outra exploração na sua conta",
+            icon: Plus,
+          },
+          ...baseAtalhos.slice(1),
+        ]
+      : baseAtalhos;
+
   const linkCardClass =
     "block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
+  if (isUserPending) {
+    return (
+      <PageContainer variant="default">
+        <header className="mb-8">
+          <h1 className="text-xl font-semibold text-foreground">Início</h1>
+          <p className="text-muted-foreground mt-1">
+            Sua conta ainda não tem perfil operacional atribuído.
+          </p>
+        </header>
+        <Card className="max-w-lg">
+          <CardHeader>
+            <CardTitle>Aguardando provisão</CardTitle>
+            <CardDescription>
+              Um administrador deve vincular fazendas à sua conta e definir o
+              seu perfil de acesso (por exemplo Funcionário ou Gestão) para
+              liberar os módulos do sistema. Isto protege os dados da exploração
+              até a sua função estar confirmada.
+            </CardDescription>
+          </CardHeader>
+          <div className="px-6 pb-4 space-y-3 text-sm text-muted-foreground">
+            <p>
+              <strong className="text-foreground">Resumo:</strong> entre em
+              contato com quem administra o CeialMilk na sua organização com o
+              email da conta. Em muitos casos o pedido é tratado em até um dia
+              útil.
+            </p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>Vincular pelo menos uma fazenda</li>
+              <li>Alterar o perfil para além de USER</li>
+            </ul>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 px-6 pb-6">
+            <Button asChild className="min-h-[44px]">
+              <Link href="/onboarding">Ver orientações completas</Link>
+            </Button>
+          </div>
+        </Card>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer

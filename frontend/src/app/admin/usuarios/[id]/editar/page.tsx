@@ -55,6 +55,9 @@ function AdminUsuarioEditarContent({ id }: { id: number }) {
     mutationFn: (payload: UsuarioUpdate) => updateUsuario(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "usuarios"] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "usuarios", "pendentes-provisao"],
+      });
       router.push("/admin/usuarios");
     },
   });
@@ -66,6 +69,9 @@ function AdminUsuarioEditarContent({ id }: { id: number }) {
         queryKey: ["admin", "usuarios", id, "fazendas"],
       });
       queryClient.invalidateQueries({ queryKey: ["me", "fazendas"] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "usuarios", "pendentes-provisao"],
+      });
       setFazendasError("");
       setDirty(false);
     },

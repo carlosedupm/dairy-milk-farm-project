@@ -104,7 +104,7 @@ func (h *FolgasHandler) PutConfig(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, service.ErrFolgasPerfilNaoPermitido) {
-			response.ErrorValidation(c, err.Error(), map[string]string{"hint": "Selecione usuários com perfil FUNCIONARIO e GERENTE (ou GESTAO)."})
+			response.ErrorValidation(c, err.Error(), map[string]string{"hint": "Selecione usuários com perfil FUNCIONARIO, GERENTE, PROPRIETARIO (ou GESTAO)."})
 			return
 		}
 		response.ErrorInternal(c, "Erro ao salvar configuração", err.Error())
@@ -291,7 +291,7 @@ func (h *FolgasHandler) PostAlteracoes(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, service.ErrFolgasPerfilNaoPermitido) {
-			response.ErrorValidation(c, err.Error(), map[string]string{"hint": "Selecione um usuário com perfil FUNCIONARIO e/ou GERENTE (ou GESTAO)."})
+			response.ErrorValidation(c, err.Error(), map[string]string{"hint": "Selecione um usuário com perfil FUNCIONARIO, GERENTE, PROPRIETARIO (ou GESTAO)."})
 			return
 		}
 		if errors.Is(err, service.ErrFolgasUsuarioJaFolgaDia) {

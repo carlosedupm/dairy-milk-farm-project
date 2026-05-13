@@ -10,4 +10,6 @@ type Fazenda struct {
 	Fundacao        *time.Time `json:"fundacao,omitempty" db:"fundacao"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
+	// Papel no vínculo usuarios_fazendas (TITULAR | OPERACIONAL); preenchido em listagens por utilizador.
+	Papel string `json:"papel,omitempty" db:"papel"`
 }

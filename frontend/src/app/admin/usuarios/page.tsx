@@ -9,6 +9,7 @@ import { BackLink } from '@/components/layout/BackLink'
 import { ListCardLayout } from '@/components/layout/ListCardLayout'
 import { QueryListContent } from '@/components/layout/QueryListContent'
 import { UsuarioTable } from '@/components/admin/UsuarioTable'
+import { PendentesProvisaoPanel } from '@/components/admin/PendentesProvisaoPanel'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 
@@ -40,7 +41,10 @@ function AdminUsuariosContent() {
           error={error}
           errorFallback="Erro ao carregar usuários. Tente novamente."
         >
-          <UsuarioTable items={usuarios} />
+          <div className="space-y-6">
+            <PendentesProvisaoPanel />
+            <UsuarioTable items={usuarios} />
+          </div>
         </QueryListContent>
       </ListCardLayout>
     </PageContainer>

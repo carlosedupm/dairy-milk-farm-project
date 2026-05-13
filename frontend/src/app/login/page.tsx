@@ -36,7 +36,7 @@ function resolvePostLoginTarget(
   }
   // Perfis com acesso pleno mantêm o fluxo legado por /fazendas
   // (a página decide entre /, /onboarding e /fazendas/selecionar).
-  // Perfis restritos (ex.: FUNCIONARIO) vão direto para sua landing.
+  // Perfis restritos (ex.: FUNCIONARIO) ou USER pendente vão para a landing adequada.
   if (getAreasMode(perfil) === 'full') {
     return '/fazendas'
   }
@@ -44,8 +44,8 @@ function resolvePostLoginTarget(
 }
 
 /**
- * Para perfis com áreas restritas (ex.: FUNCIONARIO), pré-checa se há
- * fazenda vinculada antes de mandar para a landing. Sem vínculo, vai
+ * Para perfis com áreas restritas (ex.: FUNCIONARIO) ou USER pendente, pré-checa
+ * se há fazenda vinculada antes de mandar para a landing. Sem vínculo, vai
  * direto para `/onboarding`, evitando o flash da landing → onboarding.
  * Falhas na pré-checagem não bloqueiam o login (cai no fluxo padrão).
  */

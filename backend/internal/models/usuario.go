@@ -20,3 +20,13 @@ type UsuarioPublico struct {
 	Email  string `json:"email"`
 	Perfil string `json:"perfil"`
 }
+
+// UsuarioPendenteProvisao utilizador USER ativo aguardando vínculo a fazenda(s) e/ou elevação de perfil (admin).
+type UsuarioPendenteProvisao struct {
+	ID            int64     `json:"id"`
+	Nome          string    `json:"nome"`
+	Email         string    `json:"email"`
+	FazendasCount int64     `json:"fazendas_count"`
+	TipoPendencia string    `json:"tipo_pendencia"` // SEM_VINCULO_FAZENDA | PERFIL_OPERACIONAL
+	CreatedAt     time.Time `json:"created_at"`
+}

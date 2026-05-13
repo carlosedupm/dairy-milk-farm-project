@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getApiErrorMessage } from "@/lib/errors";
+import { PERFIS_DISPONIVEIS, PERFIL_LABEL } from "@/lib/perfilLabels";
 
 type CreatePayload = UsuarioCreate;
 type UpdatePayload = Omit<UsuarioCreate, "senha"> & {
@@ -26,24 +27,6 @@ type Props = {
   onSubmit: (payload: CreatePayload | UpdatePayload) => Promise<void>;
   isPending?: boolean;
   submitLabel?: string;
-};
-
-const PERFIS_DISPONIVEIS = [
-  { value: "USER", label: "Usuário" },
-  { value: "FUNCIONARIO", label: "Funcionário" },
-  { value: "GERENTE", label: "Gerente" },
-  { value: "GESTAO", label: "Gestão" },
-  { value: "ADMIN", label: "Administrador" },
-  { value: "DEVELOPER", label: "Developer" },
-];
-
-const PERFIL_LABEL: Record<string, string> = {
-  USER: "Usuário",
-  FUNCIONARIO: "Funcionário",
-  GERENTE: "Gerente",
-  GESTAO: "Gestão",
-  ADMIN: "Administrador",
-  DEVELOPER: "Developer",
 };
 
 const perfilNaoEditavel = (perfil: string) =>
@@ -60,7 +43,7 @@ export function UsuarioForm({
   const [senha, setSenha] = useState("");
   const [perfil, setPerfil] = useState(() => {
     const p = initial?.perfil ?? "USER";
-    const editaveis = ["USER", "FUNCIONARIO", "GERENTE", "GESTAO", "ADMIN"];
+    const editaveis = ["USER", "FUNCIONARIO", "GERENTE", "GESTAO", "PROPRIETARIO", "ADMIN"];
     if (editaveis.includes(p)) return p;
     return "USER";
   });

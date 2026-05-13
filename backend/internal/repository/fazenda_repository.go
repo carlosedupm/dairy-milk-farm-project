@@ -266,7 +266,7 @@ func (r *FazendaRepository) ListUsuariosPublicosByFazendaID(ctx context.Context,
 		INNER JOIN usuarios_fazendas uf ON uf.usuario_id = u.id
 		WHERE uf.fazenda_id = $1
 		  AND u.enabled = true
-		  AND u.perfil IN ('FUNCIONARIO', 'GERENTE', 'GESTAO')
+		  AND u.perfil IN ('FUNCIONARIO', 'GERENTE', 'GESTAO', 'PROPRIETARIO')
 		ORDER BY u.nome ASC
 	`
 	rows, err := r.db.Query(ctx, query, fazendaID)
@@ -285,18 +285,44 @@ func (r *FazendaRepository) ListUsuariosPublicosByFazendaID(ctx context.Context,
 	return out, rows.Err()
 }
 
-// GetFazendasByUsuarioID retorna as fazendas vinculadas ao usuário (minhas fazendas).
+// GetFazendasByUsuarioID retorna as fazendas vinculadas ao usuário (minhas fazendas), com papel do vínculo.
 func (r *FazendaRepository) GetFazendasByUsuarioID(ctx context.Context, usuarioID int64) ([]*models.Fazenda, error) {
 	query := `
 		SELECT f.id, f.nome, f.localizacao,
 		       (SELECT COUNT(*)::int FROM animais WHERE fazenda_id = f.id) AS quantidade_vacas,
-		       f.fundacao, f.created_at, f.updated_at
+		       f.fundacao, f.created_at, f.updated_at,
+		       uf.papel
 		FROM fazendas f
 		INNER JOIN usuarios_fazendas uf ON uf.fazenda_id = f.id
 		WHERE uf.usuario_id = $1
 		ORDER BY f.nome ASC
 	`
-	return r.queryList(ctx, query, usuarioID)
+	rows, err := r.db.Query(ctx, query, usuarioID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*models.Fazenda
+	for rows.Next() {
+		var f models.Fazenda
+		err := rows.Scan(
+			&f.ID,
+			&f.Nome,
+			&f.Localizacao,
+			&f.QuantidadeVacas,
+			&f.Fundacao,
+			&f.CreatedAt,
+			&f.UpdatedAt,
+			&f.Papel,
+		)
+		if err != nil {
+			return nil, err
+		}
+		fCopy := f
+		list = append(list, &fCopy)
+	}
+	return list, rows.Err()
 }
 
 // GetFazendaIDsByUsuarioID retorna os IDs das fazendas vinculadas ao usuário (para admin).
@@ -330,9 +356,45 @@ func (r *FazendaRepository) SetFazendasForUsuario(ctx context.Context, usuarioID
 		return err
 	}
 	for _, fid := range fazendaIDs {
-		if _, err := tx.Exec(ctx, `INSERT INTO usuarios_fazendas (usuario_id, fazenda_id) VALUES ($1, $2)`, usuarioID, fid); err != nil {
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO usuarios_fazendas (usuario_id, fazenda_id, papel) VALUES ($1, $2, $3)`,
+			usuarioID, fid, models.PapelVinculoOperacional,
+		); err != nil {
 			return err
 		}
+	}
+	return tx.Commit(ctx)
+}
+
+// CreateFazendaAndLinkUsuario insere a fazenda e vincula ao utilizador com o papel indicado (ex. TITULAR em POST /me/fazendas).
+func (r *FazendaRepository) CreateFazendaAndLinkUsuario(ctx context.Context, fazenda *models.Fazenda, usuarioID int64, papel string) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	q := `
+		INSERT INTO fazendas (nome, localizacao, quantidade_vacas, fundacao)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at, updated_at
+	`
+	err = tx.QueryRow(
+		ctx,
+		q,
+		fazenda.Nome,
+		fazenda.Localizacao,
+		fazenda.QuantidadeVacas,
+		fazenda.Fundacao,
+	).Scan(&fazenda.ID, &fazenda.CreatedAt, &fazenda.UpdatedAt)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO usuarios_fazendas (usuario_id, fazenda_id, papel) VALUES ($1, $2, $3)`,
+		usuarioID, fazenda.ID, papel,
+	); err != nil {
+		return err
 	}
 	return tx.Commit(ctx)
 }
