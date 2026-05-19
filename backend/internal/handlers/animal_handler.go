@@ -18,10 +18,25 @@ type AnimalHandler struct {
 	producaoSvc          *service.ProducaoService
 	reclassificacaoSvc   *service.ReclassificacaoCategoriaService
 	restricaoLeiteSvc    *service.RestricaoLeiteService
+	gestacaoSvc          *service.GestacaoService
 }
 
-func NewAnimalHandler(service *service.AnimalService, fazendaSvc *service.FazendaService, producaoSvc *service.ProducaoService, reclassificacaoSvc *service.ReclassificacaoCategoriaService, restricaoLeiteSvc *service.RestricaoLeiteService) *AnimalHandler {
-	return &AnimalHandler{service: service, fazendaSvc: fazendaSvc, producaoSvc: producaoSvc, reclassificacaoSvc: reclassificacaoSvc, restricaoLeiteSvc: restricaoLeiteSvc}
+func NewAnimalHandler(
+	service *service.AnimalService,
+	fazendaSvc *service.FazendaService,
+	producaoSvc *service.ProducaoService,
+	reclassificacaoSvc *service.ReclassificacaoCategoriaService,
+	restricaoLeiteSvc *service.RestricaoLeiteService,
+	gestacaoSvc *service.GestacaoService,
+) *AnimalHandler {
+	return &AnimalHandler{
+		service:            service,
+		fazendaSvc:         fazendaSvc,
+		producaoSvc:        producaoSvc,
+		reclassificacaoSvc: reclassificacaoSvc,
+		restricaoLeiteSvc:  restricaoLeiteSvc,
+		gestacaoSvc:        gestacaoSvc,
+	}
 }
 
 type CreateAnimalRequest struct {
@@ -551,6 +566,15 @@ func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
 		if rl != nil {
 			payload["restricao_leite_ativa"] = rl
 		}
+	}
+
+	if h.gestacaoSvc != nil {
+		gestResumo, err := h.gestacaoSvc.BuildResumoContexto(c.Request.Context(), id)
+		if err != nil {
+			response.ErrorInternal(c, "Erro ao buscar gestação do animal", err.Error())
+			return
+		}
+		payload["gestacao_resumo"] = gestResumo
 	}
 
 	response.SuccessOK(c, payload, "Contexto do animal carregado com sucesso")

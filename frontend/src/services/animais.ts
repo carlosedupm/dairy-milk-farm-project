@@ -50,10 +50,20 @@ export type ProducaoResumo = {
   total_registros: number
 }
 
+export type GestacaoResumoContexto = {
+  confirmada: boolean
+  gestacao_id?: number | null
+  data_confirmacao?: string | null
+  data_prevista_parto?: string | null
+  dias_gestacao: number
+  meses_gestacao: number
+}
+
 export type AnimalContexto = {
   animal: Animal
   resumo_producao: ProducaoResumo
   restricao_leite_ativa?: RestricaoLeite | null
+  gestacao_resumo?: GestacaoResumoContexto | null
 }
 
 // Origem de aquisição (nascido na propriedade vs comprado)

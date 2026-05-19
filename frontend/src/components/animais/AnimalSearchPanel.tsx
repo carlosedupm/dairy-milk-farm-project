@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getApiErrorMessage } from "@/lib/errors";
-import { formatDatePtBr } from "@/lib/format";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
   type Animal,
@@ -15,15 +14,13 @@ import {
   MOTIVO_RESTRICAO_LEITE_LABELS,
   type MotivoRestricaoLeite,
 } from "@/services/restricoesLeite";
+import {
+  buildAnimalContextoLinhasResumo,
+  formatAnimalContextoMeta,
+  formatAnimalContextoStatusLinha,
+} from "@/components/animais/animalResumoUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-function formatNumberPtBr(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
 
 export type AnimalSearchPanelProps = {
   /** Fecha o diálogo / painel ao navegar para a ficha do animal */
@@ -131,6 +128,20 @@ export function AnimalSearchPanel({
     }
   }
 
+  const metaLinha = contexto
+    ? formatAnimalContextoMeta(contexto.animal)
+    : null;
+  const statusLinha = contexto
+    ? formatAnimalContextoStatusLinha(contexto.animal)
+    : null;
+  const linhasDetalhe = contexto
+    ? buildAnimalContextoLinhasResumo({
+        animal: contexto.animal,
+        resumo_producao: contexto.resumo_producao,
+        gestacao_resumo: contexto.gestacao_resumo,
+      })
+    : [];
+
   return (
     <div className="min-w-0 space-y-4">
       <form onSubmit={handleSubmitRapido} className="min-w-0 space-y-1.5">
@@ -212,25 +223,31 @@ export function AnimalSearchPanel({
             </div>
           ) : null}
           <p className="font-medium break-words text-foreground">
-            Animal: {contexto.animal.identificacao}
+            {contexto.animal.identificacao}
           </p>
-          <p className="break-words text-sm text-muted-foreground">
-            Saúde: {contexto.animal.status_saude ?? "Não informado"} |
-            Reprodutivo:{" "}
-            {contexto.animal.status_reprodutivo ?? "Não informado"}
-          </p>
-          <p className="break-words text-sm text-muted-foreground">
-            Data de nascimento:{" "}
-            {contexto.animal.data_nascimento
-              ? formatDatePtBr(contexto.animal.data_nascimento)
-              : "Não informada"}
-          </p>
-          <p className="break-words text-sm text-muted-foreground">
-            Produção: {formatNumberPtBr(contexto.resumo_producao.total_litros)} L
-            total | média{" "}
-            {formatNumberPtBr(contexto.resumo_producao.media_litros)} L |
-            registros: {contexto.resumo_producao.total_registros}
-          </p>
+          {metaLinha ? (
+            <p className="break-words text-sm text-muted-foreground">
+              {metaLinha}
+            </p>
+          ) : null}
+          {statusLinha ? (
+            <p className="break-words text-sm text-muted-foreground">
+              {statusLinha}
+            </p>
+          ) : null}
+          {linhasDetalhe.map((linha) => (
+            <p
+              key={linha.label}
+              className={
+                linha.destaque
+                  ? "break-words text-sm font-medium text-foreground"
+                  : "break-words text-sm text-muted-foreground"
+              }
+            >
+              <span className="text-muted-foreground">{linha.label}: </span>
+              {linha.value}
+            </p>
+          ))}
           <Button asChild variant="secondary" size="sm">
             <Link
               href={`/animais/${contexto.animal.id}`}

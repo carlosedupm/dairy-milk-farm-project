@@ -150,7 +150,6 @@ func main() {
 					}
 					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
-					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc)
 					restricaoLeiteHandler := handlers.NewRestricaoLeiteHandler(restricaoLeiteSvc, fazendaSvc)
 					producaoHandler := handlers.NewProducaoHandler(producaoSvc, animalSvc, fazendaSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
@@ -166,6 +165,7 @@ func main() {
 					coberturaSvc := service.NewCoberturaService(coberturaRepo, animalRepo, fazendaRepo, gestacaoRepo, diagnosticoGestacaoRepo)
 					diagnosticoGestacaoSvc := service.NewDiagnosticoGestacaoService(diagnosticoGestacaoRepo, animalRepo, gestacaoRepo, coberturaRepo, fazendaRepo)
 					gestacaoSvc := service.NewGestacaoService(gestacaoRepo, animalRepo, fazendaRepo)
+					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc)
 					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
 					partoSvc := service.NewPartoService(pool, partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo, criaSvc)
 					secagemSvc := service.NewSecagemService(secagemRepo, animalRepo, fazendaRepo)

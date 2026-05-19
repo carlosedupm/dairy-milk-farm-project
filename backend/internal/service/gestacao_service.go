@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/repository"
@@ -65,6 +66,57 @@ func (s *GestacaoService) GetByAnimalID(ctx context.Context, animalID int64) ([]
 
 func (s *GestacaoService) GetByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Gestacao, error) {
 	return s.repo.GetByFazendaID(ctx, fazendaID)
+}
+
+const diasPorMesGestacao = 30
+
+// BuildResumoContexto monta o resumo de gestação confirmada ativa para o contexto do animal.
+func (s *GestacaoService) BuildResumoContexto(ctx context.Context, animalID int64) (*models.GestacaoResumoContexto, error) {
+	g, err := s.repo.GetAtivaConfirmadaByAnimalID(ctx, animalID)
+	if err != nil {
+		return nil, err
+	}
+	if g == nil {
+		return &models.GestacaoResumoContexto{Confirmada: false}, nil
+	}
+	dias := diasGestacaoCivis(g.DataConfirmacao, time.Now())
+	meses := dias / diasPorMesGestacao
+	resumo := &models.GestacaoResumoContexto{
+		Confirmada:    true,
+		GestacaoID:    &g.ID,
+		DiasGestacao:  dias,
+		MesesGestacao: meses,
+	}
+	if dc := formatDateYMD(g.DataConfirmacao); dc != "" {
+		resumo.DataConfirmacao = &dc
+	}
+	if g.DataPrevistaParto != nil {
+		if dp := formatDateYMD(*g.DataPrevistaParto); dp != "" {
+			resumo.DataPrevistaParto = &dp
+		}
+	}
+	return resumo, nil
+}
+
+func diasGestacaoCivis(dataConfirmacao, hoje time.Time) int {
+	dias := civilDaysBetween(dataConfirmacao, hoje)
+	if dias < 0 {
+		return 0
+	}
+	return dias
+}
+
+func civilDaysBetween(a, b time.Time) int {
+	ay, am, ad := a.Date()
+	by, bm, bd := b.Date()
+	t1 := time.Date(ay, am, ad, 0, 0, 0, 0, time.Local)
+	t2 := time.Date(by, bm, bd, 0, 0, 0, 0, time.Local)
+	return int(t2.Sub(t1).Hours() / 24)
+}
+
+func formatDateYMD(t time.Time) string {
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
 }
 
 func (s *GestacaoService) Update(ctx context.Context, g *models.Gestacao) error {

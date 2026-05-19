@@ -11,6 +11,7 @@ import {
   getCategoriaLabel,
   ORIGEM_LABELS,
 } from "@/services/animais";
+import { getStatusReprodutivoLabel } from "@/components/animais/animalResumoUtils";
 import type { OrigemAquisicao } from "@/services/animais";
 import type { Sexo, StatusSaude } from "@/services/animais";
 import { get as getFazenda } from "@/services/fazendas";
@@ -197,7 +198,9 @@ function AnimalDetailContent() {
                   Status reprodutivo
                 </dt>
                 <dd className="mt-0.5">
-                  {animal.status_reprodutivo ?? "—"}
+                  {animal.status_reprodutivo
+                    ? getStatusReprodutivoLabel(animal.status_reprodutivo)
+                    : "—"}
                 </dd>
               </div>
             </dl>

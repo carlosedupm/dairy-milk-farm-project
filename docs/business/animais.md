@@ -4,9 +4,10 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 **Implementação principal**
 
-- Backend: `backend/internal/handlers/animal_handler.go`, `backend/internal/service/animal_service.go`, rotas em `backend/cmd/api/main.go`.
-- Frontend: `frontend/src/components/animais/AnimalSearchHome.tsx`, `frontend/src/services/animais.ts`, home em `frontend/src/app/page.tsx`.
+- Backend: `backend/internal/handlers/animal_handler.go`, `backend/internal/service/animal_service.go`, `backend/internal/service/gestacao_service.go` (`BuildResumoContexto`), rotas em `backend/cmd/api/main.go`.
+- Frontend: `frontend/src/components/animais/AnimalSearchPanel.tsx`, `frontend/src/components/animais/animalResumoUtils.ts`, `frontend/src/services/animais.ts`, home em `frontend/src/app/page.tsx`.
 - Produção (resumo contextual): `backend/internal/service/producao_service.go`.
+- Gestação confirmada (toque positivo): `backend/internal/service/diagnostico_gestacao_service.go`, tabela `gestacoes`.
 
 ---
 
@@ -18,25 +19,40 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 - **Efeito**: bloqueio no servidor para fazendas não vinculadas; UI exibe apenas resultados autorizados.
 - **Implementação**:
   - Busca por identificação (parcial + equivalência número ↔ por extenso): `GET /api/v1/animais/search/by-identificacao`.
-  - Contexto do animal: `GET /api/v1/animais/:id/contexto` (animal + resumo de produção).
+  - Contexto do animal: `GET /api/v1/animais/:id/contexto` (animal + resumo de produção + gestação + restrição de leite opcional).
   - Validação de acesso: `ValidateFazendaAccess` + filtro por `GetByUsuarioID` na busca.
 - **Estado**: Implementado.
 
 ### BR-ANIMAIS-002 — Contexto mínimo obrigatório no resultado inteligente
 
-- **Enunciado**: Ao selecionar um resultado, o sistema deve apresentar dados essenciais do animal e indicadores de produção consolidados.
-- **Escopo**: Resumo exibido na home após busca.
+- **Enunciado**: Ao selecionar um resultado, o sistema deve apresentar dados essenciais do animal e indicadores de produção consolidados, com rótulos legíveis para o usuário.
+- **Escopo**: Resumo exibido na home e no diálogo global de busca após seleção.
 - **Efeito**: informativo na UI; consulta consolidada no backend.
 - **Dados exibidos**:
   - identificação do animal;
-  - status de saúde e status reprodutivo;
-  - data de nascimento (quando disponível);
-  - resumo de produção (`total_litros`, `media_litros`, `total_registros`);
+  - categoria, sexo e raça (quando preenchidos);
+  - status de saúde e reprodutivo **somente quando cadastrados** (nunca «Não informado» no resumo); em **bezerra/bezerro** omitir reprodução e integrar **nasc.** na linha meta;
+  - gestação confirmada (ver BR-ANIMAIS-003);
+  - data de nascimento **somente se cadastrada** (omitir linha se vazia — detalhe na ficha);
+  - resumo de produção **histórico** **somente se houver registros** (omitir linha se zero — evita ruído no resumo rápido);
+  - meta compacta (categoria · sexo · raça) sem rótulos repetitivos;
   - quando existir episódio aberto: `restricao_leite_ativa` (ver [leite-restricoes.md](./leite-restricoes.md) — BR-LEITE-004).
 - **Regra de exibição da fazenda na busca**: na lista de resultados da home, **não** exibir nome/ID da fazenda, pois o contexto já é da fazenda ativa do usuário logado.
-- **Implementação**: payload `data.animal` + `data.resumo_producao` do endpoint `GET /api/v1/animais/:id/contexto`.
+- **Implementação**: payload `data.animal` + `data.resumo_producao` + `data.gestacao_resumo` do endpoint `GET /api/v1/animais/:id/contexto`; formatação em `frontend/src/components/animais/animalResumoUtils.ts`.
+- **Estado**: Implementado.
+
+### BR-ANIMAIS-003 — Gestação confirmada no resumo contextual
+
+- **Enunciado**: No resumo da busca por identificação, informar se o animal está com **gestação confirmada** (após toque positivo com cobertura vinculada) e, em caso afirmativo, o tempo decorrido desde a confirmação em meses civis (meses completos = `floor(dias/30)`, dias = diferença entre datas civis).
+- **Fonte de verdade**: registro em `gestacoes` com `status = 'CONFIRMADA'` (mais recente por `data_confirmacao DESC`). Não inferir apenas por `status_reprodutivo = PRENHE`.
+- **Quando não há gestação confirmada**: **não exibir linha de gestação** no resumo rápido; o status reprodutivo (ex.: Servida) já comunica o estágio. Linha de gestação só aparece com toque positivo / `CONFIRMADA`.
+- **Payload API** (`gestacao_resumo`): `confirmada`, `gestacao_id`, `data_confirmacao`, `data_prevista_parto`, `dias_gestacao`, `meses_gestacao`.
+- **Implementação**:
+  - Criação da gestação: `DiagnosticoGestacaoService.Create` (toque `POSITIVO` + `cobertura_id`).
+  - Consulta: `GestacaoRepository.GetAtivaConfirmadaByAnimalID`, `GestacaoService.BuildResumoContexto`, `AnimalHandler.GetContextoByID`.
+  - UI: `formatGestacaoResumoLinha` em `animalResumoUtils.ts`.
 - **Estado**: Implementado.
 
 ---
 
-**Última atualização**: 2026-05-07
+**Última atualização**: 2026-05-18
