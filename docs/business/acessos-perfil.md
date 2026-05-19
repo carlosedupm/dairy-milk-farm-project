@@ -32,7 +32,7 @@ Regras de autorização por perfil para navegação e operações na aplicação
   - API: endpoints fora da whitelist retornam 403.
 - **Implementação**:
   - Rotas UI permitidas: `/gestao`, `/gestao/cios*`, `/gestao/coberturas*`, `/gestao/partos*`, `/gestao/secagens*`.
-  - API permitida: `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/partos*`, `/api/v1/secagens*`.
+  - API permitida: `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/partos*`, `/api/v1/secagens*`, e `GET|POST /api/v1/crias*` (sub-recurso operacional de partos — listar e complementar crias na edição; sem UI `/gestao/gestacoes`).
 - **Estado**: Implementado.
 
 ### BR-ACESSO-003 — Animais em modo consulta para FUNCIONARIO
@@ -157,4 +157,4 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ---
 
-**Última atualização**: 2026-05-13 (BR-014: `papel` em `usuarios_fazendas`; perfil RBAC no Header via `perfilLabels`)
+**Última atualização**: 2026-05-18 (BR-ACESSO-002: `GET|POST /api/v1/crias*` para FUNCIONARIO no fluxo de partos)

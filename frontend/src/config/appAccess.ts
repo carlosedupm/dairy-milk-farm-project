@@ -82,6 +82,7 @@ export function getDefaultLandingPath(perfil: string | undefined): string {
   return first ? AREA_PATH_PREFIX[first] : `/${mode[0]}`;
 }
 
+/** Gestão pecuária parcial; API de crias (GET|POST /api/v1/crias) espelhada em perfil_access.go. */
 const FUNCIONARIO_GESTAO_PATHS = [
   "/gestao",
   "/gestao/cios",

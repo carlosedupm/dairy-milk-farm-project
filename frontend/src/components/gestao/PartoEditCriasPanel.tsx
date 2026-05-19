@@ -28,8 +28,11 @@ import {
   defaultCriaLinha,
   type CriaLinhaFormState,
 } from "@/components/gestao/cria-constants";
+import { useAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
 import { getApiErrorMessage } from "@/lib/errors";
 import { cn } from "@/lib/utils";
+import { getCategoriaLabel, type Animal } from "@/services/animais";
+import type { Cria } from "@/services/crias";
 
 type Props = {
   partoId: number;
@@ -47,20 +50,59 @@ function condicaoLabel(v: string): string {
   return CRIA_CONDICAO_OPTIONS.find((o) => o.value === v)?.label ?? v;
 }
 
+function formatAnimalGeradoResumo(animal: Animal): string {
+  const partes: string[] = [animal.identificacao];
+  const categoria = getCategoriaLabel(animal.categoria);
+  if (categoria !== "—") partes.push(categoria);
+  const raca = (animal.raca ?? "").trim();
+  if (raca) partes.push(raca);
+  return partes.join(" · ");
+}
+
+function renderColunaCadastro(cria: Cria, animaisById: Map<number, Animal>) {
+  if (cria.condicao === "NATIMORTO") {
+    return <span className="text-muted-foreground text-sm">Natimorto (sem cadastro)</span>;
+  }
+  if (!cria.animal_id) {
+    return <span className="text-muted-foreground text-sm">Cadastro pendente</span>;
+  }
+  const animal = animaisById.get(cria.animal_id);
+  const resumo = animal ? formatAnimalGeradoResumo(animal) : "Ver ficha do animal";
+  return (
+    <Link
+      href={`/animais/${cria.animal_id}`}
+      className="text-primary underline-offset-4 hover:underline text-sm font-medium"
+    >
+      {resumo}
+    </Link>
+  );
+}
+
 export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaMae }: Props) {
   const queryClient = useQueryClient();
+  const animaisById = useAnimaisByIdMap(fazendaId);
   const esperado = Math.max(1, parseInt(numeroCriasText, 10) || 1);
   const [draft, setDraft] = useState<CriaLinhaFormState>(() => defaultCriaLinha());
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const { data: crias = [], isLoading } = useQuery({
+  const {
+    data: crias = [],
+    isLoading,
+    isError,
+    error: loadError,
+  } = useQuery({
     queryKey: ["crias", partoId],
     queryFn: () => listByParto(partoId),
   });
 
+  const loadErrorMessage = isError
+    ? getApiErrorMessage(loadError, "Não foi possível carregar as crias deste parto.")
+    : null;
+
   const count = crias.length;
-  const faltaCadastrar = count < esperado;
-  const maisQueInformado = count > esperado;
+  const faltaCadastrar = !isError && !isLoading && count < esperado;
+  const maisQueInformado = !isError && !isLoading && count > esperado;
+  const showCountBanner = !isError && !isLoading && (count !== esperado || maisQueInformado);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -101,14 +143,20 @@ export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaM
   return (
     <div className="space-y-4 border-t border-border pt-5">
       <div>
-        <h3 className="text-sm font-medium text-foreground">Crias registradas</h3>
+        <h3 className="text-sm font-medium text-foreground">Bezerras e bezerros deste parto</h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Cada cria é um registro separado (sexo e situação ao nascer). Você pode complementar aqui se o parto
-          já existia sem todas as crias cadastradas.
+          Confira sexo, situação ao nascer e o cadastro na fazenda (brinco e categoria). Se o parto foi registrado
+          sem todas as crias, use o formulário abaixo para completar.
         </p>
       </div>
 
-      {(count !== esperado || maisQueInformado) && (
+      {loadErrorMessage ? (
+        <p className="text-sm text-destructive" role="alert">
+          {loadErrorMessage}
+        </p>
+      ) : null}
+
+      {showCountBanner && (
         <div
           className={cn(
             "rounded-md border px-3 py-2 text-sm",
@@ -135,7 +183,7 @@ export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaM
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando crias…</p>
-      ) : (
+      ) : isError ? null : (
         <div className="rounded-md border border-border overflow-x-auto">
           <Table>
             <TableHeader>
@@ -143,14 +191,14 @@ export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaM
                 <TableHead>Sexo</TableHead>
                 <TableHead>Situação</TableHead>
                 <TableHead className="text-right">Peso (kg)</TableHead>
-                <TableHead>Animal gerado</TableHead>
+                <TableHead>Cadastro na fazenda</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {crias.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-muted-foreground text-center py-6">
-                    Nenhuma cria registrada para este parto.
+                    Nenhuma bezerra ou bezerro registrado neste parto.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -163,18 +211,7 @@ export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaM
                         ? String(c.peso).replace(".", ",")
                         : "—"}
                     </TableCell>
-                    <TableCell>
-                      {c.animal_id ? (
-                        <Link
-                          href={`/animais/${c.animal_id}`}
-                          className="text-primary underline-offset-4 hover:underline text-sm"
-                        >
-                          Ver animal #{c.animal_id}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
+                    <TableCell>{renderColunaCadastro(c, animaisById)}</TableCell>
                   </TableRow>
                 ))
               )}
