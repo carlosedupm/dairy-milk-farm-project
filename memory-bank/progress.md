@@ -100,6 +100,8 @@
 - [x] **DRY frontend (Fase plano)**: `QueryListContent` + `ListCardLayout`; `lib/format.ts`; hook `useFolgasPage` para `/folgas` (página só UI)
 - [x] **Landing pública + CTA no header**: `LandingPage.tsx` com copy focada em gestão leiteira e Brasil, marca no hero, bento sem promessas de offline/sync ou “projeções inteligentes”; mock do painel com `role="img"` + `aria-label` e ações ilustrativas não focáveis; `Header.tsx` com **Criar conta** (`/registro`) para visitantes (desktop e menu mobile)
 - [x] **Home logada (Dashboard)**: `Dashboard.tsx` + `RestricoesLeiteHomePanel.tsx` + `AnimalSearchHome.tsx` — hierarquia visual, progressive disclosure e atalhos sem CTA duplicado
+- [x] **`AnimalSelect` pesquisável**: combobox com filtro no cliente (`animalSelectUtils.ts`); gestão pecuária, produção e registro de restrições de leite; substitui Select com scroll longo
+- [x] **UX Input/Textarea — foco**: borda única `border-ring` no foco (sem ring sobreposto); corrige aparência do campo de busca por identificação no diálogo global
 
 ## 📋 Próximos Passos
 
@@ -629,6 +631,6 @@
 
 ---
 
-**Última atualização**: 2026-05-12 (memory bank: Header identidade + fazenda ativa; `progress` / `systemPatterns` / `activeContext`)
+**Última atualização**: 2026-05-18 (memory bank: `AnimalSelect` combobox pesquisável; foco Input/Textarea; `activeContext` / `systemPatterns` / `progress`)
 **Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável (partos, cios, coberturas CRUD) | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live (bloqueado para FUNCIONARIO) | **Header** com identidade e fazenda ativa visíveis (mobile + desktop) | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
 **Próxima revisão**: 2026-05-19

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Plus } from "lucide-react";
@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { getApiErrorMessage } from "@/lib/errors";
 import { formatDatePtBr } from "@/lib/format";
-import { listEmLactacaoByFazenda, type Animal } from "@/services/animais";
+import { listEmLactacaoByFazenda } from "@/services/animais";
 import {
   createRestricao,
   liberarRestricao,
@@ -35,6 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
@@ -111,14 +112,6 @@ export function RestricoesLeiteHomePanel() {
     queryFn: () => listEmLactacaoByFazenda(fazendaId!),
     enabled: Boolean(fazendaReady && fazendaId && dialogNova),
   });
-
-  const animaisOrdenados = useMemo(() => {
-    return [...animais].sort((a, b) =>
-      a.identificacao.localeCompare(b.identificacao, "pt-BR", {
-        numeric: true,
-      }),
-    );
-  }, [animais]);
 
   const invalidate = () => {
     if (fazendaId) {
@@ -380,31 +373,21 @@ export function RestricoesLeiteHomePanel() {
             <DialogTitle>Registrar descarte / amostra</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="rl-animal">Animal</Label>
-              {animaisOrdenados.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nenhum animal em lactação ativa nesta fazenda (cadastre lactação após o parto ou
-                  verifique secagem).
-                </p>
-              ) : (
-                <Select
-                  value={animalIdStr || undefined}
-                  onValueChange={setAnimalIdStr}
-                >
-                  <SelectTrigger id="rl-animal" className="w-full">
-                    <SelectValue placeholder="Selecione o animal" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {animaisOrdenados.map((a: Animal) => (
-                      <SelectItem key={a.id} value={String(a.id)}>
-                        {a.identificacao}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+            {animais.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhum animal em lactação ativa nesta fazenda (cadastre lactação após o parto ou
+                verifique secagem).
+              </p>
+            ) : (
+              <AnimalSelect
+                id="rl-animal"
+                animais={animais}
+                value={animalIdStr}
+                onValueChange={setAnimalIdStr}
+                label="Animal"
+                placeholder="Selecione o animal"
+              />
+            )}
             <div className="space-y-2">
               <Label>Motivo</Label>
               <Select
