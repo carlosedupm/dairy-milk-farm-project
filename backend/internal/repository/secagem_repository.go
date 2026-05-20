@@ -75,3 +75,10 @@ func (r *SecagemRepository) Delete(ctx context.Context, id int64) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM secagens WHERE id = $1`, id)
 	return err
 }
+
+func (r *SecagemRepository) CreateTx(ctx context.Context, tx pgx.Tx, s *models.Secagem) error {
+	query := `INSERT INTO secagens (animal_id, gestacao_id, data_secagem, data_prevista_parto, protocolo, motivo, observacoes, fazenda_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`
+	return tx.QueryRow(ctx, query, s.AnimalID, s.GestacaoID, s.DataSecagem, s.DataPrevistaParto, s.Protocolo, s.Motivo, s.Observacoes, s.FazendaID).
+		Scan(&s.ID, &s.CreatedAt)
+}

@@ -78,6 +78,14 @@ func (h *ProducaoHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(c.Request.Context(), producao); err != nil {
+		if errors.Is(err, service.ErrProducaoSemLactacaoAtiva) {
+			response.ErrorValidation(c, "Animal sem lactação ativa", err.Error())
+			return
+		}
+		if err.Error() == "animal não encontrado" {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
 		response.ErrorInternal(c, "Erro ao registrar produção", err.Error())
 		return
 	}

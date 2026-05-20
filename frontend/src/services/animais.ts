@@ -59,11 +59,38 @@ export type GestacaoResumoContexto = {
   meses_gestacao: number
 }
 
+export type LactacaoAtiva = {
+  id: number
+  animal_id: number
+  numero_lactacao: number
+  data_inicio: string
+  data_fim?: string | null
+  status?: string | null
+  fazenda_id: number
+}
+
+export type CicloTimelineItem = {
+  tipo: string
+  data: string
+  titulo: string
+  detalhe?: string
+  ref_id?: number
+}
+
+export type ProximaAcao = {
+  codigo: string
+  label: string
+  href_path: string
+}
+
 export type AnimalContexto = {
   animal: Animal
   resumo_producao: ProducaoResumo
   restricao_leite_ativa?: RestricaoLeite | null
   gestacao_resumo?: GestacaoResumoContexto | null
+  lactacao_ativa?: LactacaoAtiva | null
+  timeline?: CicloTimelineItem[]
+  proximas_acoes?: ProximaAcao[]
 }
 
 // Origem de aquisição (nascido na propriedade vs comprado)

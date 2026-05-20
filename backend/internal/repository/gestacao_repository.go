@@ -128,6 +128,42 @@ func (r *GestacaoRepository) GetByIDTx(ctx context.Context, tx pgx.Tx, id int64)
 	return &g, err
 }
 
+func (r *GestacaoRepository) CountConfirmadasByFazendaID(ctx context.Context, fazendaID int64) (int, error) {
+	var n int
+	err := r.db.QueryRow(ctx,
+		`SELECT COUNT(*) FROM gestacoes WHERE fazenda_id = $1 AND status = $2`,
+		fazendaID, models.GestacaoStatusConfirmada,
+	).Scan(&n)
+	return n, err
+}
+
+func (r *GestacaoRepository) ListPartosPrevistosByFazendaID(ctx context.Context, fazendaID int64, ate time.Time) ([]models.PartoPrevistoResumo, error) {
+	const q = `
+		SELECT g.animal_id, a.identificacao, g.id, g.data_prevista_parto
+		FROM gestacoes g
+		INNER JOIN animais a ON a.id = g.animal_id
+		WHERE g.fazenda_id = $1 AND g.status = $2
+		  AND g.data_prevista_parto IS NOT NULL
+		  AND g.data_prevista_parto::date <= $3::date
+		ORDER BY g.data_prevista_parto ASC
+		LIMIT 50
+	`
+	rows, err := r.db.Query(ctx, q, fazendaID, models.GestacaoStatusConfirmada, ate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []models.PartoPrevistoResumo
+	for rows.Next() {
+		var item models.PartoPrevistoResumo
+		if err := rows.Scan(&item.AnimalID, &item.Identificacao, &item.GestacaoID, &item.DataPrevistaParto); err != nil {
+			return nil, err
+		}
+		list = append(list, item)
+	}
+	return list, rows.Err()
+}
+
 func (r *GestacaoRepository) UpdateTx(ctx context.Context, tx pgx.Tx, g *models.Gestacao) error {
 	if g.ID <= 0 {
 		return fmt.Errorf("id invalido: %d", g.ID)

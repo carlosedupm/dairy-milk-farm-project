@@ -151,6 +151,18 @@ func (r *ProducaoRepository) CountByAnimal(ctx context.Context, animalID int64) 
 	return n, err
 }
 
+func (r *ProducaoRepository) SumLitrosByFazendaBetween(ctx context.Context, fazendaID int64, start, end time.Time) (float64, error) {
+	const q = `
+		SELECT COALESCE(SUM(p.quantidade), 0)
+		FROM producao_leite p
+		INNER JOIN animais a ON a.id = p.animal_id
+		WHERE a.fazenda_id = $1 AND p.data_hora >= $2 AND p.data_hora < $3
+	`
+	var total float64
+	err := r.db.QueryRow(ctx, q, fazendaID, start, end).Scan(&total)
+	return total, err
+}
+
 func (r *ProducaoRepository) GetResumoByAnimal(ctx context.Context, animalID int64) (*models.ProducaoResumo, error) {
 	query := `
 		SELECT COALESCE(SUM(quantidade), 0), COALESCE(AVG(quantidade), 0), COUNT(*)

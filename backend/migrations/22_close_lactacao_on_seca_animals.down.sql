@@ -1,0 +1,1 @@
+-- Reversão não restaura data_fim/status anteriores (correção de integridade irreversível).

@@ -87,6 +87,7 @@ const FUNCIONARIO_GESTAO_PATHS = [
   "/gestao",
   "/gestao/cios",
   "/gestao/coberturas",
+  "/gestao/toques",
   "/gestao/partos",
   "/gestao/secagens",
 ] as const;
@@ -95,6 +96,7 @@ function isFuncionarioAllowedPath(path: string): boolean {
   if (path === "/") return true;
   if (path === "/animais") return true;
   if (/^\/animais\/\d+$/.test(path)) return true;
+  if (path === "/producao/novo") return true;
   if (path === "/folgas" || path.startsWith("/folgas/")) return true;
   return FUNCIONARIO_GESTAO_PATHS.some(
     (base) => path === base || path.startsWith(`${base}/`)

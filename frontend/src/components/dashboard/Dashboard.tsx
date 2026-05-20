@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { AnimalSearchHome } from "@/components/animais/AnimalSearchHome";
 import { RestricoesLeiteHomePanel } from "@/components/leite/RestricoesLeiteHomePanel";
+import { PecuarioResumoHomePanel } from "@/components/dashboard/PecuarioResumoHomePanel";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
 import { cn } from "@/lib/utils";
 
@@ -65,9 +66,15 @@ export function Dashboard() {
           icon: List,
         },
         {
+          href: "/producao/novo",
+          title: "Registrar produção",
+          description: "Registar leite da ordenha",
+          icon: Droplets,
+        },
+        {
           href: "/gestao",
           title: "Gestão reprodutiva",
-          description: "Cios, coberturas, partos e secagens",
+          description: "Cios, coberturas, toques, partos e secagens",
           icon: ClipboardList,
         },
       ]
@@ -174,6 +181,7 @@ export function Dashboard() {
             Prioridades e alertas
           </h2>
           <RestricoesLeiteHomePanel />
+          {!restrictedMode ? <PecuarioResumoHomePanel /> : null}
         </section>
 
         <section aria-labelledby="busca-heading" className="hidden md:block">

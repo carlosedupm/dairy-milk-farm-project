@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type {
   ProducaoLeite,
@@ -10,7 +10,8 @@ import type {
 import { QUALIDADES, QUALIDADE_LABELS } from "@/services/producao";
 import { getMinhasFazendas, type Fazenda } from "@/services/fazendas";
 import {
-  listByFazenda as listAnimaisByFazenda,
+  get as getAnimal,
+  listEmLactacaoByFazenda,
   type Animal,
 } from "@/services/animais";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
@@ -81,12 +82,47 @@ export function ProducaoForm({
     queryFn: getMinhasFazendas,
   });
 
-  // Buscar animais da fazenda selecionada
-  const { data: animais = [] } = useQuery<Animal[]>({
-    queryKey: ["animais", "fazenda", fazendaId],
-    queryFn: () => listAnimaisByFazenda(fazendaId),
-    enabled: fazendaId > 0,
+  const { data: animaisEmLactacao = [], isLoading: loadingAnimais } =
+    useQuery<Animal[]>({
+      queryKey: ["animais", "fazenda", fazendaId, "em-lactacao"],
+      queryFn: () => listEmLactacaoByFazenda(fazendaId),
+      enabled: fazendaId > 0,
+    });
+
+  const { data: animalEdicao } = useQuery({
+    queryKey: ["animais", initial?.animal_id],
+    queryFn: () => getAnimal(initial!.animal_id),
+    enabled: !!initial?.animal_id,
   });
+
+  /** Novo registro: só matrizes em lactação ativa; edição: inclui o animal do registo mesmo se a lactação já encerrou. */
+  const animaisParaSelect = useMemo(() => {
+    if (!initial) return animaisEmLactacao;
+    if (!animalEdicao) return animaisEmLactacao;
+    if (animaisEmLactacao.some((a) => a.id === animalEdicao.id)) {
+      return animaisEmLactacao;
+    }
+    return [animalEdicao, ...animaisEmLactacao];
+  }, [initial, animalEdicao, animaisEmLactacao]);
+
+  const animalSelectValue = useMemo(() => {
+    if (!animalId || animalId <= 0) return "";
+    if (initial) return String(animalId);
+    if (loadingAnimais) return String(animalId);
+    if (animaisParaSelect.some((a) => a.id === animalId)) {
+      return String(animalId);
+    }
+    return "";
+  }, [animalId, initial, loadingAnimais, animaisParaSelect]);
+
+  const linkAnimalIndisponivel =
+    !initial &&
+    defaultAnimalId != null &&
+    defaultAnimalId > 0 &&
+    fazendaId > 0 &&
+    !loadingAnimais &&
+    animaisEmLactacao.length > 0 &&
+    animalSelectValue === "";
 
   const handleFazendaChange = (v: string) => {
     const nextFazendaId = Number(v);
@@ -100,8 +136,9 @@ export function ProducaoForm({
     e.preventDefault();
     setError("");
 
-    if (!animalId || animalId <= 0) {
-      setError("Selecione um animal.");
+    const idEnvio = initial ? animalId : Number(animalSelectValue);
+    if (!idEnvio || idEnvio <= 0) {
+      setError("Selecione um animal em lactação.");
       return;
     }
     const qtd = parseFloat(quantidade);
@@ -111,7 +148,7 @@ export function ProducaoForm({
     }
 
     const payload: ProducaoCreate = {
-      animal_id: animalId,
+      animal_id: idEnvio,
       quantidade: qtd,
       data_hora: dataHora ? `${dataHora}:00` : undefined,
       qualidade: qualidade,
@@ -164,18 +201,46 @@ export function ProducaoForm({
             )}
 
             <AnimalSelect
-              animais={animais}
-              value={animalId?.toString() ?? ""}
+              animais={animaisParaSelect}
+              value={animalSelectValue}
               onValueChange={(v) => setAnimalId(Number(v))}
-              label="Animal *"
+              label="Animal em lactação *"
               placeholder={
-                fazendaId > 0
-                  ? "Selecione um animal"
-                  : "Selecione uma fazenda primeiro"
+                fazendaId <= 0
+                  ? "Selecione uma fazenda primeiro"
+                  : loadingAnimais
+                    ? "Carregando animais…"
+                    : animaisParaSelect.length === 0
+                      ? "Nenhum animal em lactação"
+                      : "Selecione a matriz"
               }
-              disabled={!fazendaId || fazendaId <= 0 || !!initial}
+              disabled={
+                !fazendaId ||
+                fazendaId <= 0 ||
+                !!initial ||
+                loadingAnimais ||
+                (!initial && animaisParaSelect.length === 0)
+              }
+              femeasOnly
             />
           </div>
+
+          {!initial && fazendaId > 0 && !loadingAnimais && animaisParaSelect.length === 0 ? (
+            <p className="text-sm text-muted-foreground break-words">
+              Não há animais em lactação ativa nesta fazenda. Registre um parto
+              ou abra uma lactação antes de lançar produção.
+            </p>
+          ) : null}
+
+          {linkAnimalIndisponivel ? (
+            <p
+              className="text-sm text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg p-3 break-words"
+              role="alert"
+            >
+              O animal indicado no link não está em lactação ativa. Escolha uma
+              matriz na lista acima.
+            </p>
+          ) : null}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">

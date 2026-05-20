@@ -11,6 +11,9 @@ import (
 
 var ErrLactacaoNotFound = errors.New("lactacao nao encontrada")
 
+// ErrLactacaoAtivaJaExiste indica que o animal já possui lactação em andamento na fazenda.
+var ErrLactacaoAtivaJaExiste = errors.New("animal ja possui lactacao ativa nesta fazenda")
+
 type LactacaoService struct {
 	repo        *repository.LactacaoRepository
 	animalRepo  *repository.AnimalRepository
@@ -45,6 +48,16 @@ func (s *LactacaoService) Create(ctx context.Context, l *models.Lactacao) error 
 		}
 		if !valid {
 			return errors.New("status invalido")
+		}
+	}
+	// Lactação manual só permitida se não houver lactação ativa (parto cria via PartoService).
+	if l.DataFim == nil && (l.Status == nil || *l.Status == "" || *l.Status == models.LactacaoStatusEmAndamento) {
+		exists, err := s.repo.ExistsAtivaNaFazenda(ctx, l.FazendaID, l.AnimalID)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return ErrLactacaoAtivaJaExiste
 		}
 	}
 	return s.repo.Create(ctx, l)

@@ -2,7 +2,7 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 97%
+### **Completude Geral**: 97% (fundação) — **Fase 2 ciclo integrado**: ~95% (entregas 1–6 + refinamentos toque/produção; pendente BR-CICLO-002)
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
@@ -145,29 +145,32 @@
 
 ## 🎯 Metas de Curto Prazo
 
-### **Meta 1: MVP Básico (4 semanas)**
+### **Meta 1: Fundação (concluída)**
 
-- [ ] CRUD completo de todas as entidades principais
-- [ ] Autenticação JWT funcional
-- [ ] API RESTful operacional
-- [ ] Deploy em ambiente de produção
-- [ ] Interface básica funcional
+- [x] CRUD fazendas, animais, produção, gestão pecuária modular, folgas, RBAC
+- [x] Autenticação JWT; deploy Render + Vercel
+- [x] Catálogo `docs/business/` iniciado
 
-### **Meta 2: Operacional (8 semanas)**
+### **Meta 2: Ciclo integrado do rebanho** *(Fase 2 — ver `projectbrief.md`)*
 
-- [ ] Controle de saúde animal implementado
-- [ ] Gestão reprodutiva básica
-- [ ] Relatórios analíticos iniciais
-- [ ] Versão mobile responsiva
-- [ ] Testes de integração cobrindo 70%
+- [x] Ficha do animal com timeline e estado (BR-CICLO-008)
+- [x] Secagem encerra lactação ativa + uma lactação ativa (BR-CICLO-005/006)
+- [x] Dashboard pecuário na home (BR-CICLO-009)
+- [x] Produção exige lactação ativa (BR-CICLO-007)
+- [x] API contexto enriquecido (`AnimalCicloService`)
+- [x] Catálogo: partos, lactações, toques, secagens, gestações, produção (`docs/business/`)
+- [x] Perfil FUNCIONARIO: POST toques + produção (BR-ACESSO-015)
+- [x] Toque positivo vincula cobertura → gestação + PRENHE + UI/cache (BR-TOQUES-002)
+- [x] Produção: combo e API só com lactação ativa (BR-CICLO-007 / BR-PRODUCAO-003)
+- [ ] BR-CICLO-002 completo (status por cio/toque negativo)
+- [ ] Consolidação módulo agrícola + regressão integrada
 
-### **Meta 3: Inteligência (12 semanas)**
+### **Meta 3: Saúde e inteligência** *(Fase 3 — `projectbrief.md`)*
 
-- [ ] Sistema de predições de produção
-- [ ] Alertas automáticos de saúde preventiva
-- [ ] Otimização de recursos através de IA
-- [ ] Integração com dispositivos IoT
-- [ ] Dashboard analítico completo
+- [ ] Módulo saúde (vacinas/tratamentos)
+- [ ] Predições e alertas automáticos (reprodução, saúde, produção)
+- [ ] Assistente por capacidades; integração IoT (opcional)
+- [ ] Testes de integração cobrindo 70%+
 
 ## 📊 Métricas de Progresso Detalhadas
 
@@ -629,8 +632,14 @@
 - ✅ **Testes Unitários Backend**: Testes table-driven para models e services
 - ✅ **Testes E2E Frontend**: Configuração Playwright + testes de autenticação e navegação
 
+### **2026-05-19 — Fase 2 ciclo integrado + refinamentos**
+
+- ✅ **Entregas BR-CICLO-005 a 009**: secagem↔lactação, ficha/timeline (`AnimalFichaCiclo`), resumo pecuário na home, produção↔lactação, RBAC FUNCIONARIO toques/produção; catálogo `docs/business/` por módulo.
+- ✅ **Toque positivo**: `resolveCoberturaIDForPositivo` + UI com cobertura obrigatória; propaga `PRENHE`, gestação confirmada, busca, ficha e dashboard.
+- ✅ **Produção**: `ProducaoForm` lista só `em-lactacao`; validação server-side mantida.
+
 ---
 
-**Última atualização**: 2026-05-18 (memory bank: `AnimalSelect` combobox pesquisável; foco Input/Textarea; `activeContext` / `systemPatterns` / `progress`)
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | Gestão Pecuária estável (partos, cios, coberturas CRUD) | Folgas 5x1 com UX mobile refinada + dialog de dia | Módulo Agrícola em consolidação | Assistente FAB + Live (bloqueado para FUNCIONARIO) | **Header** com identidade e fazenda ativa visíveis (mobile + desktop) | CRUD Fazendas, Animais, Produção | Testes unitários, E2E e **TestSprite API** (`testsprite_tests/`)
-**Próxima revisão**: 2026-05-19
+**Última atualização**: 2026-05-19 (Fase 2 ciclo integrado ~95%; refinamentos toque/produção)
+**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | **Ciclo do rebanho Fase 2** entregue (pendente BR-CICLO-002) | Gestão pecuária + ficha animal | Folgas 5x1 | Restrições de leite | Módulo Agrícola em consolidação | Assistente (exceto FUNCIONARIO)
+**Próxima revisão**: após regressão integrada ciclo + agricultura

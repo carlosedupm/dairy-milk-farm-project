@@ -5,131 +5,115 @@
 ### **Problema Identificado**
 As fazendas leiteiras brasileiras, especialmente as pequenas e médias, enfrentam desafios significativos na gestão operacional:
 - Controle manual de rebanhos usando planilhas ou papel
-- Dificuldade em acompanhar a saúde individual de cada animal
-- Falta de insights sobre produção e eficiência operacional
+- **Informação do ciclo da vaca espalhada** (cio num caderno, produção noutro, prenhez na memória do gerente)
+- Dificuldade em acompanhar a saúde individual e o **leite descartável** (laboratório / antibiótico)
+- Falta de visão para decisão (partos previstos, vacas a secar, produção do período)
 - Custo elevado de sistemas de gestão existentes
 - Conectividade limitada em áreas rurais
 
 ### **Oportunidade**
-Criar uma solução acessível, especializada e de alta performance para democratizar a tecnologia no agronegócio leiteiro, combinando:
-- Baixo custo de entrada (open source)
-- Alta performance técnica (stack Go + Next.js)
-- Experiência simplificada para usuários não técnicos
-- Funcionalidade offline para áreas rurais
+Criar uma solução acessível e especializada que **siga cada animal no rebanho** — do nascimento ou compra à produção e nova gestação — com dados **consistentes** para o curral e para a gestão, em stack Go + Next.js.
 
 ## 🎯 Propósito do Produto
 
 ### **Missão**
-Transformar a gestão de fazendas leiteiras através de tecnologia acessível e especializada, aumentando a eficiência operacional e a rentabilidade dos produtores.
+Transformar a gestão de fazendas leiteiras com tecnologia que **respeita o ciclo real da vaca** e reduz retrabalho administrativo, aumentando eficiência e rentabilidade.
 
 ### **Visão**
-Ser a plataforma de referência em gestão leiteira no Brasil, atingindo 1.000+ fazendas nos primeiros 2 anos.
+Ser a plataforma de referência em gestão leiteira no Brasil, na qual **cada fazenda confia na ficha do animal** e nos alertas derivados dos registros de campo.
 
 ### **Valores**
-- **Acessibilidade**: Tecnologia ao alcance de todos os produtores
-- **Simplicidade**: Interface intuitiva para usuários não técnicos
-- **Performance**: Experiência rápida e responsiva
-- **Inovação**: Preparado para integração com IA e IoT
+- **Acessibilidade**: Tecnologia ao alcance de pequenos produtores
+- **Simplicidade**: Curral primeiro; gestão vê o consolidado
+- **Integridade**: Um registro, um efeito coerente no estado do animal
+- **Rastreabilidade**: Requisitos de negócio (`BR-*`) alinhados ao código
+- **Performance**: Resposta rápida em dispositivos móveis
 
 ### **Perfis e papéis (produto)**
 
-- **Administrador da plataforma** (perfis técnicos `ADMIN` / `DEVELOPER`): opera o CeialMilk ao nível do sistema — provisão de utilizadores, listagem global de fazendas, área `/admin`.
-- **Titular da exploração** (perfil técnico `PROPRIETARIO`): responsável pela fazenda no produto; acesso operacional completo **somente** às fazendas vinculadas em `usuarios_fazendas`. Pode registar **nova** exploração via `/fazendas/criar-minha` → `POST /api/v1/me/fazendas` quando já é titular, ou ser atribuído e vinculado pelo administrador da plataforma.
-- **Gerente** (`GERENTE`): gestão operacional por fazenda (vínculo obrigatório); não confundir com administrador da plataforma.
+- **Administrador da plataforma** (`ADMIN` / `DEVELOPER`): provisão de utilizadores, fazendas globais, `/admin`.
+- **Titular da exploração** (`PROPRIETARIO`): fazendas vinculadas; pode criar exploração (`POST /api/v1/me/fazendas`).
+- **Gerente** (`GERENTE`, `GESTAO`): operação e equipe por fazenda (vínculo obrigatório).
+- **Campo** (`FUNCIONARIO`): curral — cios, coberturas, toques, partos, secagens, registo de produção e consulta de animais; ver [acessos-perfil.md](../docs/business/acessos-perfil.md) BR-ACESSO-015.
+
+## 🐄 Ciclo do rebanho (eixo do produto)
+
+O CeialMilk organiza-se em torno do **ciclo da vaca de leite**, não de menus isolados:
+
+| Fase | O que o utilizador precisa | Estado no produto |
+|------|----------------------------|-------------------|
+| Identificar no curral | Busca por brinco/nome + contexto imediato | ✅ Home + `GET .../contexto` |
+| Reproduzir | Cio → cobertura → toque → gestação | ✅ Encadeado (toque positivo + cobertura → PRENHE e gestação na busca/ficha/home) |
+| Preparar parto | Secagem, data prevista | ⚠️ Secagem sem fechar lactação |
+| Parir e lactar | Parto, crias, lactação, produção | ✅ Parto forte; produção sem vínculo explícito à lactação |
+| Qualidade do leite | Restrição até laboratório | ✅ Painel home |
+| Gerir | Prenhes, partos previstos, produção agregada | 🚧 Planejado |
+
+Detalhe transversal: **[docs/business/ciclo-rebanho.md](../docs/business/ciclo-rebanho.md)**.
 
 ## 👥 Jornada do Usuário
 
-### **Proprietário da Fazenda**
-1. **Cadastro**: Registo na aplicação; opcionalmente **registar a própria fazenda** (passa a titular `PROPRIETARIO`) ou aguardar vínculo pelo administrador da plataforma
-2. **Visão Geral**: Dashboard com indicadores-chave (produção, saúde, financeiro)
-3. **Relatórios**: Análises automáticas de performance
-4. **Decisões**: Insights para melhorar rentabilidade
+### **Proprietário / Gerente**
+1. **Provisão**: Conta e fazenda(s) vinculadas (admin ou fluxo titular).
+2. **Visão do rebanho**: Lista/filtros de animais; **meta**: dashboard com partos previstos, prenhes e produção.
+3. **Decisão**: Relatórios e alertas derivados dos registros (não duplicar planilhas).
 
-### **Gerente/Ordenhador**
-1. **Operação Diária**: Registro rápido de produção de leite
-2. **Controle Animal**: Acompanhamento individual de cada vaca
-3. **Alertas**: Notificações sobre saúde e reprodução
-4. **Tarefas**: Gestão de atividades da equipe
+### **Campo / Ordenhador**
+1. **Entrada rápida**: Buscar vaca → ver gestação, restrição de leite, última produção.
+2. **Registar**: Produção do dia, restrição de leite, eventos reprodutivos permitidos ao perfil.
+3. **Meta**: Mesmo fluxo na ficha da vaca, sem saltar entre oito ecrãs de gestão.
 
-### **Veterinário**
-1. **Histórico Saúde**: Acesso completo ao histórico médico
-2. **Tratamentos**: Registro de medicamentos e procedimentos
-3. **Prevenção**: Alertas para vacinas e cuidados preventivos
-4. **Relatórios**: Análises de saúde do rebanho
+### **Veterinário** *(roadmap)*
+1. Histórico de saúde, vacinas e tratamentos por animal.
+2. Hoje: apenas `status_saude` no cadastro.
 
 ## 🏗️ Arquitetura da Experiência
 
 ### **Princípios de Design**
-- **Mobile-first**: Interface otimizada para dispositivos móveis
-- **Offline-first**: Funcionalidade completa sem internet
-- **Progressive Disclosure**: Informações mostradas gradualmente
-- **Contextual Actions**: Ações relevantes para cada contexto
+- **Animal-first**: Contexto e ações na ficha e na busca, não só listas globais.
+- **Mobile-first**: Curral e folgas; zoom/reflow em `systemPatterns.md`.
+- **Progressive disclosure**: Resumo na home; detalhe na ficha.
+- **Requisitos explícitos**: Toda política de domínio com ID `BR-*` em `docs/business/`.
 
-### **Fluxos Principais**
-1. **Onboarding**: Cadastro simplificado em menos de 5 minutos
-2. **Registro Produção**: Interface rápida para registro diário
-3. **Controle Saúde**: Fluxo intuitivo para acompanhamento veterinário
-4. **Relatórios**: Visualizações claras e acionáveis
+### **Fluxos Principais (alvo)**
+1. **Onboarding** e provisão (`USER` → perfil operacional).
+2. **Busca → contexto → ação** (registar produção, restrição, evento reprodutivo).
+3. **Gestão reprodutiva encadeada** (cobertura → toque → parto).
+4. **Painel gerencial** (alertas e indicadores da fazenda ativa).
 
-## 📅 Folgas (escala 5x1)
-
-Módulo para **organizar folgas da equipe por fazenda** com rodízio **5x1**. O detalhamento das regras (IDs, perfis, bloqueios vs alertas informativos, ponteiros ao código e migrations) está no catálogo de negócio: **[docs/business/folgas.md](../docs/business/folgas.md)**.
+### **Módulos complementares**
+- **Folgas 5x1**: [folgas.md](../docs/business/folgas.md)
+- **Agricultura**: custos/safras (mesma conta, domínio separado do ciclo da vaca)
 
 ## 📊 Métricas de Valor
 
 ### **Para o Produtor**
-- ⏰ **Economia de tempo**: Redução de 40% em tarefas administrativas
-- 💰 **Aumento de receita**: +15% na produção através de insights
-- 🐄 **Melhoria na saúde**: -20% em custos veterinários
-- 📈 **Melhor decisão**: Acesso a dados em tempo real
+- Menos erros de identificação e de estado reprodutivo desatualizado
+- Menos tempo a procurar informação entre cadernos e módulos
+- Decisões de secagem/parto e de descarte de leite com dados centralizados
 
 ### **Para o Sistema**
-- 🚀 **Performance**: <200ms response time
-- 📱 **Disponibilidade**: 99.9% uptime
-- 🔄 **Escalabilidade**: Suporte a 1000+ usuários simultâneos
-- 💾 **Eficiência**: Baixo consumo de recursos
+- Performance &lt; 200 ms; disponibilidade 99,9%
+- Documentação de negócio atualizada em cada entrega de comportamento
 
-## 🔄 Ciclo de Feedback
+## 🔄 Ciclo de Feedback e Documentação
 
-### **Coleta de Dados**
-- Analytics anônimos de uso
-- Feedback direto dos usuários
-- Métricas de performance técnica
-- Dados de erro e exceções
-
-### **Processamento**
-- Análise trimestral de feedback
-- Priorização baseada em impacto
-- Iterações rápidas (sprints quinzenais)
-- Testes A/B para novas funcionalidades
-
-### **Implementação**
-- Deploy contínuo com feature flags
-- Rollout gradual para usuários
-- Monitoramento rigoroso de performance
-- Rollback rápido em caso de problemas
+- Feedback de campo prioriza **ficha do animal**, **dashboard pecuário** e **perfis de ordenha**.
+- Entregas de produto incluem atualização de `docs/business/` e, se transversal, `ciclo-rebanho.md`.
+- Memory bank (`activeContext`, `progress`, `projectbrief`) revisado nos marcos.
 
 ## 🌱 Estratégia de Crescimento
 
-### **Fase 1 (0-100 fazendas)**
-- Foco em pequenas fazendas (10-50 animais)
-- Onboarding assistido
-- Suporte prioritário
-- Coleta intensiva de feedback
+### **Fase 1 (0–100 fazendas)**
+- Pequenas fazendas; ciclo reprodutivo + leite + folgas; catálogo `BR-*` completo.
 
-### **Fase 2 (100-500 fazendas)**
-- Expansão para médias fazendas
-- Automação de onboarding
-- Sistema de suporte escalável
-- Introdução de funcionalidades premium
+### **Fase 2 (100–500 fazendas)**
+- Dashboard, saúde animal mínimo, alertas automáticos.
 
 ### **Fase 3 (500+ fazendas)**
-- Atração de grandes fazendas
-- API pública para integrações
-- Ecossistema de parceiros
-- Modelo de negócio sustentável
+- Integrações, API pública, offline avançado.
 
 ---
 
-**Última atualização**: 2026-05-12 (USER não regista fazenda; titular via admin + fluxo PROPRIETARIO)
-**Versão do Contexto**: 2.3 (perfil PROPRIETARIO; distinção admin da plataforma vs titular; ver `docs/business/acessos-perfil.md` BR-ACESSO-011 a 013)
+**Última atualização**: 2026-05-19  
+**Versão do Contexto**: 3.0 (ciclo do rebanho como eixo; jornadas alinhadas ao estado real e ao roadmap; referência `ciclo-rebanho.md`)

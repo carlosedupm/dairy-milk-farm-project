@@ -112,7 +112,7 @@ func (r *LactacaoRepository) ExistsAtivaNaFazenda(ctx context.Context, fazendaID
 
 func (r *LactacaoRepository) GetEmAndamentoByAnimalID(ctx context.Context, animalID int64) (*models.Lactacao, error) {
 	query := `SELECT id, animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id, created_at, updated_at
-		FROM lactacoes WHERE animal_id = $1 AND (status IS NULL OR status = 'EM_ANDAMENTO') ORDER BY data_inicio DESC LIMIT 1`
+		FROM lactacoes WHERE animal_id = $1 AND data_fim IS NULL AND (status IS NULL OR status = 'EM_ANDAMENTO') ORDER BY data_inicio DESC LIMIT 1`
 	var l models.Lactacao
 	err := r.db.QueryRow(ctx, query, animalID).Scan(&l.ID, &l.AnimalID, &l.NumeroLactacao, &l.PartoID, &l.DataInicio, &l.DataFim, &l.DiasLactacao, &l.ProducaoTotal, &l.MediaDiaria, &l.Status, &l.FazendaID, &l.CreatedAt, &l.UpdatedAt)
 	if err == pgx.ErrNoRows {
@@ -131,4 +131,30 @@ func (r *LactacaoRepository) CountByAnimalIDTx(ctx context.Context, tx pgx.Tx, a
 	var n int
 	err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM lactacoes WHERE animal_id = $1`, animalID).Scan(&n)
 	return n, err
+}
+
+func (r *LactacaoRepository) UpdateTx(ctx context.Context, tx pgx.Tx, l *models.Lactacao) error {
+	if l.ID <= 0 {
+		return fmt.Errorf("id invalido: %d", l.ID)
+	}
+	query := `UPDATE lactacoes SET data_fim = $1, dias_lactacao = $2, producao_total = $3, media_diaria = $4, status = $5, updated_at = $6 WHERE id = $7`
+	cmd, err := tx.Exec(ctx, query, l.DataFim, l.DiasLactacao, l.ProducaoTotal, l.MediaDiaria, l.Status, time.Now(), l.ID)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return errors.New("nenhuma linha atualizada")
+	}
+	return nil
+}
+
+func (r *LactacaoRepository) GetEmAndamentoByAnimalIDTx(ctx context.Context, tx pgx.Tx, animalID int64) (*models.Lactacao, error) {
+	query := `SELECT id, animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id, created_at, updated_at
+		FROM lactacoes WHERE animal_id = $1 AND data_fim IS NULL AND (status IS NULL OR status = 'EM_ANDAMENTO') ORDER BY data_inicio DESC LIMIT 1`
+	var l models.Lactacao
+	err := tx.QueryRow(ctx, query, animalID).Scan(&l.ID, &l.AnimalID, &l.NumeroLactacao, &l.PartoID, &l.DataInicio, &l.DataFim, &l.DiasLactacao, &l.ProducaoTotal, &l.MediaDiaria, &l.Status, &l.FazendaID, &l.CreatedAt, &l.UpdatedAt)
+	if err == pgx.ErrNoRows {
+		return nil, pgx.ErrNoRows
+	}
+	return &l, err
 }

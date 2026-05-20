@@ -10,15 +10,23 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var ErrProducaoNotFound = errors.New("registro de produção não encontrado")
+var (
+	ErrProducaoNotFound            = errors.New("registro de produção não encontrado")
+	ErrProducaoSemLactacaoAtiva    = errors.New("animal não está em lactação ativa")
+)
 
 type ProducaoService struct {
-	repo       *repository.ProducaoRepository
-	animalRepo *repository.AnimalRepository
+	repo         *repository.ProducaoRepository
+	animalRepo   *repository.AnimalRepository
+	lactacaoRepo *repository.LactacaoRepository
 }
 
-func NewProducaoService(repo *repository.ProducaoRepository, animalRepo *repository.AnimalRepository) *ProducaoService {
-	return &ProducaoService{repo: repo, animalRepo: animalRepo}
+func NewProducaoService(
+	repo *repository.ProducaoRepository,
+	animalRepo *repository.AnimalRepository,
+	lactacaoRepo *repository.LactacaoRepository,
+) *ProducaoService {
+	return &ProducaoService{repo: repo, animalRepo: animalRepo, lactacaoRepo: lactacaoRepo}
 }
 
 func (s *ProducaoService) Create(ctx context.Context, producao *models.ProducaoLeite) error {
@@ -34,12 +42,20 @@ func (s *ProducaoService) Create(ctx context.Context, producao *models.ProducaoL
 	}
 
 	// Verificar se o animal existe
-	_, err := s.animalRepo.GetByID(ctx, producao.AnimalID)
+	animal, err := s.animalRepo.GetByID(ctx, producao.AnimalID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return errors.New("animal não encontrado")
 		}
 		return err
+	}
+
+	emLactacao, err := s.lactacaoRepo.ExistsAtivaNaFazenda(ctx, animal.FazendaID, producao.AnimalID)
+	if err != nil {
+		return err
+	}
+	if !emLactacao {
+		return ErrProducaoSemLactacaoAtiva
 	}
 
 	// Validar qualidade se fornecida (1-10)

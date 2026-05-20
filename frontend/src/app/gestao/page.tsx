@@ -34,7 +34,13 @@ function GestaoContent() {
   const allowedLinks =
     user?.perfil === "FUNCIONARIO"
       ? links.filter(({ href }) =>
-          ["/gestao/cios", "/gestao/coberturas", "/gestao/partos", "/gestao/secagens"].includes(href)
+          [
+            "/gestao/cios",
+            "/gestao/coberturas",
+            "/gestao/toques",
+            "/gestao/partos",
+            "/gestao/secagens",
+          ].includes(href)
         )
       : links;
 

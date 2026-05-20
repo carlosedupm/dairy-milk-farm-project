@@ -1,126 +1,149 @@
 # 📋 Project Brief - CeialMilk
 
 ## 🎯 Objetivo Principal
-Desenvolver um sistema de gestão completo para fazendas leiteiras que combine alta performance técnica com funcionalidades práticas para o agronegócio, utilizando arquitetura moderna (Go + Next.js) e preparado para integração com IA.
+
+Desenvolver um sistema de gestão para **fazendas leiteiras** que acompanhe o **ciclo de vida de cada animal no rebanho** — da entrada ou nascimento à produção, reprodução, saúde do leite e saída — com **informação sincronizada** entre operação de campo, gestão da fazenda e documentação de requisitos.
+
+A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy simples e base para assistente e alertas futuros. O produto **não** é um conjunto de CRUDs isolados; é uma plataforma em que **cada evento no curral atualiza o estado coerente da vaca** e fica visível para quem decide.
+
+## 🧭 Norte do produto (2026)
+
+| Princípio | Significado |
+|-----------|-------------|
+| **Centrado no animal** | A ficha da vaca é o hub: histórico reprodutivo, lactação, produção, restrições e próximas ações — não apenas listas por módulo. |
+| **Ciclo contínuo** | Cio → cobertura → toque → gestação → secagem → parto → lactação → produção → nova cobertura, com regras no servidor e UX que guiam a ordem correta. |
+| **Sincronização tripla** | Código, comportamento em produção e **`docs/business/`** (requisitos com IDs `BR-*`) evoluem **no mesmo ciclo de entrega**. |
+| **Dia a dia no curral** | Mobile-first, busca por identificação, registro rápido (leite, restrições, eventos reprodutivos) conforme perfil. |
+| **Visibilidade gerencial** | Dashboard e alertas (partos previstos, prenhes, restrições, produção) para titular e gerente — não só cadastros. |
+
+**Referência de requisitos transversais:** [docs/business/ciclo-rebanho.md](../docs/business/ciclo-rebanho.md).
 
 ## 🎯 Objetivos Específicos
 
-### **Controle Operacional**
-- Gestão individualizada de cada animal do rebanho
-- Monitoramento diário de produção de leite
-- Controle completo de saúde animal (vacinações, tratamentos veterinários)
-- Gestão financeira integrada da operação leiteira
+### **Ciclo do rebanho leiteiro** (prioridade de produto)
 
-### **Performance Técnica**
-- API REST com Go (Gin) e frontend Next.js
-- Tempos de resposta inferiores a 200ms (95% das requisições)
-- Escalabilidade horizontal automática
-- Baixo consumo de recursos computacionais
+- Gestão **individualizada** por animal, com linhagem (mãe, origem NASCIDO/COMPRADO) e evolução de categoria.
+- **Gestão reprodutiva** integrada: cios, coberturas, toques, gestações, partos, crias no rebanho, secagens e lactações.
+- **Produção de leite** por animal, alinhada à lactação ativa quando aplicável.
+- **Qualidade operacional do leite**: restrições de descarte / laboratório vinculadas à vaca em lactação.
+- **Consistência de estado**: `status_reprodutivo`, lactação aberta/fechada e gestação confirmada derivados dos eventos (ver lacunas em `ciclo-rebanho.md`).
 
-### **Acessibilidade**
-- Stack 100% open source sem custos iniciais
-- Deploy simplificado com containers Docker
-- Funcionalidade offline-first para áreas rurais
-- Baixa necessidade de manutenção técnica
+### **Operação da fazenda** (complementar)
 
-### **Experiência do Usuário**
-- Interface intuitiva para trabalhadores rurais
-- Multiplataforma (web responsiva; Folgas e demais telas priorizam uso em celular onde aplicável)
-- Relatórios automáticos e insights preditivos
-- Sistema de alertas inteligentes para saúde animal
+- Equipe: escala de **folgas 5x1** por fazenda.
+- **Lotes** e movimentação de animais.
+- **Agricultura**: custos, safras e resultado (domínio separado, mesma conta/fazenda).
+
+### **Controle de saúde** (roadmap)
+
+- Hoje: `status_saude` no cadastro do animal.
+- Planejado: vacinas, tratamentos e histórico veterinário (módulo dedicado).
+
+### **Performance técnica**
+
+- API REST Go (Gin); tempos de resposta &lt; 200 ms (meta 95% das requisições).
+- Frontend Next.js responsivo; PWA instalável.
+- Observabilidade (logs estruturados, Sentry, Prometheus).
+
+### **Acessibilidade e deploy**
+
+- Stack open source; deploy Render + Vercel.
+- **Conectividade rural**: PWA e UI tolerante a latência; **offline-first completo** permanece objetivo de médio prazo (não entregue como promessa atual).
+
+### **Experiência do usuário**
+
+- Interface para trabalhadores rurais (zoom/reflow documentados em `systemPatterns.md`).
+- Assistente virtual (perfis com acesso) para consultas e comandos; evolução por capacidades para `FUNCIONARIO`.
+- Relatórios e alertas reprodutivos/produção — **em construção** (prioridade pós-consolidação do ciclo).
 
 ## 👥 Público-Alvo
 
-### **Fazendas Leiteiras**
-- **Pequenas**: 10-50 animais (foco principal inicial)
-- **Médias**: 50-200 animais (expansão natural)
-- **Grandes**: 200+ animais (com customizações específicas)
+### **Fazendas leiteiras**
 
-### **Perfis de Usuário**
-- **Proprietário**: Visão geral e financeira da operação
-- **Gerente**: Operação diária e gestão de equipe
-- **Veterinário**: Controle de saúde e tratamentos
-- **Ordenhador**: Registro de produção e observações
+- **Pequenas** (10–50 animais): foco principal.
+- **Médias** (50–200): expansão natural.
+- **Grandes** (200+): customizações e integrações futuras.
+
+### **Perfis de usuário** (técnicos no sistema)
+
+| Papel na fazenda | Perfil(is) | Expectativa no produto |
+|------------------|------------|-------------------------|
+| Titular | `PROPRIETARIO` | Visão da exploração, cadastro de fazenda, gestão completa nas fazendas vinculadas |
+| Gerente | `GERENTE`, `GESTAO` | Operação, equipe, folgas, reprodução e indicadores |
+| Campo / ordenha | `FUNCIONARIO` | Curral: busca, restrições de leite, eventos reprodutivos permitidos; **revisão de escopo** (produção e toques) — ver `acessos-perfil.md` |
+| Plataforma | `ADMIN`, `DEVELOPER` | Provisão de contas e fazendas |
+| Pré-provisão | `USER` | Onboarding até vínculo e perfil operacional |
 
 ## 📊 Métricas de Sucesso
 
-### **Técnicas (1º Ano)**
-- < 200ms response time (95% das requisições)
-- 99.9% uptime em ambiente de produção
-- Suporte a 1000+ conexões simultâneas
-- Deployment automático CI/CD implementado
+### **Negócio (1º ano)**
 
-### **Operacionais (1º Ano)**
-- +30% eficiência operacional reportada
-- -20% custos com saúde animal
-- +15% produção de leite através de insights
-- -40% tempo em tarefas administrativas
+- Redução de **erros de registro** (animal errado, gestação desatualizada, leite de vaca restrita).
+- **Adoção diária** no curral (busca + produção + eventos reprodutivos por perfil).
+- **Tempo até decisão** (ex.: lista de partos previstos e prenhes acessível em &lt; 2 cliques na home).
+
+### **Técnicas (1º ano)**
+
+- &lt; 200 ms response time (95%); 99,9% uptime; suporte a 1000+ utilizadores simultâneos.
+- **100%** das mudanças de comportamento de produto com regra correspondente em `docs/business/`.
+
+### **Operacionais (aspiracionais)**
+
+- +30% eficiência administrativa; +15% produção via insights; -20% custos de saúde — dependentes de módulos ainda em roadmap.
 
 ## 🚀 Fases de Desenvolvimento
 
-### **Fase 1 - MVP (Atual)**
-- [x] CRUD completo de Fazendas
-- [ ] CRUD completo de Animais
-- [ ] CRUD completo de Produção de Leite
-- [x] Sistema de Autenticação JWT
-- [x] API REST (Go) funcional
-- [x] **Módulo Folgas 5x1** por fazenda (configuração, geração pelo mês visível, alteração por gestão, justificativa pelo funcionário, alertas/equidade informativos, UX mobile com grade + detalhes por dia)
+### **Fase 1 — Fundação e módulos (concluída em grande parte)**
 
-### **Fase 2 - Operacional**
-- [ ] Controle de saúde animal integrado
-- [ ] Gestão reprodutiva
-- [ ] Relatórios analíticos básicos
-- [ ] Versão mobile responsiva
+- [x] Autenticação JWT, fazendas, vínculo usuário–fazenda, RBAC por perfil
+- [x] CRUD animais, produção de leite, lotes
+- [x] Gestão pecuária: cios, coberturas, toques, gestações, partos (+ crias), secagens, lactações
+- [x] Restrições de leite (laboratório); busca contextual na home
+- [x] Folgas 5x1; módulo agrícola (estrutura)
+- [x] Deploy produção (Render + Vercel); catálogo `docs/business/` iniciado
 
-### **Fase 3 - Inteligência**
-- [ ] Sistema de predições de produção
-- [ ] Alertas automáticos de saúde preventiva
-- [ ] Otimização de recursos através de IA
-- [ ] Integração com dispositivos IoT
+### **Fase 2 — Ciclo integrado e gestão visível** *(foco atual)*
+
+- [ ] **Ficha do animal** com timeline e estado (lactação, gestação, próximas ações)
+- [ ] **Invariantes de ciclo** no servidor (ex.: secagem encerra lactação; uma lactação ativa por animal)
+- [ ] **Fluxos encadeados** na UI (cobertura → toque → parto com `gestacao_id`)
+- [ ] **Dashboard pecuário**: partos previstos, prenhes, restrições, produção do período
+- [ ] **Perfis de campo** alinhados à ordenha e diagnóstico (revisão `FUNCIONARIO`)
+- [ ] **Catálogo de negócio** completo para partos, lactações, gestações, toques, secagens, produção
+- [ ] Consolidação módulo agrícola e regressão integrada
+
+### **Fase 3 — Saúde, inteligência e escala**
+
+- [ ] Módulo saúde (vacinas, tratamentos)
+- [ ] Alertas automáticos reprodutivos e de produção
+- [ ] Assistente por capacidades; gráficos e exportações
+- [ ] Offline-first onde tecnicamente viável
+- [ ] IoT / integrações (opcional)
+
+## ✅ Definição de pronto (DoD) para entregas de produto
+
+1. Comportamento implementado e testável (API + UI quando aplicável).
+2. Regra(s) em **`docs/business/`** com ID estável, estado **implementado | parcial | planejado**.
+3. Atualização de **`memory-bank/activeContext.md`** e **`progress.md`** se mudar foco ou marco.
+4. Alinhamento **`appAccess.ts`** ↔ **`perfil_access.go`** se mudar permissões.
+5. Atualização de **[ciclo-rebanho.md](../docs/business/ciclo-rebanho.md)** se afetar o fluxo transversal do animal.
 
 ## 💡 Diferenciais Competitivos
 
-### **Técnicos**
-- 🚀 **Stack moderna (Go + Next.js)** no mercado leiteiro
-- 📱 **Offline-first** para áreas com conectividade limitada
-- 🤖 **AI-native** desde a arquitetura inicial
-- 🐳 **100% containerizado** para fácil deploy
+- **Especialização leiteira** com ciclo reprodutivo + leite no mesmo sistema.
+- **Stack moderna** (Go + Next.js) e custo de entrada baixo.
+- **Regras versionadas** (`BR-*`) — rastreabilidade negócio ↔ código.
+- **Realidade brasileira** (perfis, folgas, fluxo de laboratório do leite).
 
-### **Mercado**
-- 🐄 **Especialização leiteira** (não genérico)
-- 🇧🇷 **Feito para realidade brasileira**
-- 💰 **Custo zero inicial** para pequenas fazendas
-- 📊 **Simplicidade** para usuários não técnicos
+## 📅 Timeline (orientativa)
 
-## 📅 Timeline Estimada
-
-### **Quarter 1 (MVP)**
-- ✅ Definição arquitetural (Concluído)
-- ✅ Ambiente desenvolvimento (Concluído)
-- ✅ Estrutura base projeto (Concluído)
-- ✅ Implementação CRUD Fazendas e Autenticação JWT (Concluído)
-- [ ] CRUD Animais e Produção de Leite
-- [ ] Deploy produção inicial
-
-### **Quarter 2 (Operacional)**
-- [ ] Controle saúde animal
-- [ ] Gestão reprodutiva
-- [ ] Relatórios básicos
-- [ ] App mobile
-
-### **Quarter 3 (Inteligência)**
-- [ ] Predições produção
-- [ ] Alertas automáticos
-- [ ] Integração IoT
-- [ ] Marketplace insumos
-
-### **Quarter 4 (Expansão)**
-- [ ] Múltiplas fazendas
-- [ ] API pública
-- [ ] Comunidade usuários
-- [ ] Modelo freemium
+| Período | Entrega alvo |
+|---------|----------------|
+| **Agora – Q2 2026** | Fase 2: ciclo integrado + documentação de requisitos completa |
+| **Q3 2026** | Saúde animal mínimo + alertas reprodutivos |
+| **Q4 2026+** | Inteligência, offline, ecossistema |
 
 ---
 
-**Última atualização**: 2026-04-01
-**Versão do Brief**: 2.1 (Go + Next.js — Folgas 5x1 no escopo MVP)
+**Última atualização**: 2026-05-19  
+**Versão do Brief**: 3.0 (ciclo do rebanho como eixo; sincronização código–documentação–requisitos; fases realinhadas ao estado do projeto)

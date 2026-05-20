@@ -24,28 +24,37 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ### BR-ACESSO-002 — Gestão parcial para FUNCIONARIO
 
-- **Enunciado**: No módulo Gestão, `FUNCIONARIO` pode acessar apenas manutenção de Cios, Coberturas, Partos e Secagens.
+- **Enunciado**: No módulo Gestão, `FUNCIONARIO` pode acessar Cios, Coberturas, **Toques**, Partos e Secagens (sem gestações/lactações globais).
 - **Escopo**: Frontend e API de gestão pecuária.
 - **Perfis / permissões**: `FUNCIONARIO`.
 - **Efeito**:
   - UI: cards/rotas de Gestão fora desse escopo ficam ocultos ou bloqueados.
   - API: endpoints fora da whitelist retornam 403.
 - **Implementação**:
-  - Rotas UI permitidas: `/gestao`, `/gestao/cios*`, `/gestao/coberturas*`, `/gestao/partos*`, `/gestao/secagens*`.
-  - API permitida: `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/partos*`, `/api/v1/secagens*`, e `GET|POST /api/v1/crias*` (sub-recurso operacional de partos — listar e complementar crias na edição; sem UI `/gestao/gestacoes`).
+  - Rotas UI: `/gestao`, `/gestao/cios*`, `/gestao/coberturas*`, `/gestao/toques*`, `/gestao/partos*`, `/gestao/secagens*`.
+  - API: `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/toques*`, `/api/v1/partos*`, `/api/v1/secagens*`, `GET|POST /api/v1/crias*`.
 - **Estado**: Implementado.
 
 ### BR-ACESSO-003 — Animais em modo consulta para FUNCIONARIO
 
-- **Enunciado**: No módulo Animais, `FUNCIONARIO` tem somente consulta, incluindo detalhe e histórico/resumo de produção.
+- **Enunciado**: No módulo Animais, `FUNCIONARIO` tem consulta (lista, detalhe, contexto) sem criar/editar/excluir animal.
 - **Escopo**: Frontend e API de animais.
 - **Perfis / permissões**: `FUNCIONARIO`.
 - **Efeito**:
-  - UI: sem ações de criar/editar/excluir animal e sem atalho para registrar produção.
-  - API: apenas leitura (`GET`) em `/api/v1/animais*`.
+  - UI: sem CRUD de animal; atalho para `/producao/novo` na home (ver BR-ACESSO-015).
+  - API: `GET` em `/api/v1/animais*`.
 - **Implementação**:
-  - UI permitida: `/animais` e `/animais/:id`.
-  - API leitura por método HTTP no middleware de perfil.
+  - UI: `/animais`, `/animais/:id`.
+  - API: `funcionarioAnimaisPath` (GET).
+- **Estado**: Implementado.
+
+### BR-ACESSO-015 — FUNCIONARIO: produção e toques no curral
+
+- **Enunciado**: `FUNCIONARIO` pode **registrar produção de leite** (`POST /api/v1/producao`) e **toques** (`/api/v1/toques*`), fechando o ciclo cobertura → diagnóstico → ordenha no campo.
+- **Escopo**: API e rotas UI `/producao/novo`, `/gestao/toques*`.
+- **Perfis / permissões**: `FUNCIONARIO`; demais perfis inalterados.
+- **Efeito**: bloqueio mantido em `PUT/DELETE` de produção, gestações, lactações e assistente.
+- **Implementação**: `perfil_access.go` (`toques` em `funcionarioGestaoPath`, `POST /api/v1/producao`); `appAccess.ts` (`/producao/novo`, `/gestao/toques`); `Dashboard.tsx` atalho produção.
 - **Estado**: Implementado.
 
 ### BR-ACESSO-004 — Folgas e endpoints auxiliares mantidos para FUNCIONARIO

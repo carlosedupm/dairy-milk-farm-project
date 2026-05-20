@@ -19,6 +19,7 @@ type AnimalHandler struct {
 	reclassificacaoSvc   *service.ReclassificacaoCategoriaService
 	restricaoLeiteSvc    *service.RestricaoLeiteService
 	gestacaoSvc          *service.GestacaoService
+	cicloSvc             *service.AnimalCicloService
 }
 
 func NewAnimalHandler(
@@ -28,6 +29,7 @@ func NewAnimalHandler(
 	reclassificacaoSvc *service.ReclassificacaoCategoriaService,
 	restricaoLeiteSvc *service.RestricaoLeiteService,
 	gestacaoSvc *service.GestacaoService,
+	cicloSvc *service.AnimalCicloService,
 ) *AnimalHandler {
 	return &AnimalHandler{
 		service:            service,
@@ -36,6 +38,7 @@ func NewAnimalHandler(
 		reclassificacaoSvc: reclassificacaoSvc,
 		restricaoLeiteSvc:  restricaoLeiteSvc,
 		gestacaoSvc:        gestacaoSvc,
+		cicloSvc:           cicloSvc,
 	}
 }
 
@@ -575,6 +578,29 @@ func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
 			return
 		}
 		payload["gestacao_resumo"] = gestResumo
+	}
+
+	if h.cicloSvc != nil {
+		lact, err := h.cicloSvc.GetLactacaoAtiva(c.Request.Context(), id)
+		if err != nil {
+			response.ErrorInternal(c, "Erro ao buscar lactação do animal", err.Error())
+			return
+		}
+		if lact != nil {
+			payload["lactacao_ativa"] = lact
+		}
+		timeline, err := h.cicloSvc.BuildTimeline(c.Request.Context(), id)
+		if err != nil {
+			response.ErrorInternal(c, "Erro ao buscar histórico do animal", err.Error())
+			return
+		}
+		payload["timeline"] = timeline
+		acoes, err := h.cicloSvc.BuildProximasAcoes(c.Request.Context(), animal)
+		if err != nil {
+			response.ErrorInternal(c, "Erro ao sugerir próximas ações", err.Error())
+			return
+		}
+		payload["proximas_acoes"] = acoes
 	}
 
 	response.SuccessOK(c, payload, "Contexto do animal carregado com sucesso")

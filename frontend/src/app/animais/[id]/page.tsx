@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   get as getAnimal,
+  getContexto,
   remove,
   SEXO_LABELS,
   STATUS_SAUDE_LABELS,
@@ -12,10 +13,11 @@ import {
   ORIGEM_LABELS,
 } from "@/services/animais";
 import { getStatusReprodutivoLabel } from "@/components/animais/animalResumoUtils";
+import { AnimalFichaCiclo } from "@/components/animais/AnimalFichaCiclo";
 import type { OrigemAquisicao } from "@/services/animais";
 import type { Sexo, StatusSaude } from "@/services/animais";
 import { get as getFazenda } from "@/services/fazendas";
-import { getResumoByAnimal } from "@/services/producao";
+import { isPathAllowedForPerfil } from "@/config/appAccess";
 import { formatDatePtBr } from "@/lib/format";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -68,11 +70,14 @@ function AnimalDetailContent() {
     enabled: !!animal?.fazenda_id,
   });
 
-  const { data: resumo } = useQuery({
-    queryKey: ["producao", "resumo", id],
-    queryFn: () => getResumoByAnimal(id),
+  const { data: contexto, isLoading: contextoLoading } = useQuery({
+    queryKey: ["animais", id, "contexto"],
+    queryFn: () => getContexto(id),
     enabled: !Number.isNaN(id) && !!animal,
   });
+
+  const canRegistrarProducao =
+    !!user?.perfil && isPathAllowedForPerfil(user.perfil, "/producao/novo");
 
   const deleteMutation = useMutation({
     mutationFn: () => remove(id),
@@ -272,7 +277,7 @@ function AnimalDetailContent() {
               <Milk className="h-4 w-4" />
               Produção de leite
             </CardTitle>
-            {canManageAnimal && (
+            {canRegistrarProducao && (
               <Button size="sm" asChild>
                 <Link href={`/producao/novo?animal_id=${id}`}>
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -282,14 +287,15 @@ function AnimalDetailContent() {
             )}
           </CardHeader>
           <CardContent>
-            {resumo ? (
+            {contexto?.resumo_producao &&
+            contexto.resumo_producao.total_registros > 0 ? (
               <dl className="grid gap-2 sm:grid-cols-3">
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">
                     Total (litros)
                   </dt>
                   <dd className="text-lg font-semibold">
-                    {resumo.total_litros.toFixed(1)}
+                    {contexto.resumo_producao.total_litros.toFixed(1)}
                   </dd>
                 </div>
                 <div>
@@ -297,7 +303,7 @@ function AnimalDetailContent() {
                     Média (litros)
                   </dt>
                   <dd className="text-lg font-semibold">
-                    {resumo.media_litros.toFixed(1)}
+                    {contexto.resumo_producao.media_litros.toFixed(1)}
                   </dd>
                 </div>
                 <div>
@@ -305,7 +311,7 @@ function AnimalDetailContent() {
                     Registros
                   </dt>
                   <dd className="text-lg font-semibold">
-                    {resumo.total_registros}
+                    {contexto.resumo_producao.total_registros}
                   </dd>
                 </div>
               </dl>
@@ -316,6 +322,11 @@ function AnimalDetailContent() {
             )}
           </CardContent>
         </Card>
+
+        {contextoLoading && (
+          <p className="text-sm text-muted-foreground">Carregando ciclo…</p>
+        )}
+        {contexto ? <AnimalFichaCiclo contexto={contexto} /> : null}
       </div>
     </PageContainer>
   );

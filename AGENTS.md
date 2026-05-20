@@ -24,13 +24,13 @@ O projeto mantém documentação estruturada no diretório `memory-bank/`. **SEM
 
 Catálogo **versionado** de regras de domínio (IDs estáveis, escopo, perfis, bloqueio vs informativo, ponteiros ao código). **`memory-bank/productContext.md`** mantém visão de produto e jornada; o **detalhe operacional** das regras fica em `docs/business/*.md`.
 
-**Obrigatório:** qualquer **mudança de comportamento de produto** (nova regra, alteração de política de domínio ou UX que reflita decisão de negócio) deve incluir **no mesmo trabalho** a atualização do arquivo correspondente em `docs/business/` (novo módulo = novo `.md` + entrada no índice em `docs/business/README.md`). Para contexto no chat do Cursor, use `@docs/business/...` quando implementar aquele domínio.
+**Obrigatório:** qualquer **mudança de comportamento de produto** (nova regra, alteração de política de domínio ou UX que reflita decisão de negócio) deve incluir **no mesmo trabalho** a atualização do arquivo correspondente em `docs/business/` (novo módulo = novo `.md` + entrada no `docs/business/README.md`). Impacto **transversal no ciclo da vaca** → atualizar também **`docs/business/ciclo-rebanho.md`**. Para contexto no chat do Cursor, use `@docs/business/...` quando implementar aquele domínio.
 
 ## 🎯 Visão Geral do Projeto
 
-CeialMilk é um sistema de gestão completo para fazendas leiteiras que combina alta performance técnica com funcionalidades práticas para o agronegócio, utilizando arquitetura moderna com Go e Next.js.
+CeialMilk é um sistema de gestão para **fazendas leiteiras** centrado no **ciclo de vida de cada animal no rebanho** (reprodução, lactação, produção, restrições de leite, equipe), com stack Go + Next.js e requisitos versionados em `docs/business/` (IDs `BR-*`).
 
-**Consulte `memory-bank/projectbrief.md` para detalhes completos sobre objetivos, público-alvo e métricas de sucesso.**
+**Consulte `memory-bank/projectbrief.md`** (objetivos e fases) e **`docs/business/ciclo-rebanho.md`** (fluxo transversal e backlog de requisitos).
 
 ## 🏗️ Arquitetura e Stack
 
@@ -207,5 +207,5 @@ Pages/App → Components → Services → API (Backend)
 
 ---
 
-**Última atualização**: 2026-05-11
-**Versão**: 2.1 (Go + Next.js — catálogo `docs/business/`; padrão de zoom/reflow na UX documentado em `systemPatterns.md`)
+**Última atualização**: 2026-05-19
+**Versão**: 2.2 (ciclo do rebanho como eixo; `ciclo-rebanho.md`; DoD com sincronização documentação–código)

@@ -178,6 +178,13 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 - **Frontend**: `frontend/src/services/restricoesLeite.ts`, `frontend/src/services/animais.ts` (`listEmLactacaoByFazenda`), `frontend/src/components/leite/RestricoesLeiteHomePanel.tsx`, integração na home (`app/page.tsx`).
 - **Negócio**: `docs/business/leite-restricoes.md` (BR-LEITE-005).
 
+## Ciclo integrado do rebanho (Fase 2)
+
+- **Migração**: `backend/migrations/22_close_lactacao_on_seca_animals.up.sql` (correção legado seca + lactação aberta).
+- **Backend**: `animal_ciclo_service.go` (timeline, próximas ações); `secagem_service.go` (transação encerra lactação); `lactacao_service.go` (bloqueio 2ª ativa); `producao_service.go` + `ExistsAtivaNaFazenda`; `diagnostico_gestacao_service.go` (`resolveCoberturaIDForPositivo`); `resumo_pecuario_service.go`; `GET /api/v1/animais/:id/contexto` enriquecido; `GET /api/v1/fazendas/:id/resumo-pecuario`.
+- **Frontend**: `AnimalFichaCiclo.tsx`, `PecuarioResumoHomePanel.tsx`, `ProducaoForm` (`listEmLactacaoByFazenda`), `/gestao/toques/novo` (cobertura + invalidação de cache).
+- **Negócio**: `docs/business/ciclo-rebanho.md` e módulos `secagens`, `lactacoes`, `partos`, `toques`, `gestacoes`, `producao-leite`.
+
 ## Módulo Agrícola (Contexto Técnico)
 
 ### Backend (Go)
@@ -260,5 +267,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-13 (migration 21: `usuarios_fazendas.papel`)
-**Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Módulo Folgas 5x1 (migration 16; UI `folgas/*` + geração pelo mês visível), restrições de leite (migration 20; `GET .../animais/em-lactacao` + BR-LEITE-005), Módulo Agrícola, Dev Studio com contexto do repositório (GitHub), testes API TestSprite (`testsprite_tests/`)
+**Última atualização**: 2026-05-19 (Fase 2 ciclo integrado: migration 22, contexto animal, resumo pecuário, toque↔gestação)
+**Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Ciclo do rebanho Fase 2, Folgas 5x1, restrições de leite (`em-lactacao`), Módulo Agrícola, Dev Studio (GitHub), TestSprite API (`testsprite_tests/`)

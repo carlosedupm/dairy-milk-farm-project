@@ -53,6 +53,13 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
   - UI: `formatGestacaoResumoLinha` em `animalResumoUtils.ts`.
 - **Estado**: Implementado.
 
+### BR-ANIMAIS-004 — Contexto enriquecido (ciclo do rebanho)
+
+- **Enunciado**: `GET /api/v1/animais/:id/contexto` inclui, além dos blocos existentes, `lactacao_ativa`, `timeline[]` (eventos ordenados por data) e `proximas_acoes[]` (sugestões de registro).
+- **Escopo**: Mesmo controle de acesso do contexto; até 50 itens na timeline (produção limitada aos 15 registros mais recentes).
+- **Implementação**: `AnimalCicloService` em `backend/internal/service/animal_ciclo_service.go`; `AnimalHandler.GetContextoByID`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-18
+**Última atualização**: 2026-05-19

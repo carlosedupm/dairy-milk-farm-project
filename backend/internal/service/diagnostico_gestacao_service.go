@@ -12,7 +12,11 @@ import (
 
 const diasGestacaoBovino = 283
 
-var ErrDiagnosticoNotFound = errors.New("diagnostico de gestacao nao encontrado")
+var (
+	ErrDiagnosticoNotFound          = errors.New("diagnostico de gestacao nao encontrado")
+	ErrToquePositivoSemCobertura    = errors.New("toque positivo exige cobertura vinculada: registre uma cobertura ou informe cobertura_id")
+	ErrToquePositivoGestacaoAtiva   = errors.New("animal ja possui gestacao confirmada")
+)
 
 type DiagnosticoGestacaoService struct {
 	repo           *repository.DiagnosticoGestacaoRepository
@@ -50,16 +54,27 @@ func (s *DiagnosticoGestacaoService) Create(ctx context.Context, d *models.Diagn
 	if animal.FazendaID != d.FazendaID {
 		return errors.New("animal deve ser da mesma fazenda")
 	}
+
+	var coberturaID int64
+	if d.Resultado == models.DiagnosticoResultadoPositivo {
+		ativa, err := s.gestacaoRepo.GetAtivaConfirmadaByAnimalID(ctx, d.AnimalID)
+		if err != nil {
+			return err
+		}
+		if ativa != nil {
+			return ErrToquePositivoGestacaoAtiva
+		}
+		coberturaID, err = s.resolveCoberturaIDForPositivo(ctx, d)
+		if err != nil {
+			return err
+		}
+		d.CoberturaID = &coberturaID
+	}
+
 	if err := s.repo.Create(ctx, d); err != nil {
 		return err
 	}
 	if d.Resultado != models.DiagnosticoResultadoPositivo {
-		return nil
-	}
-	var coberturaID int64
-	if d.CoberturaID != nil && *d.CoberturaID > 0 {
-		coberturaID = *d.CoberturaID
-	} else {
 		return nil
 	}
 	cobertura, err := s.coberturaRepo.GetByID(ctx, coberturaID)
@@ -111,4 +126,42 @@ func (s *DiagnosticoGestacaoService) Delete(ctx context.Context, id int64) error
 		return err
 	}
 	return s.repo.Delete(ctx, id)
+}
+
+// resolveCoberturaIDForPositivo usa cobertura_id informado ou a cobertura mais recente do animal sem gestação vinculada.
+func (s *DiagnosticoGestacaoService) resolveCoberturaIDForPositivo(ctx context.Context, d *models.DiagnosticoGestacao) (int64, error) {
+	if d.CoberturaID != nil && *d.CoberturaID > 0 {
+		cob, err := s.coberturaRepo.GetByID(ctx, *d.CoberturaID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return 0, errors.New("cobertura nao encontrada")
+			}
+			return 0, err
+		}
+		if cob.AnimalID != d.AnimalID || cob.FazendaID != d.FazendaID {
+			return 0, errors.New("cobertura deve ser do mesmo animal e fazenda")
+		}
+		exists, err := s.gestacaoRepo.ExistsByCoberturaID(ctx, cob.ID)
+		if err != nil {
+			return 0, err
+		}
+		if exists {
+			return 0, errors.New("cobertura ja possui gestacao registrada")
+		}
+		return cob.ID, nil
+	}
+	coberturas, err := s.coberturaRepo.GetByAnimalID(ctx, d.AnimalID)
+	if err != nil {
+		return 0, err
+	}
+	for _, c := range coberturas {
+		exists, err := s.gestacaoRepo.ExistsByCoberturaID(ctx, c.ID)
+		if err != nil {
+			return 0, err
+		}
+		if !exists {
+			return c.ID, nil
+		}
+	}
+	return 0, ErrToquePositivoSemCobertura
 }

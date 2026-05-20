@@ -16,7 +16,7 @@ import (
 var funcionarioFolgasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/folgas/`)
 var funcionarioRestricoesLeitePath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/restricoes-leite(/ativas)?$`)
 var funcionarioFazendaAnimaisPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/animais(/count|/em-lactacao)?$`)
-var funcionarioGestaoPath = regexp.MustCompile(`^/api/v1/(cios|coberturas|partos|secagens)(/.*)?$`)
+var funcionarioGestaoPath = regexp.MustCompile(`^/api/v1/(cios|coberturas|partos|secagens|toques)(/.*)?$`)
 // Crias: sub-recurso operacional de partos (listar/complementar na edição de parto).
 var funcionarioCriasPath = regexp.MustCompile(`^/api/v1/crias(/.*)?$`)
 var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
@@ -79,6 +79,9 @@ func requestAllowedForFuncionario(method, path string) bool {
 		return true
 	}
 	if method == http.MethodGet && funcionarioAnimaisPath.MatchString(path) {
+		return true
+	}
+	if method == http.MethodPost && path == "/api/v1/producao" {
 		return true
 	}
 	return false

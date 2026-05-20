@@ -238,7 +238,13 @@ func (h *DiagnosticoGestacaoHandler) Create(c *gin.Context) {
 	}
 	d := &models.DiagnosticoGestacao{AnimalID: req.AnimalID, Data: t, Resultado: req.Resultado, FazendaID: req.FazendaID, CoberturaID: req.CoberturaID, DiasGestacaoEstimados: req.DiasGestacaoEstimados, Metodo: req.Metodo, Veterinario: req.Veterinario, Observacoes: req.Observacoes}
 	if err := h.svc.Create(c.Request.Context(), d); err != nil {
-		response.ErrorInternal(c, "Erro ao registrar diagnostico", err.Error())
+		switch {
+		case errors.Is(err, service.ErrToquePositivoSemCobertura),
+			errors.Is(err, service.ErrToquePositivoGestacaoAtiva):
+			response.ErrorValidation(c, err.Error(), nil)
+		default:
+			response.ErrorInternal(c, "Erro ao registrar diagnostico", err.Error())
+		}
 		return
 	}
 	response.SuccessCreated(c, d, "Diagnostico registrado")

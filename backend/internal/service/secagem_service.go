@@ -7,18 +7,33 @@ import (
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/repository"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var ErrSecagemNotFound = errors.New("secagem nao encontrada")
 
 type SecagemService struct {
+	pool        *pgxpool.Pool
 	repo        *repository.SecagemRepository
+	lactacaoRepo *repository.LactacaoRepository
 	animalRepo  *repository.AnimalRepository
 	fazendaRepo *repository.FazendaRepository
 }
 
-func NewSecagemService(repo *repository.SecagemRepository, animalRepo *repository.AnimalRepository, fazendaRepo *repository.FazendaRepository) *SecagemService {
-	return &SecagemService{repo: repo, animalRepo: animalRepo, fazendaRepo: fazendaRepo}
+func NewSecagemService(
+	pool *pgxpool.Pool,
+	repo *repository.SecagemRepository,
+	lactacaoRepo *repository.LactacaoRepository,
+	animalRepo *repository.AnimalRepository,
+	fazendaRepo *repository.FazendaRepository,
+) *SecagemService {
+	return &SecagemService{
+		pool:         pool,
+		repo:         repo,
+		lactacaoRepo: lactacaoRepo,
+		animalRepo:   animalRepo,
+		fazendaRepo:  fazendaRepo,
+	}
 }
 
 func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error {
@@ -50,11 +65,53 @@ func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error 
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return errors.New("apenas femeas podem ter secagem")
 	}
-	if err := s.repo.Create(ctx, sec); err != nil {
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
 		return err
 	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	if err := s.repo.CreateTx(ctx, tx, sec); err != nil {
+		return err
+	}
+
+	if err := s.encerrarLactacaoAtivaSeExistirTx(ctx, tx, sec); err != nil {
+		return err
+	}
+
 	status := models.StatusReprodutivoSeca
-	return s.animalRepo.UpdateStatusReprodutivo(ctx, sec.AnimalID, &status)
+	if err := s.animalRepo.UpdateStatusReprodutivoTx(ctx, tx, sec.AnimalID, &status); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	committed = true
+	return nil
+}
+
+func (s *SecagemService) encerrarLactacaoAtivaSeExistirTx(ctx context.Context, tx pgx.Tx, sec *models.Secagem) error {
+	lact, err := s.lactacaoRepo.GetEmAndamentoByAnimalIDTx(ctx, tx, sec.AnimalID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	fim := sec.DataSecagem
+	dias := diasLactacaoCivis(lact.DataInicio, fim)
+	st := models.LactacaoStatusEncerrada
+	lact.DataFim = &fim
+	lact.DiasLactacao = &dias
+	lact.Status = &st
+	return s.lactacaoRepo.UpdateTx(ctx, tx, lact)
 }
 
 func (s *SecagemService) GetByID(ctx context.Context, id int64) (*models.Secagem, error) {
