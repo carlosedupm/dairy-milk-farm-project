@@ -79,7 +79,7 @@ function NovoContent() {
   const mutation = useMutation({
     mutationFn: () => {
       const coberturaIdNum =
-        resultado === "POSITIVO" ? Number(coberturaSelectValue) : undefined;
+        resultado === "POSITIVO" ? Number(coberturaSelectValue) : 0;
       return create({
         animal_id: Number(animalId),
         data: new Date(data).toISOString(),
