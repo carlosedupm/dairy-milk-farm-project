@@ -19,6 +19,7 @@ import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -245,11 +246,10 @@ export function ProducaoForm({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dataHora">Data/Hora</Label>
-              <Input
+              <DateTimePickerPtBr
                 id="dataHora"
-                type="datetime-local"
                 value={dataHora}
-                onChange={(e) => setDataHora(e.target.value)}
+                onChange={setDataHora}
               />
             </div>
 

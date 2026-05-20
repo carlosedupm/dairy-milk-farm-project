@@ -242,9 +242,23 @@ export async function get(id: number): Promise<Animal | null> {
   return data.data ?? null
 }
 
+type AnimaisListPayload = Animal[] | { animais?: Animal[]; total?: number }
+
+/** Aceita array direto ou envelope paginado `{ animais, total }` da API. */
+export function coerceAnimaisList(payload: unknown): Animal[] {
+  if (Array.isArray(payload)) return payload
+  if (payload && typeof payload === 'object' && 'animais' in payload) {
+    const inner = (payload as { animais?: unknown }).animais
+    return Array.isArray(inner) ? inner : []
+  }
+  return []
+}
+
 export async function listByFazenda(fazendaId: number): Promise<Animal[]> {
-  const { data } = await api.get<ApiResponse<Animal[]>>(`/api/v1/fazendas/${fazendaId}/animais`)
-  return data.data ?? []
+  const { data } = await api.get<ApiResponse<AnimaisListPayload>>(
+    `/api/v1/fazendas/${fazendaId}/animais`,
+  )
+  return coerceAnimaisList(data.data)
 }
 
 /** Listagem paginada por fazenda (use query `limit` na API). */
@@ -275,8 +289,10 @@ export async function listByFazendaPaginated(
 
 /** Animais com lactação ativa na fazenda (ordenha / descarte de leite). */
 export async function listEmLactacaoByFazenda(fazendaId: number): Promise<Animal[]> {
-  const { data } = await api.get<ApiResponse<Animal[]>>(`/api/v1/fazendas/${fazendaId}/animais/em-lactacao`)
-  return data.data ?? []
+  const { data } = await api.get<ApiResponse<AnimaisListPayload>>(
+    `/api/v1/fazendas/${fazendaId}/animais/em-lactacao`,
+  )
+  return coerceAnimaisList(data.data)
 }
 
 export async function create(payload: AnimalCreate): Promise<Animal> {

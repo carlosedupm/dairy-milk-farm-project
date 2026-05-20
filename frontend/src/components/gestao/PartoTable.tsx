@@ -43,7 +43,9 @@ export function PartoTable({ items, fazendaId }: Props) {
       queryClient.invalidateQueries({ queryKey: ["partos", fazendaId] });
       // Parto removido pode excluir animais nascidos na API — atualiza listas e detalhe
       if (fazendaId != null && fazendaId > 0) {
-        queryClient.invalidateQueries({ queryKey: ["animais", fazendaId] });
+        queryClient.invalidateQueries({
+          queryKey: ["animais", "by-fazenda", fazendaId],
+        });
         queryClient.invalidateQueries({ queryKey: ["fazendas", fazendaId, "animais"] });
       }
       queryClient.invalidateQueries({ queryKey: ["animais"] });

@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { Check, ChevronDown, Search } from "lucide-react";
-import type { Animal } from "@/services/animais";
+import { coerceAnimaisList, type Animal } from "@/services/animais";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,19 +67,21 @@ export function AnimalSelect({
 
   const debouncedQuery = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
 
+  const animaisList = useMemo(() => coerceAnimaisList(animais), [animais]);
+
   const selectedAnimal = useMemo(
-    () => animais.find((a) => a.id.toString() === value),
-    [animais, value],
+    () => animaisList.find((a) => a.id.toString() === value),
+    [animaisList, value],
   );
 
   const filteredAnimais = useMemo(
     () =>
-      filterAnimais(animais, {
+      filterAnimais(animaisList, {
         query: debouncedQuery,
         femeasOnly,
         reprodutoresOnly,
       }),
-    [animais, debouncedQuery, femeasOnly, reprodutoresOnly],
+    [animaisList, debouncedQuery, femeasOnly, reprodutoresOnly],
   );
 
   const visibleAnimais = useMemo(

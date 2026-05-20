@@ -36,7 +36,7 @@ function NovoContent() {
   const fazendaId = fazendaAtiva?.id ?? 0;
 
   const { data: animais = [] } = useQuery({
-    queryKey: ["animais", fazendaId],
+    queryKey: ["animais", "by-fazenda", fazendaId],
     queryFn: () => listByFazenda(fazendaId),
     enabled: fazendaId > 0,
   });

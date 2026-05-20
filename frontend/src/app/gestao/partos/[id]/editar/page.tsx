@@ -44,7 +44,7 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
   const [formState, setFormState] = useState(() => initialFormState(parto));
 
   const { data: animais = [] } = useQuery({
-    queryKey: ["animais", fazendaId],
+    queryKey: ["animais", "by-fazenda", fazendaId],
     queryFn: () => listByFazenda(fazendaId),
     enabled: fazendaId > 0,
   });

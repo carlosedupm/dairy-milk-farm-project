@@ -129,7 +129,9 @@ export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaM
     onSuccess: () => {
       setDraft(defaultCriaLinha());
       queryClient.invalidateQueries({ queryKey: ["crias", partoId] });
-      queryClient.invalidateQueries({ queryKey: ["animais", fazendaId] });
+      queryClient.invalidateQueries({
+        queryKey: ["animais", "by-fazenda", fazendaId],
+      });
     },
     onError: (err) => {
       setLocalError(

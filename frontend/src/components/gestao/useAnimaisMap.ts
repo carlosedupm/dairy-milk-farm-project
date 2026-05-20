@@ -6,7 +6,7 @@ import { listByFazenda, type Animal } from "@/services/animais";
 
 function useAnimaisFazendaQuery(fazendaId: number | undefined) {
   return useQuery({
-    queryKey: ["animais", fazendaId],
+    queryKey: ["animais", "by-fazenda", fazendaId],
     queryFn: () => listByFazenda(fazendaId!),
     enabled: !!fazendaId && fazendaId > 0,
   });

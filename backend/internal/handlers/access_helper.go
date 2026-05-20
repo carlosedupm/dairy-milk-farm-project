@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/response"
@@ -63,4 +64,52 @@ func ValidateFazendaAccessOrGestao(c *gin.Context, fazendaSvc *service.FazendaSe
 		return true
 	}
 	return ValidateFazendaAccess(c, fazendaSvc, fazendaID)
+}
+
+// ResolveFazendaIDsForList retorna IDs de fazenda para listagens: todas do usuário ou uma
+// via query fazenda_id (validada). ok=false se a resposta HTTP de erro já foi enviada.
+func ResolveFazendaIDsForList(c *gin.Context, fazendaSvc *service.FazendaService) ([]int64, bool) {
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		response.ErrorUnauthorized(c, "Usuário não identificado")
+		return nil, false
+	}
+	userID, ok := userIDVal.(int64)
+	if !ok {
+		response.ErrorInternal(c, "ID de usuário inválido", nil)
+		return nil, false
+	}
+
+	fazendas, err := fazendaSvc.GetByUsuarioID(c.Request.Context(), userID)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao listar fazendas do usuário", err.Error())
+		return nil, false
+	}
+
+	fazendaIDs := make([]int64, 0, len(fazendas))
+	for _, fz := range fazendas {
+		fazendaIDs = append(fazendaIDs, fz.ID)
+	}
+
+	if s := c.Query("fazenda_id"); s != "" {
+		fid, err := strconv.ParseInt(s, 10, 64)
+		if err != nil || fid <= 0 {
+			response.ErrorBadRequest(c, "fazenda_id inválido", nil)
+			return nil, false
+		}
+		allowed := false
+		for _, id := range fazendaIDs {
+			if id == fid {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			response.ErrorForbidden(c, "Você não tem acesso a esta fazenda")
+			return nil, false
+		}
+		return []int64{fid}, true
+	}
+
+	return fazendaIDs, true
 }

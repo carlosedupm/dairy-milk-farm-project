@@ -6,7 +6,8 @@ Registro diário de **volume de leite** por animal na fazenda.
 
 - Backend: `backend/internal/service/producao_service.go`, `backend/internal/handlers/producao_handler.go`.
 - API: `POST /api/v1/producao` (entre outras rotas de consulta/edição para perfis autorizados).
-- Frontend: `frontend/src/app/producao/*`, `ProducaoForm.tsx`.
+- Listagens globais (`GET /api/v1/producao`, `/count`, `/filter/by-date`): apenas registros de animais das fazendas do usuário; query `fazenda_id` restringe à fazenda ativa (validada em `ResolveFazendaIDsForList`).
+- Frontend: `frontend/src/app/producao/*`, `ProducaoForm.tsx`, `ProducaoTable.tsx` — listagem usa `useFazendaAtiva()` + `fazenda_id` na API.
 - RBAC: FUNCIONARIO com `POST` — [acessos-perfil.md](./acessos-perfil.md) BR-ACESSO-015.
 
 ---
@@ -33,4 +34,13 @@ Registro diário de **volume de leite** por animal na fazenda.
 
 ---
 
-**Última atualização**: 2026-05-19
+### BR-PRODUCAO-004 — Listagem por escopo de fazenda
+
+- **Enunciado**: Consultas globais de produção retornam apenas registros de animais pertencentes às fazendas vinculadas ao utilizador; com `fazenda_id` na query, apenas essa fazenda (se o utilizador tiver acesso).
+- **Efeito**: bloqueio no servidor (403 se `fazenda_id` sem vínculo); UI alinhada à fazenda ativa do header.
+- **Implementação**: `ResolveFazendaIDsForList`, `ProducaoRepository.GetByFazendaIDs*`; `frontend/src/app/producao/page.tsx`.
+- **Estado**: implementado.
+
+---
+
+**Última atualização**: 2026-05-20

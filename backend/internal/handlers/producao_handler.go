@@ -82,7 +82,7 @@ func (h *ProducaoHandler) Create(c *gin.Context) {
 			response.ErrorValidation(c, "Animal sem lactação ativa", err.Error())
 			return
 		}
-		if err.Error() == "animal não encontrado" {
+		if errors.Is(err, service.ErrAnimalNotFound) {
 			response.ErrorNotFound(c, "Animal não encontrado")
 			return
 		}
@@ -126,7 +126,12 @@ func (h *ProducaoHandler) GetByID(c *gin.Context) {
 }
 
 func (h *ProducaoHandler) GetAll(c *gin.Context) {
-	producoes, err := h.service.GetAll(c.Request.Context())
+	fazendaIDs, ok := ResolveFazendaIDsForList(c, h.fazendaSvc)
+	if !ok {
+		return
+	}
+
+	producoes, err := h.service.GetByFazendaIDs(c.Request.Context(), fazendaIDs)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao buscar produções", err.Error())
 		return
@@ -194,8 +199,17 @@ func (h *ProducaoHandler) GetByDateRange(c *gin.Context) {
 	// Adicionar fim do dia para incluir todo o dia final
 	endDate = endDate.Add(24*time.Hour - time.Second)
 
-	producoes, err := h.service.GetByDateRange(c.Request.Context(), startDate, endDate)
+	fazendaIDs, ok := ResolveFazendaIDsForList(c, h.fazendaSvc)
+	if !ok {
+		return
+	}
+
+	producoes, err := h.service.GetByFazendaIDsAndDateRange(c.Request.Context(), fazendaIDs, startDate, endDate)
 	if err != nil {
+		if err.Error() == "data inicial não pode ser posterior à data final" {
+			response.ErrorValidation(c, "Período inválido", err.Error())
+			return
+		}
 		response.ErrorInternal(c, "Erro ao buscar produções", err.Error())
 		return
 	}
@@ -327,7 +341,12 @@ func (h *ProducaoHandler) Delete(c *gin.Context) {
 }
 
 func (h *ProducaoHandler) Count(c *gin.Context) {
-	n, err := h.service.Count(c.Request.Context())
+	fazendaIDs, ok := ResolveFazendaIDsForList(c, h.fazendaSvc)
+	if !ok {
+		return
+	}
+
+	n, err := h.service.CountByFazendaIDs(c.Request.Context(), fazendaIDs)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao contar", err.Error())
 		return

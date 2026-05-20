@@ -41,7 +41,7 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
   const [formState, setFormState] = useState(() => initialFormState(cobertura));
 
   const { data: animais = [] } = useQuery({
-    queryKey: ["animais", fazendaId],
+    queryKey: ["animais", "by-fazenda", fazendaId],
     queryFn: () => listByFazenda(fazendaId),
     enabled: fazendaId > 0,
   });

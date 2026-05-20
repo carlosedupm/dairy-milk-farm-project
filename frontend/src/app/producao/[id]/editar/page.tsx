@@ -23,8 +23,14 @@ function EditarProducaoContent() {
 
   const mutation = useMutation({
     mutationFn: (p: ProducaoUpdate) => update(id, p),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['producao'] })
+      queryClient.invalidateQueries({ queryKey: ['resumo-pecuario'] })
+      if (variables.animal_id) {
+        queryClient.invalidateQueries({
+          queryKey: ['animais', variables.animal_id, 'contexto'],
+        })
+      }
       router.push('/producao')
     },
   })

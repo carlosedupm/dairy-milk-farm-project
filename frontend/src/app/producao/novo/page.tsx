@@ -29,8 +29,14 @@ function NovaProducaoContent() {
 
   const mutation = useMutation({
     mutationFn: (p: ProducaoCreate) => create(p),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({ queryKey: ["producao"] });
+      await queryClient.invalidateQueries({ queryKey: ["resumo-pecuario"] });
+      if (variables.animal_id) {
+        await queryClient.invalidateQueries({
+          queryKey: ["animais", variables.animal_id, "contexto"],
+        });
+      }
       router.push("/producao");
     },
   });

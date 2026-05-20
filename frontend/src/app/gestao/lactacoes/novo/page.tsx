@@ -25,7 +25,7 @@ function NovoContent() {
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
 
   const { data: animais = [] } = useQuery({
-    queryKey: ["animais", fazendaAtiva?.id],
+    queryKey: ["animais", "by-fazenda", fazendaAtiva?.id],
     queryFn: () => listByFazenda(fazendaAtiva!.id),
     enabled: !!fazendaAtiva?.id,
   });

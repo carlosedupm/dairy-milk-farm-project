@@ -41,8 +41,14 @@ export const QUALIDADE_LABELS: Record<Qualidade, string> = {
   10: '10 - Perfeita',
 }
 
-export async function list(): Promise<ProducaoLeite[]> {
-  const { data } = await api.get<ApiResponse<ProducaoLeite[]>>('/api/v1/producao')
+export type ProducaoListParams = {
+  fazenda_id: number
+}
+
+export async function list(params: ProducaoListParams): Promise<ProducaoLeite[]> {
+  const { data } = await api.get<ApiResponse<ProducaoLeite[]>>('/api/v1/producao', {
+    params: { fazenda_id: params.fazenda_id },
+  })
   return data.data ?? []
 }
 
@@ -56,8 +62,14 @@ export async function listByAnimal(animalId: number): Promise<ProducaoLeite[]> {
   return data.data ?? []
 }
 
-export async function listByDateRange(startDate: string, endDate: string): Promise<ProducaoLeite[]> {
-  const { data } = await api.get<ApiResponse<ProducaoLeite[]>>(`/api/v1/producao/filter/by-date?start=${startDate}&end=${endDate}`)
+export async function listByDateRange(
+  startDate: string,
+  endDate: string,
+  fazendaId: number,
+): Promise<ProducaoLeite[]> {
+  const { data } = await api.get<ApiResponse<ProducaoLeite[]>>('/api/v1/producao/filter/by-date', {
+    params: { start: startDate, end: endDate, fazenda_id: fazendaId },
+  })
   return data.data ?? []
 }
 
@@ -77,8 +89,10 @@ export async function remove(id: number): Promise<void> {
   await api.delete(`/api/v1/producao/${id}`)
 }
 
-export async function count(): Promise<number> {
-  const { data } = await api.get<ApiResponse<{ count: number }>>('/api/v1/producao/count')
+export async function count(fazendaId: number): Promise<number> {
+  const { data } = await api.get<ApiResponse<{ count: number }>>('/api/v1/producao/count', {
+    params: { fazenda_id: fazendaId },
+  })
   return data.data?.count ?? 0
 }
 

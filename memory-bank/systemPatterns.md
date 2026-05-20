@@ -156,6 +156,8 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 - `GET /api/v1/fazendas/:id/fornecedores/comparativo/:ano`
 - `GET /api/v1/fazendas/:id/usuarios-vinculados` (usuários com vínculo N:N à fazenda; acesso: vínculo ou gestão/admin/dev via `ValidateFazendaAccessOrGestao`)
 - `GET|PUT /api/v1/fazendas/:id/folgas/config` | `GET /api/v1/fazendas/:id/folgas/escala` (resposta: `linhas` + `rodizio_por_dia` por data) | `GET /api/v1/fazendas/:id/folgas/resumo-equidade?inicio&fim` (GESTAO/ADMIN/DEVELOPER: registradas vs previstas do 5x1 por slot) | `POST /api/v1/fazendas/:id/folgas/gerar` | `POST /api/v1/fazendas/:id/folgas/alteracoes` | `POST /api/v1/fazendas/:id/folgas/justificativas` | `GET /api/v1/fazendas/:id/folgas/alteracoes` | `GET /api/v1/fazendas/:id/folgas/alertas`
+- `GET|POST|PUT|DELETE /api/v1/producao` (+ `GET /count`, `GET /filter/by-date?start&end&fazenda_id`) — listagens filtradas pelas fazendas do usuário; query `fazenda_id` opcional restringe a uma fazenda vinculada
+- `GET /api/v1/animais/:id/producao` (+ `/count`, `/resumo`) — histórico e resumo por animal; `POST /api/v1/producao` exige lactação ativa (ver `docs/business/producao-leite.md`)
 - `GET /api/v1/fazendas/:id/animais/em-lactacao` (animais com lactação ativa; mesma autorização que listagem por fazenda)
 - `GET /api/v1/fazendas/:id/restricoes-leite/ativas` | `POST /api/v1/fazendas/:id/restricoes-leite` | `PATCH /api/v1/fazendas/:id/restricoes-leite/:restricaoId/liberar` (descarte até laboratório; ver `docs/business/leite-restricoes.md`)
 - `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`

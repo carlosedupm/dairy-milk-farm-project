@@ -41,7 +41,7 @@ function NovoContent() {
   const fazendaId = fazendaAtiva?.id ?? 0;
 
   const { data: animais = [] } = useQuery({
-    queryKey: ["animais", fazendaId],
+    queryKey: ["animais", "by-fazenda", fazendaId],
     queryFn: () => listByFazenda(fazendaId),
     enabled: fazendaId > 0,
   });
@@ -96,7 +96,9 @@ function NovoContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["partos", fazendaAtiva?.id] });
-      queryClient.invalidateQueries({ queryKey: ["animais", fazendaAtiva?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["animais", "by-fazenda", fazendaAtiva?.id],
+      });
       router.push("/gestao/partos");
     },
   });

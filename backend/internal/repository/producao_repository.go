@@ -72,6 +72,20 @@ func (r *ProducaoRepository) GetAll(ctx context.Context) ([]*models.ProducaoLeit
 	return r.queryList(ctx, query)
 }
 
+func (r *ProducaoRepository) GetByFazendaIDs(ctx context.Context, fazendaIDs []int64) ([]*models.ProducaoLeite, error) {
+	if len(fazendaIDs) == 0 {
+		return []*models.ProducaoLeite{}, nil
+	}
+	query := `
+		SELECT p.id, p.animal_id, p.quantidade, p.data_hora, p.qualidade, p.created_at
+		FROM producao_leite p
+		INNER JOIN animais a ON a.id = p.animal_id
+		WHERE a.fazenda_id = ANY($1::bigint[])
+		ORDER BY p.data_hora DESC
+	`
+	return r.queryList(ctx, query, fazendaIDs)
+}
+
 func (r *ProducaoRepository) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.ProducaoLeite, error) {
 	query := `
 		SELECT id, animal_id, quantidade, data_hora, qualidade, created_at
@@ -92,6 +106,20 @@ func (r *ProducaoRepository) GetByDateRange(ctx context.Context, startDate, endD
 	`
 
 	return r.queryList(ctx, query, startDate, endDate)
+}
+
+func (r *ProducaoRepository) GetByFazendaIDsAndDateRange(ctx context.Context, fazendaIDs []int64, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {
+	if len(fazendaIDs) == 0 {
+		return []*models.ProducaoLeite{}, nil
+	}
+	query := `
+		SELECT p.id, p.animal_id, p.quantidade, p.data_hora, p.qualidade, p.created_at
+		FROM producao_leite p
+		INNER JOIN animais a ON a.id = p.animal_id
+		WHERE a.fazenda_id = ANY($1::bigint[]) AND p.data_hora BETWEEN $2 AND $3
+		ORDER BY p.data_hora DESC
+	`
+	return r.queryList(ctx, query, fazendaIDs, startDate, endDate)
 }
 
 func (r *ProducaoRepository) GetByAnimalAndDateRange(ctx context.Context, animalID int64, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {
@@ -142,6 +170,20 @@ func (r *ProducaoRepository) Delete(ctx context.Context, id int64) error {
 func (r *ProducaoRepository) Count(ctx context.Context) (int64, error) {
 	var n int64
 	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM producao_leite`).Scan(&n)
+	return n, err
+}
+
+func (r *ProducaoRepository) CountByFazendaIDs(ctx context.Context, fazendaIDs []int64) (int64, error) {
+	if len(fazendaIDs) == 0 {
+		return 0, nil
+	}
+	var n int64
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM producao_leite p
+		INNER JOIN animais a ON a.id = p.animal_id
+		WHERE a.fazenda_id = ANY($1::bigint[])
+	`, fazendaIDs).Scan(&n)
 	return n, err
 }
 

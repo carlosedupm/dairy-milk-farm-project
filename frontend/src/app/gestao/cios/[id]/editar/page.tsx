@@ -87,7 +87,7 @@ function EditarContent() {
   });
 
   const { data: animais = [] } = useQuery({
-    queryKey: ["animais", fazendaAtiva?.id],
+    queryKey: ["animais", "by-fazenda", fazendaAtiva?.id],
     queryFn: () => listByFazenda(fazendaAtiva!.id),
     enabled: !!fazendaAtiva?.id,
   });

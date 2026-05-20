@@ -45,7 +45,7 @@ func (s *ProducaoService) Create(ctx context.Context, producao *models.ProducaoL
 	animal, err := s.animalRepo.GetByID(ctx, producao.AnimalID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return errors.New("animal não encontrado")
+			return ErrAnimalNotFound
 		}
 		return err
 	}
@@ -81,6 +81,10 @@ func (s *ProducaoService) GetAll(ctx context.Context) ([]*models.ProducaoLeite, 
 	return s.repo.GetAll(ctx)
 }
 
+func (s *ProducaoService) GetByFazendaIDs(ctx context.Context, fazendaIDs []int64) ([]*models.ProducaoLeite, error) {
+	return s.repo.GetByFazendaIDs(ctx, fazendaIDs)
+}
+
 func (s *ProducaoService) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.ProducaoLeite, error) {
 	// Verificar se o animal existe
 	_, err := s.animalRepo.GetByID(ctx, animalID)
@@ -99,6 +103,13 @@ func (s *ProducaoService) GetByDateRange(ctx context.Context, startDate, endDate
 		return nil, errors.New("data inicial não pode ser posterior à data final")
 	}
 	return s.repo.GetByDateRange(ctx, startDate, endDate)
+}
+
+func (s *ProducaoService) GetByFazendaIDsAndDateRange(ctx context.Context, fazendaIDs []int64, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {
+	if startDate.After(endDate) {
+		return nil, errors.New("data inicial não pode ser posterior à data final")
+	}
+	return s.repo.GetByFazendaIDsAndDateRange(ctx, fazendaIDs, startDate, endDate)
 }
 
 func (s *ProducaoService) GetByAnimalAndDateRange(ctx context.Context, animalID int64, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {
@@ -130,7 +141,7 @@ func (s *ProducaoService) Update(ctx context.Context, producao *models.ProducaoL
 	_, err = s.animalRepo.GetByID(ctx, producao.AnimalID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return errors.New("animal não encontrado")
+			return ErrAnimalNotFound
 		}
 		return err
 	}
@@ -158,6 +169,10 @@ func (s *ProducaoService) Delete(ctx context.Context, id int64) error {
 
 func (s *ProducaoService) Count(ctx context.Context) (int64, error) {
 	return s.repo.Count(ctx)
+}
+
+func (s *ProducaoService) CountByFazendaIDs(ctx context.Context, fazendaIDs []int64) (int64, error) {
+	return s.repo.CountByFazendaIDs(ctx, fazendaIDs)
 }
 
 func (s *ProducaoService) CountByAnimal(ctx context.Context, animalID int64) (int64, error) {

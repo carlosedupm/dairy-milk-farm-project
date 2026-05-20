@@ -100,7 +100,7 @@ function FazendaDetailContent() {
                 </Link>
               </Button>
               <Button variant="outline" size="default" asChild>
-                <Link href={`/fazendas/${id}/producao`}>
+                <Link href={`/producao?fazenda_id=${id}`}>
                   <Droplets className="mr-2 h-4 w-4" />
                   Ver produção
                 </Link>
