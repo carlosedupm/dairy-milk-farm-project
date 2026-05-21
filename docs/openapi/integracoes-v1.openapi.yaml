@@ -15,8 +15,8 @@ info:
     name: CeialMilk
 
 servers:
-  - url: http://localhost:8080
-    description: Desenvolvimento local
+  - url: /
+    description: Servidor atual (mesmo host onde abriu o Swagger ou importou a spec)
 
 tags:
   - name: Cliente

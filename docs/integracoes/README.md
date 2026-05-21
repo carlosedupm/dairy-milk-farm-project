@@ -29,6 +29,8 @@ Ficheiro versionado no repositório: [`docs/openapi/integracoes-v1.openapi.yaml`
 
 No Swagger UI: **Authorize** → cole a chave completa `cmk_live_...` → use **Try it out**. Para `GET /animais/search`, preencha os parâmetros na secção **Parameters** (query), não em headers.
 
+A spec OpenAPI declara o servidor como URL relativa `/` — o dropdown **Servers** usa o **mesmo host** onde abriu o Swagger (dev `localhost:8080` ou URL de produção do Render).
+
 **Postman:** Import → Link → `http://localhost:8080/api/v1/integracoes/openapi.yaml`
 
 ## Scopes (v1)
