@@ -45,7 +45,8 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
         queryKey: ["admin", "integracoes", cliente.id],
       });
     },
-    onError: (err) => setMsg(getApiErrorMessage(err)),
+    onError: (err) =>
+      setMsg(getApiErrorMessage(err, "Erro ao guardar alterações.")),
   });
 
   const rotateMutation = useMutation({
@@ -57,13 +58,15 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
         queryKey: ["admin", "integracoes", cliente.id],
       });
     },
-    onError: (err) => setMsg(getApiErrorMessage(err)),
+    onError: (err) =>
+      setMsg(getApiErrorMessage(err, "Erro ao rotacionar chave.")),
   });
 
   const revokeMutation = useMutation({
     mutationFn: () => revogarIntegracao(cliente.id),
     onSuccess: onRevoked,
-    onError: (err) => setMsg(getApiErrorMessage(err)),
+    onError: (err) =>
+      setMsg(getApiErrorMessage(err, "Erro ao revogar cliente.")),
   });
 
   return (

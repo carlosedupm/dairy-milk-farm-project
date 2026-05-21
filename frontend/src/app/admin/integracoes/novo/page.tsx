@@ -39,7 +39,8 @@ function AdminIntegracaoNovoContent() {
       setApiKey(res.api_key);
       setShowKeyDialog(true);
     },
-    onError: (err) => setFormError(getApiErrorMessage(err)),
+    onError: (err) =>
+      setFormError(getApiErrorMessage(err, "Erro ao criar cliente de integração.")),
   });
 
   function toggleFazenda(id: number) {
