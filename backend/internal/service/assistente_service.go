@@ -315,7 +315,7 @@ func (s *AssistenteService) Executar(ctx context.Context, intent string, payload
 	case intentExcluirAnimal:
 		return s.executarExcluirAnimal(ctx, payload)
 	case intentRegistrarProducaoAnimal:
-		return s.executarRegistrarProducaoAnimal(ctx, payload)
+		return s.executarRegistrarProducaoAnimal(ctx, payload, userID)
 	case intentEditarFazenda:
 		return s.executarEditarFazenda(ctx, payload)
 	case intentExcluirFazenda:
@@ -730,6 +730,9 @@ func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload
 		defaultStatus := models.StatusSaudavel
 		animal.StatusSaude = &defaultStatus
 	}
+	if userID > 0 {
+		animal.CreatedBy = &userID
+	}
 	if err := s.animalSvc.Create(ctx, animal); err != nil {
 		observability.CaptureError(err, map[string]string{"action": "assistente_executar_cadastrar_animal"}, nil)
 		return nil, fmt.Errorf("erro ao cadastrar animal: %w", err)
@@ -814,7 +817,7 @@ func (s *AssistenteService) executarExcluirAnimal(ctx context.Context, payload m
 	return map[string]interface{}{"message": msg, "id": id}, nil
 }
 
-func (s *AssistenteService) executarRegistrarProducaoAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
+func (s *AssistenteService) executarRegistrarProducaoAnimal(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
 	animal, err := s.resolveAnimalByPayload(ctx, payload)
 	if err != nil {
 		return nil, err
@@ -848,6 +851,9 @@ func (s *AssistenteService) executarRegistrarProducaoAnimal(ctx context.Context,
 		producao.Qualidade = &q
 	} else if v, ok := payload["qualidade"].(int); ok && v >= 1 && v <= 10 {
 		producao.Qualidade = &v
+	}
+	if userID > 0 {
+		producao.CreatedBy = &userID
 	}
 	if err := s.producaoSvc.Create(ctx, producao); err != nil {
 		observability.CaptureError(err, map[string]string{"action": "assistente_executar_registrar_producao_animal"}, nil)

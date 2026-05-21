@@ -22,6 +22,7 @@ type Animal struct {
 	DataSaida         *time.Time `json:"data_saida,omitempty" db:"data_saida"`
 	MotivoSaida       *string    `json:"motivo_saida,omitempty" db:"motivo_saida"`
 	OrigemAquisicao   *string    `json:"origem_aquisicao,omitempty" db:"origem_aquisicao"`
+	CreatedBy         *int64     `json:"created_by,omitempty" db:"created_by"`
 	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
 }

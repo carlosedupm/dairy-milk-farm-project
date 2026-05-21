@@ -662,6 +662,9 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			defaultStatus := models.StatusSaudavel
 			a.StatusSaude = &defaultStatus
 		}
+		if userID > 0 {
+			a.CreatedBy = &userID
+		}
 
 		err := s.animalSvc.Create(ctx, a)
 		if err != nil {
@@ -688,6 +691,9 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			AnimalID:   animais[0].ID,
 			Quantidade: quant,
 			DataHora:   time.Now(),
+		}
+		if userID > 0 {
+			producao.CreatedBy = &userID
 		}
 		err = s.producaoSvc.Create(ctx, producao)
 		if err != nil {

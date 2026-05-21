@@ -163,7 +163,8 @@
 - [x] Toque positivo vincula cobertura → gestação + PRENHE + UI/cache (BR-TOQUES-002)
 - [x] Produção: combo e API só com lactação ativa (BR-CICLO-007 / BR-PRODUCAO-003)
 - [x] BR-CICLO-002 completo (status por cio/toque negativo)
-- [x] Auditoria utilizador (migration 23) + API conformidade
+- [x] Auditoria utilizador (migrations 23–24): ciclo/leite + animais; assistente e API REST com `created_by`; BR-AUDIT-005
+- [x] API conformidade (`GET .../auditoria/conformidade`)
 - [ ] Regressão integrada ciclo + UI conformidade (opcional)
 
 ### **Meta 3: Saúde e inteligência** *(Fase 3 — `projectbrief.md`)*

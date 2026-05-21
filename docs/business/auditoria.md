@@ -4,7 +4,8 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 
 **Implementação principal**
 
-- Migration: `backend/migrations/23_add_auditoria_usuario_ciclo.up.sql` (`created_by`, `liberado_por`).
+- Migration ciclo/leite: `backend/migrations/23_add_auditoria_usuario_ciclo.up.sql` (`created_by`, `liberado_por`).
+- Migration animais: `backend/migrations/24_add_auditoria_animais.up.sql` (`animais.created_by`).
 - Utilizador autenticado: `handlers.GetActorUserID` ← JWT `user_id`.
 - Conformidade: `backend/internal/service/conformidade_service.go`, `GET /api/v1/fazendas/:id/auditoria/conformidade`.
 - Referência de padrão maduro: módulo Folgas (`created_by`, `folgas_alteracoes`).
@@ -13,8 +14,8 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 
 ### BR-AUDIT-001 — Escrita identifica o utilizador
 
-- **Enunciado**: Ao criar registos de ciclo pecuário e leite (cio, cobertura, toque, parto, secagem, lactação automática no parto, produção, restrição de leite), o servidor grava `created_by` (ou `usuario_id` em cios) com o ID do utilizador autenticado, **sem** aceitar esse campo no body do cliente.
-- **Escopo**: Fazenda; entidades listadas na migration 23.
+- **Enunciado**: Ao criar registos de ciclo pecuário, leite e **cadastro de animal** (cio, cobertura, toque, parto, secagem, lactação automática no parto, produção, restrição de leite, **animal**), o servidor grava `created_by` (ou `usuario_id` em cios) com o ID do utilizador autenticado, **sem** aceitar esse campo no body do cliente. Inclui criação via **assistente** (texto e Live) e bezerra/bezerro gerados no parto (herdam `parto.created_by`).
+- **Escopo**: Fazenda; entidades das migrations 23 e 24.
 - **Perfis**: conforme módulo (ex.: FUNCIONARIO em toques/produção — BR-ACESSO-015).
 - **Efeito**: bloqueio implícito (sem auth não há escrita); rastreio em banco.
 - **Implementação**: handlers de gestão, produção e restrições; repositórios com coluna `created_by`.
@@ -41,6 +42,16 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 
 - **Enunciado**: Correlation ID e logs JSON (`X-Correlation-ID`) complementam suporte técnico; a **fonte de verdade** para «quem registrou» no produto é a coluna `created_by` / `usuario_id` na entidade.
 - **Estado**: implementado (processo).
+
+### BR-AUDIT-005 — Cadastro de animal identifica o utilizador
+
+- **Enunciado**: `POST /api/v1/animais` e intents do assistente `cadastrar_animal` gravam `animais.created_by` com o utilizador autenticado (JWT). O campo **não** é aceito no body JSON nem no payload do assistente.
+- **Escopo**: Fazenda; criação manual, assistente texto/Live e animal gerado no parto (via `parto.created_by`).
+- **Perfis**: conforme módulo animais / assistente.
+- **Efeito**: rastreio em banco; registos anteriores à migration 24 permanecem com `created_by` NULL.
+- **Implementação**: `AnimalHandler.Create` + `SetCreatedBy`; `AssistenteService` / `AssistenteLiveService`; `CriaService.insertCriaVivaComAnimalGeradoTx`; migration 24.
+- **Integrações API futuras**: reutilizar os mesmos handlers/services com token que carregue `user_id` (utilizador real ou conta de serviço); não expor `created_by` em DTOs de entrada.
+- **Estado**: implementado.
 
 ---
 

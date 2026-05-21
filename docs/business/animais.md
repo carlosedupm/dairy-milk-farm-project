@@ -60,6 +60,14 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 - **Implementação**: `AnimalCicloService` em `backend/internal/service/animal_ciclo_service.go`; `AnimalHandler.GetContextoByID`.
 - **Estado**: implementado.
 
+### BR-ANIMAIS-005 — Rastreabilidade do cadastro
+
+- **Enunciado**: Todo animal criado no sistema (API, assistente ou nascimento no parto) deve ter `created_by` preenchido pelo servidor com o utilizador que executou a ação de criação, quando autenticado.
+- **Escopo**: Tabela `animais`; ver [auditoria.md](./auditoria.md) BR-AUDIT-005.
+- **Efeito**: persistência; sem bloqueio adicional além da autenticação existente.
+- **Implementação**: migration `24_add_auditoria_animais`; `animal_handler.go`, `assistente_service.go`, `assistente_live_service.go`, `cria_service.go`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-19
+**Última atualização**: 2026-05-20

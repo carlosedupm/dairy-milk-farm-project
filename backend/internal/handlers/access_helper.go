@@ -11,6 +11,14 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// SetCreatedBy preenche created_by no modelo; actorID deve vir do JWT/contexto interno, nunca do body JSON.
+func SetCreatedBy(dst **int64, actorID int64) {
+	if actorID > 0 {
+		id := actorID
+		*dst = &id
+	}
+}
+
 // GetActorUserID devolve o ID do utilizador autenticado (JWT). ok=false se ausente ou inválido.
 func GetActorUserID(c *gin.Context) (int64, bool) {
 	userIDVal, exists := c.Get("user_id")

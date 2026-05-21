@@ -19,6 +19,7 @@ export type Animal = {
   data_saida?: string | null
   motivo_saida?: string | null
   origem_aquisicao?: OrigemAquisicao | null
+  created_by?: number | null
   created_at: string
   updated_at: string
 }

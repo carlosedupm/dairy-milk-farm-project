@@ -389,6 +389,17 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 - **SameSite**: `SameSite=Strict` em dev (CORS localhost); `SameSite=None` em produção cross-origin (frontend Vercel ↔ backend Render), para que o navegador envie cookies em requisições cross-origin
 - **Frontend**: Usa `withCredentials: true` no Axios para enviar cookies automaticamente
 
+### **Rastreabilidade (`created_by`)**
+
+Contrato para «quem registrou» no domínio (detalhe em `docs/business/auditoria.md`):
+
+1. **Nunca** incluir `created_by` em structs de request (`CreateAnimalRequest`, payloads do assistente, DTOs de integração futura).
+2. **Sempre** definir `CreatedBy` no **call site** antes de `service.Create`: handlers HTTP (`GetActorUserID` + `SetCreatedBy` em `access_helper.go`), assistente (`userID` do JWT em `Executar` / `ExecuteFunction`), criação derivada (ex.: bezerra no parto herda `parto.CreatedBy`).
+3. **Integrações API futuras**: reutilizar handlers/services existentes; o token (JWT ou API key mapeada a `user_id`) identifica o ator — não é necessária coluna extra se o contexto de auth for correto.
+4. **Services** persistem o valor já presente no model; não leem `created_by` do body. Logs com `X-Correlation-ID` são suporte técnico; fonte de verdade de negócio = coluna na entidade.
+
+Migrations: `23` (ciclo/leite), `24` (`animais.created_by`).
+
 ## ⚡ Padrões de Performance
 
 ### **Backend (Go)**

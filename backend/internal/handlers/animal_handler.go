@@ -136,6 +136,10 @@ func (h *AnimalHandler) Create(c *gin.Context) {
 		animal.DataSaida = dataSaida
 	}
 
+	if actorID, ok := GetActorUserID(c); ok {
+		SetCreatedBy(&animal.CreatedBy, actorID)
+	}
+
 	if err := h.service.Create(c.Request.Context(), animal); err != nil {
 		response.ErrorInternal(c, "Erro ao criar animal", err.Error())
 		return

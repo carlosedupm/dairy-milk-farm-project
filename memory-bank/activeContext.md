@@ -58,7 +58,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 ### ✅ Concluído desde a última atualização:
 
 1. ✅ **BR-CICLO-002**: cio → `VAZIA` (exceto `PRENHE`); toque `NEGATIVO` → `VAZIA`; catálogo `cios.md` / `toques.md` / `ciclo-rebanho.md`.
-2. ✅ **Auditoria de utilizador (migration 23)**: `created_by` em coberturas, toques, gestações, partos, secagens, lactações, produção; `created_by` + `liberado_por` em restrições; `usuario_id` em cios via JWT; handlers com `GetActorUserID`.
+2. ✅ **Auditoria de utilizador (migrations 23–24)**: `created_by` em ciclo/leite (23) e **animais** (24); assistente texto/Live preenchem `created_by` em animal e produção; crias do parto herdam `parto.created_by`; `SetCreatedBy` + BR-AUDIT-005.
 3. ✅ **Auditoria de conformidade**: `ConformidadeService` (INT-001–006), `GET /api/v1/fazendas/:id/auditoria/conformidade`, `docs/business/auditoria.md` (BR-AUDIT-001–004).
 4. ✅ **Produção de leite — alinhamento a padrões**: listagens API (`GET /producao`, `/count`, `/filter/by-date`) filtradas por fazendas do usuário (`ResolveFazendaIDsForList` + `GetByFazendaIDs*`); frontend `/producao` com `useFazendaAtiva()`, filtro por período, paginação client-side, coluna animal em `ProducaoTable`, `DateTimePickerPtBr`, invalidação de contexto/resumo pecuário; link «Ver produção» na ficha da fazenda → `/producao?fazenda_id=`; **BR-PRODUCAO-004**; erros com `errors.Is(ErrAnimalNotFound)`.
 2. ✅ **Perfil PROPRIETARIO (titular)**: constante em `models/perfil.go`; atribuível pelo admin; `POST /api/v1/me/fazendas` apenas para **PROPRIETARIO** (nova fazenda); UI `/fazendas/criar-minha` só para titular; onboarding sem auto-registo para **USER**; folgas com isolamento (`PodeAcessarFazendaSemVinculoGestao` só ADMIN/DEV/GESTAO). Regras **BR-ACESSO-011** a **013** em `docs/business/acessos-perfil.md`.
@@ -184,5 +184,5 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ---
 
-**Última atualização**: 2026-05-20 (BR-CICLO-002; auditoria utilizador migration 23; conformidade API)
-**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 entregue** + BR-CICLO-002 | **Auditoria** (`created_by`, `docs/business/auditoria.md`, `GET .../auditoria/conformidade`) | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)
+**Última atualização**: 2026-05-20 (BR-AUDIT-005; migration 24 animais.created_by; assistente + API)
+**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 entregue** + BR-CICLO-002 | **Auditoria** (`created_by` animais+ciclo, `docs/business/auditoria.md`, conformidade API) | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)

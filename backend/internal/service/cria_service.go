@@ -149,6 +149,7 @@ func (s *CriaService) insertCriaVivaComAnimalGeradoTx(ctx context.Context, tx pg
 		DataNascimento:  &dn,
 		OrigemAquisicao: &origem,
 		Raca:            racaPtr,
+		CreatedBy:       parto.CreatedBy,
 	}
 	if err := s.repo.CreateTx(ctx, tx, c); err != nil {
 		return err
