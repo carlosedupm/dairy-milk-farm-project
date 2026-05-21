@@ -76,6 +76,8 @@ export type CicloTimelineItem = {
   titulo: string
   detalhe?: string
   ref_id?: number
+  created_by?: number | null
+  registrado_por?: string
 }
 
 export type ProximaAcao = {
@@ -92,6 +94,7 @@ export type AnimalContexto = {
   lactacao_ativa?: LactacaoAtiva | null
   timeline?: CicloTimelineItem[]
   proximas_acoes?: ProximaAcao[]
+  registrado_por_cadastro?: string
 }
 
 // Origem de aquisição (nascido na propriedade vs comprado)

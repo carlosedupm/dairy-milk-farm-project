@@ -34,7 +34,7 @@ func (r *SecagemRepository) GetByID(ctx context.Context, id int64) (*models.Seca
 }
 
 func (r *SecagemRepository) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.Secagem, error) {
-	query := `SELECT id, animal_id, gestacao_id, data_secagem, data_prevista_parto, protocolo, motivo, observacoes, fazenda_id, created_at
+	query := `SELECT id, animal_id, gestacao_id, data_secagem, data_prevista_parto, protocolo, motivo, observacoes, fazenda_id, created_by, created_at
 		FROM secagens WHERE animal_id = $1 ORDER BY data_secagem DESC`
 	rows, err := r.db.Query(ctx, query, animalID)
 	if err != nil {
@@ -44,7 +44,7 @@ func (r *SecagemRepository) GetByAnimalID(ctx context.Context, animalID int64) (
 	var list []*models.Secagem
 	for rows.Next() {
 		var s models.Secagem
-		if err := rows.Scan(&s.ID, &s.AnimalID, &s.GestacaoID, &s.DataSecagem, &s.DataPrevistaParto, &s.Protocolo, &s.Motivo, &s.Observacoes, &s.FazendaID, &s.CreatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.AnimalID, &s.GestacaoID, &s.DataSecagem, &s.DataPrevistaParto, &s.Protocolo, &s.Motivo, &s.Observacoes, &s.FazendaID, &s.CreatedBy, &s.CreatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, &s)

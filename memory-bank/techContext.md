@@ -178,12 +178,13 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 - **Frontend**: `frontend/src/services/restricoesLeite.ts`, `frontend/src/services/animais.ts` (`listEmLactacaoByFazenda`), `frontend/src/components/leite/RestricoesLeiteHomePanel.tsx`, integração na home (`app/page.tsx`).
 - **Negócio**: `docs/business/leite-restricoes.md` (BR-LEITE-005).
 
-## Ciclo integrado do rebanho (Fase 2)
+## Ciclo integrado do rebanho (Fase 2 — concluída)
 
-- **Migração**: `backend/migrations/22_close_lactacao_on_seca_animals.up.sql` (correção legado seca + lactação aberta).
-- **Backend**: `animal_ciclo_service.go` (timeline, próximas ações); `secagem_service.go` (transação encerra lactação); `lactacao_service.go` (bloqueio 2ª ativa); `producao_service.go` + `ExistsAtivaNaFazenda`; `diagnostico_gestacao_service.go` (`resolveCoberturaIDForPositivo`); `resumo_pecuario_service.go`; `GET /api/v1/animais/:id/contexto` enriquecido; `GET /api/v1/fazendas/:id/resumo-pecuario`.
-- **Frontend**: `AnimalFichaCiclo.tsx`, `PecuarioResumoHomePanel.tsx`, `ProducaoForm` (`listEmLactacaoByFazenda`), `/gestao/toques/novo` (cobertura + invalidação de cache).
-- **Negócio**: `docs/business/ciclo-rebanho.md` e módulos `secagens`, `lactacoes`, `partos`, `toques`, `gestacoes`, `producao-leite`.
+- **Migrações**: `22_close_lactacao_on_seca_animals`; `23_add_auditoria_usuario_ciclo`; `24_add_auditoria_animais`.
+- **Backend**: `animal_ciclo_service.go` (timeline com `registrado_por`, `enrichRegistradoPor`); `conformidade_service.go` + `GET /api/v1/fazendas/:id/auditoria/conformidade`; `secagem_service.go`, `lactacao_service.go`, `producao_service.go`, `diagnostico_gestacao_service.go`, `resumo_pecuario_service.go`; `usuario_repository.GetNamesByIDs`; repositórios de ciclo com `created_by` em `GetByAnimalID`.
+- **Frontend**: `AnimalFichaCiclo.tsx`, `PecuarioResumoHomePanel.tsx`, `ConformidadeHomePanel.tsx`, `services/auditoria.ts`, `showConformidadePanelForPerfil` em `appAccess.ts`, `ProducaoForm`, toques com cobertura.
+- **Negócio**: `docs/business/ciclo-rebanho.md`, `auditoria.md` (BR-AUDIT-003/006), módulos do ciclo.
+- **Regressão**: [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md).
 
 ## Módulo Agrícola (Contexto Técnico)
 
@@ -267,5 +268,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-19 (Fase 2 ciclo integrado: migration 22, contexto animal, resumo pecuário, toque↔gestação)
-**Stack**: Go + Next.js 16 (Next.js 16.2.2, React 19) — Ciclo do rebanho Fase 2, Folgas 5x1, restrições de leite (`em-lactacao`), Módulo Agrícola, Dev Studio (GitHub), TestSprite API (`testsprite_tests/`)
+**Última atualização**: 2026-05-20 (Fase 2 fechada: conformidade UI, Registado por, checklist regressão)
+**Stack**: Go + Next.js 16 — Fase 2 concluída; Folgas 5x1; restrições de leite; Módulo Agrícola; Dev Studio; TestSprite (`testsprite_tests/`)

@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/ceialmilk/api/internal/models"
+	"github.com/ceialmilk/api/internal/repository"
 	"github.com/ceialmilk/api/internal/response"
 	"github.com/ceialmilk/api/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 type AnimalHandler struct {
@@ -20,6 +22,7 @@ type AnimalHandler struct {
 	restricaoLeiteSvc    *service.RestricaoLeiteService
 	gestacaoSvc          *service.GestacaoService
 	cicloSvc             *service.AnimalCicloService
+	usuarioRepo          *repository.UsuarioRepository
 }
 
 func NewAnimalHandler(
@@ -30,6 +33,7 @@ func NewAnimalHandler(
 	restricaoLeiteSvc *service.RestricaoLeiteService,
 	gestacaoSvc *service.GestacaoService,
 	cicloSvc *service.AnimalCicloService,
+	usuarioRepo *repository.UsuarioRepository,
 ) *AnimalHandler {
 	return &AnimalHandler{
 		service:            service,
@@ -39,6 +43,7 @@ func NewAnimalHandler(
 		restricaoLeiteSvc:  restricaoLeiteSvc,
 		gestacaoSvc:        gestacaoSvc,
 		cicloSvc:           cicloSvc,
+		usuarioRepo:        usuarioRepo,
 	}
 }
 
@@ -605,6 +610,15 @@ func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
 			return
 		}
 		payload["proximas_acoes"] = acoes
+	}
+
+	if h.usuarioRepo != nil && animal.CreatedBy != nil && *animal.CreatedBy > 0 {
+		if u, err := h.usuarioRepo.GetByID(c.Request.Context(), *animal.CreatedBy); err == nil {
+			payload["registrado_por_cadastro"] = u.Nome
+		} else if err != pgx.ErrNoRows {
+			response.ErrorInternal(c, "Erro ao buscar autor do cadastro", err.Error())
+			return
+		}
 	}
 
 	response.SuccessOK(c, payload, "Contexto do animal carregado com sucesso")

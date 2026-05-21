@@ -22,6 +22,7 @@ type AnimalCicloService struct {
 	partoRepo       *repository.PartoRepository
 	lactacaoRepo    *repository.LactacaoRepository
 	producaoRepo    *repository.ProducaoRepository
+	usuarioRepo     *repository.UsuarioRepository
 }
 
 func NewAnimalCicloService(
@@ -33,6 +34,7 @@ func NewAnimalCicloService(
 	partoRepo *repository.PartoRepository,
 	lactacaoRepo *repository.LactacaoRepository,
 	producaoRepo *repository.ProducaoRepository,
+	usuarioRepo *repository.UsuarioRepository,
 ) *AnimalCicloService {
 	return &AnimalCicloService{
 		cioRepo:         cioRepo,
@@ -43,6 +45,7 @@ func NewAnimalCicloService(
 		partoRepo:       partoRepo,
 		lactacaoRepo:    lactacaoRepo,
 		producaoRepo:    producaoRepo,
+		usuarioRepo:     usuarioRepo,
 	}
 }
 
@@ -71,6 +74,7 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 		}
 		items = append(items, models.CicloTimelineItem{
 			Tipo: "CIO", Data: c.DataDetectado, Titulo: "Cio detectado", Detalhe: det, RefID: c.ID,
+			CreatedBy: c.UsuarioID,
 		})
 	}
 
@@ -81,6 +85,7 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 	for _, c := range cobs {
 		items = append(items, models.CicloTimelineItem{
 			Tipo: "COBERTURA", Data: c.Data, Titulo: fmt.Sprintf("Cobertura (%s)", c.Tipo), RefID: c.ID,
+			CreatedBy: c.CreatedBy,
 		})
 	}
 
@@ -91,6 +96,7 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 	for _, d := range diags {
 		items = append(items, models.CicloTimelineItem{
 			Tipo: "TOQUE", Data: d.Data, Titulo: fmt.Sprintf("Toque %s", d.Resultado), RefID: d.ID,
+			CreatedBy: d.CreatedBy,
 		})
 	}
 
@@ -102,6 +108,7 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 		titulo := fmt.Sprintf("Gestação %s", g.Status)
 		items = append(items, models.CicloTimelineItem{
 			Tipo: "GESTACAO", Data: g.DataConfirmacao, Titulo: titulo, RefID: g.ID,
+			CreatedBy: g.CreatedBy,
 		})
 	}
 
@@ -112,6 +119,7 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 	for _, sec := range secs {
 		items = append(items, models.CicloTimelineItem{
 			Tipo: "SECAGEM", Data: sec.DataSecagem, Titulo: "Secagem", RefID: sec.ID,
+			CreatedBy: sec.CreatedBy,
 		})
 	}
 
@@ -122,6 +130,7 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 	for _, p := range partos {
 		items = append(items, models.CicloTimelineItem{
 			Tipo: "PARTO", Data: p.Data, Titulo: fmt.Sprintf("Parto (%d cria(s))", p.NumeroCrias), RefID: p.ID,
+			CreatedBy: p.CreatedBy,
 		})
 	}
 
@@ -138,6 +147,7 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 		}
 		items = append(items, models.CicloTimelineItem{
 			Tipo: "LACTACAO", Data: d, Titulo: titulo, RefID: l.ID,
+			CreatedBy: l.CreatedBy,
 		})
 	}
 
@@ -156,6 +166,7 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 			Titulo:  "Produção de leite",
 			Detalhe: fmt.Sprintf("%.1f L", p.Quantidade),
 			RefID:   p.ID,
+			CreatedBy: p.CreatedBy,
 		})
 		n++
 	}
@@ -166,7 +177,45 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 	if len(items) > maxTimelineItems {
 		items = items[:maxTimelineItems]
 	}
+	if err := s.enrichRegistradoPor(ctx, items); err != nil {
+		return nil, err
+	}
 	return items, nil
+}
+
+func (s *AnimalCicloService) enrichRegistradoPor(ctx context.Context, items []models.CicloTimelineItem) error {
+	if s.usuarioRepo == nil {
+		return nil
+	}
+	seen := make(map[int64]struct{})
+	var ids []int64
+	for i := range items {
+		if items[i].CreatedBy == nil || *items[i].CreatedBy <= 0 {
+			continue
+		}
+		id := *items[i].CreatedBy
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	names, err := s.usuarioRepo.GetNamesByIDs(ctx, ids)
+	if err != nil {
+		return err
+	}
+	for i := range items {
+		if items[i].CreatedBy == nil {
+			continue
+		}
+		if nome, ok := names[*items[i].CreatedBy]; ok && nome != "" {
+			items[i].RegistradoPor = nome
+		}
+	}
+	return nil
 }
 
 func (s *AnimalCicloService) BuildProximasAcoes(ctx context.Context, animal *models.Animal) ([]models.ProximaAcao, error) {

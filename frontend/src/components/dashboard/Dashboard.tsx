@@ -26,6 +26,8 @@ import {
 import { AnimalSearchHome } from "@/components/animais/AnimalSearchHome";
 import { RestricoesLeiteHomePanel } from "@/components/leite/RestricoesLeiteHomePanel";
 import { PecuarioResumoHomePanel } from "@/components/dashboard/PecuarioResumoHomePanel";
+import { ConformidadeHomePanel } from "@/components/dashboard/ConformidadeHomePanel";
+import { showConformidadePanelForPerfil } from "@/config/appAccess";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +49,9 @@ export function Dashboard() {
     !!user && isPathAllowedForPerfil(user.perfil, "/animais") && animalSearch;
 
   const restrictedMode = areasMode !== "full" && areasMode !== "pending";
+
+  const showConformidade =
+    !!user && showConformidadePanelForPerfil(user.perfil);
 
   const isProprietario = user?.perfil === "PROPRIETARIO";
 
@@ -182,6 +187,7 @@ export function Dashboard() {
           </h2>
           <RestricoesLeiteHomePanel />
           {!restrictedMode ? <PecuarioResumoHomePanel /> : null}
+          {showConformidade ? <ConformidadeHomePanel /> : null}
         </section>
 
         <section aria-labelledby="busca-heading" className="hidden md:block">

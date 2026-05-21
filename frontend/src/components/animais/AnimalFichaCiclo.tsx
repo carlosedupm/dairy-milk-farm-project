@@ -32,6 +32,11 @@ export function AnimalFichaCiclo({ contexto }: Props) {
           <CardTitle className="text-base">Estado atual</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm min-w-0">
+          {contexto.registrado_por_cadastro ? (
+            <p className="text-xs text-muted-foreground">
+              Animal registado por {contexto.registrado_por_cadastro}
+            </p>
+          ) : null}
           {contexto.restricao_leite_ativa ? (
             <div className="flex gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 min-w-0">
               <AlertTriangle
@@ -112,6 +117,11 @@ export function AnimalFichaCiclo({ contexto }: Props) {
                   {item.detalhe ? (
                     <p className="text-sm text-muted-foreground break-words">
                       {item.detalhe}
+                    </p>
+                  ) : null}
+                  {item.registrado_por ? (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Registado por {item.registrado_por}
                     </p>
                   ) : null}
                 </li>

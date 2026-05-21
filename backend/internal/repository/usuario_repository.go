@@ -43,6 +43,28 @@ func (r *UsuarioRepository) GetByEmail(ctx context.Context, email string) (*mode
 	return &u, nil
 }
 
+// GetNamesByIDs devolve mapa id → nome para exibição na timeline (auditoria).
+func (r *UsuarioRepository) GetNamesByIDs(ctx context.Context, ids []int64) (map[int64]string, error) {
+	out := make(map[int64]string)
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.Query(ctx, `SELECT id, nome FROM usuarios WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var nome string
+		if err := rows.Scan(&id, &nome); err != nil {
+			return nil, err
+		}
+		out[id] = nome
+	}
+	return out, rows.Err()
+}
+
 func (r *UsuarioRepository) GetByID(ctx context.Context, id int64) (*models.Usuario, error) {
 	query := `
 		SELECT id, nome, email, senha, perfil, enabled, created_at, updated_at

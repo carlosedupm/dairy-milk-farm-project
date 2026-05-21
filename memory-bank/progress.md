@@ -2,7 +2,7 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 97% (fundação) — **Fase 2 ciclo integrado**: ~98% (BR-CICLO-002 + auditoria utilizador e conformidade)
+### **Completude Geral**: 98% — **Fase 2 (ciclo + auditoria UI)**: 100% em código; checklist de regressão documentado (execução em staging pendente)
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
@@ -18,8 +18,8 @@
 - **Migração Arquitetural**: 2026-01-24
 - **Velocity atual**: Em reestruturação
 - **Team size**: 1 desenvolvedor
-- **Sprint atual**: Migração para Go + Next.js
-- **Progresso sprint**: 60% concluído
+- **Sprint atual**: Pós-Fase 2 — validação operacional + preparação Fase 3
+- **Progresso sprint**: Fase 2 fechada em desenvolvimento
 
 ## ✅ O que foi concluído
 
@@ -151,7 +151,7 @@
 - [x] Autenticação JWT; deploy Render + Vercel
 - [x] Catálogo `docs/business/` iniciado
 
-### **Meta 2: Ciclo integrado do rebanho** *(Fase 2 — ver `projectbrief.md`)*
+### **Meta 2: Ciclo integrado do rebanho** *(Fase 2 — concluída; ver `projectbrief.md`)*
 
 - [x] Ficha do animal com timeline e estado (BR-CICLO-008)
 - [x] Secagem encerra lactação ativa + uma lactação ativa (BR-CICLO-005/006)
@@ -165,7 +165,9 @@
 - [x] BR-CICLO-002 completo (status por cio/toque negativo)
 - [x] Auditoria utilizador (migrations 23–24): ciclo/leite + animais; assistente e API REST com `created_by`; BR-AUDIT-005
 - [x] API conformidade (`GET .../auditoria/conformidade`)
-- [ ] Regressão integrada ciclo + UI conformidade (opcional)
+- [x] UI conformidade na home + «Registado por» na ficha (BR-AUDIT-003/006)
+- [x] Checklist regressão ciclo ([docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md))
+- [ ] Execução manual do checklist em staging (validação operacional)
 
 ### **Meta 3: Saúde e inteligência** *(Fase 3 — `projectbrief.md`)*
 
@@ -640,8 +642,16 @@
 - ✅ **Toque positivo**: `resolveCoberturaIDForPositivo` + UI com cobertura obrigatória; propaga `PRENHE`, gestação confirmada, busca, ficha e dashboard.
 - ✅ **Produção**: `ProducaoForm` lista só `em-lactacao`; validação server-side mantida.
 
+### **2026-05-20 — Fase 2 fechada: qualidade e visibilidade**
+
+- ✅ **BR-CICLO-002** e auditoria migrations 23–24 (`created_by` ciclo/leite/animais).
+- ✅ **Conformidade**: `ConformidadeHomePanel` + `GET .../auditoria/conformidade`; BR-AUDIT-003/006 em `docs/business/auditoria.md`.
+- ✅ **Registado por**: timeline e cadastro na ficha; repositórios `GetByAnimalID` com `created_by`.
+- ✅ **Checklist**: [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md).
+- ⏸️ **Recuperação de senha**: adiada — SMTP não definido (`deploy-notes.md`).
+
 ---
 
-**Última atualização**: 2026-05-19 (Fase 2 ciclo integrado ~95%; refinamentos toque/produção)
-**Status**: Backend (Render) + Frontend (Vercel) em produção ✅ | **Ciclo do rebanho Fase 2** entregue (pendente BR-CICLO-002) | Gestão pecuária + ficha animal | Folgas 5x1 | Restrições de leite | Módulo Agrícola em consolidação | Assistente (exceto FUNCIONARIO)
-**Próxima revisão**: após regressão integrada ciclo + agricultura
+**Última atualização**: 2026-05-20 (Fase 2 fechada: ciclo + conformidade UI + Registado por)
+**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
+**Próxima revisão**: após execução do checklist em staging + arranque Fase 3

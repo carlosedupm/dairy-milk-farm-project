@@ -4,11 +4,13 @@ import "time"
 
 // CicloTimelineItem representa um evento na linha do tempo do animal.
 type CicloTimelineItem struct {
-	Tipo    string    `json:"tipo"`
-	Data    time.Time `json:"data"`
-	Titulo  string    `json:"titulo"`
-	Detalhe string    `json:"detalhe,omitempty"`
-	RefID   int64     `json:"ref_id,omitempty"`
+	Tipo          string    `json:"tipo"`
+	Data          time.Time `json:"data"`
+	Titulo        string    `json:"titulo"`
+	Detalhe       string    `json:"detalhe,omitempty"`
+	RefID         int64     `json:"ref_id,omitempty"`
+	CreatedBy     *int64    `json:"created_by,omitempty"`
+	RegistradoPor string    `json:"registrado_por,omitempty"`
 }
 
 // ProximaAcao sugere o próximo passo operacional para o animal.

@@ -56,7 +56,7 @@ func (r *GestacaoRepository) GetAtivaConfirmadaByAnimalID(ctx context.Context, a
 }
 
 func (r *GestacaoRepository) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.Gestacao, error) {
-	query := `SELECT id, animal_id, cobertura_id, data_confirmacao, data_prevista_parto, status, observacoes, fazenda_id, created_at, updated_at
+	query := `SELECT id, animal_id, cobertura_id, data_confirmacao, data_prevista_parto, status, observacoes, fazenda_id, created_by, created_at, updated_at
 		FROM gestacoes WHERE animal_id = $1 ORDER BY data_confirmacao DESC`
 	rows, err := r.db.Query(ctx, query, animalID)
 	if err != nil {
@@ -66,7 +66,7 @@ func (r *GestacaoRepository) GetByAnimalID(ctx context.Context, animalID int64) 
 	var list []*models.Gestacao
 	for rows.Next() {
 		var g models.Gestacao
-		if err := rows.Scan(&g.ID, &g.AnimalID, &g.CoberturaID, &g.DataConfirmacao, &g.DataPrevistaParto, &g.Status, &g.Observacoes, &g.FazendaID, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.AnimalID, &g.CoberturaID, &g.DataConfirmacao, &g.DataPrevistaParto, &g.Status, &g.Observacoes, &g.FazendaID, &g.CreatedBy, &g.CreatedAt, &g.UpdatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, &g)

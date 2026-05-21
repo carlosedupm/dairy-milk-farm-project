@@ -37,6 +37,10 @@ O arquivo `render.yaml` define:
 - `JWT_PRIVATE_KEY` - Chave privada RSA (PEM) para assinar tokens JWT (RS256). **Obrigatória.** Gerar com `openssl` (ver seção "Geração de Chaves JWT") e informar na criação do Blueprint ou no Dashboard do serviço.
 - `JWT_PUBLIC_KEY` - Chave pública RSA (PEM) para verificar tokens. **Obrigatória.** Mesmo par da privada; definir no Blueprint ou no Dashboard.
 
+#### Recuperação de senha (planejado — SMTP não definido)
+
+Fluxo `forgot-password` / `reset-password` **não implementado** até escolha do provedor de e-mail transacional (ex.: Resend, SendGrid, Amazon SES, SMTP do Render). Quando definido, documentar aqui: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, e URL base do frontend para links de reset.
+
 #### Opcionais (Dev Studio)
 
 - `GEMINI_API_KEY` - Chave da API Gemini (geração de código).
@@ -356,7 +360,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 ---
 
-**Última atualização**: 2026-05-05 (migração 19 — RLS em tabelas `public`)
+**Última atualização**: 2026-05-20 (recuperação de senha adiada — SMTP; Fase 2 fechada)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

@@ -35,7 +35,16 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 - **Perfis**: acesso à fazenda (vínculo ou ADMIN/DEVELOPER/GESTAO conforme `ValidateFazendaAccessOrGestao`); **não** exposto a FUNCIONARIO na UI (evolução futura).
 - **Efeito**: informativo; não altera dados automaticamente.
 - **Checks**: INT-001 (múltiplas lactações ativas), INT-002 (produção sem lactação), INT-003 (gestação sem toque+), INT-004 (restrição sem lactação), INT-005 (PRENHE sem gestação), INT-006 (toque+ sem cobertura).
-- **Implementação**: `ConformidadeService.ListByFazenda`, rota `GET /api/v1/fazendas/:id/auditoria/conformidade`.
+- **Implementação**: `ConformidadeService.ListByFazenda`, rota `GET /api/v1/fazendas/:id/auditoria/conformidade`; UI `ConformidadeHomePanel` na home (`frontend/src/components/dashboard/ConformidadeHomePanel.tsx`), serviço `frontend/src/services/auditoria.ts`; oculto para `FUNCIONARIO` e `USER` (`showConformidadePanelForPerfil` em `appAccess.ts`).
+- **Estado**: implementado.
+
+### BR-AUDIT-006 — Exibição de «Registado por» na ficha do animal
+
+- **Enunciado**: Na ficha `/animais/:id`, o histórico do ciclo e o cadastro do animal mostram o nome do utilizador que registou o evento, quando `created_by` / `usuario_id` estiver preenchido.
+- **Escopo**: Timeline em `GET /api/v1/animais/:id/contexto` (`registrado_por` por item); cadastro com `registrado_por_cadastro` quando `animais.created_by` não for nulo.
+- **Perfis**: quem pode ver a ficha do animal.
+- **Efeito**: informativo.
+- **Implementação**: `AnimalCicloService.enrichRegistradoPor`, repositórios `GetByAnimalID` com `created_by`; `AnimalFichaCiclo.tsx`.
 - **Estado**: implementado.
 
 ### BR-AUDIT-004 — Logs técnicos vs auditoria de domínio

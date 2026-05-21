@@ -89,13 +89,26 @@ func (r *ProducaoRepository) GetByFazendaIDs(ctx context.Context, fazendaIDs []i
 
 func (r *ProducaoRepository) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.ProducaoLeite, error) {
 	query := `
-		SELECT id, animal_id, quantidade, data_hora, qualidade, created_at
+		SELECT id, animal_id, quantidade, data_hora, qualidade, created_by, created_at
 		FROM producao_leite
 		WHERE animal_id = $1
 		ORDER BY data_hora DESC
 	`
-
-	return r.queryList(ctx, query, animalID)
+	rows, err := r.db.Query(ctx, query, animalID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []*models.ProducaoLeite
+	for rows.Next() {
+		var p models.ProducaoLeite
+		if err := rows.Scan(&p.ID, &p.AnimalID, &p.Quantidade, &p.DataHora, &p.Qualidade, &p.CreatedBy, &p.CreatedAt); err != nil {
+			return nil, err
+		}
+		pCopy := p
+		list = append(list, &pCopy)
+	}
+	return list, rows.Err()
 }
 
 func (r *ProducaoRepository) GetByDateRange(ctx context.Context, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {

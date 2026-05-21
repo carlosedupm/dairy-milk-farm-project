@@ -75,7 +75,7 @@ func (r *PartoRepository) GetByID(ctx context.Context, id int64) (*models.Parto,
 }
 
 func (r *PartoRepository) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.Parto, error) {
-	query := `SELECT id, animal_id, gestacao_id, data, tipo, numero_crias, complicacoes, observacoes, fazenda_id, created_at
+	query := `SELECT id, animal_id, gestacao_id, data, tipo, numero_crias, complicacoes, observacoes, fazenda_id, created_by, created_at
 		FROM partos WHERE animal_id = $1 ORDER BY data DESC`
 	rows, err := r.db.Query(ctx, query, animalID)
 	if err != nil {
@@ -85,7 +85,7 @@ func (r *PartoRepository) GetByAnimalID(ctx context.Context, animalID int64) ([]
 	var list []*models.Parto
 	for rows.Next() {
 		var p models.Parto
-		if err := rows.Scan(&p.ID, &p.AnimalID, &p.GestacaoID, &p.Data, &p.Tipo, &p.NumeroCrias, &p.Complicacoes, &p.Observacoes, &p.FazendaID, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.AnimalID, &p.GestacaoID, &p.Data, &p.Tipo, &p.NumeroCrias, &p.Complicacoes, &p.Observacoes, &p.FazendaID, &p.CreatedBy, &p.CreatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, &p)

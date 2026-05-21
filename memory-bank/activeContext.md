@@ -4,7 +4,7 @@
 
 ### **Status Geral**
 
-O projeto está em **migração arquitetural** da stack Java/Spring para uma solução moderna e eficiente com **Go** no backend e **Next.js** no frontend. Esta mudança visa resolver problemas de consumo de recursos, complexidade de deploy e melhorar a experiência de desenvolvimento.
+Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrado do rebanho)** considerada **fechada** em código e catálogo — inclui qualidade (checklist de regressão) e visibilidade (painel de conformidade, «Registado por» na ficha). **Foco atual:** validação operacional do checklist em staging e **Fase 3** (saúde, alertas); recuperação de senha **adiada** (SMTP).
 
 ### ✅ O que está funcionando:
 
@@ -47,17 +47,19 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 - **Vínculo usuário–fazenda**: Tabela `usuarios_fazendas` (N:N) com coluna **`papel`** (`TITULAR` | `OPERACIONAL`) — ver **BR-ACESSO-014** em `docs/business/acessos-perfil.md`. `GET /api/v1/me/fazendas` devolve cada fazenda com `papel` do vínculo. **`POST /api/v1/me/fazendas`** (só **PROPRIETARIO**) cria fazenda + vínculo **`TITULAR`**. **`PUT /api/v1/admin/usuarios/:id/fazendas`** recria vínculos com **`OPERACIONAL`** (MVP). **UI titular**: botão «Nova fazenda» no header (desktop e menu mobile), atalho na home (`Dashboard`) e opção no rodapé do seletor quando há várias fazendas (`FazendaSelector`). **Header**: `UserIdentitySummary`; **desktop** — gatilho **Popover** «Conta» (iniciais + nome + fazenda no `aria-label`); painel com detalhes, `FazendaSelector`, «Nova fazenda» (titular) e **Sair**; **mobile** — secção **Conta e fazenda** no topo do drawer e avatar na barra. **`FazendaContext`**: se **não** há fazendas, limpa estado; se há **exatamente uma**, **sempre** define essa fazenda como ativa e persiste em `localStorage` (sem depender de valor pré-existente); se há **duas ou mais**, mantém restauração pela chave salva quando válida. **`FazendaSelector`**: com **uma** fazenda mostra cartão só leitura «Fazenda ativa» + nome; com **duas ou mais** mantém o `Select` (com `sr-only` e `aria-label` no trigger); «A carregar fazendas…» enquanto carrega; oculto para **ADMIN**/**DEVELOPER**. Formulários de novo animal e nova produção com fazenda única seguem sem seletor; atalhos da home apontam direto quando aplicável. **Sem auto-vínculo** por “fazenda única” em Register, Login, Validate ou `POST /api/v1/admin/usuarios` — evita contas públicas herdarem dados da única fazenda em produção.
 - **Módulo Custos Agrícolas**: Migration 15 (fornecedores, areas, analises_solo, safras_culturas, custos_agricolas, producoes_agricolas, receitas_agricolas). Backend: CRUD completo fornecedores, áreas, análises solo, safras/culturas; custos, produções e receitas por safra/cultura (com seleção de fornecedor); resultado por área/safra e consolidado; comparativo de fornecedores por safra. Frontend: dashboard Agricultura; CRUD fornecedores e áreas (incl. edição); análises de solo (listagem e nova por área); safras/culturas por área/ano (dialog criar cultura); detalhe safra/cultura com custos, produções, receitas e formulários (com FornecedorSelect em custos e receitas); resultado por safra; comparativo fornecedores. Acesso via menu "Agricultura" (ícone Wheat). Próximo: integração Assistente Virtual.
 - **Busca inteligente de animais na home**: tela inicial (`/`) com pesquisa por identificação e resultado contextual. Backend: `GET /api/v1/animais/search/by-identificacao` com filtro por fazendas vinculadas ao usuário e `GET /api/v1/animais/:id/contexto` (animal, resumo de produção, `gestacao_resumo`, `restricao_leite_ativa`, `lactacao_ativa`, `timeline[]`, `proximas_acoes[]` — ver **Ciclo integrado**). Frontend: **`AnimalSearchPanel`** (campo com **debounce ~400 ms** + Enter para busca imediata, resultados, resumo, «Abrir detalhes») em **`AnimalSearchHome`** e **`AnimalSearchDialogProvider`** (lupa + atalho mobile no `Dashboard`). Lista de resultados sem exibir fazenda (contexto já é da fazenda ativa). **Diálogo global**: posicionamento ao **topo** com `translate-y-0` (evita corte com zoom alto vs. `translate-y-1/2` do shadcn), `max-h` com `dvh`, cabeçalho fixo e **corpo com `min-h-0` + scroll**; painel com **`min-w-0`**, identificações com **quebra de linha** e botões de resultado em altura mínima confortável.
-- **Ciclo integrado do rebanho (Fase 2 — concluída)**: invariantes **secagem encerra lactação** (`SecagemService` + migration `22_close_lactacao_on_seca_animals`) e **uma lactação ativa** por animal; **`AnimalCicloService`** + contexto enriquecido; ficha `/animais/[id]` com **`AnimalFichaCiclo`** (estado, timeline, atalhos); **`GET /api/v1/fazendas/:id/resumo-pecuario`** + **`PecuarioResumoHomePanel`** (perfis não restritos); produção com lactação obrigatória na API e combo só **`em-lactacao`** em `ProducaoForm`; **toque positivo** com `cobertura_id` (UI + `resolveCoberturaIDForPositivo` no backend) propagando `PRENHE`, gestação `CONFIRMADA`, busca, ficha e resumo pecuário. Catálogo: `docs/business/ciclo-rebanho.md`, `secagens.md`, `lactacoes.md`, `partos.md`, `toques.md`, `gestacoes.md`, `producao-leite.md`. Pendente: **BR-CICLO-002** (cio/toque negativo → status).
+- **Ciclo integrado do rebanho (Fase 2 — concluída)**: invariantes **secagem encerra lactação** (`SecagemService` + migration `22_close_lactacao_on_seca_animals`) e **uma lactação ativa** por animal; **BR-CICLO-002** (cio/toque → `status_reprodutivo`); **`AnimalCicloService`** + contexto enriquecido; ficha `/animais/[id]` com **`AnimalFichaCiclo`** (estado, timeline com **Registado por**, atalhos); **`GET /api/v1/fazendas/:id/resumo-pecuario`** + **`PecuarioResumoHomePanel`**; produção com lactação obrigatória e combo **`em-lactacao`**; **toque positivo** com `cobertura_id`. Catálogo: `docs/business/ciclo-rebanho.md` e módulos do ciclo.
+- **Auditoria e conformidade (Fase 2 — visibilidade)**: migrations 23–24 (`created_by`); `GET /api/v1/fazendas/:id/auditoria/conformidade` (INT-001–006); home **`ConformidadeHomePanel`** (`showConformidadePanelForPerfil` — oculto FUNCIONARIO/USER); timeline e cadastro com nomes via `UsuarioRepository.GetNamesByIDs`. Catálogo: `docs/business/auditoria.md` (BR-AUDIT-003/006). Checklist: `docs/tests/regressao-ciclo-fase2.md`.
 - **Listagem de animais (filtros + paginação)**: `GET /api/v1/animais` retorna `{ animais, total }` com query `limit`, `offset`, `fazenda_id`, `identificacao`, `categoria`, `sexo`, `status_saude`, `lote_id`, `status_reprodutivo` — restrito às fazendas do usuário. `GET /api/v1/fazendas/:id/animais` sem `limit` mantém array completo (formulários); com `limit` retorna `{ animais, total }`. Frontend: em **`/animais`** o `fazenda_id` vem **só da fazenda ativa** (`FazendaContext` / seletor do header); em **`/fazendas/[id]/animais`** o escopo é a fazenda da rota. **`AnimaisListToolbar`**: secção **Busca** (identificação com debounce); filtros avançados em **`Popover`** (`md+`) ou **`Dialog`** (mobile) via `useMediaQuery("(min-width: 768px)")` em `hooks/useMediaQuery.ts`; badge + chips para filtros ativos; **`resultCount`** / **`listLoading`** mostram total na lista **somente no Dialog (mobile)** — no desktop o Popover não repete o total (título/paginação visíveis atrás). Popover com `max-h` + scroll interno no formulário para não cortar conteúdo. Rótulo da busca **`max-sm:sr-only`** + placeholder visível no telemóvel. Serviços `listPaginated` / `listByFazendaPaginated` e **`ListPaginationBar`**.
 - **Leite para descarte (aguardando laboratório)**: tabela `restricoes_leite` por episódio (motivo, início, observação, status `AGUARDANDO_LAB` → `LIBERADO`). API: `GET|POST /api/v1/fazendas/:id/restricoes-leite/ativas` e base, `PATCH .../:restricaoId/liberar` (FUNCIONARIO pode listar e registrar; não liberar); `GET /api/v1/fazendas/:id/animais/em-lactacao` para o combo de registro; `POST` valida lactação ativa (`lactacoes`: `data_fim` nula, `status` nulo ou `EM_ANDAMENTO`). Home: `RestricoesLeiteHomePanel` acima da busca inteligente (`listEmLactacaoByFazenda`); registro de animal usa **`AnimalSelect`** pesquisável. Catálogo: `docs/business/leite-restricoes.md` (inclui **BR-LEITE-005**).
 - **`AnimalSelect` (combobox pesquisável em formulários)**: `components/animais/AnimalSelect.tsx` + `animalSelectUtils.ts` — Popover, busca com debounce (~150 ms) por identificação/raça/categoria/status reprodutivo, filtros `femeasOnly`/`reprodutoresOnly`, até 50 itens visíveis, teclado (↑↓, Enter, Escape). Mesma API de props; usado em gestão pecuária (cios, coberturas, partos, toques, secagens, lactações), produção de leite e restrições de leite. **Produção (novo)**: lista apenas `listEmLactacaoByFazenda` (matrizes em lactação); **toque positivo**: seletor de cobertura obrigatório. Demais formulários: `listByFazenda` ou `listEmLactacaoByFazenda` conforme regra de negócio.
 
 ### 🚧 Em andamento:
-- (nenhum foco bloqueante no ciclo pecuário após auditoria + BR-CICLO-002)
+- (nenhum foco bloqueante na Fase 2 após fecho qualidade/visibilidade)
 
 ### ✅ Concluído desde a última atualização:
 
-1. ✅ **BR-CICLO-002**: cio → `VAZIA` (exceto `PRENHE`); toque `NEGATIVO` → `VAZIA`; catálogo `cios.md` / `toques.md` / `ciclo-rebanho.md`.
+1. ✅ **Fase 2 — qualidade e visibilidade**: checklist [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md); painel **Conformidade** na home (`ConformidadeHomePanel`, BR-AUDIT-003); **Registado por** na timeline e cadastro do animal (BR-AUDIT-006); timeline com `created_by` nos repositórios de ciclo.
+2. ✅ **BR-CICLO-002**: cio → `VAZIA` (exceto `PRENHE`); toque `NEGATIVO` → `VAZIA`; catálogo `cios.md` / `toques.md` / `ciclo-rebanho.md`.
 2. ✅ **Auditoria de utilizador (migrations 23–24)**: `created_by` em ciclo/leite (23) e **animais** (24); assistente texto/Live preenchem `created_by` em animal e produção; crias do parto herdam `parto.created_by`; `SetCreatedBy` + BR-AUDIT-005.
 3. ✅ **Auditoria de conformidade**: `ConformidadeService` (INT-001–006), `GET /api/v1/fazendas/:id/auditoria/conformidade`, `docs/business/auditoria.md` (BR-AUDIT-001–004).
 4. ✅ **Produção de leite — alinhamento a padrões**: listagens API (`GET /producao`, `/count`, `/filter/by-date`) filtradas por fazendas do usuário (`ResolveFazendaIDsForList` + `GetByFazendaIDs*`); frontend `/producao` com `useFazendaAtiva()`, filtro por período, paginação client-side, coluna animal em `ProducaoTable`, `DateTimePickerPtBr`, invalidação de contexto/resumo pecuário; link «Ver produção» na ficha da fazenda → `/producao?fazenda_id=`; **BR-PRODUCAO-004**; erros com `errors.Is(ErrAnimalNotFound)`.
@@ -116,9 +118,9 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ### 📋 Próximos passos imediatos:
 
-1. Regressão integrada do ciclo (cobertura → toque ± → secagem → parto → produção → restrições; validar `GET .../auditoria/conformidade`).
-2. UI gestão: painel de conformidade e «Registado por» na ficha/timeline (opcional).
-3. Recuperação de senha (SMTP).
+1. Executar checklist em [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md) em ambiente de staging/produção e registar falhas.
+2. Recuperação de senha — **adiado** até provedor SMTP definido (`deploy-notes.md`).
+3. Backlog pós-Fase 2: paginação timeline, `lactacao_id` em produção, agricultura/assistente, Fase 3 (saúde).
 4. DoD em toda entrega: código + `docs/business/` + memory bank quando mudar marco.
 
 ## 🛠️ Decisões Técnicas Ativas
@@ -127,6 +129,7 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 - ✅ **Decidido (2026-05-19)**: **Ciclo do rebanho leiteiro** como eixo do produto; requisitos transversais em `docs/business/ciclo-rebanho.md` (`BR-CICLO-*`); definição de pronto inclui sincronização código ↔ catálogo ↔ memory bank (`projectbrief.md` v3.0).
 - ✅ **Decidido (2026-05-19)**: **Toque positivo** exige cobertura (informada ou última sem gestação); sem cobertura → 400; efeitos em gestação confirmada, `PRENHE`, busca, ficha e resumo pecuário. **Produção** lista e valida apenas animais em lactação ativa (`em-lactacao`).
+- ✅ **Decidido (2026-05-20)**: **Fase 2 fechada** com UI de conformidade e rastreio «Registado por»; recuperação de senha **não** entra no critério de fecho até SMTP definido (`deploy-notes.md`).
 
 ### **Arquitetura e Stack**
 
@@ -174,15 +177,16 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ## 📊 Métricas de Progresso
 
-### **Completude Geral**: 96%
+### **Completude Geral**: 98%
 
 - **Infraestrutura**: 95% ✅ (backend + frontend em produção + Dev Studio)
-- **Documentação**: 95% ✅ (incluindo Dev Studio)
-- **Implementação**: 95% ✅ (CRUD Animais, Produção, Registro, Prometheus, vínculo usuário–fazenda)
-- **Testes**: 75% ✅ (testes unitários backend + E2E frontend + **scripts TestSprite** `TC001`–`TC009` contra a API local; ver `testsprite_tests/`)
-- **Deploy**: 90% ✅ (backend Render + frontend Vercel; login e CRUD validados no ar)
+- **Documentação**: 96% ✅ (catálogo `docs/business/`, checklist regressão Fase 2)
+- **Implementação**: 96% ✅ (ciclo integrado + auditoria UI; agricultura em consolidação)
+- **Fase 2 ciclo + auditoria**: 100% ✅ (código + UI; validação manual do checklist pendente em staging)
+- **Testes**: 75% ✅ (unitários + TestSprite + checklist manual documentado)
+- **Deploy**: 90% ✅ (Render + Vercel)
 
 ---
 
-**Última atualização**: 2026-05-20 (BR-AUDIT-005; migration 24 animais.created_by; assistente + API)
-**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 entregue** + BR-CICLO-002 | **Auditoria** (`created_by` animais+ciclo, `docs/business/auditoria.md`, conformidade API) | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)
+**Última atualização**: 2026-05-20 (Fase 2 fechada: UI conformidade + Registado por; regressão documentada)
+**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** (ciclo + auditoria UI) | Recuperação senha aguarda SMTP | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)

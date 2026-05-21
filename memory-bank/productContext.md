@@ -44,10 +44,10 @@ O CeialMilk organiza-se em torno do **ciclo da vaca de leite**, não de menus is
 |------|----------------------------|-------------------|
 | Identificar no curral | Busca por brinco/nome + contexto imediato | ✅ Home + `GET .../contexto` |
 | Reproduzir | Cio → cobertura → toque → gestação | ✅ Encadeado (toque positivo + cobertura → PRENHE e gestação na busca/ficha/home) |
-| Preparar parto | Secagem, data prevista | ⚠️ Secagem sem fechar lactação |
-| Parir e lactar | Parto, crias, lactação, produção | ✅ Parto forte; produção sem vínculo explícito à lactação |
+| Preparar parto | Secagem, data prevista | ✅ Secagem encerra lactação ativa |
+| Parir e lactar | Parto, crias, lactação, produção | ✅ Produção exige lactação ativa |
 | Qualidade do leite | Restrição até laboratório | ✅ Painel home |
-| Gerir | Prenhes, partos previstos, produção agregada | 🚧 Planejado |
+| Gerir | Prenhes, partos previstos, produção, integridade dos dados | ✅ Resumo pecuário + painel **Conformidade** (gestão) |
 
 Detalhe transversal: **[docs/business/ciclo-rebanho.md](../docs/business/ciclo-rebanho.md)**.
 
@@ -55,7 +55,7 @@ Detalhe transversal: **[docs/business/ciclo-rebanho.md](../docs/business/ciclo-r
 
 ### **Proprietário / Gerente**
 1. **Provisão**: Conta e fazenda(s) vinculadas (admin ou fluxo titular).
-2. **Visão do rebanho**: Lista/filtros de animais; **meta**: dashboard com partos previstos, prenhes e produção.
+2. **Visão do rebanho**: Lista/filtros; home com resumo pecuário, restrições de leite e **conformidade dos dados** (anomalias INT-*).
 3. **Decisão**: Relatórios e alertas derivados dos registros (não duplicar planilhas).
 
 ### **Campo / Ordenhador**
@@ -115,5 +115,5 @@ Detalhe transversal: **[docs/business/ciclo-rebanho.md](../docs/business/ciclo-r
 
 ---
 
-**Última atualização**: 2026-05-19  
+**Última atualização**: 2026-05-20  
 **Versão do Contexto**: 3.0 (ciclo do rebanho como eixo; jornadas alinhadas ao estado real e ao roadmap; referência `ciclo-rebanho.md`)

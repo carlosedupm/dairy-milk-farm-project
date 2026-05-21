@@ -148,6 +148,17 @@ export function showAssistenteForPerfil(perfil: string | undefined): boolean {
   return isAssistenteEnabledForPerfil(perfil);
 }
 
+/** Painel de conformidade/auditoria na home — gestão e titular; não FUNCIONARIO nem USER pendente. */
+export function showConformidadePanelForPerfil(
+  perfil: string | undefined
+): boolean {
+  if (!perfil) return false;
+  if (perfil === "FUNCIONARIO" || perfil === "USER") return false;
+  const mode = getAreasMode(perfil);
+  if (mode === "pending") return false;
+  return true;
+}
+
 /**
  * Capacidades futuras do assistente para liberação gradual por negócio.
  * Neste momento não há capacidades liberadas para FUNCIONARIO.

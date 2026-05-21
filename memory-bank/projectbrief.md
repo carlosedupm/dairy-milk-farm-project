@@ -102,7 +102,7 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 - [x] Folgas 5x1; módulo agrícola (estrutura)
 - [x] Deploy produção (Render + Vercel); catálogo `docs/business/` iniciado
 
-### **Fase 2 — Ciclo integrado e gestão visível** *(foco atual)*
+### **Fase 2 — Ciclo integrado e gestão visível** *(concluída — 2026-05-20)*
 
 - [x] **Ficha do animal** com timeline e estado (lactação, gestação, próximas ações)
 - [x] **Invariantes de ciclo** no servidor (ex.: secagem encerra lactação; uma lactação ativa por animal)
@@ -111,7 +111,8 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 - [x] **Perfis de campo** alinhados à ordenha e diagnóstico (`FUNCIONARIO` POST toques/produção — BR-ACESSO-015)
 - [x] **Catálogo de negócio** completo para partos, lactações, gestações, toques, secagens, produção
 - [x] **BR-CICLO-002** (cio / toque negativo → status) + **auditoria** (`docs/business/auditoria.md`, migration 23)
-- [ ] Regressão integrada ciclo + UI conformidade (opcional)
+- [x] Regressão integrada ciclo (checklist) + UI conformidade + «Registado por»
+- [ ] Recuperação de senha (adiado — aguarda SMTP)
 
 ### **Fase 3 — Saúde, inteligência e escala**
 
@@ -140,11 +141,11 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 
 | Período | Entrega alvo |
 |---------|----------------|
-| **Agora – Q2 2026** | Fase 2: ciclo integrado + documentação de requisitos completa |
-| **Q3 2026** | Saúde animal mínimo + alertas reprodutivos |
+| **Q2 2026** | Fase 2 concluída (ciclo + conformidade UI); validar checklist em staging |
+| **Q3 2026** | Fase 3: saúde animal mínimo + alertas; recuperação de senha (após SMTP) |
 | **Q4 2026+** | Inteligência, offline, ecossistema |
 
 ---
 
-**Última atualização**: 2026-05-19  
-**Versão do Brief**: 3.0 (ciclo do rebanho como eixo; sincronização código–documentação–requisitos; fases realinhadas ao estado do projeto)
+**Última atualização**: 2026-05-20  
+**Versão do Brief**: 3.1 (Fase 2 fechada; senha adiada; foco Fase 3)

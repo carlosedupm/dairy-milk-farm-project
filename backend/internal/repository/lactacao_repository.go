@@ -44,7 +44,7 @@ func (r *LactacaoRepository) GetByID(ctx context.Context, id int64) (*models.Lac
 }
 
 func (r *LactacaoRepository) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.Lactacao, error) {
-	query := `SELECT id, animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id, created_at, updated_at
+	query := `SELECT id, animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id, created_by, created_at, updated_at
 		FROM lactacoes WHERE animal_id = $1 ORDER BY numero_lactacao DESC`
 	rows, err := r.db.Query(ctx, query, animalID)
 	if err != nil {
@@ -54,7 +54,7 @@ func (r *LactacaoRepository) GetByAnimalID(ctx context.Context, animalID int64) 
 	var list []*models.Lactacao
 	for rows.Next() {
 		var l models.Lactacao
-		if err := rows.Scan(&l.ID, &l.AnimalID, &l.NumeroLactacao, &l.PartoID, &l.DataInicio, &l.DataFim, &l.DiasLactacao, &l.ProducaoTotal, &l.MediaDiaria, &l.Status, &l.FazendaID, &l.CreatedAt, &l.UpdatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.AnimalID, &l.NumeroLactacao, &l.PartoID, &l.DataInicio, &l.DataFim, &l.DiasLactacao, &l.ProducaoTotal, &l.MediaDiaria, &l.Status, &l.FazendaID, &l.CreatedBy, &l.CreatedAt, &l.UpdatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, &l)

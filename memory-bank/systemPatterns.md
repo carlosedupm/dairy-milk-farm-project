@@ -591,7 +591,7 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 - **Alvos de toque**: Mínimo 44×44px para botões e links interativos (WCAG / Apple HIG). Button `size="default"` e `size="icon"` usam `min-h-[44px]`/`min-w-[44px]`; links do Header e CTAs principais seguem o mesmo critério.
 - **Formulários**: `space-y-5` entre grupos; botão de envio `size="lg"`; mensagens de erro em `text-base`; tabelas com `overflow-x-auto` em mobile; botões Editar/Excluir nas tabelas com `size="default"` para toque.
 - **Seleção em listas longas**: Para pickers com muitos itens (ex.: animais da fazenda), usar combobox pesquisável (`AnimalSelect` — Popover + campo de busca + filtro no cliente em `animalSelectUtils.ts`), não Radix Select com scroll infinito. Limite de exibição (~50) com mensagem para refinar a busca; alvos de toque ≥ 44px nas opções.
-- **Home autenticada**: Página inicial exibe atalhos grandes (Ver fazendas, Ver animais, Registrar produção) em cards com ícones e botão de ação; sem redirecionamento automático para listagem.
+- **Home autenticada (`Dashboard`)**: Secção de prioridades — `RestricoesLeiteHomePanel`, `PecuarioResumoHomePanel` (perfis não restritos), **`ConformidadeHomePanel`** (gestão/titular via `showConformidadePanelForPerfil`; query `auditoria-conformidade`); busca animal (`AnimalSearchHome` / diálogo global); atalhos de acesso rápido. Painéis com `max-h` + scroll quando há listas longas (zoom/reflow).
 
 #### **Zoom do navegador, escala de texto do sistema e reflow**
 
