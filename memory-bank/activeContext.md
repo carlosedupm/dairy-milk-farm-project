@@ -17,7 +17,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
   - Logging estruturado JSON com correlation IDs, método, path, status, latency
   - Sentry integrado para captura de erros e panics
   - Middleware de logging automático para todas as requisições
-- **Migrações**: golang-migrate no startup; seed do usuário admin (V3); refresh tokens (V4); Dev Studio (V5, V6); constraint unicidade DEVELOPER (V8); vínculo usuário–fazenda (V11 – tabela `usuarios_fazendas`; V21 – coluna `papel` TITULAR|OPERACIONAL); origem de aquisição em animais (V13 – origem_aquisicao NASCIDO|COMPRADO); touro_animal_id em coberturas (V14 – vinculação reprodutor em monta natural); **folgas 5x1** (V16 – `folgas_escala_config`, `escala_folgas`, `folgas_justificativas`, `folgas_excecoes_dia`, `folgas_alteracoes`); **RLS em `public`** (V19 – todas as tabelas de domínio, sem políticas PostgREST; dono da tabela/API Go inalterado); **restrições de leite** (V20 – `restricoes_leite`, índice único parcial um `AGUARDANDO_LAB` por animal)
+- **Migrações**: golang-migrate no startup; seed do usuário admin (V3); refresh tokens (V4); Dev Studio (V5, V6); constraint unicidade DEVELOPER (V8); vínculo usuário–fazenda (V11 – tabela `usuarios_fazendas`; V21 – coluna `papel` TITULAR|OPERACIONAL); origem de aquisição em animais (V13 – origem_aquisicao NASCIDO|COMPRADO); touro_animal_id em coberturas (V14 – vinculação reprodutor em monta natural); **folgas 5x1** (V16 – `folgas_escala_config`, `escala_folgas`, `folgas_justificativas`, `folgas_excecoes_dia`, `folgas_alteracoes`); **RLS em `public`** (V19 – todas as tabelas de domínio, sem políticas PostgREST; dono da tabela/API Go inalterado); **restrições de leite** (V20 – `restricoes_leite`, índice único parcial um `AGUARDANDO_LAB` por animal); **integrações M2M** (V25 – `integracao_clientes`, scopes, fazendas, `integracao_chamadas`, `integracao_idempotencia`)
 - **Postman**: Rotas compatíveis com a collection (`/api/auth/*`, `/api/v1/fazendas/*`)
 - **Frontend + Backend**: Integração validada — login, listagem, criar/editar/excluir fazendas (dev e **produção** Vercel + Render)
 - **Devcontainer**: `DATABASE_URL` e `PORT` pré-configurados; backend via `go run ./cmd/api`
@@ -52,12 +52,14 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 - **Listagem de animais (filtros + paginação)**: `GET /api/v1/animais` retorna `{ animais, total }` com query `limit`, `offset`, `fazenda_id`, `identificacao`, `categoria`, `sexo`, `status_saude`, `lote_id`, `status_reprodutivo` — restrito às fazendas do usuário. `GET /api/v1/fazendas/:id/animais` sem `limit` mantém array completo (formulários); com `limit` retorna `{ animais, total }`. Frontend: em **`/animais`** o `fazenda_id` vem **só da fazenda ativa** (`FazendaContext` / seletor do header); em **`/fazendas/[id]/animais`** o escopo é a fazenda da rota. **`AnimaisListToolbar`**: secção **Busca** (identificação com debounce); filtros avançados em **`Popover`** (`md+`) ou **`Dialog`** (mobile) via `useMediaQuery("(min-width: 768px)")` em `hooks/useMediaQuery.ts`; badge + chips para filtros ativos; **`resultCount`** / **`listLoading`** mostram total na lista **somente no Dialog (mobile)** — no desktop o Popover não repete o total (título/paginação visíveis atrás). Popover com `max-h` + scroll interno no formulário para não cortar conteúdo. Rótulo da busca **`max-sm:sr-only`** + placeholder visível no telemóvel. Serviços `listPaginated` / `listByFazendaPaginated` e **`ListPaginationBar`**.
 - **Leite para descarte (aguardando laboratório)**: tabela `restricoes_leite` por episódio (motivo, início, observação, status `AGUARDANDO_LAB` → `LIBERADO`). API: `GET|POST /api/v1/fazendas/:id/restricoes-leite/ativas` e base, `PATCH .../:restricaoId/liberar` (FUNCIONARIO pode listar e registrar; não liberar); `GET /api/v1/fazendas/:id/animais/em-lactacao` para o combo de registro; `POST` valida lactação ativa (`lactacoes`: `data_fim` nula, `status` nulo ou `EM_ANDAMENTO`). Home: `RestricoesLeiteHomePanel` acima da busca inteligente (`listEmLactacaoByFazenda`); registro de animal usa **`AnimalSelect`** pesquisável. Catálogo: `docs/business/leite-restricoes.md` (inclui **BR-LEITE-005**).
 - **`AnimalSelect` (combobox pesquisável em formulários)**: `components/animais/AnimalSelect.tsx` + `animalSelectUtils.ts` — Popover, busca com debounce (~150 ms) por identificação/raça/categoria/status reprodutivo, filtros `femeasOnly`/`reprodutoresOnly`, até 50 itens visíveis, teclado (↑↓, Enter, Escape). Mesma API de props; usado em gestão pecuária (cios, coberturas, partos, toques, secagens, lactações), produção de leite e restrições de leite. **Produção (novo)**: lista apenas `listEmLactacaoByFazenda` (matrizes em lactação); **toque positivo**: seletor de cobertura obrigatório. Demais formulários: `listByFazenda` ou `listEmLactacaoByFazenda` conforme regra de negócio.
+- **API de integrações M2M (externa)**: Chaves `cmk_live_*` por cliente; perfil técnico `INTEGRACAO` (`enabled=false`) para `created_by`; scopes `animais:read`, `toques:write`, `coberturas:read`; rotas `GET|POST /api/v1/integracoes/*` (me, busca/detalhe animal, coberturas por `animal_id`, toque unitário, lote de toques com sucesso parcial); `Idempotency-Key`; rate limit `INTEGRATION_RATE_LIMIT_PER_HOUR` (default 300/h); auditoria em `integracao_chamadas`. **Admin**: `/admin/integracoes` + API `/api/v1/admin/integracoes` (criar/revogar/rotacionar chave, chamadas). **OpenAPI 3.0 + Swagger UI** (público, sem API key): `GET /api/v1/integracoes/openapi.yaml`, `GET /api/v1/integracoes/docs`, redirect `/swagger`. Spec: `backend/internal/openapi/integracoes-v1.openapi.yaml` (embed); cópia em `docs/openapi/`. Guia: `docs/integracoes/README.md`; regras `docs/business/integracoes.md` (BR-INTEG-001–006). **Testes externos**: base URL backend `http://localhost:8080` (não porta 3000 do Next.js); parâmetros de busca (`fazenda_id`, `identificacao`, `animal_id`) na **query string**, não em headers.
 
 ### 🚧 Em andamento:
 - (nenhum foco bloqueante na Fase 2 após fecho qualidade/visibilidade)
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **API de integrações M2M + OpenAPI**: migration 25; M2M (`cmk_live_*`, scopes, 6 rotas, idempotência, `integracao_chamadas`); admin + UI `/admin/integracoes`; catálogo `docs/business/integracoes.md` (BR-INTEG-001–006); guia `docs/integracoes/README.md`; **OpenAPI 3.0** + **Swagger UI** em `/api/v1/integracoes/docs` (público); spec `docs/openapi/integracoes-v1.openapi.yaml`; teste embed `internal/openapi/integracoes_docs_test.go`; Postman import via URL do YAML.
 1. ✅ **Fase 2 — qualidade e visibilidade**: checklist [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md); painel **Conformidade** na home (`ConformidadeHomePanel`, BR-AUDIT-003); **Registado por** na timeline e cadastro do animal (BR-AUDIT-006); timeline com `created_by` nos repositórios de ciclo.
 2. ✅ **BR-CICLO-002**: cio → `VAZIA` (exceto `PRENHE`); toque `NEGATIVO` → `VAZIA`; catálogo `cios.md` / `toques.md` / `ciclo-rebanho.md`.
 2. ✅ **Auditoria de utilizador (migrations 23–24)**: `created_by` em ciclo/leite (23) e **animais** (24); assistente texto/Live preenchem `created_by` em animal e produção; crias do parto herdam `parto.created_by`; `SetCreatedBy` + BR-AUDIT-005.
@@ -119,9 +121,10 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 ### 📋 Próximos passos imediatos:
 
 1. Executar checklist em [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md) em ambiente de staging/produção e registar falhas.
-2. Recuperação de senha — **adiado** até provedor SMTP definido (`deploy-notes.md`).
-3. Backlog pós-Fase 2: paginação timeline, `lactacao_id` em produção, agricultura/assistente, Fase 3 (saúde).
-4. DoD em toda entrega: código + `docs/business/` + memory bank quando mudar marco.
+2. Validar fluxo integração externa ponta-a-ponta (ex.: relatório vet → lote toques) com cliente real em staging; confirmar scopes e vínculo de fazendas no admin.
+3. Recuperação de senha — **adiado** até provedor SMTP definido (`deploy-notes.md`).
+4. Backlog pós-Fase 2: paginação timeline, `lactacao_id` em produção, agricultura/assistente, Fase 3 (saúde); expandir scopes M2M (produção, partos) se necessário.
+5. DoD em toda entrega: código + `docs/business/` + memory bank quando mudar marco.
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -130,6 +133,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 - ✅ **Decidido (2026-05-19)**: **Ciclo do rebanho leiteiro** como eixo do produto; requisitos transversais em `docs/business/ciclo-rebanho.md` (`BR-CICLO-*`); definição de pronto inclui sincronização código ↔ catálogo ↔ memory bank (`projectbrief.md` v3.0).
 - ✅ **Decidido (2026-05-19)**: **Toque positivo** exige cobertura (informada ou última sem gestação); sem cobertura → 400; efeitos em gestação confirmada, `PRENHE`, busca, ficha e resumo pecuário. **Produção** lista e valida apenas animais em lactação ativa (`em-lactacao`).
 - ✅ **Decidido (2026-05-20)**: **Fase 2 fechada** com UI de conformidade e rastreio «Registado por»; recuperação de senha **não** entra no critério de fecho até SMTP definido (`deploy-notes.md`).
+- ✅ **Decidido (2026-05-21)**: **Integrações M2M** como API dedicada (`/api/v1/integracoes`), não JWT de utilizador; documentação OpenAPI **estática** (embed + cópia em `docs/openapi/`), Swagger UI **pública** (sem auth para ler spec/UI); operações M2M exigem Bearer `cmk_live_*` + scopes + fazenda vinculada ao cliente.
 
 ### **Arquitetura e Stack**
 
@@ -167,6 +171,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 ### **Problemas Conhecidos / Limitações**
 
 - ⚠️ **Voz no Chrome Android**: A Web Speech API tem suporte limitado no Chrome Android. Aplicamos workarounds (`continuous: false`, pre-warm com `getUserMedia`) para melhorar a interpretação. Em alguns dispositivos a precisão pode ser menor que no desktop. Em caso de falha recorrente, o usuário pode digitar o comando.
+- ⚠️ **Testes da API de integrações**: Usar **porta 8080** (backend Go), não 3000 (Next.js). Em `GET /animais/search` e `GET /coberturas`, enviar `fazenda_id` / `identificacao` / `animal_id` como **query params** (Swagger «Parameters»), não como headers HTTP. Respostas típicas: 403 sem scope ou fazenda não vinculada; 404 animal inexistente; 200 com `data: []` sem coberturas.
 
 ### **Problemas Resolvidos**
 
@@ -180,13 +185,13 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 ### **Completude Geral**: 98%
 
 - **Infraestrutura**: 95% ✅ (backend + frontend em produção + Dev Studio)
-- **Documentação**: 96% ✅ (catálogo `docs/business/`, checklist regressão Fase 2)
-- **Implementação**: 96% ✅ (ciclo integrado + auditoria UI; agricultura em consolidação)
+- **Documentação**: 97% ✅ (catálogo `docs/business/`, OpenAPI integrações, checklist regressão Fase 2)
+- **Implementação**: 97% ✅ (ciclo integrado + auditoria UI + API M2M integrações; agricultura em consolidação)
 - **Fase 2 ciclo + auditoria**: 100% ✅ (código + UI; validação manual do checklist pendente em staging)
 - **Testes**: 75% ✅ (unitários + TestSprite + checklist manual documentado)
 - **Deploy**: 90% ✅ (Render + Vercel)
 
 ---
 
-**Última atualização**: 2026-05-20 (Fase 2 fechada: UI conformidade + Registado por; regressão documentada)
-**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** (ciclo + auditoria UI) | Recuperação senha aguarda SMTP | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)
+**Última atualização**: 2026-05-21 (API M2M integrações + OpenAPI/Swagger UI públicos)
+**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Integrações M2M** (`/api/v1/integracoes` + `/docs` Swagger) | Recuperação senha aguarda SMTP | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)

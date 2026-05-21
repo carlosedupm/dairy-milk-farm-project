@@ -11,7 +11,7 @@ import { QueryListContent } from '@/components/layout/QueryListContent'
 import { UsuarioTable } from '@/components/admin/UsuarioTable'
 import { PendentesProvisaoPanel } from '@/components/admin/PendentesProvisaoPanel'
 import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { Plus, Plug } from 'lucide-react'
 
 function AdminUsuariosContent() {
   const { data, isLoading, error } = useQuery({
@@ -28,12 +28,20 @@ function AdminUsuariosContent() {
       <ListCardLayout
         title={`Usuários (${total})`}
         action={
-          <Button asChild>
-            <Link href="/admin/usuarios/novo">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Usuário
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/admin/integracoes">
+                <Plug className="mr-2 h-4 w-4" />
+                Integrações
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/admin/usuarios/novo">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Usuário
+              </Link>
+            </Button>
+          </div>
         }
       >
         <QueryListContent

@@ -22,7 +22,8 @@ type Config struct {
 	GeminiModelAssistente string // modelo para Assistente; se vazio usa GeminiModel (ex.: gemini-2.5-flash-lite)
 	GitHubToken           string
 	GitHubRepo            string
-	GitHubContextBranch   string // branch de produção para contexto Dev Studio (default: main)
+	GitHubContextBranch              string // branch de produção para contexto Dev Studio (default: main)
+	IntegrationRateLimitPerHour      int    // rate limit M2M por cliente (default: 300)
 }
 
 func Load() *Config {
@@ -74,8 +75,19 @@ func Load() *Config {
 		GeminiModelAssistente: getEnv("GEMINI_MODEL_ASSISTENTE", ""),
 		GitHubToken:           getEnv("GITHUB_TOKEN", ""),
 		GitHubRepo:            getEnv("GITHUB_REPO", ""),
-		GitHubContextBranch:   getEnv("GITHUB_CONTEXT_BRANCH", "main"),
+		GitHubContextBranch:         getEnv("GITHUB_CONTEXT_BRANCH", "main"),
+		IntegrationRateLimitPerHour: getEnvInt("INTEGRATION_RATE_LIMIT_PER_HOUR", 300),
 	}
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		var n int
+		if _, err := fmt.Sscanf(value, "%d", &n); err == nil && n > 0 {
+			return n
+		}
+	}
+	return defaultValue
 }
 
 func getEnv(key, defaultValue string) string {

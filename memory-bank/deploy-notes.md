@@ -41,6 +41,11 @@ O arquivo `render.yaml` define:
 
 Fluxo `forgot-password` / `reset-password` **não implementado** até escolha do provedor de e-mail transacional (ex.: Resend, SendGrid, Amazon SES, SMTP do Render). Quando definido, documentar aqui: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, e URL base do frontend para links de reset.
 
+#### Opcionais (integrações M2M)
+
+- `INTEGRATION_RATE_LIMIT_PER_HOUR` - Limite de requisições por cliente de integração (default: **300**). Aplica-se a rotas autenticadas em `/api/v1/integracoes/*` (não às rotas públicas de documentação).
+- **Docs em produção** (sem API key): `https://<backend>/api/v1/integracoes/openapi.yaml`, `https://<backend>/api/v1/integracoes/docs`. Chaves `cmk_live_*` criadas apenas via admin (`/admin/integracoes`).
+
 #### Opcionais (Dev Studio)
 
 - `GEMINI_API_KEY` - Chave da API Gemini (geração de código).
@@ -360,7 +365,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 ---
 
-**Última atualização**: 2026-05-20 (recuperação de senha adiada — SMTP; Fase 2 fechada)
+**Última atualização**: 2026-05-21 (integrações M2M: rate limit opcional; URLs OpenAPI/Swagger em produção)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

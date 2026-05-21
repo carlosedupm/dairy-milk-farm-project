@@ -1,0 +1,127 @@
+# Guia de integração — CeialMilk API M2M
+
+## Autenticação
+
+```http
+Authorization: Bearer cmk_live_<segredo>
+```
+
+A chave é gerada em **Admin → Integrações** (`/admin/integracoes`). Só é exibida na criação ou na rotação.
+
+## Base URL
+
+- Desenvolvimento: `http://localhost:8080`
+- Produção: URL do backend Render (ver `memory-bank/deploy-notes.md`)
+
+Todas as rotas abaixo usam o prefixo `/api/v1/integracoes`.
+
+## Documentação interativa (OpenAPI / Swagger)
+
+Acesso **público** (não exige API key para ver a documentação):
+
+| Recurso | URL (dev) |
+|---------|-----------|
+| **Swagger UI** | [http://localhost:8080/api/v1/integracoes/docs](http://localhost:8080/api/v1/integracoes/docs) |
+| **OpenAPI YAML** | [http://localhost:8080/api/v1/integracoes/openapi.yaml](http://localhost:8080/api/v1/integracoes/openapi.yaml) |
+| Atalho | `/api/v1/integracoes/swagger` → redireciona para `/docs` |
+
+Ficheiro versionado no repositório: [`docs/openapi/integracoes-v1.openapi.yaml`](../openapi/integracoes-v1.openapi.yaml) (cópia de [`backend/internal/openapi/integracoes-v1.openapi.yaml`](../../backend/internal/openapi/integracoes-v1.openapi.yaml) usada no embed).
+
+No Swagger UI: **Authorize** → cole a chave completa `cmk_live_...` → use **Try it out**. Para `GET /animais/search`, preencha os parâmetros na secção **Parameters** (query), não em headers.
+
+**Postman:** Import → Link → `http://localhost:8080/api/v1/integracoes/openapi.yaml`
+
+## Scopes (v1)
+
+| Scope | Endpoints |
+|-------|-----------|
+| `animais:read` | `GET /animais/search`, `GET /animais/:id` |
+| `coberturas:read` | `GET /coberturas?animal_id=` |
+| `toques:write` | `POST /toques`, `POST /toques/lote` |
+
+## Fluxo recomendado — relatório veterinário (toques)
+
+1. Extrair do PDF (OCR/IA externa) uma lista: identificação, data, resultado (`POSITIVO` / `NEGATIVO` / `INCONCLUSIVO`), opcional `cobertura_id`, `veterinario`, `observacoes`.
+2. (Opcional) Para cada identificação ambígua, `GET /animais/search?fazenda_id=&identificacao=`.
+3. Para toques positivos, `GET /coberturas?animal_id=` e escolher `cobertura_id`.
+4. Enviar lote com idempotência:
+
+```bash
+curl -s -X POST "$BASE/api/v1/integracoes/toques/lote" \
+  -H "Authorization: Bearer $CMK_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: relatorio-vet-2026-05-21-fazenda-1" \
+  -d '{
+    "fazenda_id": 1,
+    "itens": [
+      {
+        "identificacao": "BR-042",
+        "data": "2026-05-20T10:00:00Z",
+        "resultado": "POSITIVO",
+        "cobertura_id": 12,
+        "veterinario": "Dr. Silva"
+      },
+      {
+        "identificacao": "BR-099",
+        "data": "2026-05-20T10:00:00Z",
+        "resultado": "NEGATIVO"
+      }
+    ]
+  }'
+```
+
+Use o mesmo `Idempotency-Key` ao reenviar o **mesmo** payload; alterações no body exigem nova chave.
+
+## Resposta do lote
+
+```json
+{
+  "data": {
+    "total": 2,
+    "sucesso": 1,
+    "falhas": [
+      {
+        "linha": 2,
+        "identificacao": "BR-099",
+        "code": "ANIMAL_NAO_ENCONTRADO",
+        "message": "animal nao encontrado na fazenda"
+      }
+    ],
+    "toques_criados": [{ "id": 1, "animal_id": 5, "resultado": "POSITIVO" }]
+  }
+}
+```
+
+## Códigos de erro por linha
+
+| Code | Significado |
+|------|-------------|
+| `ANIMAL_NAO_ENCONTRADO` | Nenhum animal na fazenda com essa identificação |
+| `ANIMAL_AMBIGUO` | Mais de um animal; ver `animal_ids` |
+| `TOQUE_POSITIVO_SEM_COBERTURA` | Positivo sem cobertura vinculada |
+| `TOQUE_POSITIVO_GESTACAO_ATIVA` | Animal já com gestação confirmada |
+| `DATA_INVALIDA` | Data não está em RFC3339 |
+| `RESULTADO_INVALIDO` | Campo obrigatório ou resultado inválido |
+
+## Rate limit
+
+Variável de ambiente `INTEGRATION_RATE_LIMIT_PER_HOUR` (default **300** requisições/hora por cliente). Resposta **429** quando excedido.
+
+## Administração
+
+| Método | Rota (JWT admin) | Descrição |
+|--------|------------------|-----------|
+| `GET` | `/api/v1/admin/integracoes` | Listar clientes |
+| `POST` | `/api/v1/admin/integracoes` | Criar (+ `api_key` uma vez) |
+| `GET` | `/api/v1/admin/integracoes/:id` | Detalhe + chamadas recentes |
+| `PATCH` | `/api/v1/admin/integracoes/:id` | Nome, fazendas, scopes |
+| `POST` | `/api/v1/admin/integracoes/:id/rotacionar-chave` | Nova chave |
+| `POST` | `/api/v1/admin/integracoes/:id/revogar` | Revogar |
+
+## Postman
+
+Importe a spec OpenAPI (recomendado para integrações) ou `docs/postman/CeialMilk-Postman-Collection.json` (API geral). Defina `integration_api_key` no ambiente. Ver `docs/postman/POSTMAN-README.md`.
+
+---
+
+**Última atualização**: 2026-05-21

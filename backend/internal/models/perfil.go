@@ -9,7 +9,11 @@ const (
 	PerfilGerente      = "GERENTE"
 	PerfilGestao       = "GESTAO"
 	PerfilProprietario = "PROPRIETARIO"
+	PerfilIntegracao   = "INTEGRACAO" // conta técnica; sem login (enabled=false)
 )
+
+// PerfilIntegracaoNomePrefix prefixo do nome exibido em auditoria.
+const PerfilIntegracaoNomePrefix = "Integração — "
 
 // PodeGerenciarFolgas indica perfis que podem gerar/alterar escala de folgas na fazenda
 // (sempre sujeito a validação de vínculo, exceto perfis de gestão global — ver PodeAcessarFazendaSemVinculoGestao).

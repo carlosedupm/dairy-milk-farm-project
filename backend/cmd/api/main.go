@@ -14,9 +14,11 @@ import (
 	"github.com/ceialmilk/api/internal/auth"
 	"github.com/ceialmilk/api/internal/config"
 	"github.com/ceialmilk/api/internal/handlers"
+	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/logger"
 	"github.com/ceialmilk/api/internal/middleware"
 	"github.com/ceialmilk/api/internal/observability"
+	apidocs "github.com/ceialmilk/api/internal/openapi"
 	"github.com/ceialmilk/api/internal/repository"
 	"github.com/ceialmilk/api/internal/service"
 	"github.com/gin-gonic/gin"
@@ -78,6 +80,9 @@ func main() {
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		})
 	})
+
+	apidocs.RegisterIntegracaoDocsRoutes(router)
+	slog.Info("Rotas OpenAPI integracoes registradas: /api/v1/integracoes/openapi.yaml, /docs")
 
 	var apiRoutesRegistered bool
 	if cfg.DatabaseURL == "" {
@@ -177,6 +182,10 @@ func main() {
 					lactacaoSvc := service.NewLactacaoService(lactacaoRepo, animalRepo, fazendaRepo)
 					coberturaHandler := handlers.NewCoberturaHandler(coberturaSvc, fazendaSvc)
 					diagnosticoGestacaoHandler := handlers.NewDiagnosticoGestacaoHandler(diagnosticoGestacaoSvc, fazendaSvc)
+					integracaoRepo := repository.NewIntegracaoRepository(pool)
+					integracaoSvc := service.NewIntegracaoService(integracaoRepo, userRepo)
+					integracaoHandler := handlers.NewIntegracaoHandler(integracaoSvc, animalSvc, diagnosticoGestacaoSvc, coberturaSvc)
+					integracaoAdminHandler := handlers.NewIntegracaoAdminHandler(integracaoSvc)
 					gestacaoHandler := handlers.NewGestacaoHandler(gestacaoSvc, fazendaSvc)
 					partoHandler := handlers.NewPartoHandler(partoSvc, fazendaSvc)
 					criaHandler := handlers.NewCriaHandler(criaSvc)
@@ -413,8 +422,34 @@ func main() {
 						admin.PATCH("/usuarios/:id/toggle-enabled", adminHandler.ToggleEnabled)
 						admin.GET("/usuarios/:id/fazendas", adminHandler.GetUsuarioFazendas)
 						admin.PUT("/usuarios/:id/fazendas", adminHandler.SetUsuarioFazendas)
+						admin.GET("/integracoes", integracaoAdminHandler.List)
+						admin.POST("/integracoes", integracaoAdminHandler.Create)
+						admin.GET("/integracoes/:id", integracaoAdminHandler.GetByID)
+						admin.PATCH("/integracoes/:id", integracaoAdminHandler.Update)
+						admin.POST("/integracoes/:id/rotacionar-chave", integracaoAdminHandler.RotacionarChave)
+						admin.POST("/integracoes/:id/revogar", integracaoAdminHandler.Revogar)
+						admin.GET("/integracoes/:id/chamadas", integracaoAdminHandler.ListChamadas)
 					}
 					slog.Info("Rotas de Admin registradas")
+
+					integracaoRL := cfg.IntegrationRateLimitPerHour
+					if integracaoRL <= 0 {
+						integracaoRL = 300
+					}
+					integ := api.Group("/v1/integracoes",
+						auth.IntegrationAuthMiddleware(integracaoSvc),
+						middleware.IntegrationRateLimit(integracaoRL),
+						middleware.IntegrationAuditMiddleware(integracaoSvc),
+					)
+					{
+						integ.GET("/me", integracaoHandler.Me)
+						integ.GET("/animais/search", auth.RequireIntegrationScope(models.ScopeAnimaisRead), integracaoHandler.SearchAnimais)
+						integ.GET("/animais/:id", auth.RequireIntegrationScope(models.ScopeAnimaisRead), integracaoHandler.GetAnimal)
+						integ.GET("/coberturas", auth.RequireIntegrationScope(models.ScopeCoberturasRead), integracaoHandler.ListCoberturas)
+						integ.POST("/toques", auth.RequireIntegrationScope(models.ScopeToquesWrite), integracaoHandler.CreateToque)
+						integ.POST("/toques/lote", auth.RequireIntegrationScope(models.ScopeToquesWrite), integracaoHandler.CreateToqueLote)
+					}
+					slog.Info("Rotas de Integracoes M2M registradas")
 
 					// Dev Studio routes (apenas se Gemini API key estiver configurada)
 					if cfg.GeminiAPIKey != "" {

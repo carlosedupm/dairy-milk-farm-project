@@ -113,6 +113,7 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 - [x] **BR-CICLO-002** (cio / toque negativo → status) + **auditoria** (`docs/business/auditoria.md`, migration 23)
 - [x] Regressão integrada ciclo (checklist) + UI conformidade + «Registado por»
 - [ ] Recuperação de senha (adiado — aguarda SMTP)
+- [x] **API de integrações M2M** (toques pós-vet, busca animal, coberturas; admin `/admin/integracoes`; OpenAPI/Swagger em `/api/v1/integracoes/docs`) — ver `docs/business/integracoes.md`
 
 ### **Fase 3 — Saúde, inteligência e escala**
 
@@ -120,7 +121,7 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 - [ ] Alertas automáticos reprodutivos e de produção
 - [ ] Assistente por capacidades; gráficos e exportações
 - [ ] Offline-first onde tecnicamente viável
-- [ ] IoT / integrações (opcional)
+- [ ] IoT; **escopos M2M adicionais** (produção, partos, webhooks) — backlog
 
 ## ✅ Definição de pronto (DoD) para entregas de produto
 
@@ -141,11 +142,11 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 
 | Período | Entrega alvo |
 |---------|----------------|
-| **Q2 2026** | Fase 2 concluída (ciclo + conformidade UI); validar checklist em staging |
+| **Q2 2026** | Fase 2 concluída; integrações M2M v1; validar checklist + integrador em staging |
 | **Q3 2026** | Fase 3: saúde animal mínimo + alertas; recuperação de senha (após SMTP) |
 | **Q4 2026+** | Inteligência, offline, ecossistema |
 
 ---
 
-**Última atualização**: 2026-05-20  
-**Versão do Brief**: 3.1 (Fase 2 fechada; senha adiada; foco Fase 3)
+**Última atualização**: 2026-05-21  
+**Versão do Brief**: 3.2 (integrações M2M v1 entregue; Fase 3 saúde/alertas)

@@ -67,12 +67,36 @@ Se o banco estiver indisponível, o backend sobe apenas com `GET /health`; após
 - `GET /api/v1/fazendas/count` - Get total farms count
 - `GET /api/v1/fazendas/exists` - Check if farm exists
 
+## Integrações M2M (API key)
+
+### Importar via OpenAPI (recomendado)
+
+1. Postman → **Import** → **Link**
+2. URL: `http://localhost:8080/api/v1/integracoes/openapi.yaml` (com o backend a correr)
+3. Ou importe o ficheiro local: `docs/openapi/integracoes-v1.openapi.yaml`
+4. Na UI: `/admin/integracoes` → criar cliente → copiar `cmk_live_...` para `integration_api_key`
+5. Na collection importada, configure **Authorization** → Bearer `{{integration_api_key}}`
+
+**Swagger UI (navegador):** `http://localhost:8080/api/v1/integracoes/docs` — documentação pública; Authorize com a chave para testar.
+
+Ver `docs/integracoes/README.md` para fluxo veterinário (lote de toques).
+
+### Endpoints principais
+
+- `GET {{baseUrl}}/api/v1/integracoes/me`
+- `GET {{baseUrl}}/api/v1/integracoes/animais/search?fazenda_id={{fazendaId}}&identificacao=BR-001` — parâmetros na **query**, não em headers
+- `POST {{baseUrl}}/api/v1/integracoes/toques/lote` (header `Idempotency-Key` recomendado)
+
+Admin (JWT): `GET/POST {{baseUrl}}/api/v1/admin/integracoes`
+
 ## Environment Variables
 
 - `baseUrl`: http://localhost:8080
 - `authToken`: Automatically set after login
 - `adminEmail`: admin@ceialmilk.com
 - `adminPassword`: password
+- `integration_api_key`: Chave M2M (`cmk_live_...`) — criada em Admin → Integrações
+- `fazendaId`: ID da fazenda para testes de integração
 
 ## Features
 

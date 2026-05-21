@@ -50,6 +50,8 @@
   - `SENTRY_DSN`: DSN do Sentry para captura de erros (opcional)
   - `LOG_LEVEL`: Nível de log (DEBUG, INFO, WARN, ERROR) - padrão: INFO
   - `ENV`: Ambiente (development, production) - padrão: development
+  - `INTEGRATION_RATE_LIMIT_PER_HOUR`: Rate limit por cliente M2M (default: 300) — rotas `/api/v1/integracoes/*`
+  - **Docs OpenAPI integrações** (públicas): `GET /api/v1/integracoes/openapi.yaml`, `GET /api/v1/integracoes/docs` (Swagger UI); spec embed em `backend/internal/openapi/`
   - **Dev Studio e Assistente** (opcional): `GEMINI_API_KEY`; `GEMINI_MODEL` (default `gemini-2.0-flash`) para Dev Studio; `GEMINI_MODEL_ASSISTENTE` (opcional, se vazio usa `GEMINI_MODEL`; recomendado `gemini-2.5-flash-lite` para custo menor). GitHub: `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_CONTEXT_BRANCH` (default `main`). Ver `docs/dev-studio/SETUP.md`.
 
 ### Frontend (Vercel)
@@ -268,5 +270,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-20 (Fase 2 fechada: conformidade UI, Registado por, checklist regressão)
+**Última atualização**: 2026-05-21 (API M2M integrações; OpenAPI/Swagger UI em `/api/v1/integracoes/docs`)
 **Stack**: Go + Next.js 16 — Fase 2 concluída; Folgas 5x1; restrições de leite; Módulo Agrícola; Dev Studio; TestSprite (`testsprite_tests/`)

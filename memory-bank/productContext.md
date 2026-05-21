@@ -111,9 +111,10 @@ Detalhe transversal: **[docs/business/ciclo-rebanho.md](../docs/business/ciclo-r
 - Dashboard, saúde animal mínimo, alertas automáticos.
 
 ### **Fase 3 (500+ fazendas)**
-- Integrações, API pública, offline avançado.
+- Saúde animal, alertas automáticos, predições; offline avançado.
+- **Integrações M2M (parcial — 2026-05-21)**: API dedicada para sistemas/agentes externos (toques pós-vet, busca animal, coberturas); gestão em `/admin/integracoes`; docs OpenAPI em `/api/v1/integracoes/docs`. Escopos e módulos adicionais (produção, webhooks, OAuth) permanecem backlog.
 
 ---
 
-**Última atualização**: 2026-05-20  
-**Versão do Contexto**: 3.0 (ciclo do rebanho como eixo; jornadas alinhadas ao estado real e ao roadmap; referência `ciclo-rebanho.md`)
+**Última atualização**: 2026-05-21  
+**Versão do Contexto**: 3.1 (integrações M2M documentadas no roadmap de crescimento)

@@ -6,7 +6,7 @@
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
-📚  Documentação: 95% ✅ (memory bank alinhado e em revisão contínua de consistência)
+📚  Documentação: 97% ✅ (memory bank + OpenAPI integrações M2M)
 💻  Implementação: 95% ✅ (CRUD Animais, Produção, Gestão Pecuária e Módulo Agrícola em consolidação)
 🧪  Testes: 75% ✅ (unitários backend + E2E frontend + scripts TestSprite TC001–TC009 API)
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
@@ -102,6 +102,8 @@
 - [x] **Home logada (Dashboard)**: `Dashboard.tsx` + `RestricoesLeiteHomePanel.tsx` + `AnimalSearchHome.tsx` — hierarquia visual, progressive disclosure e atalhos sem CTA duplicado
 - [x] **`AnimalSelect` pesquisável**: combobox com filtro no cliente (`animalSelectUtils.ts`); gestão pecuária, produção e registro de restrições de leite; substitui Select com scroll longo
 - [x] **UX Input/Textarea — foco**: borda única `border-ring` no foco (sem ring sobreposto); corrige aparência do campo de busca por identificação no diálogo global
+- [x] **API de integrações M2M (2026-05-21)**: migration 25; auth `cmk_live_*` + scopes; rotas `/api/v1/integracoes` (me, animais, coberturas, toques/lote); idempotência; admin API + UI `/admin/integracoes`; catálogo `docs/business/integracoes.md` (BR-INTEG-001–006); guia `docs/integracoes/README.md`
+- [x] **OpenAPI integrações M2M (2026-05-21)**: spec OpenAPI 3.0 embed + `docs/openapi/integracoes-v1.openapi.yaml`; rotas públicas `openapi.yaml`, Swagger UI `/docs`; teste `integracoes_docs_test.go`; Postman/README atualizados
 
 ## 📋 Próximos Passos
 
@@ -141,7 +143,8 @@
 - [ ] Testes de integração
 - [ ] Observabilidade (Sentry, BetterStack)
 - [ ] Otimizações de performance
-- [ ] Documentação de API
+- [x] **Documentação de API (integrações M2M)**: OpenAPI 3.0 + Swagger UI em `/api/v1/integracoes/docs` (JWT geral e admin integrações fora do escopo)
+- [ ] Documentação OpenAPI da API JWT completa (futuro)
 
 ## 🎯 Metas de Curto Prazo
 
@@ -168,6 +171,16 @@
 - [x] UI conformidade na home + «Registado por» na ficha (BR-AUDIT-003/006)
 - [x] Checklist regressão ciclo ([docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md))
 - [ ] Execução manual do checklist em staging (validação operacional)
+
+### **Meta 2b: Integrações externas (M2M — concluída em código)**
+
+- [x] Migration 25 + perfil `INTEGRACAO` + chaves `cmk_live_*`
+- [x] Rotas M2M v1 (animais, coberturas, toques unitário/lote) + idempotência + auditoria `integracao_chamadas`
+- [x] Admin CRUD clientes + UI `/admin/integracoes`
+- [x] Catálogo `docs/business/integracoes.md` (BR-INTEG-001–006)
+- [x] OpenAPI 3.0 + Swagger UI públicos (`/api/v1/integracoes/docs`)
+- [ ] Validação operacional em staging (cliente real, lote de toques pós-vet)
+- [ ] Escopos adicionais (produção, partos) — backlog
 
 ### **Meta 3: Saúde e inteligência** *(Fase 3 — `projectbrief.md`)*
 
@@ -650,8 +663,14 @@
 - ✅ **Checklist**: [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md).
 - ⏸️ **Recuperação de senha**: adiada — SMTP não definido (`deploy-notes.md`).
 
+### **2026-05-21 — Integrações M2M + OpenAPI**
+
+- ✅ **API externa**: migration 25; `IntegrationAuthMiddleware`; 6 rotas M2M; lote de toques com sucesso parcial; idempotência; rate limit; admin + UI.
+- ✅ **Documentação**: `docs/business/integracoes.md`; `docs/integracoes/README.md`; OpenAPI embed + `docs/openapi/`; Swagger UI pública; Postman/README.
+- 📋 **Pendente**: teste ponta-a-ponta em staging com integrador real; rotação de chaves expostas em testes manuais.
+
 ---
 
-**Última atualização**: 2026-05-20 (Fase 2 fechada: ciclo + conformidade UI + Registado por)
-**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
-**Próxima revisão**: após execução do checklist em staging + arranque Fase 3
+**Última atualização**: 2026-05-21 (Integrações M2M + OpenAPI/Swagger)
+**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
+**Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

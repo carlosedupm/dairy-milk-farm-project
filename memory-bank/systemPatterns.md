@@ -393,12 +393,23 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 
 Contrato para «quem registrou» no domínio (detalhe em `docs/business/auditoria.md`):
 
-1. **Nunca** incluir `created_by` em structs de request (`CreateAnimalRequest`, payloads do assistente, DTOs de integração futura).
+1. **Nunca** incluir `created_by` em structs de request (`CreateAnimalRequest`, payloads do assistente, DTOs M2M de integração).
 2. **Sempre** definir `CreatedBy` no **call site** antes de `service.Create`: handlers HTTP (`GetActorUserID` + `SetCreatedBy` em `access_helper.go`), assistente (`userID` do JWT em `Executar` / `ExecuteFunction`), criação derivada (ex.: bezerra no parto herda `parto.CreatedBy`).
-3. **Integrações API futuras**: reutilizar handlers/services existentes; o token (JWT ou API key mapeada a `user_id`) identifica o ator — não é necessária coluna extra se o contexto de auth for correto.
+3. **Integrações M2M**: API key `cmk_live_*` → `IntegrationAuthMiddleware` define `user_id` = `actor_user_id` (utilizador `INTEGRACAO`); `GetActorUserID` reutilizado nos handlers de integração; ver `docs/business/integracoes.md`.
 4. **Services** persistem o valor já presente no model; não leem `created_by` do body. Logs com `X-Correlation-ID` são suporte técnico; fonte de verdade de negócio = coluna na entidade.
 
-Migrations: `23` (ciclo/leite), `24` (`animais.created_by`).
+Migrations: `23` (ciclo/leite), `24` (`animais.created_by`), `25` (`integracao_*`).
+
+### **Integrações M2M (API externa)**
+
+- **Autenticação**: `Authorization: Bearer cmk_live_...` — middleware em `backend/internal/auth/integration.go`; **não** usa `RequirePerfilAPIAccess`.
+- **Autorização**: scopes (`animais:read`, `toques:write`, `coberturas:read`) + `ValidateFazendaIntegracao` em `handlers/access_helper.go`.
+- **Rotas**: `/api/v1/integracoes/*` — reutilizam `DiagnosticoGestacaoService`, `AnimalService`, `CoberturaService`.
+- **Idempotência**: header `Idempotency-Key` + tabela `integracao_idempotencia` (`IntegracaoService.CheckIdempotency`).
+- **Auditoria técnica**: `integracao_chamadas` via `middleware/integration_audit.go`.
+- **Rate limit**: `INTEGRATION_RATE_LIMIT_PER_HOUR` (default 300) — `middleware/integration_rate_limit.go`.
+- **Admin**: `/api/v1/admin/integracoes` + UI `/admin/integracoes`; guia em `docs/integracoes/README.md`.
+- **OpenAPI (só M2M)**: spec estática OpenAPI 3.0 em `backend/internal/openapi/integracoes-v1.openapi.yaml` (`go:embed`); rotas **públicas** (sem API key): `GET /api/v1/integracoes/openapi.yaml`, `GET /api/v1/integracoes/docs` (Swagger UI), `GET /api/v1/integracoes/swagger` → redirect; registo em `internal/openapi/integracoes_docs.go` no arranque do router (independente do middleware M2M). Cópia em `docs/openapi/integracoes-v1.openapi.yaml`.
 
 ## ⚡ Padrões de Performance
 
@@ -645,4 +656,4 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 **Versão dos Padrões**: 2.21 (Go + Next.js) — Header com `UserIdentitySummary` e fazenda ativa sempre visível quando aplicável.
 
-**Última atualização**: 2026-05-12 (Header desktop: menu Conta em `Popover`, barra `h-14` sem overflow)
+**Última atualização**: 2026-05-21 (padrões API M2M integrações + OpenAPI/Swagger públicos)

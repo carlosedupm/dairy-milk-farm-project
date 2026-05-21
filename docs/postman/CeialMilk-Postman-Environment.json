@@ -25,6 +25,18 @@
       "value": "password",
       "type": "string",
       "enabled": true
+    },
+    {
+      "key": "integration_api_key",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "fazendaId",
+      "value": "1",
+      "type": "string",
+      "enabled": true
     }
   ],
   "_postman_variable_scope": "environment",

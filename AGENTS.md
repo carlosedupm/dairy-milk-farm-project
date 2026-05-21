@@ -18,7 +18,9 @@ O projeto mantém documentação estruturada no diretório `memory-bank/`. **SEM
 
 ### Documentação Técnica (`docs/`)
 
-- **`docs/postman/`**: Coleção Postman com exemplos de uso da API, endpoints documentados e variáveis de ambiente (será atualizada para nova API Go)
+- **`docs/postman/`**: Coleção Postman com exemplos da API JWT e variáveis de ambiente
+- **`docs/integracoes/README.md`**: Guia operacional da **API M2M** (chaves, scopes, testes, erros comuns)
+- **`docs/openapi/integracoes-v1.openapi.yaml`**: Cópia da spec OpenAPI 3.0 (fonte embed: `backend/internal/openapi/`)
 
 ### Catálogo de negócio (`docs/business/`)
 
@@ -31,6 +33,25 @@ Catálogo **versionado** de regras de domínio (IDs estáveis, escopo, perfis, b
 CeialMilk é um sistema de gestão para **fazendas leiteiras** centrado no **ciclo de vida de cada animal no rebanho** (reprodução, lactação, produção, restrições de leite, equipe), com stack Go + Next.js e requisitos versionados em `docs/business/` (IDs `BR-*`).
 
 **Consulte `memory-bank/projectbrief.md`** (objetivos e fases) e **`docs/business/ciclo-rebanho.md`** (fluxo transversal e backlog de requisitos).
+
+## 🔌 API de integrações M2M (externa)
+
+Sistemas externos (ERP, laboratório, agentes de IA pós-visita veterinária) consomem uma **API dedicada**, separada do JWT de utilizadores da UI.
+
+| Tópico | Detalhe |
+|--------|---------|
+| **Autenticação** | `Authorization: Bearer cmk_live_...` — **não** usar cookies/JWT da UI |
+| **Gestão** | UI admin `/admin/integracoes` (perfis ADMIN/DEVELOPER); API `/api/v1/admin/integracoes` |
+| **Rotas M2M** | Prefixo `/api/v1/integracoes/*` — `me`, busca/detalhe animal, coberturas, toque unitário, lote de toques |
+| **Scopes v1** | `animais:read`, `toques:write`, `coberturas:read` + fazendas vinculadas ao cliente |
+| **Idempotência** | Header `Idempotency-Key` em escritas (especialmente lote de toques) |
+| **Docs públicas** | `GET /api/v1/integracoes/openapi.yaml`, `GET /api/v1/integracoes/docs` (Swagger UI — **sem** API key) |
+| **Regras de negócio** | `docs/business/integracoes.md` (`BR-INTEG-001`–`006`) |
+| **Padrões de código** | `memory-bank/systemPatterns.md` — secção **Integrações M2M** |
+
+**Ao implementar ou alterar integrações:** consulte `docs/business/integracoes.md`, `docs/integracoes/README.md` e `systemPatterns.md`; atualize a spec OpenAPI embed **e** `docs/openapi/integracoes-v1.openapi.yaml` no mesmo trabalho. Testes manuais contra o **backend** (`localhost:8080` em dev, não porta 3000 do Next.js); parâmetros de filtro (`fazenda_id`, `identificacao`, `animal_id`) vão na **query string**.
+
+**Fora de escopo atual:** OpenAPI da API JWT completa; admin de integrações no OpenAPI; upload de PDF; webhooks; OAuth2.
 
 ## 🏗️ Arquitetura e Stack
 
@@ -81,13 +102,8 @@ Pages/App → Components → Services → API (Backend)
 - Decisões técnicas ativas
 
 ### Status Atual (Resumo)
-- 🚧 Infraestrutura: 20% (Estrutura sendo criada)
-- ✅ Documentação: 90% (Atualizada para nova stack)
-- 🚧 Implementação: 5% (Início da migração)
-- 🚧 Testes: 0%
-- 🚧 Deploy: 10% (Configuração pendente)
 
-**Consulte `memory-bank/progress.md` para métricas detalhadas e histórico.**
+Produção **Render + Vercel**; **Fase 2** (ciclo integrado + auditoria UI) fechada em código; **API M2M de integrações** v1 entregue (2026-05-21). Métricas vivas (~97% implementação) em **`memory-bank/progress.md`** e **`memory-bank/activeContext.md`** — não confiar nos percentuais históricos deste ficheiro sem consultar o memory bank.
 
 ## 🔧 Padrões e Convenções
 
@@ -123,6 +139,7 @@ Pages/App → Components → Services → API (Backend)
 3. **Status Codes**: Use códigos HTTP apropriados
 4. **JSON**: Formato padrão de request/response
 5. **Error Format**: Formato padronizado de erros
+6. **Dois modos de auth**: (a) **JWT** — UI e maioria dos endpoints `/api/v1/*`; (b) **API key M2M** — apenas `/api/v1/integracoes/*` autenticadas; rotas de documentação OpenAPI/Swagger são **públicas**
 
 ## 📝 Manutenção de Documentação
 
@@ -170,6 +187,7 @@ Pages/App → Components → Services → API (Backend)
    - Consulte `memory-bank/systemPatterns.md` para padrões relevantes
    - Verifique `memory-bank/progress.md` para contexto de progresso
    - Se a tarefa tocar **regras de domínio**: leia `docs/business/README.md` e o módulo relevante (ex.: `docs/business/folgas.md`)
+   - Se a tarefa tocar **integrações externas**: leia `docs/business/integracoes.md`, `docs/integracoes/README.md` e a secção M2M em `systemPatterns.md`
 
 2. **Durante o desenvolvimento**:
    - Siga os padrões estabelecidos em `systemPatterns.md`
@@ -187,6 +205,7 @@ Pages/App → Components → Services → API (Backend)
 ## 📖 Referências Rápidas
 
 - **Catálogo de negócio**: `docs/business/README.md`
+- **Integrações M2M**: `docs/business/integracoes.md` · `docs/integracoes/README.md` · Swagger `GET /api/v1/integracoes/docs`
 - **Estado Atual**: `memory-bank/activeContext.md`
 - **Padrões Arquiteturais**: `memory-bank/systemPatterns.md`
 - **Stack Tecnológica**: `memory-bank/techContext.md`
@@ -207,5 +226,5 @@ Pages/App → Components → Services → API (Backend)
 
 ---
 
-**Última atualização**: 2026-05-19
-**Versão**: 2.2 (ciclo do rebanho como eixo; `ciclo-rebanho.md`; DoD com sincronização documentação–código)
+**Última atualização**: 2026-05-21
+**Versão**: 2.3 (API M2M integrações + OpenAPI/Swagger; referências `docs/integracoes` e `docs/openapi`)

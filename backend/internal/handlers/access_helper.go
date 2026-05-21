@@ -19,7 +19,7 @@ func SetCreatedBy(dst **int64, actorID int64) {
 	}
 }
 
-// GetActorUserID devolve o ID do utilizador autenticado (JWT). ok=false se ausente ou inválido.
+// GetActorUserID devolve o ID do utilizador autenticado (JWT ou actor de integração M2M).
 func GetActorUserID(c *gin.Context) (int64, bool) {
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
@@ -27,6 +27,23 @@ func GetActorUserID(c *gin.Context) (int64, bool) {
 	}
 	userID, ok := userIDVal.(int64)
 	return userID, ok
+}
+
+// ValidateFazendaIntegracao verifica se fazenda_id está na lista do cliente de integração.
+func ValidateFazendaIntegracao(c *gin.Context, fazendaID int64) bool {
+	idsVal, ok := c.Get("integration_fazenda_ids")
+	if !ok {
+		response.ErrorForbidden(c, "Integracao sem fazendas configuradas")
+		return false
+	}
+	ids, _ := idsVal.([]int64)
+	for _, id := range ids {
+		if id == fazendaID {
+			return true
+		}
+	}
+	response.ErrorForbidden(c, "Fazenda nao autorizada para esta integracao")
+	return false
 }
 
 // ValidateFazendaAccess verifica se a fazenda informada pertence ao usuário logado.

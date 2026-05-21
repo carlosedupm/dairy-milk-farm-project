@@ -44,6 +44,10 @@ Registro de **toque** (diagnóstico de gestação) após cobertura, com resultad
 - **Implementação**: `perfil_access.go`; `appAccess.ts` (`/gestao/toques`).
 - **Estado**: implementado.
 
+### Canal de integração externa
+
+- Registo via `POST /api/v1/integracoes/toques` ou lote `POST /api/v1/integracoes/toques/lote` (scope `toques:write`) — ver [integracoes.md](./integracoes.md) (`BR-INTEG-*`).
+
 ---
 
-**Última atualização**: 2026-05-20
+**Última atualização**: 2026-05-21
