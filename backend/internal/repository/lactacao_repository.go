@@ -20,16 +20,16 @@ func NewLactacaoRepository(db *pgxpool.Pool) *LactacaoRepository {
 }
 
 func (r *LactacaoRepository) Create(ctx context.Context, l *models.Lactacao) error {
-	query := `INSERT INTO lactacoes (animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at, updated_at`
-	return r.db.QueryRow(ctx, query, l.AnimalID, l.NumeroLactacao, l.PartoID, l.DataInicio, l.DataFim, l.DiasLactacao, l.ProducaoTotal, l.MediaDiaria, l.Status, l.FazendaID).
+	query := `INSERT INTO lactacoes (animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, created_at, updated_at`
+	return r.db.QueryRow(ctx, query, l.AnimalID, l.NumeroLactacao, l.PartoID, l.DataInicio, l.DataFim, l.DiasLactacao, l.ProducaoTotal, l.MediaDiaria, l.Status, l.FazendaID, l.CreatedBy).
 		Scan(&l.ID, &l.CreatedAt, &l.UpdatedAt)
 }
 
 func (r *LactacaoRepository) CreateTx(ctx context.Context, tx pgx.Tx, l *models.Lactacao) error {
-	query := `INSERT INTO lactacoes (animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at, updated_at`
-	return tx.QueryRow(ctx, query, l.AnimalID, l.NumeroLactacao, l.PartoID, l.DataInicio, l.DataFim, l.DiasLactacao, l.ProducaoTotal, l.MediaDiaria, l.Status, l.FazendaID).
+	query := `INSERT INTO lactacoes (animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, created_at, updated_at`
+	return tx.QueryRow(ctx, query, l.AnimalID, l.NumeroLactacao, l.PartoID, l.DataInicio, l.DataFim, l.DiasLactacao, l.ProducaoTotal, l.MediaDiaria, l.Status, l.FazendaID, l.CreatedBy).
 		Scan(&l.ID, &l.CreatedAt, &l.UpdatedAt)
 }
 

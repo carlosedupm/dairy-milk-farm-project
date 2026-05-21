@@ -89,6 +89,7 @@ func (s *PartoService) applyAfterPartoCreate(ctx context.Context, p *models.Part
 		DataInicio:     p.Data,
 		Status:         strPtr(models.LactacaoStatusEmAndamento),
 		FazendaID:      p.FazendaID,
+		CreatedBy:      p.CreatedBy,
 	}
 	return s.lactacaoRepo.Create(ctx, lactacao)
 }
@@ -122,6 +123,7 @@ func (s *PartoService) applyAfterPartoCreateTx(ctx context.Context, tx pgx.Tx, p
 		DataInicio:     p.Data,
 		Status:         strPtr(models.LactacaoStatusEmAndamento),
 		FazendaID:      p.FazendaID,
+		CreatedBy:      p.CreatedBy,
 	}
 	return s.lactacaoRepo.CreateTx(ctx, tx, lactacao)
 }

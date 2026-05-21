@@ -62,7 +62,19 @@ func (s *CioService) Create(ctx context.Context, c *models.Cio) error {
 			return errors.New("intensidade invalida")
 		}
 	}
-	return s.repo.Create(ctx, c)
+	if err := s.repo.Create(ctx, c); err != nil {
+		return err
+	}
+	return s.applyStatusAfterCio(ctx, animal)
+}
+
+// applyStatusAfterCio atualiza status reprodutivo (BR-CICLO-002): cio → VAZIA, exceto se já PRENHE.
+func (s *CioService) applyStatusAfterCio(ctx context.Context, animal *models.Animal) error {
+	if animal.StatusReprodutivo != nil && *animal.StatusReprodutivo == models.StatusReprodutivoPrenhe {
+		return nil
+	}
+	status := models.StatusReprodutivoVazia
+	return s.animalRepo.UpdateStatusReprodutivo(ctx, animal.ID, &status)
 }
 
 func (s *CioService) GetByID(ctx context.Context, id int64) (*models.Cio, error) {

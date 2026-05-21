@@ -17,9 +17,9 @@ func NewDiagnosticoGestacaoRepository(db *pgxpool.Pool) *DiagnosticoGestacaoRepo
 }
 
 func (r *DiagnosticoGestacaoRepository) Create(ctx context.Context, d *models.DiagnosticoGestacao) error {
-	query := `INSERT INTO diagnosticos_gestacao (animal_id, cobertura_id, data, resultado, dias_gestacao_estimados, metodo, veterinario, observacoes, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at`
-	return r.db.QueryRow(ctx, query, d.AnimalID, d.CoberturaID, d.Data, d.Resultado, d.DiasGestacaoEstimados, d.Metodo, d.Veterinario, d.Observacoes, d.FazendaID).
+	query := `INSERT INTO diagnosticos_gestacao (animal_id, cobertura_id, data, resultado, dias_gestacao_estimados, metodo, veterinario, observacoes, fazenda_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at`
+	return r.db.QueryRow(ctx, query, d.AnimalID, d.CoberturaID, d.Data, d.Resultado, d.DiasGestacaoEstimados, d.Metodo, d.Veterinario, d.Observacoes, d.FazendaID, d.CreatedBy).
 		Scan(&d.ID, &d.CreatedAt)
 }
 

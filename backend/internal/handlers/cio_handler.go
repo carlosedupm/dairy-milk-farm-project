@@ -40,6 +40,9 @@ func (h *CioHandler) Create(c *gin.Context) {
 		return
 	}
 	cio := &models.Cio{AnimalID: req.AnimalID, DataDetectado: t, MetodoDeteccao: req.MetodoDeteccao, Intensidade: req.Intensidade, Observacoes: req.Observacoes, FazendaID: req.FazendaID}
+	if actorID, ok := GetActorUserID(c); ok {
+		cio.UsuarioID = &actorID
+	}
 	if err := h.svc.Create(c.Request.Context(), cio); err != nil {
 		response.ErrorInternal(c, "Erro ao registrar cio", err.Error())
 		return

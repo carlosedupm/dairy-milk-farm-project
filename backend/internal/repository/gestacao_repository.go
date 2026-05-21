@@ -20,9 +20,9 @@ func NewGestacaoRepository(db *pgxpool.Pool) *GestacaoRepository {
 }
 
 func (r *GestacaoRepository) Create(ctx context.Context, g *models.Gestacao) error {
-	query := `INSERT INTO gestacoes (animal_id, cobertura_id, data_confirmacao, data_prevista_parto, status, observacoes, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at, updated_at`
-	return r.db.QueryRow(ctx, query, g.AnimalID, g.CoberturaID, g.DataConfirmacao, g.DataPrevistaParto, g.Status, g.Observacoes, g.FazendaID).
+	query := `INSERT INTO gestacoes (animal_id, cobertura_id, data_confirmacao, data_prevista_parto, status, observacoes, fazenda_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at, updated_at`
+	return r.db.QueryRow(ctx, query, g.AnimalID, g.CoberturaID, g.DataConfirmacao, g.DataPrevistaParto, g.Status, g.Observacoes, g.FazendaID, g.CreatedBy).
 		Scan(&g.ID, &g.CreatedAt, &g.UpdatedAt)
 }
 

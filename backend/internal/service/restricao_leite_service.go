@@ -44,6 +44,7 @@ type CreateRestricaoLeiteInput struct {
 	Motivo      string
 	InicioEm    *time.Time
 	Observacao  *string
+	CreatedBy   *int64
 }
 
 func (s *RestricaoLeiteService) Create(ctx context.Context, in CreateRestricaoLeiteInput) (*models.RestricaoLeite, error) {
@@ -84,6 +85,7 @@ func (s *RestricaoLeiteService) Create(ctx context.Context, in CreateRestricaoLe
 		InicioEm:    inicio,
 		Observacao:  in.Observacao,
 		Status:      models.RestricaoLeiteStatusAguardandoLab,
+		CreatedBy:   in.CreatedBy,
 	}
 
 	if err := s.repo.Create(ctx, row); err != nil {
@@ -99,6 +101,7 @@ func (s *RestricaoLeiteService) Create(ctx context.Context, in CreateRestricaoLe
 type LiberarRestricaoLeiteInput struct {
 	LiberadoEm         time.Time
 	LiberadoObservacao *string
+	LiberadoPor        *int64
 }
 
 func (s *RestricaoLeiteService) Liberar(ctx context.Context, fazendaID, restricaoID int64, in LiberarRestricaoLeiteInput) (*models.RestricaoLeite, error) {
@@ -117,7 +120,7 @@ func (s *RestricaoLeiteService) Liberar(ctx context.Context, fazendaID, restrica
 	}
 
 	lib := truncateToDateUTC(in.LiberadoEm)
-	if err := s.repo.Liberar(ctx, restricaoID, lib, in.LiberadoObservacao); err != nil {
+	if err := s.repo.Liberar(ctx, restricaoID, lib, in.LiberadoObservacao, in.LiberadoPor); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrRestricaoLeiteNaoAguardando
 		}

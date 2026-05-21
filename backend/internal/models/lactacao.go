@@ -14,6 +14,7 @@ type Lactacao struct {
 	MediaDiaria    *float64   `json:"media_diaria,omitempty" db:"media_diaria"`
 	Status         *string   `json:"status,omitempty" db:"status"`
 	FazendaID      int64     `json:"fazenda_id" db:"fazenda_id"`
+	CreatedBy      *int64    `json:"created_by,omitempty" db:"created_by"`
 	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
 }

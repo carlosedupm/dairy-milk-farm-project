@@ -53,11 +53,14 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 - **`AnimalSelect` (combobox pesquisável em formulários)**: `components/animais/AnimalSelect.tsx` + `animalSelectUtils.ts` — Popover, busca com debounce (~150 ms) por identificação/raça/categoria/status reprodutivo, filtros `femeasOnly`/`reprodutoresOnly`, até 50 itens visíveis, teclado (↑↓, Enter, Escape). Mesma API de props; usado em gestão pecuária (cios, coberturas, partos, toques, secagens, lactações), produção de leite e restrições de leite. **Produção (novo)**: lista apenas `listEmLactacaoByFazenda` (matrizes em lactação); **toque positivo**: seletor de cobertura obrigatório. Demais formulários: `listByFazenda` ou `listEmLactacaoByFazenda` conforme regra de negócio.
 
 ### 🚧 Em andamento:
-- **Consolidação do Módulo Agrícola**: backend (handlers/services/repositories/models + migration 15) e frontend (`/agricultura`) já estruturados no workspace, com ajustes finais de validação integrada e fechamento dos fluxos ponta a ponta.
+- (nenhum foco bloqueante no ciclo pecuário após auditoria + BR-CICLO-002)
 
 ### ✅ Concluído desde a última atualização:
 
-1. ✅ **Produção de leite — alinhamento a padrões**: listagens API (`GET /producao`, `/count`, `/filter/by-date`) filtradas por fazendas do usuário (`ResolveFazendaIDsForList` + `GetByFazendaIDs*`); frontend `/producao` com `useFazendaAtiva()`, filtro por período, paginação client-side, coluna animal em `ProducaoTable`, `DateTimePickerPtBr`, invalidação de contexto/resumo pecuário; link «Ver produção» na ficha da fazenda → `/producao?fazenda_id=`; **BR-PRODUCAO-004**; erros com `errors.Is(ErrAnimalNotFound)`.
+1. ✅ **BR-CICLO-002**: cio → `VAZIA` (exceto `PRENHE`); toque `NEGATIVO` → `VAZIA`; catálogo `cios.md` / `toques.md` / `ciclo-rebanho.md`.
+2. ✅ **Auditoria de utilizador (migration 23)**: `created_by` em coberturas, toques, gestações, partos, secagens, lactações, produção; `created_by` + `liberado_por` em restrições; `usuario_id` em cios via JWT; handlers com `GetActorUserID`.
+3. ✅ **Auditoria de conformidade**: `ConformidadeService` (INT-001–006), `GET /api/v1/fazendas/:id/auditoria/conformidade`, `docs/business/auditoria.md` (BR-AUDIT-001–004).
+4. ✅ **Produção de leite — alinhamento a padrões**: listagens API (`GET /producao`, `/count`, `/filter/by-date`) filtradas por fazendas do usuário (`ResolveFazendaIDsForList` + `GetByFazendaIDs*`); frontend `/producao` com `useFazendaAtiva()`, filtro por período, paginação client-side, coluna animal em `ProducaoTable`, `DateTimePickerPtBr`, invalidação de contexto/resumo pecuário; link «Ver produção» na ficha da fazenda → `/producao?fazenda_id=`; **BR-PRODUCAO-004**; erros com `errors.Is(ErrAnimalNotFound)`.
 2. ✅ **Perfil PROPRIETARIO (titular)**: constante em `models/perfil.go`; atribuível pelo admin; `POST /api/v1/me/fazendas` apenas para **PROPRIETARIO** (nova fazenda); UI `/fazendas/criar-minha` só para titular; onboarding sem auto-registo para **USER**; folgas com isolamento (`PodeAcessarFazendaSemVinculoGestao` só ADMIN/DEV/GESTAO). Regras **BR-ACESSO-011** a **013** em `docs/business/acessos-perfil.md`.
 2. ✅ **Registo e provisão (segurança)**: `POST /api/auth/register` cria **`USER`** sem `usuarios_fazendas`; removido auto-vínculo em Login/Validate e em `POST /api/v1/admin/usuarios`; `GET /api/v1/fazendas` (lista/pesquisas/count/exists) restrito a **ADMIN/DEVELOPER**; perfil **`USER`** com API mínima (`/api/v1/me/*` na whitelist, **sem** `POST .../me/fazendas`) e UI em modo `pending` até o perfil deixar de ser apenas `USER`; documentação `BR-ACESSO-007`/`BR-ACESSO-008`/`BR-ACESSO-012`/`BR-ACESSO-014` em `docs/business/acessos-perfil.md`.
 3. ✅ **Animais — UX toolbar de filtros (mobile-first)**: `AnimaisListToolbar` com secção Busca, filtros avançados em Popover (desktop) ou Dialog (mobile); chips para remover critérios; resumo **«N animais encontrados»** / loading **só no modal mobile** (`resultCount`, `listLoading` das páginas); Popover sem esse bloco para poupar espaço; layout Popover com altura máxima e área de scroll; rótulo «Identificação ou brinco» **`sr-only`** abaixo de `sm` + placeholder explícito.
@@ -113,11 +116,10 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ### 📋 Próximos passos imediatos:
 
-1. Consolidar e validar o Módulo Agrícola (fluxos completos: fornecedores, áreas, análises, safras, custos, produções, receitas e resultado).
-2. Regressão integrada Agricultura × Gestão Pecuária × ciclo do rebanho (cobertura → toque positivo → ficha/home; secagem → lactação; produção só em lactação).
-3. BR-CICLO-002 completo (cio / toque negativo atualizam status) — backlog em `ciclo-rebanho.md`.
-4. Recuperação de senha (SMTP).
-5. DoD em toda entrega: código + `docs/business/` + `activeContext`/`progress` quando mudar marco (ver `projectbrief.md`).
+1. Regressão integrada do ciclo (cobertura → toque ± → secagem → parto → produção → restrições; validar `GET .../auditoria/conformidade`).
+2. UI gestão: painel de conformidade e «Registado por» na ficha/timeline (opcional).
+3. Recuperação de senha (SMTP).
+4. DoD em toda entrega: código + `docs/business/` + memory bank quando mudar marco.
 
 ## 🛠️ Decisões Técnicas Ativas
 
@@ -182,5 +184,5 @@ O projeto está em **migração arquitetural** da stack Java/Spring para uma sol
 
 ---
 
-**Última atualização**: 2026-05-19 (Fase 2 ciclo integrado concluída; refinamentos toque positivo + produção em lactação)
-**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 entregue** (ficha/timeline, resumo pecuário, invariantes lactação, toque↔gestação) | Pendente BR-CICLO-002 | Módulo Agrícola em consolidação | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)
+**Última atualização**: 2026-05-20 (BR-CICLO-002; auditoria utilizador migration 23; conformidade API)
+**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 entregue** + BR-CICLO-002 | **Auditoria** (`created_by`, `docs/business/auditoria.md`, `GET .../auditoria/conformidade`) | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)

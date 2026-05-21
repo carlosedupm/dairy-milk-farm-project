@@ -15,6 +15,7 @@ type Cobertura struct {
 	ProtocoloID  *int64    `json:"protocolo_id,omitempty" db:"protocolo_id"`
 	Observacoes  *string   `json:"observacoes,omitempty" db:"observacoes"`
 	FazendaID    int64     `json:"fazenda_id" db:"fazenda_id"`
+	CreatedBy    *int64    `json:"created_by,omitempty" db:"created_by"`
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
 }

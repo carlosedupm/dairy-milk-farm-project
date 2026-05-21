@@ -74,6 +74,10 @@ func (s *DiagnosticoGestacaoService) Create(ctx context.Context, d *models.Diagn
 	if err := s.repo.Create(ctx, d); err != nil {
 		return err
 	}
+	if d.Resultado == models.DiagnosticoResultadoNegativo {
+		status := models.StatusReprodutivoVazia
+		return s.animalRepo.UpdateStatusReprodutivo(ctx, d.AnimalID, &status)
+	}
 	if d.Resultado != models.DiagnosticoResultadoPositivo {
 		return nil
 	}
@@ -90,6 +94,7 @@ func (s *DiagnosticoGestacaoService) Create(ctx context.Context, d *models.Diagn
 		DataPrevistaParto: &dataPrevista,
 		Status:            models.GestacaoStatusConfirmada,
 		FazendaID:         d.FazendaID,
+		CreatedBy:         d.CreatedBy,
 	}
 	if err := s.gestacaoRepo.Create(ctx, gestacao); err != nil {
 		return err

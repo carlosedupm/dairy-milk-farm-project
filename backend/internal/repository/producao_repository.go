@@ -21,8 +21,8 @@ func NewProducaoRepository(db *pgxpool.Pool) *ProducaoRepository {
 
 func (r *ProducaoRepository) Create(ctx context.Context, producao *models.ProducaoLeite) error {
 	query := `
-		INSERT INTO producao_leite (animal_id, quantidade, data_hora, qualidade)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO producao_leite (animal_id, quantidade, data_hora, qualidade, created_by)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at
 	`
 
@@ -33,6 +33,7 @@ func (r *ProducaoRepository) Create(ctx context.Context, producao *models.Produc
 		producao.Quantidade,
 		producao.DataHora,
 		producao.Qualidade,
+		producao.CreatedBy,
 	).Scan(&producao.ID, &producao.CreatedAt)
 
 	return err

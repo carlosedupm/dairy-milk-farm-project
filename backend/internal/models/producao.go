@@ -10,6 +10,7 @@ type ProducaoLeite struct {
 	Quantidade float64   `json:"quantidade" db:"quantidade"`
 	DataHora   time.Time `json:"data_hora" db:"data_hora"`
 	Qualidade  *int      `json:"qualidade,omitempty" db:"qualidade"`
+	CreatedBy  *int64    `json:"created_by,omitempty" db:"created_by"`
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 }
 

@@ -63,6 +63,9 @@ func (h *CoberturaHandler) Create(c *gin.Context) {
 		return
 	}
 	cobertura := &models.Cobertura{AnimalID: req.AnimalID, Tipo: req.Tipo, Data: t, FazendaID: req.FazendaID, CioID: req.CioID, TouroAnimalID: req.TouroAnimalID, TouroInfo: req.TouroInfo, SemenPartida: req.SemenPartida, Tecnico: req.Tecnico, ProtocoloID: req.ProtocoloID, Observacoes: req.Observacoes}
+	if actorID, ok := GetActorUserID(c); ok {
+		cobertura.CreatedBy = &actorID
+	}
 	if err := h.svc.Create(c.Request.Context(), cobertura); err != nil {
 		response.ErrorInternal(c, "Erro ao registrar cobertura", err.Error())
 		return
@@ -237,6 +240,9 @@ func (h *DiagnosticoGestacaoHandler) Create(c *gin.Context) {
 		return
 	}
 	d := &models.DiagnosticoGestacao{AnimalID: req.AnimalID, Data: t, Resultado: req.Resultado, FazendaID: req.FazendaID, CoberturaID: req.CoberturaID, DiasGestacaoEstimados: req.DiasGestacaoEstimados, Metodo: req.Metodo, Veterinario: req.Veterinario, Observacoes: req.Observacoes}
+	if actorID, ok := GetActorUserID(c); ok {
+		d.CreatedBy = &actorID
+	}
 	if err := h.svc.Create(c.Request.Context(), d); err != nil {
 		switch {
 		case errors.Is(err, service.ErrToquePositivoSemCobertura),
@@ -349,6 +355,9 @@ func (h *PartoHandler) Create(c *gin.Context) {
 		return
 	}
 	p := &models.Parto{AnimalID: req.AnimalID, Data: t, FazendaID: req.FazendaID, GestacaoID: req.GestacaoID, Tipo: req.Tipo, Complicacoes: req.Complicacoes, Observacoes: req.Observacoes, NumeroCrias: 1}
+	if actorID, ok := GetActorUserID(c); ok {
+		p.CreatedBy = &actorID
+	}
 	if req.NumeroCrias != nil && *req.NumeroCrias > 0 {
 		p.NumeroCrias = *req.NumeroCrias
 	}
@@ -568,6 +577,9 @@ func (h *SecagemHandler) Create(c *gin.Context) {
 		return
 	}
 	sec := &models.Secagem{AnimalID: req.AnimalID, DataSecagem: t, FazendaID: req.FazendaID, GestacaoID: req.GestacaoID, Protocolo: req.Protocolo, Motivo: req.Motivo, Observacoes: req.Observacoes}
+	if actorID, ok := GetActorUserID(c); ok {
+		sec.CreatedBy = &actorID
+	}
 	if req.DataPrevistaParto != nil {
 		t2, _ := time.Parse("2006-01-02", *req.DataPrevistaParto)
 		sec.DataPrevistaParto = &t2

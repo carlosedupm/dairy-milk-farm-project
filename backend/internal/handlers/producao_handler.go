@@ -63,6 +63,9 @@ func (h *ProducaoHandler) Create(c *gin.Context) {
 		Qualidade:  req.Qualidade,
 		DataHora:   time.Now(), // default
 	}
+	if actorID, ok := GetActorUserID(c); ok {
+		producao.CreatedBy = &actorID
+	}
 
 	if req.DataHora != nil && *req.DataHora != "" {
 		dataHora, err := time.Parse(time.RFC3339, *req.DataHora)

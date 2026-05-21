@@ -114,8 +114,8 @@ func (r *RestricaoLeiteRepository) GetByID(ctx context.Context, id int64) (*mode
 
 func (r *RestricaoLeiteRepository) Create(ctx context.Context, row *models.RestricaoLeite) error {
 	const q = `
-		INSERT INTO restricoes_leite (fazenda_id, animal_id, motivo, inicio_em, observacao, status)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO restricoes_leite (fazenda_id, animal_id, motivo, inicio_em, observacao, status, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at, updated_at
 	`
 	return r.db.QueryRow(ctx, q,
@@ -125,16 +125,17 @@ func (r *RestricaoLeiteRepository) Create(ctx context.Context, row *models.Restr
 		row.InicioEm,
 		row.Observacao,
 		row.Status,
+		row.CreatedBy,
 	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt)
 }
 
-func (r *RestricaoLeiteRepository) Liberar(ctx context.Context, id int64, liberadoEm time.Time, liberadoObs *string) error {
+func (r *RestricaoLeiteRepository) Liberar(ctx context.Context, id int64, liberadoEm time.Time, liberadoObs *string, liberadoPor *int64) error {
 	const q = `
 		UPDATE restricoes_leite
-		SET status = 'LIBERADO', liberado_em = $2, liberado_observacao = $3, updated_at = NOW()
+		SET status = 'LIBERADO', liberado_em = $2, liberado_observacao = $3, liberado_por = $4, updated_at = NOW()
 		WHERE id = $1 AND status = 'AGUARDANDO_LAB'
 	`
-	tag, err := r.db.Exec(ctx, q, id, liberadoEm, liberadoObs)
+	tag, err := r.db.Exec(ctx, q, id, liberadoEm, liberadoObs, liberadoPor)
 	if err != nil {
 		return err
 	}

@@ -13,6 +13,7 @@ type DiagnosticoGestacao struct {
 	Veterinario           *string   `json:"veterinario,omitempty" db:"veterinario"`
 	Observacoes           *string   `json:"observacoes,omitempty" db:"observacoes"`
 	FazendaID             int64     `json:"fazenda_id" db:"fazenda_id"`
+	CreatedBy             *int64    `json:"created_by,omitempty" db:"created_by"`
 	CreatedAt             time.Time `json:"created_at" db:"created_at"`
 }
 

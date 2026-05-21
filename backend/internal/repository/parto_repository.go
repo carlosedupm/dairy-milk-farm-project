@@ -22,16 +22,16 @@ func NewPartoRepository(db *pgxpool.Pool) *PartoRepository {
 }
 
 func (r *PartoRepository) Create(ctx context.Context, p *models.Parto) error {
-	query := `INSERT INTO partos (animal_id, gestacao_id, data, tipo, numero_crias, complicacoes, observacoes, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`
-	return r.db.QueryRow(ctx, query, p.AnimalID, p.GestacaoID, p.Data, p.Tipo, p.NumeroCrias, p.Complicacoes, p.Observacoes, p.FazendaID).
+	query := `INSERT INTO partos (animal_id, gestacao_id, data, tipo, numero_crias, complicacoes, observacoes, fazenda_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at`
+	return r.db.QueryRow(ctx, query, p.AnimalID, p.GestacaoID, p.Data, p.Tipo, p.NumeroCrias, p.Complicacoes, p.Observacoes, p.FazendaID, p.CreatedBy).
 		Scan(&p.ID, &p.CreatedAt)
 }
 
 func (r *PartoRepository) CreateTx(ctx context.Context, tx pgx.Tx, p *models.Parto) error {
-	query := `INSERT INTO partos (animal_id, gestacao_id, data, tipo, numero_crias, complicacoes, observacoes, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`
-	return tx.QueryRow(ctx, query, p.AnimalID, p.GestacaoID, p.Data, p.Tipo, p.NumeroCrias, p.Complicacoes, p.Observacoes, p.FazendaID).
+	query := `INSERT INTO partos (animal_id, gestacao_id, data, tipo, numero_crias, complicacoes, observacoes, fazenda_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at`
+	return tx.QueryRow(ctx, query, p.AnimalID, p.GestacaoID, p.Data, p.Tipo, p.NumeroCrias, p.Complicacoes, p.Observacoes, p.FazendaID, p.CreatedBy).
 		Scan(&p.ID, &p.CreatedAt)
 }
 

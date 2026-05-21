@@ -104,13 +104,14 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 
 ### **Fase 2 — Ciclo integrado e gestão visível** *(foco atual)*
 
-- [ ] **Ficha do animal** com timeline e estado (lactação, gestação, próximas ações)
-- [ ] **Invariantes de ciclo** no servidor (ex.: secagem encerra lactação; uma lactação ativa por animal)
-- [ ] **Fluxos encadeados** na UI (cobertura → toque → parto com `gestacao_id`)
-- [ ] **Dashboard pecuário**: partos previstos, prenhes, restrições, produção do período
-- [ ] **Perfis de campo** alinhados à ordenha e diagnóstico (revisão `FUNCIONARIO`)
-- [ ] **Catálogo de negócio** completo para partos, lactações, gestações, toques, secagens, produção
-- [ ] Consolidação módulo agrícola e regressão integrada
+- [x] **Ficha do animal** com timeline e estado (lactação, gestação, próximas ações)
+- [x] **Invariantes de ciclo** no servidor (ex.: secagem encerra lactação; uma lactação ativa por animal)
+- [x] **Fluxos encadeados** na UI (cobertura → toque → parto com `gestacao_id`)
+- [x] **Dashboard pecuário**: partos previstos, prenhes, restrições, produção do período
+- [x] **Perfis de campo** alinhados à ordenha e diagnóstico (`FUNCIONARIO` POST toques/produção — BR-ACESSO-015)
+- [x] **Catálogo de negócio** completo para partos, lactações, gestações, toques, secagens, produção
+- [x] **BR-CICLO-002** (cio / toque negativo → status) + **auditoria** (`docs/business/auditoria.md`, migration 23)
+- [ ] Regressão integrada ciclo + UI conformidade (opcional)
 
 ### **Fase 3 — Saúde, inteligência e escala**
 

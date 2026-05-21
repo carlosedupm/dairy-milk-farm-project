@@ -25,11 +25,17 @@ Registro de **toque** (diagnóstico de gestação) após cobertura, com resultad
 - **Implementação**: `DiagnosticoGestacaoService.Create` + `resolveCoberturaIDForPositivo`; UI `/gestao/toques/novo` com seletor de cobertura; invalidação de cache no frontend após sucesso.
 - **Estado**: implementado.
 
-### BR-TOQUES-003 — Toque negativo não altera status
+### BR-TOQUES-003 — Toque negativo volta animal a VAZIA
 
-- **Enunciado**: Toque `NEGATIVO` não atualiza `status_reprodutivo` automaticamente (animal pode permanecer `SERVIDA`).
-- **Efeito**: informativo; lacuna transversal em BR-CICLO-002.
-- **Estado**: implementado (comportamento atual).
+- **Enunciado**: Toque `NEGATIVO` atualiza `status_reprodutivo` para `VAZIA` (não gestante após diagnóstico).
+- **Efeito**: atualização no servidor (BR-CICLO-002).
+- **Implementação**: `DiagnosticoGestacaoService.Create`.
+- **Estado**: implementado.
+
+### BR-TOQUES-005 — Toque inconclusivo
+
+- **Enunciado**: Toque `INCONCLUSIVO` não altera `status_reprodutivo` automaticamente.
+- **Estado**: implementado.
 
 ### BR-TOQUES-004 — FUNCIONARIO no curral
 
@@ -40,4 +46,4 @@ Registro de **toque** (diagnóstico de gestação) após cobertura, com resultad
 
 ---
 
-**Última atualização**: 2026-05-19
+**Última atualização**: 2026-05-20

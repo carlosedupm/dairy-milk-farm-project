@@ -2,7 +2,7 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 97% (fundação) — **Fase 2 ciclo integrado**: ~95% (entregas 1–6 + refinamentos toque/produção; pendente BR-CICLO-002)
+### **Completude Geral**: 97% (fundação) — **Fase 2 ciclo integrado**: ~98% (BR-CICLO-002 + auditoria utilizador e conformidade)
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
@@ -162,8 +162,9 @@
 - [x] Perfil FUNCIONARIO: POST toques + produção (BR-ACESSO-015)
 - [x] Toque positivo vincula cobertura → gestação + PRENHE + UI/cache (BR-TOQUES-002)
 - [x] Produção: combo e API só com lactação ativa (BR-CICLO-007 / BR-PRODUCAO-003)
-- [ ] BR-CICLO-002 completo (status por cio/toque negativo)
-- [ ] Consolidação módulo agrícola + regressão integrada
+- [x] BR-CICLO-002 completo (status por cio/toque negativo)
+- [x] Auditoria utilizador (migration 23) + API conformidade
+- [ ] Regressão integrada ciclo + UI conformidade (opcional)
 
 ### **Meta 3: Saúde e inteligência** *(Fase 3 — `projectbrief.md`)*
 

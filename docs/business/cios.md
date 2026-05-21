@@ -26,6 +26,13 @@ Registro de **detecção de cio** na matriz (data/hora e metadados opcionais).
 - **Implementação**: `CioService.Create` / `Update`; UI com selects alinhados em `CioFormFields`.
 - **Estado**: Implementado.
 
+### BR-CIOS-003 — Cio atualiza status reprodutivo
+
+- **Enunciado**: Ao registrar cio, o servidor define `status_reprodutivo` = `VAZIA`, exceto se o animal já estiver `PRENHE`.
+- **Efeito**: atualização no servidor (BR-CICLO-002); `usuario_id` gravado com o utilizador autenticado.
+- **Implementação**: `CioService.Create` + `applyStatusAfterCio`; `CioHandler.Create` preenche `usuario_id`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-07
+**Última atualização**: 2026-05-20

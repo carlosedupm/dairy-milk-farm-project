@@ -168,6 +168,8 @@ func main() {
 					diagnosticoGestacaoSvc := service.NewDiagnosticoGestacaoService(diagnosticoGestacaoRepo, animalRepo, gestacaoRepo, coberturaRepo, fazendaRepo)
 					gestacaoSvc := service.NewGestacaoService(gestacaoRepo, animalRepo, fazendaRepo)
 					animalCicloSvc := service.NewAnimalCicloService(cioRepo, coberturaRepo, diagnosticoGestacaoRepo, gestacaoRepo, secagemRepo, partoRepo, lactacaoRepo, producaoRepo)
+					conformidadeSvc := service.NewConformidadeService(pool)
+					conformidadeHandler := handlers.NewConformidadeHandler(conformidadeSvc, fazendaSvc)
 					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc, animalCicloSvc)
 					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
 					partoSvc := service.NewPartoService(pool, partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo, criaSvc)
@@ -223,6 +225,7 @@ func main() {
 						v1.GET("/search/by-vacas-range", auth.RequireAdmin(), fazendaHandler.SearchByVacasRange)
 						v1.GET("/:id/usuarios-vinculados", fazendaHandler.GetUsuariosVinculados)
 						v1.GET("/:id/resumo-pecuario", resumoPecuarioHandler.GetByFazendaID)
+						v1.GET("/:id/auditoria/conformidade", conformidadeHandler.GetConformidade)
 						v1.GET("/:id", fazendaHandler.GetByID)
 						// Criar, editar e excluir fazendas requerem perfil ADMIN ou DEVELOPER
 						v1.POST("", auth.RequireAdmin(), fazendaHandler.Create)

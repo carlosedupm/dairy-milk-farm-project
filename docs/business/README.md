@@ -46,7 +46,8 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 | Lactações | [lactacoes.md](./lactacoes.md) | ✅ |
 | Produção de leite | [producao-leite.md](./producao-leite.md) | ✅ |
 | Lotes | *a criar* `lotes.md` | 🚧 |
+| Auditoria e conformidade | [auditoria.md](./auditoria.md) | ✅ |
 
 ---
 
-**Última atualização**: 2026-05-19
+**Última atualização**: 2026-05-20

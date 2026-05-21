@@ -17,9 +17,9 @@ func NewSecagemRepository(db *pgxpool.Pool) *SecagemRepository {
 }
 
 func (r *SecagemRepository) Create(ctx context.Context, s *models.Secagem) error {
-	query := `INSERT INTO secagens (animal_id, gestacao_id, data_secagem, data_prevista_parto, protocolo, motivo, observacoes, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`
-	return r.db.QueryRow(ctx, query, s.AnimalID, s.GestacaoID, s.DataSecagem, s.DataPrevistaParto, s.Protocolo, s.Motivo, s.Observacoes, s.FazendaID).
+	query := `INSERT INTO secagens (animal_id, gestacao_id, data_secagem, data_prevista_parto, protocolo, motivo, observacoes, fazenda_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at`
+	return r.db.QueryRow(ctx, query, s.AnimalID, s.GestacaoID, s.DataSecagem, s.DataPrevistaParto, s.Protocolo, s.Motivo, s.Observacoes, s.FazendaID, s.CreatedBy).
 		Scan(&s.ID, &s.CreatedAt)
 }
 
@@ -77,8 +77,8 @@ func (r *SecagemRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *SecagemRepository) CreateTx(ctx context.Context, tx pgx.Tx, s *models.Secagem) error {
-	query := `INSERT INTO secagens (animal_id, gestacao_id, data_secagem, data_prevista_parto, protocolo, motivo, observacoes, fazenda_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`
-	return tx.QueryRow(ctx, query, s.AnimalID, s.GestacaoID, s.DataSecagem, s.DataPrevistaParto, s.Protocolo, s.Motivo, s.Observacoes, s.FazendaID).
+	query := `INSERT INTO secagens (animal_id, gestacao_id, data_secagem, data_prevista_parto, protocolo, motivo, observacoes, fazenda_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at`
+	return tx.QueryRow(ctx, query, s.AnimalID, s.GestacaoID, s.DataSecagem, s.DataPrevistaParto, s.Protocolo, s.Motivo, s.Observacoes, s.FazendaID, s.CreatedBy).
 		Scan(&s.ID, &s.CreatedAt)
 }

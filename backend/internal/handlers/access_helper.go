@@ -11,6 +11,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// GetActorUserID devolve o ID do utilizador autenticado (JWT). ok=false se ausente ou inválido.
+func GetActorUserID(c *gin.Context) (int64, bool) {
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		return 0, false
+	}
+	userID, ok := userIDVal.(int64)
+	return userID, ok
+}
+
 // ValidateFazendaAccess verifica se a fazenda informada pertence ao usuário logado.
 // Retorna true se o acesso for válido, false caso contrário (já enviando a resposta de erro).
 func ValidateFazendaAccess(c *gin.Context, fazendaSvc *service.FazendaService, fazendaID int64) bool {

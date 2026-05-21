@@ -75,13 +75,17 @@ func (h *RestricaoLeiteHandler) Create(c *gin.Context) {
 		inicio = &t
 	}
 
-	row, err := h.svc.Create(c.Request.Context(), service.CreateRestricaoLeiteInput{
+	in := service.CreateRestricaoLeiteInput{
 		FazendaID:  fazendaID,
 		AnimalID:   req.AnimalID,
 		Motivo:     req.Motivo,
 		InicioEm:   inicio,
 		Observacao: req.Observacao,
-	})
+	}
+	if actorID, ok := GetActorUserID(c); ok {
+		in.CreatedBy = &actorID
+	}
+	row, err := h.svc.Create(c.Request.Context(), in)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrRestricaoLeiteMotivoInvalido):
@@ -149,10 +153,14 @@ func (h *RestricaoLeiteHandler) Liberar(c *gin.Context) {
 		liberadoEm = t
 	}
 
-	row, err := h.svc.Liberar(c.Request.Context(), fazendaID, restricaoID, service.LiberarRestricaoLeiteInput{
+	libIn := service.LiberarRestricaoLeiteInput{
 		LiberadoEm:         liberadoEm,
 		LiberadoObservacao: req.LiberadoObservacao,
-	})
+	}
+	if actorID, ok := GetActorUserID(c); ok {
+		libIn.LiberadoPor = &actorID
+	}
+	row, err := h.svc.Liberar(c.Request.Context(), fazendaID, restricaoID, libIn)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrRestricaoLeiteNotFound):

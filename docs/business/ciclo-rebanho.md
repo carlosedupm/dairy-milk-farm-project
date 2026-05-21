@@ -47,12 +47,14 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 - **Enunciado**: O campo `animais.status_reprodutivo` deve refletir o **último marco reprodutivo relevante**, atualizado pelo servidor ao registrar:
   - cobertura → `SERVIDA`;
   - toque positivo com `cobertura_id` → `PRENHE` (+ gestação `CONFIRMADA`);
+  - toque `NEGATIVO` → `VAZIA`;
+  - cio detectado → `VAZIA` (exceto animal já `PRENHE`);
   - parto → `PARIDA`;
   - secagem → `SECA`.
 - **Escopo**: Por animal.
 - **Efeito**: bloqueio/atualização no servidor; UI exibe rótulo derivado do cadastro.
-- **Implementação**: `CoberturaService`, `DiagnosticoGestacaoService`, `PartoService`, `SecagemService` → `AnimalRepository.UpdateStatusReprodutivo`.
-- **Estado**: **parcial** — cio e toque negativo **não** atualizam status; edição manual no cadastro ainda possível.
+- **Implementação**: `CoberturaService`, `DiagnosticoGestacaoService`, `CioService`, `PartoService`, `SecagemService` → `AnimalRepository.UpdateStatusReprodutivo`.
+- **Estado**: **implementado** (toque `INCONCLUSIVO` não altera status; edição manual no cadastro do animal ainda possível).
 
 ### BR-CICLO-003 — Gestação confirmada só após toque positivo
 
@@ -125,7 +127,7 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 | Etapa | Estado produto | Notas |
 |-------|----------------|-------|
 | Cadastro / origem / cria no rebanho | Implementado | Parto → animal automático |
-| Cio | Implementado | Sem efeito em status |
+| Cio | Implementado | Atualiza `VAZIA` (exceto `PRENHE`) |
 | Cobertura → servida | Implementado | [coberturas.md](./coberturas.md) |
 | Toque → gestação | Implementado | FUNCIONARIO com toques (BR-ACESSO-015) |
 | Gestação (lista) | Implementado | Partos previstos na home (BR-CICLO-009) |
@@ -141,11 +143,10 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 
 ## Backlog de requisitos (próximos)
 
-1. BR-CICLO-002 completo (cio / toque negativo atualizam status)  
-2. Paginação da timeline na ficha do animal  
+1. Paginação da timeline na ficha do animal  
 3. Coluna `lactacao_id` em produção (relatórios por lactação) — opcional  
 4. Módulo saúde (Fase 3)  
 
 ---
 
-**Última atualização**: 2026-05-19
+**Última atualização**: 2026-05-20
