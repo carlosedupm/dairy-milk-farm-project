@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
@@ -16,51 +15,19 @@ import {
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
+import { HeaderDesktopNav } from "@/components/layout/HeaderDesktopNav";
+import { HeaderMobileNavSections } from "@/components/layout/HeaderMobileNavSections";
 import {
   UserIdentitySummary,
   userIdentityAriaLabel,
   userIdentityInitials,
 } from "@/components/layout/UserIdentitySummary";
-import { cn } from "@/lib/utils";
-import {
-  Building2,
-  List,
-  Droplets,
-  Layers,
-  ClipboardList,
-  Menu,
-  Users,
-  Code,
-  X,
-  Wheat,
-  CalendarDays,
-  Search,
-  Plus,
-  ChevronDown,
-  type LucideIcon,
-} from "lucide-react";
-import {
-  getNavAreasForPerfil,
-  getAreaHref,
-  AREA_LABEL,
-  isPathAllowedForPerfil,
-  type AppArea,
-} from "@/config/appAccess";
-
-const AREA_ICON: Record<AppArea, LucideIcon> = {
-  fazendas: Building2,
-  animais: List,
-  producao: Droplets,
-  lotes: Layers,
-  agricultura: Wheat,
-  gestao: ClipboardList,
-  folgas: CalendarDays,
-};
+import { isPathAllowedForPerfil } from "@/config/appAccess";
+import { Menu, X, Search, Plus, ChevronDown } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
   const { fazendaAtiva } = useFazendaAtiva();
-  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER";
   const { fazendas, isLoading: fazendasLoading } = useMinhasFazendas({
@@ -70,7 +37,6 @@ export function Header() {
     !!user && (isAdmin || (!fazendasLoading && fazendas.length > 0));
   const isProprietario = user?.perfil === "PROPRIETARIO";
 
-  const navAreas = getNavAreasForPerfil(user?.perfil);
   const showBuscaAnimal =
     !!user && isPathAllowedForPerfil(user.perfil, "/animais");
   const animalSearch = useAnimalSearchDialog();
@@ -80,104 +46,19 @@ export function Header() {
     ? userIdentityAriaLabel(user, fazendaNomeResumo)
     : "";
 
-  const isActive = (path: string) =>
-    pathname === path || pathname?.startsWith(path + "/");
-
-  const navLinkClass = (path: string) =>
-    cn(
-      "inline-flex items-center gap-2 text-base hover:text-foreground transition-colors min-h-[44px] py-2",
-      isActive(path) ? "text-foreground font-medium" : "text-muted-foreground"
-    );
-
   const closeMobileMenu = () => setMobileMenuOpen(false);
-
-  const renderMainNavLinks = (opts: { onNavigate?: () => void }) => {
-    const onNav = opts.onNavigate ?? (() => {});
-    return (
-      <>
-        {isAdmin && (
-          <Link
-            href="/fazendas"
-            className={cn(
-              opts.onNavigate &&
-                "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-              navLinkClass("/fazendas")
-            )}
-            onClick={onNav}
-          >
-            <Building2 className="h-5 w-5 shrink-0" aria-hidden />
-            {AREA_LABEL.fazendas}
-          </Link>
-        )}
-        {navAreas.map((area) => {
-          const pathPrefix = getAreaHref(area);
-          const Icon = AREA_ICON[area];
-          return (
-            <Link
-              key={area}
-              href={pathPrefix}
-              className={cn(
-                opts.onNavigate &&
-                  "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-                navLinkClass(pathPrefix)
-              )}
-              onClick={onNav}
-            >
-              <Icon className="h-5 w-5 shrink-0" aria-hidden />
-              {AREA_LABEL[area]}
-            </Link>
-          );
-        })}
-        {(user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER") && (
-          <Link
-            href="/admin/usuarios"
-            className={cn(
-              opts.onNavigate &&
-                "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-              navLinkClass("/admin")
-            )}
-            onClick={onNav}
-          >
-            <Users className="h-5 w-5 shrink-0" aria-hidden />
-            Admin
-          </Link>
-        )}
-        {user && user.perfil === "DEVELOPER" && (
-          <Link
-            href="/dev-studio"
-            className={cn(
-              opts.onNavigate &&
-                "py-3 px-3 rounded-md min-h-[44px] flex items-center gap-2",
-              navLinkClass("/dev-studio")
-            )}
-            onClick={onNav}
-          >
-            <Code className="h-5 w-5 shrink-0" aria-hidden />
-            Dev Studio
-          </Link>
-        )}
-      </>
-    );
-  };
 
   return (
     <header className="border-b bg-card sticky top-0 z-50">
-      <div className="mx-auto max-w-5xl px-4">
-        <div className="flex h-14 items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="font-semibold shrink-0">
-              CeialMilk
-            </Link>
-            {/* Desktop nav - hidden on mobile */}
-            {showNavLinks && (
-              <nav className="hidden lg:flex items-center gap-1">
-                {renderMainNavLinks({})}
-              </nav>
-            )}
-          </div>
+      <div className="mx-auto max-w-7xl px-4">
+        <div className="flex h-14 items-center gap-3">
+          <Link href="/" className="font-semibold shrink-0">
+            CeialMilk
+          </Link>
+          {showNavLinks ? <HeaderDesktopNav perfil={user?.perfil} /> : null}
 
-          {/* Desktop right block - hidden on mobile */}
-          <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1 justify-end">
+          {/* Desktop right block */}
+          <div className="hidden lg:flex items-center gap-3 min-w-0 shrink-0 ml-auto">
             {showBuscaAnimal && animalSearch ? (
               <Button
                 type="button"
@@ -284,7 +165,7 @@ export function Header() {
           </div>
 
           {/* Mobile: busca + identidade compacta + menu */}
-          <div className="flex lg:hidden items-center gap-1">
+          <div className="flex lg:hidden items-center gap-1 ml-auto">
             {showBuscaAnimal && animalSearch ? (
               <Button
                 type="button"
@@ -395,11 +276,12 @@ export function Header() {
                   Buscar animal
                 </button>
               ) : null}
-              {showNavLinks && (
-                <>
-                  {renderMainNavLinks({ onNavigate: closeMobileMenu })}
-                </>
-              )}
+              {showNavLinks ? (
+                <HeaderMobileNavSections
+                  perfil={user?.perfil}
+                  onNavigate={closeMobileMenu}
+                />
+              ) : null}
               {user ? (
                 <Button
                   variant="outline"
