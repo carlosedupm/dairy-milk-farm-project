@@ -11,6 +11,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDatePtBr } from "@/lib/format";
+import { MobileListCard } from "@/components/layout/list/MobileListCard";
+import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 
 type Props = {
   items: Lactacao[];
@@ -20,39 +22,56 @@ type Props = {
 export function LactacaoTable({ items, fazendaId }: Props) {
   const animaisMap = useAnimaisMap(fazendaId);
 
+  if (items.length === 0) {
+    return (
+      <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto -mx-4 sm:mx-0">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Animal</TableHead>
-            <TableHead>Lactação #</TableHead>
-            <TableHead>Data início</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={3}
-                className="h-24 text-center text-muted-foreground"
-              >
-                Nenhum registro.
-              </TableCell>
-            </TableRow>
-          ) : (
-            items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">
-                  {animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`}
-                </TableCell>
-                <TableCell>#{item.numero_lactacao}</TableCell>
-                <TableCell>{formatDatePtBr(item.data_inicio)}</TableCell>
+    <ResponsiveListContainer
+      mobile={items.map((item) => {
+        const animalLabel =
+          animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`;
+        return (
+          <MobileListCard
+            key={item.id}
+            href={`/animais/${item.animal_id}`}
+            title={animalLabel}
+            subtitle={`Lactação #${item.numero_lactacao}`}
+            meta={
+              <span className="text-muted-foreground">
+                Início: {formatDatePtBr(item.data_inicio)}
+              </span>
+            }
+          />
+        );
+      })}
+      desktop={
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Animal</TableHead>
+                <TableHead>Lactação #</TableHead>
+                <TableHead>Data início</TableHead>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">
+                    {animaisMap.get(item.animal_id) ??
+                      `Animal ${item.animal_id}`}
+                  </TableCell>
+                  <TableCell>#{item.numero_lactacao}</TableCell>
+                  <TableCell>{formatDatePtBr(item.data_inicio)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      }
+    />
   );
 }

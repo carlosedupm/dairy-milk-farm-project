@@ -90,6 +90,7 @@ components/
 ├── fazendas/                   # FazendaForm, FazendaTable
 ├── dev-studio/                 # ChatInterface, CodePreview, PRStatus, UsageAlert
 ├── layout/                     # Header, ConditionalHeader, AssistenteFab, AssistenteDialog, ProtectedRoute, Providers
+│   └── list/                   # MobileListCard, ListRowActionsMenu, ResponsiveListContainer, DeleteRecordDialog
 └── ui/                         # Shadcn: button, card, dialog, input, label, table
 services/                       # api.ts (Axios + interceptors), auth, fazendas, devStudio
 hooks/                          # useGeminiLive, useVoiceRecognition, useMinhasFazendas (lógica reutilizável)
@@ -109,6 +110,7 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 - **Layouts e shells repetidos**: `PageContainer`, `GestaoListLayout`, `GestaoFormLayout`, `BackLink` — nova listagem de gestão deve reutilizar o layout em vez de copiar Card + header.
 - **Paginação**: usar `ListPaginationBar` (`frontend/src/components/ui/pagination.tsx`) com `total`, `pageSize`, `offset` e callbacks; opcional troca de tamanho de página. APIs offset/limit — ver `listPaginated` / `listByFazendaPaginated` em `services/animais.ts`. Para debounce em busca (ex.: identificação), usar `useDebouncedValue` (`hooks/useDebouncedValue.ts`). Na **listagem global** `/animais`, o parâmetro `fazenda_id` deve vir **apenas** de `useFazendaAtiva()` (`FazendaContext` / seletor do header), sem segundo controle de fazenda na toolbar — alinhado ao escopo “tudo ligado à fazenda ativa”.
 - **Busca rápida por animal (identificação)**: um único **`AnimalSearchPanel`** (`components/animais/AnimalSearchPanel.tsx`) — debounce ~400 ms, **Enter** dispara busca imediata no mesmo `<form>`, contador em **`useRef`** para descartar respostas HTTP obsoletas quando o termo muda rápido — reutilizado na home (`AnimalSearchHome`), no diálogo global (`AnimalSearchDialogContext` + provider em `Providers.tsx`: lupa no `Header` e atalho mobile no `Dashboard`). Serviços: `searchByIdentificacao` + `getContexto` em `services/animais.ts`.
+- **Listagens responsivas (mobile &lt; `md`)**: `ResponsiveListContainer` + `MobileListCard` + `ListRowActionsMenu` + `DeleteRecordDialog` em `components/layout/list/` — ver bullet homónimo em **Padrões de UX e Acessibilidade**. Novas tabelas com coluna Ações devem seguir o mesmo padrão (não duplicar markup card/tabela).
 - **Listagens com muitos filtros (mobile-first)**: manter o critério principal (ex.: **identificação**) sempre na vista; demais filtros num painel secundário — **`Popover`** a partir de `md` e **`Dialog`** em viewport estreita — com **`Badge`** indicando quantos filtros avançados estão ativos, **chips** para remover um critério sem reabrir o painel e ações “Limpar filtros avançados” / “Limpar tudo”. **Total de resultados** (`resultCount`) só no **`Dialog` (mobile)** junto aos botões do rodapé — no desktop o utilizador vê o total na página atrás do Popover. Breakpoint: `useMediaQuery("(min-width: 768px)")` em `hooks/useMediaQuery.ts`. Implementação de referência: `AnimaisListToolbar`.
 - **Formatação e regras puras**: datas em `lib/format.ts` (`formatDatePtBr`, `formatDateTimePtBr`, `formatDateTimePtBrOptional`); labels e maps (ex. `useAnimaisMap`, `folgas-utils`, `folgas-rodizio-utils`) em hooks ou módulos `.ts` compartilhados, não duplicados em cada página.
 
@@ -604,6 +606,7 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 - **Formulários**: `space-y-5` entre grupos; botão de envio `size="lg"`; mensagens de erro em `text-base`; tabelas com `overflow-x-auto` em mobile; botões Editar/Excluir nas tabelas com `size="default"` para toque.
 - **Seleção em listas longas**: Para pickers com muitos itens (ex.: animais da fazenda), usar combobox pesquisável (`AnimalSelect` — Popover + campo de busca + filtro no cliente em `animalSelectUtils.ts`), não Radix Select com scroll infinito. Limite de exibição (~50) com mensagem para refinar a busca; alvos de toque ≥ 44px nas opções.
 - **Home autenticada (`Dashboard`)**: Secção de prioridades — `RestricoesLeiteHomePanel`, `PecuarioResumoHomePanel` (perfis não restritos), **`ConformidadeHomePanel`** (gestão/titular via `showConformidadePanelForPerfil`; query `auditoria-conformidade`); busca animal (`AnimalSearchHome` / diálogo global); atalhos de acesso rápido. Painéis com `max-h` + scroll quando há listas longas (zoom/reflow).
+- **Listagens responsivas (mobile &lt; `md`)**: Em tabelas com coluna **Ações**, usar **`ResponsiveListContainer`** + **`MobileListCard`** (`frontend/src/components/layout/list/`) no mobile e manter **tabela** em `md+` (`hidden md:block`). **Toque no corpo do card** = ação principal (`href` ou `onPrimaryClick` — ex.: Ver animal, editar registo, selecionar fazenda). **Ações secundárias/destrutivas** = menu **⋮** (`ListRowActionsMenu`, Popover) com `stopPropagation` no gatilho; **Excluir** nunca só no toque da linha — usar **`DeleteRecordDialog`** único por tabela (estado `deleteDialogOpenId`) partilhado entre mobile e desktop. Listas só leitura (gestação, toque, secagem, lactação): card → `/animais/:id`. **`MobileListCard`**: `title`/`subtitle` são `ReactNode` — renderizar com **`<div>`**, não `<p>` (evita hidratação quando o título inclui `Badge` ou outros filhos com `<div>`). Referências antigas: `FolgasHistoricoTable`, `RestricoesLeiteHomePanel`. Consumidores (2026-05-22): `AnimalTable`, `PartoTable`, `CioTable`, `CoberturaTable`, `ProducaoTable`, `GestacaoTable`, `SecagemTable`, `ToqueTable`, `LactacaoTable`, `FazendaTable`, `UsuarioTable`, `IntegracaoTable`.
 
 #### **Zoom do navegador, escala de texto do sistema e reflow**
 
@@ -613,7 +616,7 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 - **Flex/grid e overflow**: Se conteúdo “desaparece” ou fica clipado, rever a cadeia de **overflow** nos filhos; em flex aninhado, **`min-h-0`** (ou equivalente) nos filhos que devem encolher permite **scroll interno** em vez de corte silencioso.
 - **Modais, sheets e drawers**: Corpo com **altura máxima relativa ao viewport** (`max-h-[…dvh]` / `max-h-[…vh]` ou padrão Shadcn já usado) + **`overflow-y-auto`** na zona de conteúdo; ações críticas (confirmar, gravar) devem permanecer **alcançáveis após rolar** quando não couberem acima da dobra. Não assumir altura fixa de viewport nem diálogo “encaixado” só a 375px.
 - **Truncamento** (`truncate`, `line-clamp`): Reservado a texto **não crítico**; para dados importantes (identificações, datas, estados de negócio), oferecer **“ver mais”**, **tooltip** (desktop) ou **detalhe em dialog** — padrão já usado em módulos como Folgas.
-- **Tabelas**: Manter **`overflow-x-auto`** onde fizer sentido; com zoom alto o scroll horizontal pode ser inevitável — garantir **colunas essenciais** visíveis primeiro ou **vista alternativa em mobile** (cards, colunas prioritárias) para que o utilizador não dependa só de scroll lateral sem contexto.
+- **Tabelas**: Em **desktop**, manter **`overflow-x-auto`** onde fizer sentido; em **mobile**, preferir o padrão **listagens responsivas** (cards clicáveis) em vez de depender de scroll horizontal para a coluna Ações. Com zoom alto no desktop o scroll lateral pode ser inevitável — garantir colunas essenciais visíveis primeiro.
 - **Checklist para IA e revisão**: Antes de dar por concluída uma UI nova ou alterada, validar mentalmente **zoom ~200%** + **largura estreita** (mobile); verificar que nada crítico fica só fora do ecrã sem rolagem ou ação para aceder.
 
 ## 📊 Padrões de Monitoramento
@@ -655,6 +658,6 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Versão dos Padrões**: 2.21 (Go + Next.js) — Header com `UserIdentitySummary` e fazenda ativa sempre visível quando aplicável.
+**Versão dos Padrões**: 2.22 (Go + Next.js) — Listagens responsivas mobile (`layout/list/`: card clicável + menu ⋮; tabela em `md+`).
 
 **Última atualização**: 2026-05-21 (padrões API M2M integrações + OpenAPI/Swagger públicos)

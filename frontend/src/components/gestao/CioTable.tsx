@@ -15,17 +15,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { formatDateTimePtBrOptional } from "@/lib/format";
+import { MobileListCard } from "@/components/layout/list/MobileListCard";
+import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
+import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
+import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 
 type Props = {
   items: Cio[];
@@ -35,7 +29,9 @@ type Props = {
 export function CioTable({ items, fazendaId }: Props) {
   const queryClient = useQueryClient();
   const animaisMap = useAnimaisMap(fazendaId);
-  const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(null);
+  const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
+    null
+  );
 
   const deleteMutation = useMutation({
     mutationFn: remove,
@@ -49,51 +45,75 @@ export function CioTable({ items, fazendaId }: Props) {
     deleteMutation.mutate(id);
   };
 
+  if (items.length === 0) {
+    return (
+      <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto -mx-4 sm:mx-0">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Animal</TableHead>
-            <TableHead>Data detectado</TableHead>
-            <TableHead>Método</TableHead>
-            <TableHead>Intensidade</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={5}
-                className="h-24 text-center text-muted-foreground"
-              >
-                Nenhum registro.
-              </TableCell>
-            </TableRow>
-          ) : (
-            items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">
-                  {animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`}
-                </TableCell>
-                <TableCell>{formatDateTimePtBrOptional(item.data_detectado)}</TableCell>
-                <TableCell>{item.metodo_deteccao ?? "—"}</TableCell>
-                <TableCell>{item.intensidade ?? "—"}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="default" asChild>
-                      <Link href={`/gestao/cios/${item.id}/editar`}>
-                        Editar
-                      </Link>
-                    </Button>
-                    <Dialog
-                      open={deleteDialogOpenId === item.id}
-                      onOpenChange={(open) => {
-                        if (!open) setDeleteDialogOpenId(null);
-                      }}
-                    >
-                      <DialogTrigger asChild>
+    <>
+      <ResponsiveListContainer
+        mobile={items.map((item) => {
+          const animalLabel =
+            animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`;
+          return (
+            <MobileListCard
+              key={item.id}
+              href={`/gestao/cios/${item.id}/editar`}
+              title={animalLabel}
+              subtitle={formatDateTimePtBrOptional(item.data_detectado)}
+              meta={
+                <span className="text-muted-foreground">
+                  {item.metodo_deteccao ?? "—"}
+                  {item.intensidade ? ` · ${item.intensidade}` : ""}
+                </span>
+              }
+              actions={
+                <ListRowActionsMenu
+                  items={[
+                    {
+                      label: "Excluir",
+                      variant: "destructive",
+                      onSelect: () => setDeleteDialogOpenId(item.id),
+                    },
+                  ]}
+                />
+              }
+            />
+          );
+        })}
+        desktop={
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Animal</TableHead>
+                  <TableHead>Data detectado</TableHead>
+                  <TableHead>Método</TableHead>
+                  <TableHead>Intensidade</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      {animaisMap.get(item.animal_id) ??
+                        `Animal ${item.animal_id}`}
+                    </TableCell>
+                    <TableCell>
+                      {formatDateTimePtBrOptional(item.data_detectado)}
+                    </TableCell>
+                    <TableCell>{item.metodo_deteccao ?? "—"}</TableCell>
+                    <TableCell>{item.intensidade ?? "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="default" asChild>
+                          <Link href={`/gestao/cios/${item.id}/editar`}>
+                            Editar
+                          </Link>
+                        </Button>
                         <Button
                           variant="destructive"
                           size="default"
@@ -101,36 +121,27 @@ export function CioTable({ items, fazendaId }: Props) {
                         >
                           Excluir
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Excluir registro de cio</DialogTitle>
-                          <DialogDescription>
-                            Tem certeza que deseja excluir este registro? Esta
-                            ação não pode ser desfeita.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <DialogClose asChild>
-                            <Button variant="outline">Cancelar</Button>
-                          </DialogClose>
-                          <Button
-                            variant="destructive"
-                            onClick={() => handleDelete(item.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            {deleteMutation.isPending ? "Excluindo…" : "Excluir"}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        }
+      />
+      <DeleteRecordDialog
+        open={deleteDialogOpenId != null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteDialogOpenId(null);
+        }}
+        title="Excluir registro de cio"
+        description="Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita."
+        onConfirm={() => {
+          if (deleteDialogOpenId != null) handleDelete(deleteDialogOpenId);
+        }}
+        isPending={deleteMutation.isPending}
+      />
+    </>
   );
 }

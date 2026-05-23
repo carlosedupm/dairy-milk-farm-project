@@ -104,6 +104,7 @@
 - [x] **UX Input/Textarea — foco**: borda única `border-ring` no foco (sem ring sobreposto); corrige aparência do campo de busca por identificação no diálogo global
 - [x] **API de integrações M2M (2026-05-21)**: migration 25; auth `cmk_live_*` + scopes; rotas `/api/v1/integracoes` (me, animais, coberturas, toques/lote); idempotência; admin API + UI `/admin/integracoes`; catálogo `docs/business/integracoes.md` (BR-INTEG-001–006); guia `docs/integracoes/README.md`
 - [x] **OpenAPI integrações M2M (2026-05-21)**: spec OpenAPI 3.0 embed + `docs/openapi/integracoes-v1.openapi.yaml`; rotas públicas `openapi.yaml`, Swagger UI `/docs`; teste `integracoes_docs_test.go`; Postman/README atualizados
+- [x] **Listagens responsivas mobile (2026-05-22)**: `components/layout/list/` (`MobileListCard`, `ListRowActionsMenu`, `ResponsiveListContainer`, `DeleteRecordDialog`); todas as `*Table` com Ações ou só leitura migradas; `md+` inalterado; fix hidratação (`div` em title/subtitle do card)
 
 ## 📋 Próximos Passos
 
@@ -669,8 +670,16 @@
 - ✅ **Documentação**: `docs/business/integracoes.md`; `docs/integracoes/README.md`; OpenAPI embed + `docs/openapi/`; Swagger UI pública; Postman/README.
 - 📋 **Pendente**: teste ponta-a-ponta em staging com integrador real; rotação de chaves expostas em testes manuais.
 
+### **2026-05-22 — Listagens mobile (card clicável + menu ⋮)**
+
+- ✅ **Componentes**: `frontend/src/components/layout/list/` — `MobileListCard`, `ListRowActionsMenu`, `ResponsiveListContainer`, `DeleteRecordDialog`.
+- ✅ **Tabelas migradas**: animais, gestão pecuária (partos, cios, coberturas, gestações, secagens, toques, lactações), produção, fazendas, admin (usuários, integrações).
+- ✅ **UX**: mobile sem scroll horizontal para coluna Ações; exclusão só via ⋮ + dialog; perfis (`canManage`, admin) respeitados nos menus.
+- ✅ **Correção**: `MobileListCard` — `title`/`subtitle` em `<div>` para evitar erro de hidratação (`<p>` não pode conter `Badge`/`<div>`).
+- ✅ **Documentação**: `systemPatterns.md` v2.22; `activeContext.md`.
+
 ---
 
-**Última atualização**: 2026-05-21 (Integrações M2M + OpenAPI/Swagger)
-**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
+**Última atualização**: 2026-05-22 (listagens mobile + fix hidratação MobileListCard)
+**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

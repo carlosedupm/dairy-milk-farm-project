@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ProducaoLeite } from "@/services/producao";
@@ -16,16 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { MobileListCard } from "@/components/layout/list/MobileListCard";
+import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
+import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
+import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 
 type Props = {
   items: ProducaoLeite[];
@@ -52,6 +47,10 @@ export function ProducaoTable({
 }: Props) {
   const queryClient = useQueryClient();
   const animaisMap = useAnimaisMap(showAnimal ? fazendaId : undefined);
+  const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
+    null
+  );
+  const deleteTarget = items.find((p) => p.id === deleteDialogOpenId);
 
   const deleteMutation = useMutation({
     mutationFn: remove,
@@ -64,6 +63,7 @@ export function ProducaoTable({
           queryKey: ["animais", item.animal_id, "contexto"],
         });
       }
+      setDeleteDialogOpenId(null);
     },
   });
 
@@ -77,107 +77,127 @@ export function ProducaoTable({
       maximumFractionDigits: 2,
     });
 
-  const colCount = showAnimal ? 5 : 4;
+  if (items.length === 0) {
+    return (
+      <p className="py-8 text-center text-muted-foreground">
+        Nenhum registro de produção.
+      </p>
+    );
+  }
 
   return (
-    <div className="overflow-x-auto -mx-4 sm:mx-0">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {showAnimal ? <TableHead>Animal</TableHead> : null}
-            <TableHead>Data/Hora</TableHead>
-            <TableHead className="text-right">Litros</TableHead>
-            <TableHead>Qualidade</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={colCount}
-                className="h-24 text-center text-muted-foreground"
-              >
-                Nenhum registro de produção.
-              </TableCell>
-            </TableRow>
-          ) : (
-            items.map((p) => (
-              <TableRow key={p.id}>
-                {showAnimal ? (
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/animais/${p.animal_id}`}
-                      className="text-primary hover:underline break-words"
-                    >
-                      {animaisMap.get(p.animal_id) ?? `Animal ${p.animal_id}`}
-                    </Link>
-                  </TableCell>
-                ) : null}
-                <TableCell className="font-medium">
-                  {formatDateTimePtBr(p.data_hora)}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {formatLitros(p.quantidade)} L
-                </TableCell>
-                <TableCell>
-                  {getQualidadeBadge(p.qualidade) ?? "—"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="default"
-                      className="min-h-[44px] sm:min-h-0"
-                      asChild
-                    >
-                      <Link href={`/producao/${p.id}/editar`}>Editar</Link>
-                    </Button>
-                    <Dialog>
-                      <DialogTrigger asChild>
+    <>
+      <ResponsiveListContainer
+        mobile={items.map((p) => {
+          const animalLabel = showAnimal
+            ? (animaisMap.get(p.animal_id) ?? `Animal ${p.animal_id}`)
+            : null;
+          return (
+            <MobileListCard
+              key={p.id}
+              href={`/producao/${p.id}/editar`}
+              title={animalLabel ?? formatDateTimePtBr(p.data_hora)}
+              subtitle={
+                animalLabel ? formatDateTimePtBr(p.data_hora) : undefined
+              }
+              meta={
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono">
+                    {formatLitros(p.quantidade)} L
+                  </span>
+                  {getQualidadeBadge(p.qualidade) ?? (
+                    <span className="text-muted-foreground">Qualidade: —</span>
+                  )}
+                </div>
+              }
+              actions={
+                <ListRowActionsMenu
+                  items={[
+                    {
+                      label: "Excluir",
+                      variant: "destructive",
+                      onSelect: () => setDeleteDialogOpenId(p.id),
+                    },
+                  ]}
+                />
+              }
+            />
+          );
+        })}
+        desktop={
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {showAnimal ? <TableHead>Animal</TableHead> : null}
+                  <TableHead>Data/Hora</TableHead>
+                  <TableHead className="text-right">Litros</TableHead>
+                  <TableHead>Qualidade</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((p) => (
+                  <TableRow key={p.id}>
+                    {showAnimal ? (
+                      <TableCell className="font-medium">
+                        <Link
+                          href={`/animais/${p.animal_id}`}
+                          className="text-primary hover:underline break-words"
+                        >
+                          {animaisMap.get(p.animal_id) ??
+                            `Animal ${p.animal_id}`}
+                        </Link>
+                      </TableCell>
+                    ) : null}
+                    <TableCell className="font-medium">
+                      {formatDateTimePtBr(p.data_hora)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {formatLitros(p.quantidade)} L
+                    </TableCell>
+                    <TableCell>
+                      {getQualidadeBadge(p.qualidade) ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button variant="outline" size="default" asChild>
+                          <Link href={`/producao/${p.id}/editar`}>Editar</Link>
+                        </Button>
                         <Button
                           variant="destructive"
                           size="default"
-                          className="min-h-[44px] sm:min-h-0"
+                          onClick={() => setDeleteDialogOpenId(p.id)}
                         >
                           Excluir
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Excluir registro</DialogTitle>
-                          <DialogDescription>
-                            Tem certeza que deseja excluir este registro de
-                            produção de {formatDateTimePtBr(p.data_hora)}? Esta
-                            ação não pode ser desfeita.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <DialogClose asChild>
-                            <Button variant="outline" className="min-h-[44px]">
-                              Cancelar
-                            </Button>
-                          </DialogClose>
-                          <Button
-                            variant="destructive"
-                            className="min-h-[44px]"
-                            onClick={() => handleDelete(p.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            {deleteMutation.isPending
-                              ? "Excluindo…"
-                              : "Excluir"}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        }
+      />
+      {deleteTarget ? (
+        <DeleteRecordDialog
+          open={deleteDialogOpenId != null}
+          onOpenChange={(open) => {
+            if (!open) setDeleteDialogOpenId(null);
+          }}
+          title="Excluir registro"
+          description={
+            <>
+              Tem certeza que deseja excluir este registro de produção de{" "}
+              {formatDateTimePtBr(deleteTarget.data_hora)}? Esta ação não pode
+              ser desfeita.
+            </>
+          }
+          onConfirm={() => handleDelete(deleteTarget.id)}
+          isPending={deleteMutation.isPending}
+        />
+      ) : null}
+    </>
   );
 }
