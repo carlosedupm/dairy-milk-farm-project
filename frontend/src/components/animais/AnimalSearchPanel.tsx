@@ -27,6 +27,13 @@ export type AnimalSearchPanelProps = {
   onAntesNavegarDetalhe?: () => void;
   /** Foco inicial no campo (ex.: ao abrir o diálogo global) */
   autoFocus?: boolean;
+  /** Oculta o campo de entrada (busca controlada pelo header) */
+  hideInput?: boolean;
+  /** Termo controlado externamente (ex.: input fixo no header) */
+  identificacao?: string;
+  onIdentificacaoChange?: (value: string) => void;
+  /** `header`: menos texto de ajuda no overlay */
+  variant?: "default" | "header";
 };
 
 const BUSCA_DEBOUNCE_MS = 400;
@@ -34,8 +41,21 @@ const BUSCA_DEBOUNCE_MS = 400;
 export function AnimalSearchPanel({
   onAntesNavegarDetalhe,
   autoFocus = false,
+  hideInput = false,
+  identificacao: identificacaoControlada,
+  onIdentificacaoChange,
+  variant = "default",
 }: AnimalSearchPanelProps) {
-  const [identificacao, setIdentificacao] = useState("");
+  const [identificacaoInterno, setIdentificacaoInterno] = useState("");
+  const isControlled =
+    identificacaoControlada !== undefined &&
+    onIdentificacaoChange !== undefined;
+  const identificacao = isControlled
+    ? identificacaoControlada
+    : identificacaoInterno;
+  const setIdentificacao = isControlled
+    ? onIdentificacaoChange
+    : setIdentificacaoInterno;
   const debouncedTermo = useDebouncedValue(identificacao.trim(), BUSCA_DEBOUNCE_MS);
   const buscaSeq = useRef(0);
 
@@ -142,26 +162,38 @@ export function AnimalSearchPanel({
       })
     : [];
 
+  const showInputHelp =
+    variant === "default" ||
+    loadingBusca ||
+    loadingContexto ||
+    aguardandoDebounce;
+
   return (
     <div className="min-w-0 space-y-4">
-      <form onSubmit={handleSubmitRapido} className="min-w-0 space-y-1.5">
-        <Input
-          value={identificacao}
-          onChange={(event) => setIdentificacao(event.target.value)}
-          placeholder="Ex.: 123, brinco, nome ou parte da identificação"
-          aria-label="Pesquisar animal por identificação"
-          autoFocus={autoFocus}
-          aria-busy={loadingBusca || loadingContexto}
-          className="min-w-0"
-        />
-        <p className="text-xs text-muted-foreground">
-          {loadingBusca || loadingContexto
-            ? "Pesquisando…"
-            : aguardandoDebounce
-              ? "Aguardando pausa na digitação…"
-              : "Os resultados aparecem automaticamente após você parar de digitar."}
-        </p>
-      </form>
+      {!hideInput ? (
+        <form onSubmit={handleSubmitRapido} className="min-w-0 space-y-1.5">
+          <Input
+            value={identificacao}
+            onChange={(event) => setIdentificacao(event.target.value)}
+            placeholder="Ex.: 123, brinco, nome ou parte da identificação"
+            aria-label="Pesquisar animal por identificação"
+            autoFocus={autoFocus}
+            aria-busy={loadingBusca || loadingContexto}
+            className="min-w-0"
+          />
+          {showInputHelp ? (
+            <p className="text-xs text-muted-foreground">
+              {loadingBusca || loadingContexto
+                ? "Pesquisando…"
+                : aguardandoDebounce
+                  ? "Aguardando pausa na digitação…"
+                  : variant === "default"
+                    ? "Os resultados aparecem automaticamente após você parar de digitar."
+                    : null}
+            </p>
+          ) : null}
+        </form>
+      ) : null}
 
       {erro ? <p className="text-sm text-destructive">{erro}</p> : null}
 

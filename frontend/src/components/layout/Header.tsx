@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
+import { AnimalSearchHeaderField } from "@/components/layout/AnimalSearchHeaderField";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,7 @@ import {
   userIdentityInitials,
 } from "@/components/layout/UserIdentitySummary";
 import { isPathAllowedForPerfil } from "@/config/appAccess";
-import { Menu, X, Search, Plus, ChevronDown } from "lucide-react";
+import { Menu, X, Plus, ChevronDown } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -59,17 +60,7 @@ export function Header() {
 
           {/* Desktop right block */}
           <div className="hidden lg:flex items-center gap-3 min-w-0 shrink-0 ml-auto">
-            {showBuscaAnimal && animalSearch ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Buscar animal por identificação"
-                onClick={() => animalSearch.openDialog()}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-            ) : null}
+            {showBuscaAnimal ? <AnimalSearchHeaderField /> : null}
             <ThemeToggle />
             {user ? (
               <Popover>
@@ -165,17 +156,9 @@ export function Header() {
           </div>
 
           {/* Mobile: busca + identidade compacta + menu */}
-          <div className="flex lg:hidden items-center gap-1 ml-auto">
-            {showBuscaAnimal && animalSearch ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Buscar animal por identificação"
-                onClick={() => animalSearch.openDialog()}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
+          <div className="flex lg:hidden min-w-0 flex-1 items-center gap-1 ml-auto">
+            {showBuscaAnimal ? (
+              <AnimalSearchHeaderField compact />
             ) : null}
             {user ? (
               <div
@@ -266,14 +249,10 @@ export function Header() {
                   className="flex min-h-[44px] w-full items-center gap-2 rounded-md py-3 px-3 text-left text-foreground hover:bg-accent"
                   onClick={() => {
                     closeMobileMenu();
-                    animalSearch.openDialog();
+                    animalSearch.openSearch();
                   }}
                 >
-                  <Search
-                    className="h-5 w-5 shrink-0 text-muted-foreground"
-                    aria-hidden
-                  />
-                  Buscar animal
+                  Ir para busca no topo
                 </button>
               ) : null}
               {showNavLinks ? (

@@ -211,7 +211,7 @@ export function Dashboard() {
                 <button
                   type="button"
                   className="flex min-h-[52px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50 active:bg-accent/70"
-                  onClick={() => animalSearch.openDialog()}
+                  onClick={() => animalSearch.openSearch()}
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Search className="h-5 w-5" aria-hidden />
