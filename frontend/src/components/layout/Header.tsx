@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
@@ -27,6 +28,7 @@ import { isPathAllowedForPerfil } from "@/config/appAccess";
 import { Menu, X, Plus, ChevronDown } from "lucide-react";
 
 export function Header() {
+  const pathname = usePathname();
   const { user, logout } = useAuth();
   const { fazendaAtiva } = useFazendaAtiva();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -60,7 +62,9 @@ export function Header() {
 
           {/* Desktop right block */}
           <div className="hidden lg:flex items-center gap-3 min-w-0 shrink-0 ml-auto">
-            {showBuscaAnimal ? <AnimalSearchHeaderField /> : null}
+            {showBuscaAnimal ? (
+              <AnimalSearchHeaderField key={pathname} />
+            ) : null}
             <ThemeToggle />
             {user ? (
               <Popover>
@@ -158,7 +162,7 @@ export function Header() {
           {/* Mobile: busca + identidade compacta + menu */}
           <div className="flex lg:hidden min-w-0 flex-1 items-center gap-1 ml-auto">
             {showBuscaAnimal ? (
-              <AnimalSearchHeaderField compact />
+              <AnimalSearchHeaderField key={pathname} compact />
             ) : null}
             {user ? (
               <div

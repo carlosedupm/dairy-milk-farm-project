@@ -30,7 +30,6 @@ import {
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
-import { usePathname } from "next/navigation";
 
 type AnimalSearchHeaderFieldProps = {
   /** Mobile: ocupa espaço flexível na barra */
@@ -41,7 +40,6 @@ export function AnimalSearchHeaderField({
   compact = false,
 }: AnimalSearchHeaderFieldProps) {
   const searchCtx = useAnimalSearchDialog();
-  const pathname = usePathname();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,11 +58,6 @@ export function AnimalSearchHeaderField({
     setPopoverOpen(false);
     setDialogOpen(false);
   }, []);
-
-  /** Header persiste entre rotas; limpar evita termo/resumo “fantasma” noutros menus. */
-  useEffect(() => {
-    resetSearch();
-  }, [pathname, resetSearch]);
 
   const openSearch = useCallback(() => {
     inputRef.current?.focus();
