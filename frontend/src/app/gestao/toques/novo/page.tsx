@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
 import { formatDatePtBr, nowDatetimeLocalInputValue } from "@/lib/format";
@@ -149,12 +149,13 @@ function NovoContent() {
         placeholder="Selecione"
         femeasOnly
       />
-      <div>
-        <Label>Data/hora</Label>
-        <Input
-          type="datetime-local"
+      <div className="space-y-2">
+        <Label htmlFor="toque-data-hora">Data/hora</Label>
+        <DateTimePickerPtBr
+          id="toque-data-hora"
           value={data}
-          onChange={(e) => setData(e.target.value)}
+          onChange={setData}
+          placeholder="Selecione data e hora"
         />
       </div>
       <div>

@@ -59,6 +59,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Pickers de data/hora — visibilidade universal**: `DatePicker` e `DateTimePickerPtBr` com **Dialog em todos os breakpoints** (`DatePickerOverlay` + `DatePickerPanel`); cabeçalho com resumo do valor; hora/minuto via `<select>` nativo; `Calendar` + `.rdp` em `globals.css`; toques com `DateTimePickerPtBr`. Padrão v2.24 em `systemPatterns.md`.
 1. ✅ **Listagens mobile (linha clicável + menu ⋮)**: `frontend/src/components/layout/list/` — `MobileListCard`, `ListRowActionsMenu`, `ResponsiveListContainer`, `DeleteRecordDialog`; em viewports `< md`, toque no card = ação principal (Ver/editar/selecionar fazenda); ⋮ (Popover) para Excluir, Editar secundário, Ativar/Desativar; desktop mantém tabela com botões. Migradas: `AnimalTable`, gestão (`Parto`, `Cio`, `Cobertura`, `Gestacao`, `Secagem`, `Toque`, `Lactacao`), `ProducaoTable`, `FazendaTable`, `UsuarioTable`, `IntegracaoTable`. Correção hidratação: título/subtítulo do card em `<div>` (não `<p>`) quando incluem `Badge` (ex.: fazenda ativa). Padrão documentado em `systemPatterns.md` v2.22.
 1. ✅ **API de integrações M2M + OpenAPI**: migration 25; M2M (`cmk_live_*`, scopes, 6 rotas, idempotência, `integracao_chamadas`); admin + UI `/admin/integracoes`; catálogo `docs/business/integracoes.md` (BR-INTEG-001–006); guia `docs/integracoes/README.md`; **OpenAPI 3.0** + **Swagger UI** em `/api/v1/integracoes/docs` (público); spec `docs/openapi/integracoes-v1.openapi.yaml`; teste embed `internal/openapi/integracoes_docs_test.go`; Postman import via URL do YAML.
 1. ✅ **Fase 2 — qualidade e visibilidade**: checklist [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md); painel **Conformidade** na home (`ConformidadeHomePanel`, BR-AUDIT-003); **Registado por** na timeline e cadastro do animal (BR-AUDIT-006); timeline com `created_by` nos repositórios de ciclo.
@@ -194,5 +195,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-05-22 (listagens mobile: card clicável + menu de ações)
+**Última atualização**: 2026-05-23 (pickers data/hora — Dialog unificado todos os breakpoints)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Integrações M2M** | Listagens `*Table` com UX mobile (card + ⋮) | Recuperação senha aguarda SMTP | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)

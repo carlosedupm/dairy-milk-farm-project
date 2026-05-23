@@ -7,13 +7,9 @@ import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePickerOverlay } from "@/components/ui/date-picker-overlay";
+import { DatePickerPanel } from "@/components/ui/date-picker-panel";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 type DatePickerProps = {
   value?: string; // YYYY-MM-DD
@@ -28,7 +24,7 @@ type DatePickerProps = {
   maxYear?: number;
 };
 
-/** Componente de seleção de data com calendário popover */
+/** Seleção de data com calendário em Dialog (todos os breakpoints). */
 export function DatePicker({
   value,
   onChange,
@@ -65,50 +61,52 @@ export function DatePicker({
     return format(parsed, "dd/MM/yyyy", { locale: ptBR });
   }, []);
 
-  const parseDisplayToIso = React.useCallback((displayDate: string) => {
-    const digits = digitsOnly(displayDate);
-    if (!digits) {
-      return { iso: "", isValid: true };
-    }
+  const parseDisplayToIso = React.useCallback(
+    (displayDate: string) => {
+      const digits = digitsOnly(displayDate);
+      if (!digits) {
+        return { iso: "", isValid: true };
+      }
 
-    if (digits.length !== 8) {
-      return { iso: "", isValid: false };
-    }
+      if (digits.length !== 8) {
+        return { iso: "", isValid: false };
+      }
 
-    const day = Number(digits.slice(0, 2));
-    const month = Number(digits.slice(2, 4));
-    const year = Number(digits.slice(4, 8));
+      const day = Number(digits.slice(0, 2));
+      const month = Number(digits.slice(2, 4));
+      const year = Number(digits.slice(4, 8));
 
-    if (year < minYear || year > maxYear) {
-      return { iso: "", isValid: false };
-    }
+      if (year < minYear || year > maxYear) {
+        return { iso: "", isValid: false };
+      }
 
-    const candidate = new Date(year, month - 1, day, 12, 0, 0);
-    const isExactDate =
-      candidate.getFullYear() === year &&
-      candidate.getMonth() === month - 1 &&
-      candidate.getDate() === day;
+      const candidate = new Date(year, month - 1, day, 12, 0, 0);
+      const isExactDate =
+        candidate.getFullYear() === year &&
+        candidate.getMonth() === month - 1 &&
+        candidate.getDate() === day;
 
-    if (!isExactDate) {
-      return { iso: "", isValid: false };
-    }
+      if (!isExactDate) {
+        return { iso: "", isValid: false };
+      }
 
-    const iso = format(candidate, "yyyy-MM-dd");
-    return { iso, isValid: true };
-  }, [digitsOnly, maxYear, minYear]);
+      const iso = format(candidate, "yyyy-MM-dd");
+      return { iso, isValid: true };
+    },
+    [digitsOnly, maxYear, minYear]
+  );
 
   React.useEffect(() => {
     setInputValue(formatIsoToDisplay(value));
     setInputError("");
   }, [formatIsoToDisplay, value]);
 
-  const handleSelect = (d: Date | undefined) => {
-    if (!d) return;
-    const isoValue = format(d, "yyyy-MM-dd");
+  const handleChange = (isoValue: string) => {
     onChange?.(isoValue);
-    setInputValue(format(d, "dd/MM/yyyy", { locale: ptBR }));
+    if (isoValue) {
+      setInputValue(formatIsoToDisplay(isoValue));
+    }
     setInputError("");
-    setOpen(false);
   };
 
   const applyManualValue = () => {
@@ -133,81 +131,110 @@ export function DatePicker({
     }
   };
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      {manualInput ? (
-        <div className={cn("space-y-2", className)}>
-          <div className="flex gap-2">
-            <Input
-              id={id}
-              value={inputValue}
-              disabled={disabled}
-              placeholder="DD/MM/AAAA"
-              maxLength={10}
-              onChange={(e) => {
-                const digits = digitsOnly(e.target.value);
-                const masked = formatDigitsToDisplay(digits);
-                setInputValue(masked);
-                if (inputError) setInputError("");
-                if (!digits) onChange?.("");
-                if (digits.length === 8) {
-                  const parsed = parseDisplayToIso(masked);
-                  if (parsed.isValid) {
-                    onChange?.(parsed.iso);
-                    setInputError("");
-                  }
-                }
-              }}
-              onBlur={handleManualBlur}
-              onKeyDown={handleManualKeyDown}
-              aria-invalid={inputError ? true : undefined}
-            />
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={disabled}
-                className="min-h-[44px] min-w-[44px]"
-                aria-label="Abrir calendário"
-              >
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-          </div>
-          {inputError && <p className="text-sm text-destructive">{inputError}</p>}
-        </div>
-      ) : (
-        <PopoverTrigger asChild>
-          <Button
-            id={id}
-            variant="outline"
-            disabled={disabled}
-            className={cn(
-              "w-full justify-start text-left font-normal min-h-[44px]",
-              !date && "text-muted-foreground",
-              className
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date ? (
-              format(date, "dd/MM/yyyy", { locale: ptBR })
-            ) : (
-              <span>{placeholder}</span>
-            )}
-          </Button>
-        </PopoverTrigger>
+  const summary = value
+    ? formatIsoToDisplay(value)
+    : "Nenhuma data selecionada";
+
+  const panel = (
+    <DatePickerPanel
+      mode="date"
+      value={value ?? ""}
+      onChange={handleChange}
+      minYear={minYear}
+      maxYear={maxYear}
+      onDone={() => setOpen(false)}
+      closeOnSelect
+    />
+  );
+
+  const calendarIconButton = (
+    <Button
+      type="button"
+      variant="outline"
+      disabled={disabled}
+      className="min-h-[44px] min-w-[44px] shrink-0"
+      aria-label="Abrir calendário"
+    >
+      <CalendarIcon className="h-4 w-4" />
+    </Button>
+  );
+
+  const triggerButton = (
+    <Button
+      id={id}
+      type="button"
+      variant="outline"
+      disabled={disabled}
+      className={cn(
+        "w-full min-h-[44px] justify-start text-left font-normal",
+        !date && "text-muted-foreground",
+        className
       )}
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={handleSelect}
-          captionLayout="dropdown-years"
-          startMonth={new Date(minYear, 0)}
-          endMonth={new Date(maxYear, 11)}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
+    >
+      <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+      {date ? (
+        format(date, "dd/MM/yyyy", { locale: ptBR })
+      ) : (
+        <span>{placeholder}</span>
+      )}
+    </Button>
+  );
+
+  if (manualInput) {
+    return (
+      <div className={cn("space-y-2", className)}>
+        <div className="flex gap-2">
+          <Input
+            id={id}
+            value={inputValue}
+            disabled={disabled}
+            placeholder="DD/MM/AAAA"
+            maxLength={10}
+            className="min-h-[44px]"
+            onChange={(e) => {
+              const digits = digitsOnly(e.target.value);
+              const masked = formatDigitsToDisplay(digits);
+              setInputValue(masked);
+              if (inputError) setInputError("");
+              if (!digits) onChange?.("");
+              if (digits.length === 8) {
+                const parsed = parseDisplayToIso(masked);
+                if (parsed.isValid) {
+                  onChange?.(parsed.iso);
+                  setInputError("");
+                }
+              }
+            }}
+            onBlur={handleManualBlur}
+            onKeyDown={handleManualKeyDown}
+            aria-invalid={inputError ? true : undefined}
+          />
+          <DatePickerOverlay
+            open={open}
+            onOpenChange={setOpen}
+            trigger={calendarIconButton}
+            title="Selecionar data"
+            summary={summary}
+          >
+            {panel}
+          </DatePickerOverlay>
+        </div>
+        {inputError && (
+          <p className="text-sm text-destructive">{inputError}</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <DatePickerOverlay
+      open={open}
+      onOpenChange={setOpen}
+      trigger={triggerButton}
+      title="Selecionar data"
+      summary={summary}
+    >
+      {panel}
+    </DatePickerOverlay>
   );
 }
