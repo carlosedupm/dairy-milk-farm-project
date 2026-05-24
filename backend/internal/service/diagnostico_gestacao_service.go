@@ -31,18 +31,11 @@ func NewDiagnosticoGestacaoService(repo *repository.DiagnosticoGestacaoRepositor
 }
 
 func (s *DiagnosticoGestacaoService) Create(ctx context.Context, d *models.DiagnosticoGestacao) error {
-	if d.AnimalID <= 0 || d.FazendaID <= 0 || d.Resultado == "" {
-		return errors.New("animal_id, fazenda_id e resultado sao obrigatorios")
+	if d.AnimalID <= 0 || d.FazendaID <= 0 {
+		return errors.New("animal_id e fazenda_id sao obrigatorios")
 	}
-	validRes := false
-	for _, r := range models.ValidResultadosDiagnostico() {
-		if r == d.Resultado {
-			validRes = true
-			break
-		}
-	}
-	if !validRes {
-		return errors.New("resultado invalido")
+	if err := NormalizeDiagnosticoGestacao(d); err != nil {
+		return err
 	}
 	animal, err := s.animalRepo.GetByID(ctx, d.AnimalID)
 	if err != nil {
@@ -119,7 +112,11 @@ func (s *DiagnosticoGestacaoService) GetByAnimalID(ctx context.Context, animalID
 }
 
 func (s *DiagnosticoGestacaoService) GetByFazendaID(ctx context.Context, fazendaID int64) ([]*models.DiagnosticoGestacao, error) {
-	return s.repo.GetByFazendaID(ctx, fazendaID)
+	return s.repo.GetByFazendaID(ctx, fazendaID, nil, nil)
+}
+
+func (s *DiagnosticoGestacaoService) GetByFazendaIDFiltered(ctx context.Context, fazendaID int64, dataDe, dataAte *time.Time) ([]*models.DiagnosticoGestacao, error) {
+	return s.repo.GetByFazendaID(ctx, fazendaID, dataDe, dataAte)
 }
 
 func (s *DiagnosticoGestacaoService) Delete(ctx context.Context, id int64) error {

@@ -94,8 +94,13 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 		return nil, err
 	}
 	for _, d := range diags {
+		titulo := fmt.Sprintf("Toque %s", d.Resultado)
+		if d.ClassificacaoOperacional != nil && *d.ClassificacaoOperacional != "" {
+			titulo = fmt.Sprintf("Toque %s", formatClassificacaoOperacionalLabel(*d.ClassificacaoOperacional))
+		}
+		detalhe := formatToqueDetalhe(d)
 		items = append(items, models.CicloTimelineItem{
-			Tipo: "TOQUE", Data: d.Data, Titulo: fmt.Sprintf("Toque %s", d.Resultado), RefID: d.ID,
+			Tipo: "TOQUE", Data: d.Data, Titulo: titulo, Detalhe: detalhe, RefID: d.ID,
 			CreatedBy: d.CreatedBy,
 		})
 	}
@@ -271,4 +276,28 @@ func (s *AnimalCicloService) BuildProximasAcoes(ctx context.Context, animal *mod
 	}
 
 	return acoes, nil
+}
+
+func formatClassificacaoOperacionalLabel(classificacao string) string {
+	switch classificacao {
+	case models.ClassificacaoOperacionalVaziaPEV:
+		return "VAZIA PEV"
+	default:
+		return classificacao
+	}
+}
+
+func formatToqueDetalhe(d *models.DiagnosticoGestacao) string {
+	if d.Observacoes != nil && *d.Observacoes != "" {
+		return *d.Observacoes
+	}
+	if d.DiasGestacaoEstimados != nil && *d.DiasGestacaoEstimados > 0 {
+		dias := *d.DiasGestacaoEstimados
+		if dias >= 30 && dias%30 == 0 {
+			meses := dias / 30
+			return fmt.Sprintf("%d meses", meses)
+		}
+		return fmt.Sprintf("%d dias", dias)
+	}
+	return ""
 }

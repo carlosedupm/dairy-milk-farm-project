@@ -54,6 +54,7 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 - **Escopo**: Por animal.
 - **Efeito**: bloqueio/atualização no servidor; UI exibe rótulo derivado do cadastro.
 - **Implementação**: `CoberturaService`, `DiagnosticoGestacaoService`, `CioService`, `PartoService`, `SecagemService` → `AnimalRepository.UpdateStatusReprodutivo`.
+- **Nota**: na UI/API de curral, o operador pode informar `classificacao_operacional` (`PRENHA`, `VAZIA`, … — ver [toques.md](./toques.md) BR-TOQUES-006); o servidor deriva `resultado` canônico antes de aplicar as regras acima.
 - **Estado**: **implementado** (toque `INCONCLUSIVO` não altera status; edição manual no cadastro do animal ainda possível).
 
 ### BR-CICLO-003 — Gestação confirmada só após toque positivo
@@ -149,4 +150,4 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 
 ---
 
-**Última atualização**: 2026-05-20
+**Última atualização**: 2026-05-24 (nota classificação operacional em BR-CICLO-002)

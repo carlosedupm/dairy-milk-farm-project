@@ -182,10 +182,10 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ## Ciclo integrado do rebanho (Fase 2 — concluída)
 
-- **Migrações**: `22_close_lactacao_on_seca_animals`; `23_add_auditoria_usuario_ciclo`; `24_add_auditoria_animais`.
-- **Backend**: `animal_ciclo_service.go` (timeline com `registrado_por`, `enrichRegistradoPor`); `conformidade_service.go` + `GET /api/v1/fazendas/:id/auditoria/conformidade`; `secagem_service.go`, `lactacao_service.go`, `producao_service.go`, `diagnostico_gestacao_service.go`, `resumo_pecuario_service.go`; `usuario_repository.GetNamesByIDs`; repositórios de ciclo com `created_by` em `GetByAnimalID`.
-- **Frontend**: `AnimalFichaCiclo.tsx`, `PecuarioResumoHomePanel.tsx`, `ConformidadeHomePanel.tsx`, `services/auditoria.ts`, `showConformidadePanelForPerfil` em `appAccess.ts`, `ProducaoForm`, toques com cobertura.
-- **Negócio**: `docs/business/ciclo-rebanho.md`, `auditoria.md` (BR-AUDIT-003/006), módulos do ciclo.
+- **Migrações**: `22_close_lactacao_on_seca_animals`; `23_add_auditoria_usuario_ciclo`; `24_add_auditoria_animais`; **`26_add_classificacao_operacional_toques`** (`diagnosticos_gestacao.classificacao_operacional`).
+- **Backend**: `animal_ciclo_service.go` (timeline com `registrado_por`, classificação operacional + OBS); `conformidade_service.go` + `GET /api/v1/fazendas/:id/auditoria/conformidade`; `secagem_service.go`, `lactacao_service.go`, `producao_service.go`, `diagnostico_gestacao_service.go`, `diagnostico_gestacao_normalize.go`, `resumo_pecuario_service.go`; `IntegracaoToqueLoteService` reutilizado por `POST /api/v1/toques/lote` (JWT); filtros `data_de`/`data_ate` em `GET /api/v1/toques`; `usuario_repository.GetNamesByIDs`; repositórios de ciclo com `created_by` em `GetByAnimalID`.
+- **Frontend**: `AnimalFichaCiclo.tsx`, `PecuarioResumoHomePanel.tsx`, `ConformidadeHomePanel.tsx`, `services/auditoria.ts`, `showConformidadePanelForPerfil` em `appAccess.ts`, `ProducaoForm`; toques: `ToqueFormFields`, `ToquesListToolbar`, `ToqueTable`, `ToqueLoteEditor`, `lib/toquesUtils.ts` (`/gestao/toques*).
+- **Negócio**: `docs/business/ciclo-rebanho.md`, `auditoria.md` (BR-AUDIT-003/006), `toques.md` (BR-TOQUES-006), `integracoes.md` (BR-INTEG-007).
 - **Regressão**: [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md).
 
 ## Módulo Agrícola (Contexto Técnico)
@@ -270,5 +270,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-21 (API M2M integrações; OpenAPI/Swagger UI em `/api/v1/integracoes/docs`)
+**Última atualização**: 2026-05-24 (toques operacionais; migration 26; `POST /api/v1/toques/lote`)
 **Stack**: Go + Next.js 16 — Fase 2 concluída; Folgas 5x1; restrições de leite; Módulo Agrícola; Dev Studio; TestSprite (`testsprite_tests/`)

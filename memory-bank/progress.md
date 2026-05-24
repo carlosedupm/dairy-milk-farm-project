@@ -102,10 +102,11 @@
 - [x] **Home logada (Dashboard)**: `Dashboard.tsx` + `RestricoesLeiteHomePanel.tsx` + `AnimalSearchHome.tsx` — hierarquia visual, progressive disclosure e atalhos sem CTA duplicado
 - [x] **`AnimalSelect` pesquisável**: combobox com filtro no cliente (`animalSelectUtils.ts`); gestão pecuária, produção e registro de restrições de leite; substitui Select com scroll longo
 - [x] **UX Input/Textarea — foco**: borda única `border-ring` no foco (sem ring sobreposto); corrige aparência do campo de busca por identificação no diálogo global
-- [x] **API de integrações M2M (2026-05-21)**: migration 25; auth `cmk_live_*` + scopes; rotas `/api/v1/integracoes` (me, animais, coberturas, toques/lote); idempotência; admin API + UI `/admin/integracoes`; catálogo `docs/business/integracoes.md` (BR-INTEG-001–006); guia `docs/integracoes/README.md`
+- [x] **API de integrações M2M (2026-05-21)**: migration 25; auth `cmk_live_*` + scopes; rotas `/api/v1/integracoes` (me, animais, coberturas, toques/lote); idempotência; admin API + UI `/admin/integracoes`; catálogo `docs/business/integracoes.md` (BR-INTEG-001–007); guia `docs/integracoes/README.md`
 - [x] **OpenAPI integrações M2M (2026-05-21)**: spec OpenAPI 3.0 embed + `docs/openapi/integracoes-v1.openapi.yaml`; rotas públicas `openapi.yaml`, Swagger UI `/docs`; teste `integracoes_docs_test.go`; Postman/README atualizados
 - [x] **Listagens responsivas mobile (2026-05-22)**: `components/layout/list/` (`MobileListCard`, `ListRowActionsMenu`, `ResponsiveListContainer`, `DeleteRecordDialog`); todas as `*Table` com Ações ou só leitura migradas; `md+` inalterado; fix hidratação (`div` em title/subtitle do card)
 - [x] **Coberturas — filtros na listagem (2026-05-24)**: `CoberturasListToolbar` + `lib/coberturas-filter.ts`; filtragem client-side por animal, tipo e período em `/gestao/coberturas`; contagem no título; empty state distinto com filtros ativos
+- [x] **Toques — jornada operacional do curral (2026-05-24)**: migration `26_add_classificacao_operacional_toques`; `classificacao_operacional` + mapeamento para `resultado` (BR-TOQUES-006); UI planilha (`ToqueTable`, `ToquesListToolbar`, `ToqueFormFields`, `ToqueLoteEditor`); `POST /api/v1/toques/lote` (JWT); extensão M2M/OpenAPI (BR-INTEG-007); catálogo `docs/business/toques.md`
 
 ## 📋 Próximos Passos
 
@@ -687,6 +688,6 @@
 
 ---
 
-**Última atualização**: 2026-05-24 (filtros client-side na listagem de Coberturas)
+**Última atualização**: 2026-05-24 (jornada toques operacionais do curral)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | **Coberturas com filtros** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

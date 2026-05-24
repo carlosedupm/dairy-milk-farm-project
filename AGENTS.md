@@ -46,7 +46,7 @@ Sistemas externos (ERP, laboratório, agentes de IA pós-visita veterinária) co
 | **Scopes v1** | `animais:read`, `toques:write`, `coberturas:read`, `coberturas:write` + fazendas vinculadas ao cliente |
 | **Idempotência** | Header `Idempotency-Key` em escritas (especialmente lote de toques) |
 | **Docs públicas** | `GET /api/v1/integracoes/openapi.yaml`, `GET /api/v1/integracoes/docs` (Swagger UI — **sem** API key) |
-| **Regras de negócio** | `docs/business/integracoes.md` (`BR-INTEG-001`–`006`) |
+| **Regras de negócio** | `docs/business/integracoes.md` (`BR-INTEG-001`–`007`) |
 | **Padrões de código** | `memory-bank/systemPatterns.md` — secção **Integrações M2M** |
 
 **Ao implementar ou alterar integrações:** consulte `docs/business/integracoes.md`, `docs/integracoes/README.md` e `systemPatterns.md`; atualize a spec OpenAPI embed **e** `docs/openapi/integracoes-v1.openapi.yaml` no mesmo trabalho. Testes manuais contra o **backend** (`localhost:8080` em dev, não porta 3000 do Next.js); parâmetros de filtro (`fazenda_id`, `identificacao`, `animal_id`) vão na **query string**.
@@ -226,5 +226,5 @@ Produção **Render + Vercel**; **Fase 2** (ciclo integrado + auditoria UI) fech
 
 ---
 
-**Última atualização**: 2026-05-23
-**Versão**: 2.3 (API M2M integrações + OpenAPI/Swagger; referências `docs/integracoes` e `docs/openapi`)
+**Última atualização**: 2026-05-24
+**Versão**: 2.4 (jornada toques operacionais do curral; classificação operacional + lote JWT)

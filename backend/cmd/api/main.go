@@ -181,7 +181,7 @@ func main() {
 					secagemSvc := service.NewSecagemService(pool, secagemRepo, lactacaoRepo, animalRepo, fazendaRepo)
 					lactacaoSvc := service.NewLactacaoService(lactacaoRepo, animalRepo, fazendaRepo)
 					coberturaHandler := handlers.NewCoberturaHandler(coberturaSvc, fazendaSvc)
-					diagnosticoGestacaoHandler := handlers.NewDiagnosticoGestacaoHandler(diagnosticoGestacaoSvc, fazendaSvc)
+					diagnosticoGestacaoHandler := handlers.NewDiagnosticoGestacaoHandler(diagnosticoGestacaoSvc, fazendaSvc, animalSvc)
 					integracaoRepo := repository.NewIntegracaoRepository(pool)
 					integracaoSvc := service.NewIntegracaoService(integracaoRepo, userRepo)
 					integracaoHandler := handlers.NewIntegracaoHandler(integracaoSvc, animalSvc, diagnosticoGestacaoSvc, coberturaSvc)
@@ -339,6 +339,7 @@ func main() {
 					{
 						toques.GET("", diagnosticoGestacaoHandler.GetByFazendaID)
 						toques.POST("", diagnosticoGestacaoHandler.Create)
+						toques.POST("/lote", diagnosticoGestacaoHandler.CreateLote)
 					}
 					// Gestacoes
 					gestacoes := api.Group("/v1/gestacoes", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())

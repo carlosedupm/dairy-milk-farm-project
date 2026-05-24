@@ -138,15 +138,16 @@ func (h *IntegracaoHandler) CreateToque(c *gin.Context) {
 	}
 
 	var req struct {
-		AnimalID              int64   `json:"animal_id" binding:"required"`
-		Data                  string  `json:"data" binding:"required"`
-		Resultado             string  `json:"resultado" binding:"required"`
-		FazendaID             int64   `json:"fazenda_id" binding:"required"`
-		CoberturaID           *int64  `json:"cobertura_id"`
-		DiasGestacaoEstimados *int    `json:"dias_gestacao_estimados"`
-		Metodo                *string `json:"metodo"`
-		Veterinario           *string `json:"veterinario"`
-		Observacoes           *string `json:"observacoes"`
+		AnimalID                int64   `json:"animal_id" binding:"required"`
+		Data                    string  `json:"data" binding:"required"`
+		Resultado               string  `json:"resultado"`
+		ClassificacaoOperacional *string `json:"classificacao_operacional"`
+		FazendaID               int64   `json:"fazenda_id" binding:"required"`
+		CoberturaID             *int64  `json:"cobertura_id"`
+		DiasGestacaoEstimados   *int    `json:"dias_gestacao_estimados"`
+		Metodo                  *string `json:"metodo"`
+		Veterinario             *string `json:"veterinario"`
+		Observacoes             *string `json:"observacoes"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
 		response.ErrorValidation(c, "Dados invalidos", err.Error())
@@ -162,6 +163,7 @@ func (h *IntegracaoHandler) CreateToque(c *gin.Context) {
 	}
 	d := &models.DiagnosticoGestacao{
 		AnimalID: req.AnimalID, Data: t, Resultado: req.Resultado, FazendaID: req.FazendaID,
+		ClassificacaoOperacional: req.ClassificacaoOperacional,
 		CoberturaID: req.CoberturaID, DiasGestacaoEstimados: req.DiasGestacaoEstimados,
 		Metodo: req.Metodo, Veterinario: req.Veterinario, Observacoes: req.Observacoes,
 	}
@@ -355,7 +357,14 @@ func (h *IntegracaoHandler) CreateCoberturaLote(c *gin.Context) {
 
 func mapToqueError(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, service.ErrToquePositivoSemCobertura), errors.Is(err, service.ErrToquePositivoGestacaoAtiva):
+	case errors.Is(err, service.ErrToquePositivoSemCobertura),
+		errors.Is(err, service.ErrToquePositivoGestacaoAtiva),
+		errors.Is(err, service.ErrResultadoOuClassificacaoObrigatorio),
+		errors.Is(err, service.ErrClassificacaoOperacionalInvalida),
+		errors.Is(err, service.ErrMetodoDiagnosticoInvalido),
+		errors.Is(err, models.ErrClassificacaoResultadoInconsistente):
+		response.ErrorValidation(c, err.Error(), nil)
+	case err != nil && err.Error() == "resultado invalido":
 		response.ErrorValidation(c, err.Error(), nil)
 	default:
 		response.ErrorInternal(c, "Erro ao registrar toque", err.Error())

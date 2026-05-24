@@ -686,9 +686,16 @@ components:
       type: string
       enum: [POSITIVO, NEGATIVO, INCONCLUSIVO]
 
+    ClassificacaoOperacionalToque:
+      type: string
+      enum: [PRENHA, VAZIA, VAZIA_PEV, CLOE, CL, RETOQUE]
+      description: |
+        Vocabulário operacional do curral. O servidor deriva `resultado` quando omitido:
+        PRENHA→POSITIVO; VAZIA/VAZIA_PEV→NEGATIVO; CLOE/CL/RETOQUE→INCONCLUSIVO.
+
     CreateToqueRequest:
       type: object
-      required: [animal_id, data, resultado, fazenda_id]
+      required: [animal_id, data, fazenda_id]
       properties:
         animal_id:
           type: integer
@@ -699,6 +706,8 @@ components:
           description: RFC3339, ex. 2026-05-20T10:00:00Z
         resultado:
           $ref: "#/components/schemas/ResultadoToque"
+        classificacao_operacional:
+          $ref: "#/components/schemas/ClassificacaoOperacionalToque"
         fazenda_id:
           type: integer
           format: int64
@@ -711,6 +720,7 @@ components:
           nullable: true
         metodo:
           type: string
+          enum: [PALPACAO, ULTRASSOM]
           nullable: true
         veterinario:
           type: string
@@ -737,6 +747,20 @@ components:
           format: date-time
         resultado:
           $ref: "#/components/schemas/ResultadoToque"
+        classificacao_operacional:
+          $ref: "#/components/schemas/ClassificacaoOperacionalToque"
+        dias_gestacao_estimados:
+          type: integer
+          nullable: true
+        metodo:
+          type: string
+          nullable: true
+        veterinario:
+          type: string
+          nullable: true
+        observacoes:
+          type: string
+          nullable: true
         fazenda_id:
           type: integer
           format: int64
@@ -754,7 +778,7 @@ components:
 
     ToqueLoteItem:
       type: object
-      required: [identificacao, data, resultado]
+      required: [identificacao, data]
       properties:
         identificacao:
           type: string
@@ -763,9 +787,18 @@ components:
           format: date-time
         resultado:
           $ref: "#/components/schemas/ResultadoToque"
+        classificacao_operacional:
+          $ref: "#/components/schemas/ClassificacaoOperacionalToque"
         cobertura_id:
           type: integer
           format: int64
+          nullable: true
+        dias_gestacao_estimados:
+          type: integer
+          nullable: true
+        metodo:
+          type: string
+          enum: [PALPACAO, ULTRASSOM]
           nullable: true
         veterinario:
           type: string

@@ -11,20 +11,31 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
-import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
-import { Label } from "@/components/ui/label";
+  ToqueFormFields,
+  toqueFormSubmitDisabled,
+  type ToqueFormState,
+} from "@/components/gestao/ToqueFormFields";
 import { getApiErrorMessage } from "@/lib/errors";
-import { formatDatePtBr, nowDatetimeLocalInputValue } from "@/lib/format";
+import { nowDatetimeLocalInputValue } from "@/lib/format";
+import {
+  classificacaoRequiresCobertura,
+  gestacaoToDias,
+} from "@/lib/toquesUtils";
 
-const RESULTADOS = ["POSITIVO", "NEGATIVO", "INCONCLUSIVO"];
+function emptyFormState(animalId = ""): ToqueFormState {
+  return {
+    animalId,
+    coberturaId: "",
+    data: nowDatetimeLocalInputValue(),
+    classificacao: "PRENHA",
+    gestacaoValor: "",
+    gestacaoUnidade: "meses",
+    observacoes: "",
+    veterinario: "",
+    metodo: "PALPACAO",
+  };
+}
 
 function NovoContent() {
   const router = useRouter();
@@ -33,13 +44,12 @@ function NovoContent() {
   const queryClient = useQueryClient();
 
   const defaultAnimalId = searchParams.get("animal_id") ?? "";
-
-  const [animalId, setAnimalId] = useState(defaultAnimalId);
-  const [coberturaId, setCoberturaId] = useState("");
-  const [data, setData] = useState(nowDatetimeLocalInputValue());
-  const [resultado, setResultado] = useState("POSITIVO");
+  const [formState, setFormState] = useState<ToqueFormState>(() =>
+    emptyFormState(defaultAnimalId)
+  );
 
   const fazendaId = fazendaAtiva?.id ?? 0;
+  const precisaCobertura = classificacaoRequiresCobertura(formState.classificacao);
 
   const { data: animais = [] } = useQuery({
     queryKey: ["animais", "by-fazenda", fazendaId],
@@ -50,49 +60,56 @@ function NovoContent() {
   const { data: coberturasFazenda = [] } = useQuery({
     queryKey: ["coberturas", fazendaId],
     queryFn: () => listCoberturasByFazenda(fazendaId),
-    enabled: fazendaId > 0 && resultado === "POSITIVO",
+    enabled: fazendaId > 0 && precisaCobertura,
   });
 
   const coberturasDoAnimal = useMemo(() => {
-    const aid = Number(animalId);
+    const aid = Number(formState.animalId);
     if (!aid) return [];
     return coberturasFazenda
       .filter((c) => c.animal_id === aid)
       .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-  }, [animalId, coberturasFazenda]);
+  }, [formState.animalId, coberturasFazenda]);
 
   const coberturaSelectValue = useMemo(() => {
-    if (!coberturaId) {
+    if (!formState.coberturaId) {
       if (coberturasDoAnimal.length === 1) {
         return coberturasDoAnimal[0].id.toString();
       }
       return "";
     }
-    if (coberturasDoAnimal.some((c) => c.id.toString() === coberturaId)) {
-      return coberturaId;
+    if (
+      coberturasDoAnimal.some((c) => c.id.toString() === formState.coberturaId)
+    ) {
+      return formState.coberturaId;
     }
     return coberturasDoAnimal.length === 1
       ? coberturasDoAnimal[0].id.toString()
       : "";
-  }, [coberturaId, coberturasDoAnimal]);
+  }, [formState.coberturaId, coberturasDoAnimal]);
 
   const mutation = useMutation({
     mutationFn: () => {
-      const coberturaIdNum =
-        resultado === "POSITIVO" ? Number(coberturaSelectValue) : 0;
+      const coberturaIdNum = precisaCobertura ? Number(coberturaSelectValue) : 0;
+      const diasGestacao =
+        formState.classificacao === "PRENHA"
+          ? gestacaoToDias(formState.gestacaoValor, formState.gestacaoUnidade)
+          : null;
       return create({
-        animal_id: Number(animalId),
-        data: new Date(data).toISOString(),
-        resultado,
+        animal_id: Number(formState.animalId),
+        data: new Date(formState.data).toISOString(),
+        classificacao_operacional: formState.classificacao,
         fazenda_id: fazendaId,
         cobertura_id:
-          resultado === "POSITIVO" && coberturaIdNum > 0
-            ? coberturaIdNum
-            : null,
+          precisaCobertura && coberturaIdNum > 0 ? coberturaIdNum : null,
+        dias_gestacao_estimados: diasGestacao,
+        metodo: formState.metodo || null,
+        veterinario: formState.veterinario.trim() || null,
+        observacoes: formState.observacoes.trim() || null,
       });
     },
     onSuccess: async () => {
-      const aid = Number(animalId);
+      const aid = Number(formState.animalId);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["toques", fazendaId] }),
         queryClient.invalidateQueries({ queryKey: ["animais"] }),
@@ -110,11 +127,6 @@ function NovoContent() {
     },
   });
 
-  const precisaCobertura = resultado === "POSITIVO";
-  const submitDisabled =
-    !animalId ||
-    (precisaCobertura && !coberturaSelectValue && coberturasDoAnimal.length === 0);
-
   if (!fazendaAtiva) {
     return (
       <PageContainer variant="narrow">
@@ -126,7 +138,7 @@ function NovoContent() {
 
   return (
     <GestaoFormLayout
-      title="Registrar toque (diagnóstico de gestação)"
+      title="Registrar toque (diagnóstico)"
       backHref="/gestao/toques"
       submitLabel="Registrar"
       onSubmit={() => mutation.mutate()}
@@ -136,76 +148,19 @@ function NovoContent() {
           ? getApiErrorMessage(mutation.error, "Erro ao registrar.")
           : undefined
       }
-      submitDisabled={submitDisabled}
+      submitDisabled={toqueFormSubmitDisabled(
+        formState,
+        coberturaSelectValue,
+        coberturasDoAnimal.length
+      )}
     >
-      <AnimalSelect
+      <ToqueFormFields
         animais={animais}
-        value={animalId}
-        onValueChange={(v) => {
-          setAnimalId(v);
-          setCoberturaId("");
-        }}
-        label="Animal"
-        placeholder="Selecione"
-        femeasOnly
+        coberturasDoAnimal={coberturasDoAnimal}
+        coberturaSelectValue={coberturaSelectValue}
+        formState={formState}
+        setFormState={setFormState}
       />
-      <div className="space-y-2">
-        <Label htmlFor="toque-data-hora">Data/hora</Label>
-        <DateTimePickerPtBr
-          id="toque-data-hora"
-          value={data}
-          onChange={setData}
-          placeholder="Selecione data e hora"
-        />
-      </div>
-      <div>
-        <Label>Resultado</Label>
-        <Select value={resultado} onValueChange={setResultado}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o resultado" />
-          </SelectTrigger>
-          <SelectContent>
-            {RESULTADOS.map((r) => (
-              <SelectItem key={r} value={r}>
-                {r}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {precisaCobertura ? (
-        <div className="space-y-2">
-          <Label htmlFor="cobertura">Cobertura vinculada *</Label>
-          {coberturasDoAnimal.length === 0 ? (
-            <p className="text-sm text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg p-3 break-words">
-              Não há cobertura registrada para este animal. Registre uma
-              cobertura antes do toque positivo — é ela que abre a gestação
-              confirmada e atualiza o status para prenhe.
-            </p>
-          ) : (
-            <Select
-              value={coberturaSelectValue}
-              onValueChange={setCoberturaId}
-            >
-              <SelectTrigger id="cobertura">
-                <SelectValue placeholder="Selecione a cobertura" />
-              </SelectTrigger>
-              <SelectContent>
-                {coberturasDoAnimal.map((c) => (
-                  <SelectItem key={c.id} value={c.id.toString()}>
-                    {formatDatePtBr(c.data)} — {c.tipo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <p className="text-xs text-muted-foreground break-words">
-            Toque positivo confirma a gestação, define parto previsto e atualiza
-            busca, ficha do animal e resumo pecuário na home.
-          </p>
-        </div>
-      ) : null}
     </GestaoFormLayout>
   );
 }

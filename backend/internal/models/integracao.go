@@ -65,12 +65,15 @@ type IntegracaoIdempotencia struct {
 
 // ToqueLoteItem linha de importação em lote.
 type ToqueLoteItem struct {
-	Identificacao string  `json:"identificacao"`
-	Data          string  `json:"data"`
-	Resultado     string  `json:"resultado"`
-	CoberturaID   *int64  `json:"cobertura_id,omitempty"`
-	Veterinario   *string `json:"veterinario,omitempty"`
-	Observacoes   *string `json:"observacoes,omitempty"`
+	Identificacao            string  `json:"identificacao"`
+	Data                     string  `json:"data"`
+	Resultado                string  `json:"resultado"`
+	ClassificacaoOperacional *string `json:"classificacao_operacional,omitempty"`
+	CoberturaID              *int64  `json:"cobertura_id,omitempty"`
+	DiasGestacaoEstimados    *int    `json:"dias_gestacao_estimados,omitempty"`
+	Metodo                   *string `json:"metodo,omitempty"`
+	Veterinario              *string `json:"veterinario,omitempty"`
+	Observacoes              *string `json:"observacoes,omitempty"`
 }
 
 // ToqueLoteFalha erro por linha no lote.

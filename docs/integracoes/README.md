@@ -87,7 +87,7 @@ Depois das coberturas registadas, seguir o fluxo de toques (abaixo) para diagnó
 
 ## Fluxo recomendado — relatório veterinário (toques)
 
-1. Extrair do PDF (OCR/IA externa) uma lista: identificação, data, resultado (`POSITIVO` / `NEGATIVO` / `INCONCLUSIVO`), opcional `cobertura_id`, `veterinario`, `observacoes`.
+1. Extrair do PDF (OCR/IA externa) uma lista: identificação, data, e **ou** `resultado` (`POSITIVO` / `NEGATIVO` / `INCONCLUSIVO`) **ou** `classificacao_operacional` (`PRENHA`, `VAZIA`, `VAZIA_PEV`, `CLOE`, `CL`, `RETOQUE`). Opcionais: `cobertura_id`, `dias_gestacao_estimados`, `metodo`, `veterinario`, `observacoes`.
 2. (Opcional) Para cada identificação ambígua, `GET /animais/search?fazenda_id=&identificacao=`.
 3. Para toques positivos, `GET /coberturas?animal_id=` e escolher `cobertura_id`.
 4. Enviar lote com idempotência:
@@ -101,11 +101,17 @@ curl -s -X POST "$BASE/api/v1/integracoes/toques/lote" \
     "fazenda_id": 1,
     "itens": [
       {
-        "identificacao": "BR-042",
+        "identificacao": "148",
         "data": "2026-05-20T10:00:00Z",
-        "resultado": "POSITIVO",
-        "cobertura_id": 12,
-        "veterinario": "Dr. Silva"
+        "classificacao_operacional": "PRENHA",
+        "dias_gestacao_estimados": 150,
+        "observacoes": "5 MESES"
+      },
+      {
+        "identificacao": "71",
+        "data": "2026-05-20T10:00:00Z",
+        "classificacao_operacional": "VAZIA",
+        "observacoes": "PROTOCOLO"
       },
       {
         "identificacao": "BR-099",

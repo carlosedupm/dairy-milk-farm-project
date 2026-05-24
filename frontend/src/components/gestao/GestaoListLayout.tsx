@@ -11,24 +11,40 @@ type Props = {
   title: string;
   backHref: string;
   newHref?: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
   children: React.ReactNode;
 };
 
-export function GestaoListLayout({ title, backHref, newHref, children }: Props) {
+export function GestaoListLayout({
+  title,
+  backHref,
+  newHref,
+  secondaryHref,
+  secondaryLabel,
+  children,
+}: Props) {
   return (
     <PageContainer variant="default">
       <BackLink href={backHref}>Voltar à Gestão</BackLink>
       <Card className="mt-4">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between space-y-0 pb-4">
           <CardTitle>{title}</CardTitle>
-          {newHref && (
-            <Button asChild>
-              <Link href={newHref}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo
-              </Link>
-            </Button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {secondaryHref && secondaryLabel ? (
+              <Button variant="outline" asChild>
+                <Link href={secondaryHref}>{secondaryLabel}</Link>
+              </Button>
+            ) : null}
+            {newHref ? (
+              <Button asChild>
+                <Link href={newHref}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         </CardHeader>
         <CardContent>{children}</CardContent>
       </Card>

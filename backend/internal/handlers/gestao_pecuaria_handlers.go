@@ -194,10 +194,11 @@ func (h *CoberturaHandler) Delete(c *gin.Context) {
 type DiagnosticoGestacaoHandler struct {
 	svc        *service.DiagnosticoGestacaoService
 	fazendaSvc *service.FazendaService
+	animalSvc  *service.AnimalService
 }
 
-func NewDiagnosticoGestacaoHandler(svc *service.DiagnosticoGestacaoService, fazendaSvc *service.FazendaService) *DiagnosticoGestacaoHandler {
-	return &DiagnosticoGestacaoHandler{svc: svc, fazendaSvc: fazendaSvc}
+func NewDiagnosticoGestacaoHandler(svc *service.DiagnosticoGestacaoService, fazendaSvc *service.FazendaService, animalSvc *service.AnimalService) *DiagnosticoGestacaoHandler {
+	return &DiagnosticoGestacaoHandler{svc: svc, fazendaSvc: fazendaSvc, animalSvc: animalSvc}
 }
 func (h *DiagnosticoGestacaoHandler) GetByFazendaID(c *gin.Context) {
 	fazendaID, _ := strconv.ParseInt(c.Query("fazenda_id"), 10, 64)
@@ -208,7 +209,17 @@ func (h *DiagnosticoGestacaoHandler) GetByFazendaID(c *gin.Context) {
 	if !ValidateFazendaAccess(c, h.fazendaSvc, fazendaID) {
 		return
 	}
-	list, err := h.svc.GetByFazendaID(c.Request.Context(), fazendaID)
+	dataDe, err := parseFlexibleDateTime(c.Query("data_de"), false)
+	if err != nil {
+		response.ErrorValidation(c, "data_de invalida", err.Error())
+		return
+	}
+	dataAte, err := parseFlexibleDateTime(c.Query("data_ate"), true)
+	if err != nil {
+		response.ErrorValidation(c, "data_ate invalida", err.Error())
+		return
+	}
+	list, err := h.svc.GetByFazendaIDFiltered(c.Request.Context(), fazendaID, dataDe, dataAte)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao listar diagnosticos", err.Error())
 		return
@@ -217,15 +228,16 @@ func (h *DiagnosticoGestacaoHandler) GetByFazendaID(c *gin.Context) {
 }
 func (h *DiagnosticoGestacaoHandler) Create(c *gin.Context) {
 	var req struct {
-		AnimalID              int64   `json:"animal_id" binding:"required"`
-		Data                  string  `json:"data" binding:"required"`
-		Resultado             string  `json:"resultado" binding:"required"`
-		FazendaID             int64   `json:"fazenda_id" binding:"required"`
-		CoberturaID           *int64  `json:"cobertura_id"`
-		DiasGestacaoEstimados *int    `json:"dias_gestacao_estimados"`
-		Metodo                *string `json:"metodo"`
-		Veterinario           *string `json:"veterinario"`
-		Observacoes           *string `json:"observacoes"`
+		AnimalID                int64   `json:"animal_id" binding:"required"`
+		Data                    string  `json:"data" binding:"required"`
+		Resultado               string  `json:"resultado"`
+		ClassificacaoOperacional *string `json:"classificacao_operacional"`
+		FazendaID               int64   `json:"fazenda_id" binding:"required"`
+		CoberturaID             *int64  `json:"cobertura_id"`
+		DiasGestacaoEstimados   *int    `json:"dias_gestacao_estimados"`
+		Metodo                  *string `json:"metodo"`
+		Veterinario             *string `json:"veterinario"`
+		Observacoes             *string `json:"observacoes"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorValidation(c, "Dados invalidos", err.Error())
@@ -239,21 +251,42 @@ func (h *DiagnosticoGestacaoHandler) Create(c *gin.Context) {
 		response.ErrorValidation(c, "data invalida", err.Error())
 		return
 	}
-	d := &models.DiagnosticoGestacao{AnimalID: req.AnimalID, Data: t, Resultado: req.Resultado, FazendaID: req.FazendaID, CoberturaID: req.CoberturaID, DiasGestacaoEstimados: req.DiasGestacaoEstimados, Metodo: req.Metodo, Veterinario: req.Veterinario, Observacoes: req.Observacoes}
+	d := &models.DiagnosticoGestacao{
+		AnimalID: req.AnimalID, Data: t, Resultado: req.Resultado, FazendaID: req.FazendaID,
+		ClassificacaoOperacional: req.ClassificacaoOperacional,
+		CoberturaID: req.CoberturaID, DiasGestacaoEstimados: req.DiasGestacaoEstimados,
+		Metodo: req.Metodo, Veterinario: req.Veterinario, Observacoes: req.Observacoes,
+	}
 	if actorID, ok := GetActorUserID(c); ok {
 		d.CreatedBy = &actorID
 	}
 	if err := h.svc.Create(c.Request.Context(), d); err != nil {
-		switch {
-		case errors.Is(err, service.ErrToquePositivoSemCobertura),
-			errors.Is(err, service.ErrToquePositivoGestacaoAtiva):
-			response.ErrorValidation(c, err.Error(), nil)
-		default:
-			response.ErrorInternal(c, "Erro ao registrar diagnostico", err.Error())
-		}
+		mapToqueError(c, err)
 		return
 	}
 	response.SuccessCreated(c, d, "Diagnostico registrado")
+}
+
+func (h *DiagnosticoGestacaoHandler) CreateLote(c *gin.Context) {
+	var req struct {
+		FazendaID int64                  `json:"fazenda_id" binding:"required"`
+		Itens     []models.ToqueLoteItem `json:"itens" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorValidation(c, "Dados invalidos", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, req.FazendaID) {
+		return
+	}
+	actorID, _ := GetActorUserID(c)
+	loteSvc := service.NewIntegracaoToqueLoteService(h.animalSvc, h.svc, []int64{req.FazendaID}, actorID)
+	result, err := loteSvc.Process(c.Request.Context(), req.FazendaID, req.Itens)
+	if err != nil {
+		response.ErrorForbidden(c, err.Error())
+		return
+	}
+	response.SuccessOK(c, result, "Lote processado")
 }
 
 // GestacaoHandler

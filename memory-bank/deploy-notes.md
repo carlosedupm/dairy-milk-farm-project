@@ -363,9 +363,16 @@ Com a configuração atual (Postgres **trust** + **tmpfs**), isso não deve ocor
 
 Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são apenas para setups manuais (ex.: Postgres com volume persistente no host).
 
+### Migration 26 — classificação operacional de toques
+
+- **Arquivo**: `backend/migrations/26_add_classificacao_operacional_toques.up.sql`
+- **Efeito**: coluna `classificacao_operacional` em `diagnosticos_gestacao` (valores `PRENHA`, `VAZIA`, `VAZIA_PEV`, `CLOE`, `CL`, `RETOQUE`).
+- **Deploy**: migração roda no startup do backend (golang-migrate); sem variáveis de ambiente adicionais.
+- **Rollback**: `.down.sql` remove a coluna (apenas se necessário em ambiente de teste).
+
 ---
 
-**Última atualização**: 2026-05-21 (integrações M2M: rate limit opcional; URLs OpenAPI/Swagger em produção)
+**Última atualização**: 2026-05-24 (migration 26 — classificação operacional de toques)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

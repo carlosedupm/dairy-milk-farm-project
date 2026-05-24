@@ -50,11 +50,11 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ### BR-ACESSO-015 — FUNCIONARIO: produção e toques no curral
 
-- **Enunciado**: `FUNCIONARIO` pode **registrar produção de leite** (`POST /api/v1/producao`) e **toques** (`/api/v1/toques*`), fechando o ciclo cobertura → diagnóstico → ordenha no campo.
+- **Enunciado**: `FUNCIONARIO` pode **registrar produção de leite** (`POST /api/v1/producao`) e **toques** (`POST /api/v1/toques`, `POST /api/v1/toques/lote`), fechando o ciclo cobertura → diagnóstico → ordenha no campo.
 - **Escopo**: API e rotas UI `/producao/novo`, `/gestao/toques*`.
 - **Perfis / permissões**: `FUNCIONARIO`; demais perfis inalterados.
 - **Efeito**: bloqueio mantido em `PUT/DELETE` de produção, gestações, lactações e assistente.
-- **Implementação**: `perfil_access.go` (`toques` em `funcionarioGestaoPath`, `POST /api/v1/producao`); `appAccess.ts` (`/producao/novo`, `/gestao/toques`); `Dashboard.tsx` atalho produção.
+- **Implementação**: `perfil_access.go` (`toques` em `funcionarioGestaoPath`, incl. `POST /api/v1/toques/lote`; `POST /api/v1/producao`); `appAccess.ts` (`/producao/novo`, `/gestao/toques`, `/gestao/toques/lote`); `Dashboard.tsx` atalho produção.
 - **Estado**: Implementado.
 
 ### BR-ACESSO-004 — Folgas e endpoints auxiliares mantidos para FUNCIONARIO
@@ -166,4 +166,4 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ---
 
-**Última atualização**: 2026-05-18 (BR-ACESSO-002: `GET|POST /api/v1/crias*` para FUNCIONARIO no fluxo de partos)
+**Última atualização**: 2026-05-24 (BR-ACESSO-015: `POST /api/v1/toques/lote` para FUNCIONARIO)

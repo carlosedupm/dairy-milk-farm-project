@@ -98,13 +98,16 @@ func (s *IntegracaoToqueLoteService) processOne(ctx context.Context, fazendaID i
 		return nil, &models.ToqueLoteFalha{Linha: linha, Identificacao: ident, Code: CodeDataInvalida, Message: "data invalida (use RFC3339)"}
 	}
 	d := &models.DiagnosticoGestacao{
-		AnimalID:    matched[0].ID,
-		Data:        t,
-		Resultado:   item.Resultado,
-		FazendaID:   fazendaID,
-		CoberturaID: item.CoberturaID,
-		Veterinario: item.Veterinario,
-		Observacoes: item.Observacoes,
+		AnimalID:                 matched[0].ID,
+		Data:                     t,
+		Resultado:                item.Resultado,
+		ClassificacaoOperacional: item.ClassificacaoOperacional,
+		FazendaID:                fazendaID,
+		CoberturaID:              item.CoberturaID,
+		DiasGestacaoEstimados:    item.DiasGestacaoEstimados,
+		Metodo:                   item.Metodo,
+		Veterinario:              item.Veterinario,
+		Observacoes:              item.Observacoes,
 	}
 	if s.actorUserID > 0 {
 		uid := s.actorUserID
@@ -120,6 +123,11 @@ func (s *IntegracaoToqueLoteService) processOne(ctx context.Context, fazendaID i
 			code = CodeToqueGestacaoAtiva
 		case errors.Is(err, ErrAnimalNotFound):
 			code = CodeAnimalNaoEncontrado
+		case errors.Is(err, ErrResultadoOuClassificacaoObrigatorio),
+			errors.Is(err, ErrClassificacaoOperacionalInvalida),
+			errors.Is(err, ErrMetodoDiagnosticoInvalido),
+			errors.Is(err, models.ErrClassificacaoResultadoInconsistente):
+			code = CodeResultadoInvalido
 		}
 		return nil, &models.ToqueLoteFalha{Linha: linha, Identificacao: ident, Code: code, Message: msg}
 	}

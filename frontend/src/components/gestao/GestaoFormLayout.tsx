@@ -36,6 +36,7 @@ export function GestaoFormLayout({
         <CardContent className="space-y-5">
           {children}
           <Button
+            size="lg"
             onClick={onSubmit}
             disabled={submitDisabled || isPending}
             className="min-h-[44px]"
@@ -43,7 +44,7 @@ export function GestaoFormLayout({
             {isPending ? "Salvando…" : submitLabel}
           </Button>
           {error && (
-            <p className="text-destructive text-sm">{error}</p>
+            <p className="text-destructive text-base">{error}</p>
           )}
         </CardContent>
       </Card>
