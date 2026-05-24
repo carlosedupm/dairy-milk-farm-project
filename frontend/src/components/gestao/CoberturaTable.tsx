@@ -24,6 +24,7 @@ import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog"
 type Props = {
   items: Cobertura[];
   fazendaId: number | undefined;
+  hasActiveFilters?: boolean;
 };
 
 function reprodutorLabel(
@@ -39,7 +40,11 @@ function reprodutorLabel(
   return "—";
 }
 
-export function CoberturaTable({ items, fazendaId }: Props) {
+export function CoberturaTable({
+  items,
+  fazendaId,
+  hasActiveFilters = false,
+}: Props) {
   const queryClient = useQueryClient();
   const animaisMap = useAnimaisMap(fazendaId);
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
@@ -61,7 +66,11 @@ export function CoberturaTable({ items, fazendaId }: Props) {
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>
+      <p className="py-8 text-center text-muted-foreground">
+        {hasActiveFilters
+          ? "Nenhuma cobertura encontrada com os filtros selecionados."
+          : "Nenhum registro."}
+      </p>
     );
   }
 
