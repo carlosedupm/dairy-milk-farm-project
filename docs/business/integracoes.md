@@ -26,7 +26,7 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 
 ### BR-INTEG-003 — Escopo por permissão
 
-- **Enunciado**: Cada operação exige scope declarado (`animais:read`, `toques:write`, `coberturas:read`).
+- **Enunciado**: Cada operação exige scope declarado (`animais:read`, `toques:write`, `coberturas:read`, `coberturas:write`).
 - **Efeito**: bloqueio 403 sem scope.
 - **Estado**: implementado.
 
@@ -39,15 +39,16 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 ### BR-INTEG-005 — Idempotência
 
 - **Enunciado**: Header `Idempotency-Key` (ou campo `idempotency_key` no body do lote) com o mesmo hash de body devolve a resposta armazenada; hash diferente → 409.
-- **Efeito**: evita duplicar toques em reenvio do mesmo relatório.
+- **Efeito**: evita duplicar toques ou coberturas em reenvio do mesmo relatório/importação.
+- **Implementação**: `POST /api/v1/integracoes/toques`, `POST /toques/lote`, `POST /coberturas`, `POST /coberturas/lote`.
 - **Estado**: implementado.
 
 ### BR-INTEG-006 — Lote com sucesso parcial
 
-- **Enunciado**: `POST /api/v1/integracoes/toques/lote` processa linha a linha; falhas numa linha não revertem linhas já gravadas na mesma requisição.
-- **Efeito**: resposta com `total`, `sucesso`, `falhas[]`, `toques_criados[]`; HTTP 200 quando a requisição foi processada.
+- **Enunciado**: `POST /api/v1/integracoes/toques/lote` e `POST /api/v1/integracoes/coberturas/lote` processam linha a linha; falhas numa linha não revertem linhas já gravadas na mesma requisição.
+- **Efeito**: resposta com `total`, `sucesso`, `falhas[]` e lista de registos criados (`toques_criados[]` ou `coberturas_criadas[]`); HTTP 200 quando a requisição foi processada.
 - **Estado**: implementado.
 
 ---
 
-**Última atualização**: 2026-05-21
+**Última atualização**: 2026-05-23

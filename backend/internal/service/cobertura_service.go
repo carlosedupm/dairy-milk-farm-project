@@ -14,6 +14,16 @@ var ErrCoberturaNotFound = errors.New("cobertura nao encontrada")
 // ErrCoberturaTemVinculos impede exclusão quando há gestação ou diagnóstico ligados.
 var ErrCoberturaTemVinculos = errors.New("cobertura possui gestacao ou diagnostico vinculado")
 
+var (
+	ErrCoberturaCamposObrigatorios   = errors.New("animal_id, fazenda_id e tipo sao obrigatorios")
+	ErrCoberturaTipoInvalido         = errors.New("tipo de cobertura invalido")
+	ErrCoberturaAnimalFazendaDiferente = errors.New("animal deve ser da mesma fazenda")
+	ErrCoberturaApenasFemea          = errors.New("apenas femeas podem ter cobertura")
+	ErrCoberturaReprodutorObrigatorio = errors.New("para monta natural, informe o reprodutor (touro/boi) ou touro_info")
+	ErrCoberturaReprodutorNaoEncontrado = errors.New("reprodutor (touro/boi) nao encontrado")
+	ErrCoberturaReprodutorInvalido   = errors.New("reprodutor invalido")
+)
+
 type CoberturaService struct {
 	repo                    *repository.CoberturaRepository
 	animalRepo              *repository.AnimalRepository
@@ -38,12 +48,12 @@ func NewCoberturaService(
 	}
 }
 
-func (s *CoberturaService) Create(ctx context.Context, c *models.Cobertura) error {
+func (s *CoberturaService) validateCoberturaRegras(ctx context.Context, c *models.Cobertura) error {
 	if c.AnimalID <= 0 || c.FazendaID <= 0 || c.Tipo == "" {
-		return errors.New("animal_id, fazenda_id e tipo sao obrigatorios")
+		return ErrCoberturaCamposObrigatorios
 	}
 	if !models.IsValidTipoCobertura(c.Tipo) {
-		return errors.New("tipo de cobertura invalido")
+		return ErrCoberturaTipoInvalido
 	}
 	animal, err := s.animalRepo.GetByID(ctx, c.AnimalID)
 	if err != nil {
@@ -53,36 +63,41 @@ func (s *CoberturaService) Create(ctx context.Context, c *models.Cobertura) erro
 		return err
 	}
 	if animal.FazendaID != c.FazendaID {
-		return errors.New("animal deve ser da mesma fazenda")
+		return ErrCoberturaAnimalFazendaDiferente
 	}
 	if animal.Sexo != nil && *animal.Sexo != "F" {
-		return errors.New("apenas femeas podem ter cobertura")
+		return ErrCoberturaApenasFemea
 	}
-	// Para monta natural, exige reprodutor (touro_animal_id ou touro_info)
 	if c.Tipo == models.CoberturaTipoMontaNatural {
 		hasReprodutor := (c.TouroAnimalID != nil && *c.TouroAnimalID > 0) || (c.TouroInfo != nil && *c.TouroInfo != "")
 		if !hasReprodutor {
-			return errors.New("para monta natural, informe o reprodutor (touro/boi) ou touro_info")
+			return ErrCoberturaReprodutorObrigatorio
 		}
 	}
-	// Se touro_animal_id informado, validar que o animal existe, é macho e da mesma fazenda
 	if c.TouroAnimalID != nil && *c.TouroAnimalID > 0 {
 		touro, err := s.animalRepo.GetByID(ctx, *c.TouroAnimalID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return errors.New("reprodutor (touro/boi) nao encontrado")
+				return ErrCoberturaReprodutorNaoEncontrado
 			}
 			return err
 		}
 		if touro.FazendaID != c.FazendaID {
-			return errors.New("reprodutor deve ser da mesma fazenda")
+			return ErrCoberturaReprodutorInvalido
 		}
 		if touro.Sexo == nil || *touro.Sexo != "M" {
-			return errors.New("reprodutor deve ser macho")
+			return ErrCoberturaReprodutorInvalido
 		}
 		if touro.Categoria == nil || (*touro.Categoria != models.CategoriaTouro && *touro.Categoria != models.CategoriaBoi) {
-			return errors.New("reprodutor deve ser touro ou boi")
+			return ErrCoberturaReprodutorInvalido
 		}
+	}
+	return nil
+}
+
+func (s *CoberturaService) Create(ctx context.Context, c *models.Cobertura) error {
+	if err := s.validateCoberturaRegras(ctx, c); err != nil {
+		return err
 	}
 	if err := s.repo.Create(ctx, c); err != nil {
 		return err
@@ -114,49 +129,10 @@ func (s *CoberturaService) Update(ctx context.Context, c *models.Cobertura) erro
 	if c.ID <= 0 {
 		return errors.New("id invalido")
 	}
-	if !models.IsValidTipoCobertura(c.Tipo) {
-		return errors.New("tipo de cobertura invalido")
-	}
-	animal, err := s.animalRepo.GetByID(ctx, c.AnimalID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrAnimalNotFound
-		}
+	if err := s.validateCoberturaRegras(ctx, c); err != nil {
 		return err
 	}
-	if animal.FazendaID != c.FazendaID {
-		return errors.New("animal deve ser da mesma fazenda")
-	}
-	if animal.Sexo != nil && *animal.Sexo != "F" {
-		return errors.New("apenas femeas podem ter cobertura")
-	}
-	// Para monta natural, exige reprodutor (touro_animal_id ou touro_info)
-	if c.Tipo == models.CoberturaTipoMontaNatural {
-		hasReprodutor := (c.TouroAnimalID != nil && *c.TouroAnimalID > 0) || (c.TouroInfo != nil && *c.TouroInfo != "")
-		if !hasReprodutor {
-			return errors.New("para monta natural, informe o reprodutor (touro/boi) ou touro_info")
-		}
-	}
-	// Se touro_animal_id informado, validar que o animal existe, é macho e da mesma fazenda
-	if c.TouroAnimalID != nil && *c.TouroAnimalID > 0 {
-		touro, err := s.animalRepo.GetByID(ctx, *c.TouroAnimalID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return errors.New("reprodutor (touro/boi) nao encontrado")
-			}
-			return err
-		}
-		if touro.FazendaID != c.FazendaID {
-			return errors.New("reprodutor deve ser da mesma fazenda")
-		}
-		if touro.Sexo == nil || *touro.Sexo != "M" {
-			return errors.New("reprodutor deve ser macho")
-		}
-		if touro.Categoria == nil || (*touro.Categoria != models.CategoriaTouro && *touro.Categoria != models.CategoriaBoi) {
-			return errors.New("reprodutor deve ser touro ou boi")
-		}
-	}
-	_, err = s.repo.GetByID(ctx, c.ID)
+	_, err := s.repo.GetByID(ctx, c.ID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrCoberturaNotFound

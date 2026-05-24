@@ -446,6 +446,8 @@ func main() {
 						integ.GET("/animais/search", auth.RequireIntegrationScope(models.ScopeAnimaisRead), integracaoHandler.SearchAnimais)
 						integ.GET("/animais/:id", auth.RequireIntegrationScope(models.ScopeAnimaisRead), integracaoHandler.GetAnimal)
 						integ.GET("/coberturas", auth.RequireIntegrationScope(models.ScopeCoberturasRead), integracaoHandler.ListCoberturas)
+						integ.POST("/coberturas", auth.RequireIntegrationScope(models.ScopeCoberturasWrite), integracaoHandler.CreateCobertura)
+						integ.POST("/coberturas/lote", auth.RequireIntegrationScope(models.ScopeCoberturasWrite), integracaoHandler.CreateCoberturaLote)
 						integ.POST("/toques", auth.RequireIntegrationScope(models.ScopeToquesWrite), integracaoHandler.CreateToque)
 						integ.POST("/toques/lote", auth.RequireIntegrationScope(models.ScopeToquesWrite), integracaoHandler.CreateToqueLote)
 					}

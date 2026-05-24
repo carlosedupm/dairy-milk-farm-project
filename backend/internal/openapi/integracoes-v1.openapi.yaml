@@ -24,7 +24,7 @@ tags:
   - name: Animais
     description: Consulta de animais (scope animais:read)
   - name: Coberturas
-    description: Listagem de coberturas (scope coberturas:read)
+    description: Coberturas — leitura (coberturas:read) e registo (coberturas:write)
   - name: Toques
     description: Registo de diagnósticos de gestação (scope toques:write)
 
@@ -128,6 +128,74 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+    post:
+      tags: [Coberturas]
+      summary: Registar uma cobertura
+      description: |
+        Regista inseminação/monta na matriz. Regras de domínio (fêmea, reprodutor em monta natural, etc.) aplicam-se no servidor.
+        Header opcional `Idempotency-Key` para evitar duplicatas em reenvio.
+      operationId: createCobertura
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCoberturaRequest"
+      responses:
+        "201":
+          description: Cobertura criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessCobertura"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/integracoes/coberturas/lote:
+    post:
+      tags: [Coberturas]
+      summary: Registar coberturas em lote
+      description: |
+        Processa cada item independentemente (sucesso parcial). Matriz identificada por `identificacao` (brinco).
+        `Idempotency-Key` no header ou `idempotency_key` no body.
+      operationId: createCoberturaLote
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoberturaLoteRequest"
+      responses:
+        "200":
+          description: Lote processado (ver sucesso e falhas no body)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessCoberturaLote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/TooManyRequests"
 
@@ -323,7 +391,7 @@ components:
           type: array
           items:
             type: string
-            enum: [animais:read, toques:write, coberturas:read]
+            enum: [animais:read, toques:write, coberturas:read, coberturas:write]
         fazenda_ids:
           type: array
           items:
@@ -396,6 +464,10 @@ components:
               items:
                 $ref: "#/components/schemas/Animal"
 
+    TipoCobertura:
+      type: string
+      enum: [IA, IATF, MONTA_NATURAL, TE]
+
     Cobertura:
       type: object
       properties:
@@ -405,14 +477,97 @@ components:
         animal_id:
           type: integer
           format: int64
+        cio_id:
+          type: integer
+          format: int64
+          nullable: true
         tipo:
-          type: string
+          $ref: "#/components/schemas/TipoCobertura"
         data:
           type: string
           format: date-time
+        touro_animal_id:
+          type: integer
+          format: int64
+          nullable: true
+        touro_info:
+          type: string
+          nullable: true
+        semen_partida:
+          type: string
+          nullable: true
+        tecnico:
+          type: string
+          nullable: true
+        protocolo_id:
+          type: integer
+          format: int64
+          nullable: true
+        observacoes:
+          type: string
+          nullable: true
         fazenda_id:
           type: integer
           format: int64
+        created_by:
+          type: integer
+          format: int64
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateCoberturaRequest:
+      type: object
+      required: [animal_id, tipo, data, fazenda_id]
+      properties:
+        animal_id:
+          type: integer
+          format: int64
+        tipo:
+          $ref: "#/components/schemas/TipoCobertura"
+        data:
+          type: string
+          format: date-time
+          description: RFC3339, ex. 2026-05-20T10:00:00Z
+        fazenda_id:
+          type: integer
+          format: int64
+        cio_id:
+          type: integer
+          format: int64
+          nullable: true
+        touro_animal_id:
+          type: integer
+          format: int64
+          nullable: true
+        touro_info:
+          type: string
+          nullable: true
+        semen_partida:
+          type: string
+          nullable: true
+        tecnico:
+          type: string
+          nullable: true
+        protocolo_id:
+          type: integer
+          format: int64
+          nullable: true
+        observacoes:
+          type: string
+          nullable: true
+
+    SuccessCobertura:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Cobertura"
 
     SuccessCoberturaList:
       allOf:
@@ -423,6 +578,109 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Cobertura"
+
+    CoberturaLoteItem:
+      type: object
+      required: [identificacao, tipo, data]
+      properties:
+        identificacao:
+          type: string
+        tipo:
+          $ref: "#/components/schemas/TipoCobertura"
+        data:
+          type: string
+          format: date-time
+        cio_id:
+          type: integer
+          format: int64
+          nullable: true
+        touro_animal_id:
+          type: integer
+          format: int64
+          nullable: true
+        touro_info:
+          type: string
+          nullable: true
+        semen_partida:
+          type: string
+          nullable: true
+        tecnico:
+          type: string
+          nullable: true
+        protocolo_id:
+          type: integer
+          format: int64
+          nullable: true
+        observacoes:
+          type: string
+          nullable: true
+
+    CoberturaLoteRequest:
+      type: object
+      required: [fazenda_id, itens]
+      properties:
+        fazenda_id:
+          type: integer
+          format: int64
+        idempotency_key:
+          type: string
+          maxLength: 128
+        itens:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CoberturaLoteItem"
+
+    CoberturaLoteFalha:
+      type: object
+      properties:
+        linha:
+          type: integer
+        identificacao:
+          type: string
+        code:
+          type: string
+          enum:
+            - ANIMAL_NAO_ENCONTRADO
+            - ANIMAL_AMBIGUO
+            - TIPO_INVALIDO
+            - FEMEA_OBRIGATORIA
+            - REPRODUTOR_OBRIGATORIO
+            - REPRODUTOR_INVALIDO
+            - DATA_INVALIDA
+            - RESULTADO_INVALIDO
+            - ERRO_INTERNO
+        message:
+          type: string
+        animal_ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    CoberturaLoteResult:
+      type: object
+      properties:
+        total:
+          type: integer
+        sucesso:
+          type: integer
+        falhas:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoberturaLoteFalha"
+        coberturas_criadas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Cobertura"
+
+    SuccessCoberturaLote:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/CoberturaLoteResult"
 
     ResultadoToque:
       type: string

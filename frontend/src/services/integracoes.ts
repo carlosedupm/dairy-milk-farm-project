@@ -4,6 +4,7 @@ export const INTEGRATION_SCOPES = [
   { id: "animais:read", label: "Ler animais (busca e detalhe)" },
   { id: "toques:write", label: "Registar toques (unitário e lote)" },
   { id: "coberturas:read", label: "Listar coberturas por animal" },
+  { id: "coberturas:write", label: "Registar coberturas (unitário e lote)" },
 ] as const;
 
 export type IntegracaoCliente = {

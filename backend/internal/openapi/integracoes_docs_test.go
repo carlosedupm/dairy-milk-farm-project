@@ -26,6 +26,7 @@ func TestEmbeddedOpenAPISpec(t *testing.T) {
 		"/api/v1/integracoes/animais/search",
 		"/api/v1/integracoes/animais/{id}",
 		"/api/v1/integracoes/coberturas",
+		"/api/v1/integracoes/coberturas/lote",
 		"/api/v1/integracoes/toques",
 		"/api/v1/integracoes/toques/lote",
 	}

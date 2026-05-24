@@ -4,14 +4,15 @@ import "time"
 
 // Scopes de integração (v1).
 const (
-	ScopeAnimaisRead    = "animais:read"
-	ScopeToquesWrite    = "toques:write"
-	ScopeCoberturasRead = "coberturas:read"
+	ScopeAnimaisRead     = "animais:read"
+	ScopeToquesWrite     = "toques:write"
+	ScopeCoberturasRead  = "coberturas:read"
+	ScopeCoberturasWrite = "coberturas:write"
 )
 
 // ValidIntegrationScopes lista scopes permitidos na criação admin.
 func ValidIntegrationScopes() []string {
-	return []string{ScopeAnimaisRead, ScopeToquesWrite, ScopeCoberturasRead}
+	return []string{ScopeAnimaisRead, ScopeToquesWrite, ScopeCoberturasRead, ScopeCoberturasWrite}
 }
 
 func IsValidIntegrationScope(scope string) bool {
@@ -87,4 +88,35 @@ type ToqueLoteResultado struct {
 	Sucesso       int                        `json:"sucesso"`
 	Falhas        []ToqueLoteFalha           `json:"falhas"`
 	ToquesCriados []*DiagnosticoGestacao     `json:"toques_criados"`
+}
+
+// CoberturaLoteItem linha de importação em lote.
+type CoberturaLoteItem struct {
+	Identificacao string  `json:"identificacao"`
+	Tipo          string  `json:"tipo"`
+	Data          string  `json:"data"`
+	CioID         *int64  `json:"cio_id,omitempty"`
+	TouroAnimalID *int64  `json:"touro_animal_id,omitempty"`
+	TouroInfo     *string `json:"touro_info,omitempty"`
+	SemenPartida  *string `json:"semen_partida,omitempty"`
+	Tecnico       *string `json:"tecnico,omitempty"`
+	ProtocoloID   *int64  `json:"protocolo_id,omitempty"`
+	Observacoes   *string `json:"observacoes,omitempty"`
+}
+
+// CoberturaLoteFalha erro por linha no lote.
+type CoberturaLoteFalha struct {
+	Linha         int     `json:"linha"`
+	Identificacao string  `json:"identificacao"`
+	Code          string  `json:"code"`
+	Message       string  `json:"message"`
+	AnimalIDs     []int64 `json:"animal_ids,omitempty"`
+}
+
+// CoberturaLoteResultado resposta agregada do lote.
+type CoberturaLoteResultado struct {
+	Total             int                `json:"total"`
+	Sucesso           int                `json:"sucesso"`
+	Falhas            []CoberturaLoteFalha `json:"falhas"`
+	CoberturasCriadas []*Cobertura       `json:"coberturas_criadas"`
 }

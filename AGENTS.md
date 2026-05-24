@@ -43,7 +43,7 @@ Sistemas externos (ERP, laboratório, agentes de IA pós-visita veterinária) co
 | **Autenticação** | `Authorization: Bearer cmk_live_...` — **não** usar cookies/JWT da UI |
 | **Gestão** | UI admin `/admin/integracoes` (perfis ADMIN/DEVELOPER); API `/api/v1/admin/integracoes` |
 | **Rotas M2M** | Prefixo `/api/v1/integracoes/*` — `me`, busca/detalhe animal, coberturas, toque unitário, lote de toques |
-| **Scopes v1** | `animais:read`, `toques:write`, `coberturas:read` + fazendas vinculadas ao cliente |
+| **Scopes v1** | `animais:read`, `toques:write`, `coberturas:read`, `coberturas:write` + fazendas vinculadas ao cliente |
 | **Idempotência** | Header `Idempotency-Key` em escritas (especialmente lote de toques) |
 | **Docs públicas** | `GET /api/v1/integracoes/openapi.yaml`, `GET /api/v1/integracoes/docs` (Swagger UI — **sem** API key) |
 | **Regras de negócio** | `docs/business/integracoes.md` (`BR-INTEG-001`–`006`) |
@@ -226,5 +226,5 @@ Produção **Render + Vercel**; **Fase 2** (ciclo integrado + auditoria UI) fech
 
 ---
 
-**Última atualização**: 2026-05-21
+**Última atualização**: 2026-05-23
 **Versão**: 2.3 (API M2M integrações + OpenAPI/Swagger; referências `docs/integracoes` e `docs/openapi`)

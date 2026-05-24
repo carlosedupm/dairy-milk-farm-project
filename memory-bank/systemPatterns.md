@@ -405,7 +405,7 @@ Migrations: `23` (ciclo/leite), `24` (`animais.created_by`), `25` (`integracao_*
 ### **Integrações M2M (API externa)**
 
 - **Autenticação**: `Authorization: Bearer cmk_live_...` — middleware em `backend/internal/auth/integration.go`; **não** usa `RequirePerfilAPIAccess`.
-- **Autorização**: scopes (`animais:read`, `toques:write`, `coberturas:read`) + `ValidateFazendaIntegracao` em `handlers/access_helper.go`.
+- **Autorização**: scopes (`animais:read`, `toques:write`, `coberturas:read`, `coberturas:write`) + `ValidateFazendaIntegracao` em `handlers/access_helper.go`.
 - **Rotas**: `/api/v1/integracoes/*` — reutilizam `DiagnosticoGestacaoService`, `AnimalService`, `CoberturaService`.
 - **Idempotência**: header `Idempotency-Key` + tabela `integracao_idempotencia` (`IntegracaoService.CheckIdempotency`).
 - **Auditoria técnica**: `integracao_chamadas` via `middleware/integration_audit.go`.

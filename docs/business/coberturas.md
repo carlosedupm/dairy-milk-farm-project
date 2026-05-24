@@ -40,6 +40,10 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 - **Implementação**: `CoberturaService.Delete` (`ErrCoberturaTemVinculos`); `GestacaoRepository.ExistsByCoberturaID`, `DiagnosticoGestacaoRepository.ExistsByCoberturaID`; `CoberturaHandler.Delete`.
 - **Estado**: Implementado.
 
+### Canal de integração externa
+
+- Registo via `POST /api/v1/integracoes/coberturas` ou lote `POST /api/v1/integracoes/coberturas/lote` (scope `coberturas:write`) — ver [integracoes.md](./integracoes.md) (`BR-INTEG-*`). Listagem: `GET /api/v1/integracoes/coberturas?animal_id=` (scope `coberturas:read`).
+
 ---
 
-**Última atualização**: 2026-05-07
+**Última atualização**: 2026-05-23

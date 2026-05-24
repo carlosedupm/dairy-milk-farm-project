@@ -232,11 +232,149 @@ func (h *IntegracaoHandler) CreateToqueLote(c *gin.Context) {
 	response.SuccessOK(c, result, "Lote processado")
 }
 
+func (h *IntegracaoHandler) CreateCobertura(c *gin.Context) {
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		response.ErrorBadRequest(c, "body invalido", nil)
+		return
+	}
+	c.Request.Body = io.NopCloser(bytes.NewReader(body))
+
+	clientID, _ := auth.GetIntegrationClientID(c)
+	idemKey := c.GetHeader("Idempotency-Key")
+	reqHash := service.HashRequestBody(body)
+	if cached, status, conflict, err := h.integracaoSvc.CheckIdempotency(c.Request.Context(), clientID, idemKey, reqHash); err != nil {
+		response.ErrorInternal(c, "Erro de idempotencia", err.Error())
+		return
+	} else if conflict {
+		response.Error(c, http.StatusConflict, response.CodeConflict, "Idempotency-Key ja usada com payload diferente", nil)
+		return
+	} else if cached != nil {
+		var payload interface{}
+		_ = json.Unmarshal(cached, &payload)
+		response.Success(c, status, payload, "Resposta idempotente")
+		return
+	}
+
+	var req struct {
+		AnimalID      int64   `json:"animal_id" binding:"required"`
+		Tipo          string  `json:"tipo" binding:"required"`
+		Data          string  `json:"data" binding:"required"`
+		FazendaID     int64   `json:"fazenda_id" binding:"required"`
+		CioID         *int64  `json:"cio_id"`
+		TouroAnimalID *int64  `json:"touro_animal_id"`
+		TouroInfo     *string `json:"touro_info"`
+		SemenPartida  *string `json:"semen_partida"`
+		Tecnico       *string `json:"tecnico"`
+		ProtocoloID   *int64  `json:"protocolo_id"`
+		Observacoes   *string `json:"observacoes"`
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		response.ErrorValidation(c, "Dados invalidos", err.Error())
+		return
+	}
+	if !ValidateFazendaIntegracao(c, req.FazendaID) {
+		return
+	}
+	t, err := time.Parse(time.RFC3339, req.Data)
+	if err != nil {
+		response.ErrorValidation(c, "data invalida", err.Error())
+		return
+	}
+	cobertura := &models.Cobertura{
+		AnimalID: req.AnimalID, Tipo: req.Tipo, Data: t, FazendaID: req.FazendaID,
+		CioID: req.CioID, TouroAnimalID: req.TouroAnimalID, TouroInfo: req.TouroInfo,
+		SemenPartida: req.SemenPartida, Tecnico: req.Tecnico, ProtocoloID: req.ProtocoloID, Observacoes: req.Observacoes,
+	}
+	if actorID, ok := GetActorUserID(c); ok {
+		cobertura.CreatedBy = &actorID
+	}
+	if err := h.coberturaSvc.Create(c.Request.Context(), cobertura); err != nil {
+		mapCoberturaError(c, err)
+		return
+	}
+	wrap := response.SuccessResponse{Data: cobertura, Message: "Cobertura registrada", Timestamp: time.Now().UTC().Format(time.RFC3339)}
+	_ = h.integracaoSvc.SaveIdempotency(c.Request.Context(), clientID, idemKey, reqHash, http.StatusCreated, wrap)
+	response.SuccessCreated(c, cobertura, "Cobertura registrada")
+}
+
+func (h *IntegracaoHandler) CreateCoberturaLote(c *gin.Context) {
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		response.ErrorBadRequest(c, "body invalido", nil)
+		return
+	}
+	clientID, _ := auth.GetIntegrationClientID(c)
+	idemKey := c.GetHeader("Idempotency-Key")
+	if idemKey == "" {
+		var bodyMap struct {
+			IdempotencyKey *string `json:"idempotency_key"`
+		}
+		_ = json.Unmarshal(body, &bodyMap)
+		if bodyMap.IdempotencyKey != nil {
+			idemKey = *bodyMap.IdempotencyKey
+		}
+	}
+	reqHash := service.HashRequestBody(body)
+	if cached, status, conflict, err := h.integracaoSvc.CheckIdempotency(c.Request.Context(), clientID, idemKey, reqHash); err != nil {
+		response.ErrorInternal(c, "Erro de idempotencia", err.Error())
+		return
+	} else if conflict {
+		response.Error(c, http.StatusConflict, response.CodeConflict, "Idempotency-Key ja usada com payload diferente", nil)
+		return
+	} else if cached != nil {
+		var payload interface{}
+		_ = json.Unmarshal(cached, &payload)
+		response.Success(c, status, payload, "Resposta idempotente")
+		return
+	}
+
+	var req struct {
+		FazendaID      int64                     `json:"fazenda_id" binding:"required"`
+		IdempotencyKey *string                   `json:"idempotency_key"`
+		Itens          []models.CoberturaLoteItem `json:"itens" binding:"required"`
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		response.ErrorValidation(c, "Dados invalidos", err.Error())
+		return
+	}
+	if !ValidateFazendaIntegracao(c, req.FazendaID) {
+		return
+	}
+	actorID, _ := GetActorUserID(c)
+	loteSvc := service.NewIntegracaoCoberturaLoteService(h.animalSvc, h.coberturaSvc, auth.GetIntegrationFazendaIDs(c), actorID)
+	result, err := loteSvc.Process(c.Request.Context(), req.FazendaID, req.Itens)
+	if err != nil {
+		response.ErrorForbidden(c, err.Error())
+		return
+	}
+	wrap := response.SuccessResponse{Data: result, Message: "Lote processado", Timestamp: time.Now().UTC().Format(time.RFC3339)}
+	_ = h.integracaoSvc.SaveIdempotency(c.Request.Context(), clientID, idemKey, reqHash, http.StatusOK, wrap)
+	response.SuccessOK(c, result, "Lote processado")
+}
+
 func mapToqueError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, service.ErrToquePositivoSemCobertura), errors.Is(err, service.ErrToquePositivoGestacaoAtiva):
 		response.ErrorValidation(c, err.Error(), nil)
 	default:
 		response.ErrorInternal(c, "Erro ao registrar toque", err.Error())
+	}
+}
+
+func mapCoberturaError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, service.ErrAnimalNotFound):
+		response.ErrorNotFound(c, "Animal nao encontrado")
+	case errors.Is(err, service.ErrCoberturaCamposObrigatorios),
+		errors.Is(err, service.ErrCoberturaTipoInvalido),
+		errors.Is(err, service.ErrCoberturaAnimalFazendaDiferente),
+		errors.Is(err, service.ErrCoberturaApenasFemea),
+		errors.Is(err, service.ErrCoberturaReprodutorObrigatorio),
+		errors.Is(err, service.ErrCoberturaReprodutorNaoEncontrado),
+		errors.Is(err, service.ErrCoberturaReprodutorInvalido):
+		response.ErrorValidation(c, err.Error(), nil)
+	default:
+		response.ErrorInternal(c, "Erro ao registrar cobertura", err.Error())
 	}
 }
