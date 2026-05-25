@@ -28,7 +28,7 @@ function withConformidadePrefix(code: string | undefined, message: string): stri
   return `[${code}] ${message}`
 }
 
-const PREFIXED_CONFORMIDADE_RE = /^\[(INT-\d{3}|TMP-\d{3})\]\s*(.*)$/s
+const PREFIXED_CONFORMIDADE_RE = /^\[(INT-\d{3}|TMP-\d{3})\]\s*([\s\S]*)$/
 
 /** Separa código prefixado (ex. `[TMP-003] mensagem`) do texto exibido. */
 export function parsePrefixedConformidadeMessage(message: string): {
