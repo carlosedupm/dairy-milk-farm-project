@@ -40,6 +40,8 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const ALL = "__all__";
 
+export type RebanhoFiltro = "ativos" | "baixa" | "todos";
+
 export type AnimaisFilterFormState = {
   identificacao: string;
   categoria: string;
@@ -47,6 +49,7 @@ export type AnimaisFilterFormState = {
   status_saude: string;
   status_reprodutivo: string;
   lote_id: string;
+  rebanho: RebanhoFiltro;
 };
 
 type Props = {
@@ -109,6 +112,7 @@ export function countAdvancedFiltersActive(
   if (v.status_saude) n++;
   if (v.status_reprodutivo) n++;
   if (loteAtivo(v.lote_id)) n++;
+  if (v.rebanho && v.rebanho !== "ativos") n++;
   return n;
 }
 
@@ -220,6 +224,26 @@ function AnimaisAdvancedFiltersForm({
                 {STATUS_REPRODUTIVO_LABELS[s]}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label className="text-xs font-medium text-muted-foreground">
+          Rebanho
+        </Label>
+        <Select
+          value={values.rebanho}
+          onValueChange={(v) =>
+            set({ rebanho: v as RebanhoFiltro })
+          }
+        >
+          <SelectTrigger className="min-h-[44px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ativos">Só no rebanho</SelectItem>
+            <SelectItem value="baixa">Com baixa</SelectItem>
+            <SelectItem value="todos">Todos</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -476,6 +500,16 @@ export function AnimaisListToolbar({
                   onRemove={() => set({ lote_id: "" })}
                 />
               ) : null}
+              {values.rebanho !== "ativos" ? (
+                <ActiveChip
+                  label={
+                    values.rebanho === "baixa"
+                      ? "Com baixa"
+                      : "Todos (incl. baixa)"
+                  }
+                  onRemove={() => set({ rebanho: "ativos" })}
+                />
+              ) : null}
             </div>
           </div>
         )}
@@ -531,5 +565,6 @@ export function emptyAnimaisFilterForm(): AnimaisFilterFormState {
     status_saude: "",
     status_reprodutivo: "",
     lote_id: "",
+    rebanho: "ativos",
   };
 }

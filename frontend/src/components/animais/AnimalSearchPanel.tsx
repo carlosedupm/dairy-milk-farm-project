@@ -235,6 +235,18 @@ export function AnimalSearchPanel({
 
       {contexto ? (
         <div className="min-w-0 space-y-2 rounded-lg border p-4">
+          {contexto.fora_do_rebanho ? (
+            <div
+              className="rounded-md border border-muted-foreground/30 bg-muted/50 px-3 py-2 text-sm"
+              role="status"
+            >
+              <p className="font-medium">Animal fora do rebanho</p>
+              <p className="text-muted-foreground mt-1 break-words">
+                Consulta apenas — não registe novos eventos de ciclo ou
+                produção para este animal.
+              </p>
+            </div>
+          ) : null}
           {contexto.restricao_leite_ativa ? (
             <div
               className="rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100"

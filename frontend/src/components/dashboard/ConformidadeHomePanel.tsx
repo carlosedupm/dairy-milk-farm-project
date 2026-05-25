@@ -38,6 +38,11 @@ export function ConformidadeHomePanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 min-w-0">
+        <p className="text-xs text-muted-foreground">
+          Verificação do <span className="font-medium">rebanho ativo</span> (INT-001 a
+          INT-006). Animais com baixa e ciclo incompleto aparecem como{" "}
+          <span className="font-medium">INT-007</span>.
+        </p>
         {isLoading && (
           <p className="text-sm text-muted-foreground">A verificar integridade…</p>
         )}
@@ -53,8 +58,8 @@ export function ConformidadeHomePanel() {
               aria-hidden
             />
             <p>
-              Nenhuma anomalia detectada nas regras do ciclo (lactação, gestação,
-              produção e restrições de leite).
+              Nenhuma anomalia no rebanho ativo (lactação, gestação, produção e
+              restrições de leite).
             </p>
           </div>
         )}

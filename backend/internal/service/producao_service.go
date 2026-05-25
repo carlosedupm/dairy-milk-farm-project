@@ -49,6 +49,9 @@ func (s *ProducaoService) Create(ctx context.Context, producao *models.ProducaoL
 		}
 		return err
 	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return err
+	}
 
 	emLactacao, err := s.lactacaoRepo.ExistsAtivaNaFazenda(ctx, animal.FazendaID, producao.AnimalID)
 	if err != nil {

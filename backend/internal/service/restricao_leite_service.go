@@ -62,6 +62,9 @@ func (s *RestricaoLeiteService) Create(ctx context.Context, in CreateRestricaoLe
 	if animal.FazendaID != in.FazendaID {
 		return nil, ErrRestricaoLeiteAnimalFazenda
 	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return nil, err
+	}
 
 	emLactacao, err := s.lactacaoRepo.ExistsAtivaNaFazenda(ctx, in.FazendaID, in.AnimalID)
 	if err != nil {

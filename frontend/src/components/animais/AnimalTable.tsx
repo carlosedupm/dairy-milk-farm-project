@@ -10,10 +10,15 @@ import {
   STATUS_SAUDE_LABELS,
   getCategoriaLabel,
   ORIGEM_LABELS,
+  isAnimalForaDoRebanho,
+  MOTIVO_SAIDA_LABELS,
+  type MotivoSaida,
   type OrigemAquisicao,
   type Sexo,
   type StatusSaude,
 } from "@/services/animais";
+import { canRegistrarBaixa } from "@/config/appAccess";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -59,6 +64,8 @@ export function AnimalTable({
   showFazenda = false,
   canManage = true,
 }: Props) {
+  const { user } = useAuth();
+  const showBaixa = canRegistrarBaixa(user?.perfil);
   const queryClient = useQueryClient();
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
@@ -90,14 +97,43 @@ export function AnimalTable({
   return (
     <>
       <ResponsiveListContainer
-        mobile={items.map((a) => (
+        mobile={items.map((a) => {
+          const baixado = isAnimalForaDoRebanho(a);
+          const menuItems = [];
+          if (canManage) {
+            menuItems.push({
+              label: "Editar",
+              href: `/animais/${a.id}/editar`,
+            });
+          }
+          if (showBaixa && !baixado) {
+            menuItems.push({
+              label: "Registrar baixa",
+              href: `/animais/baixa?animal_id=${a.id}`,
+            });
+          }
+          if (canManage) {
+            menuItems.push({
+              label: "Excluir",
+              variant: "destructive" as const,
+              onSelect: () => setDeleteDialogOpenId(a.id),
+            });
+          }
+          return (
           <MobileListCard
             key={a.id}
             href={`/animais/${a.id}`}
             title={a.identificacao}
             subtitle={animalSubtitle(a)}
+            className={baixado ? "opacity-75" : undefined}
             meta={
               <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                {baixado && a.motivo_saida ? (
+                  <Badge variant="secondary">
+                    {MOTIVO_SAIDA_LABELS[a.motivo_saida as MotivoSaida] ??
+                      a.motivo_saida}
+                  </Badge>
+                ) : null}
                 {a.status_saude ? (
                   <Badge
                     variant={
@@ -113,24 +149,13 @@ export function AnimalTable({
               </div>
             }
             actions={
-              canManage ? (
-                <ListRowActionsMenu
-                  items={[
-                    {
-                      label: "Editar",
-                      href: `/animais/${a.id}/editar`,
-                    },
-                    {
-                      label: "Excluir",
-                      variant: "destructive",
-                      onSelect: () => setDeleteDialogOpenId(a.id),
-                    },
-                  ]}
-                />
+              menuItems.length > 0 ? (
+                <ListRowActionsMenu items={menuItems} />
               ) : null
             }
           />
-        ))}
+          );
+        })}
         desktop={
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <Table>

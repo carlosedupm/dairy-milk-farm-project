@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
-import { listByFazenda } from "@/services/animais";
+import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { get, update, type Cobertura } from "@/services/coberturas";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -15,6 +15,7 @@ import {
   coberturaFormSubmitDisabled,
   type CoberturaFormState,
 } from "@/components/gestao/CoberturaFormFields";
+import { GestaoEditarBloqueadoGuard } from "@/components/gestao/GestaoEditarBloqueadoGuard";
 import { getApiErrorMessage } from "@/lib/errors";
 import { toDatetimeLocalInputValue } from "@/lib/format";
 
@@ -40,11 +41,7 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState(() => initialFormState(cobertura));
 
-  const { data: animais = [] } = useQuery({
-    queryKey: ["animais", "by-fazenda", fazendaId],
-    queryFn: () => listByFazenda(fazendaId),
-    enabled: fazendaId > 0,
-  });
+  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -126,7 +123,17 @@ function EditarContent() {
   }
 
   return (
-    <CoberturaEditForm key={cobertura.id} cobertura={cobertura} fazendaId={fazendaAtiva.id} />
+    <GestaoEditarBloqueadoGuard
+      animalId={cobertura.animal_id}
+      fazendaId={fazendaAtiva.id}
+      backHref="/gestao/coberturas"
+    >
+      <CoberturaEditForm
+        key={cobertura.id}
+        cobertura={cobertura}
+        fazendaId={fazendaAtiva.id}
+      />
+    </GestaoEditarBloqueadoGuard>
   );
 }
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Cobertura } from "@/services/coberturas";
 import { remove } from "@/services/coberturas";
-import { useAnimaisMap } from "@/components/gestao/useAnimaisMap";
-import { Button } from "@/components/ui/button";
+import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
+import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
+import type { Animal } from "@/services/animais";
 import {
   Table,
   TableBody,
@@ -20,6 +20,8 @@ import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
+import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
+import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
 
 type Props = {
   items: Cobertura[];
@@ -27,14 +29,13 @@ type Props = {
   hasActiveFilters?: boolean;
 };
 
-function reprodutorLabel(
+function reprodutorText(
   item: Cobertura,
-  animaisMap: Map<number, string>
+  animaisById: Map<number, Animal>,
 ): string {
   if (item.touro_animal_id != null) {
-    return (
-      animaisMap.get(item.touro_animal_id) ?? `Animal ${item.touro_animal_id}`
-    );
+    const a = animaisById.get(item.touro_animal_id);
+    return a?.identificacao ?? `Animal ${item.touro_animal_id}`;
   }
   if (item.touro_info?.trim()) return item.touro_info;
   return "—";
@@ -46,7 +47,14 @@ export function CoberturaTable({
   hasActiveFilters = false,
 }: Props) {
   const queryClient = useQueryClient();
-  const animaisMap = useAnimaisMap(fazendaId);
+  const animalIds = useMemo(
+    () => items.flatMap((i) => [i.animal_id, i.touro_animal_id ?? 0]),
+    [items],
+  );
+  const { animaisById, isResolved: animaisResolved } = useGestaoAnimaisByIdMap(
+    fazendaId,
+    animalIds,
+  );
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
@@ -78,29 +86,51 @@ export function CoberturaTable({
     <>
       <ResponsiveListContainer
         mobile={items.map((item) => {
-          const animalLabel =
-            animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`;
+          const baixado =
+            animaisResolved &&
+            isGestaoRegistroAnimalBaixado(item.animal_id, animaisById);
           return (
             <MobileListCard
               key={item.id}
-              href={`/gestao/coberturas/${item.id}/editar`}
-              title={animalLabel}
+              href={
+                baixado
+                  ? `/animais/${item.animal_id}`
+                  : animaisResolved
+                    ? `/gestao/coberturas/${item.id}/editar`
+                    : undefined
+              }
+              title={
+                <AnimalGestaoLabel
+                  animalId={item.animal_id}
+                  animaisById={animaisById}
+                />
+              }
               subtitle={`${item.tipo} · ${formatDateTimePtBrOptional(item.data)}`}
               meta={
-                <span className="text-muted-foreground">
-                  Reprodutor: {reprodutorLabel(item, animaisMap)}
+                <span className="text-muted-foreground inline-flex flex-wrap items-center gap-1">
+                  Reprodutor:{" "}
+                  {item.touro_animal_id != null ? (
+                    <AnimalGestaoLabel
+                      animalId={item.touro_animal_id}
+                      animaisById={animaisById}
+                    />
+                  ) : (
+                    reprodutorText(item, animaisById)
+                  )}
                 </span>
               }
               actions={
-                <ListRowActionsMenu
-                  items={[
-                    {
-                      label: "Excluir",
-                      variant: "destructive",
-                      onSelect: () => setDeleteDialogOpenId(item.id),
-                    },
-                  ]}
-                />
+                baixado || !animaisResolved ? undefined : (
+                  <ListRowActionsMenu
+                    items={[
+                      {
+                        label: "Excluir",
+                        variant: "destructive",
+                        onSelect: () => setDeleteDialogOpenId(item.id),
+                      },
+                    ]}
+                  />
+                )
               }
             />
           );
@@ -121,31 +151,33 @@ export function CoberturaTable({
                 {items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
-                      {animaisMap.get(item.animal_id) ??
-                        `Animal ${item.animal_id}`}
+                      <AnimalGestaoLabel
+                        animalId={item.animal_id}
+                        animaisById={animaisById}
+                      />
                     </TableCell>
                     <TableCell>{item.tipo}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {reprodutorLabel(item, animaisMap)}
+                      {item.touro_animal_id != null ? (
+                        <AnimalGestaoLabel
+                          animalId={item.touro_animal_id}
+                          animaisById={animaisById}
+                        />
+                      ) : (
+                        reprodutorText(item, animaisById)
+                      )}
                     </TableCell>
                     <TableCell>
                       {formatDateTimePtBrOptional(item.data)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2 flex-wrap">
-                        <Button variant="outline" size="default" asChild>
-                          <Link href={`/gestao/coberturas/${item.id}/editar`}>
-                            Editar
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="default"
-                          onClick={() => setDeleteDialogOpenId(item.id)}
-                        >
-                          Excluir
-                        </Button>
-                      </div>
+                      <GestaoRegistroRowActions
+                        animalId={item.animal_id}
+                        animaisById={animaisById}
+                        animaisResolved={animaisResolved}
+                        editHref={`/gestao/coberturas/${item.id}/editar`}
+                        onDelete={() => setDeleteDialogOpenId(item.id)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

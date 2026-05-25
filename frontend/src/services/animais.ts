@@ -18,6 +18,7 @@ export type Animal = {
   data_entrada?: string | null
   data_saida?: string | null
   motivo_saida?: string | null
+  observacao_saida?: string | null
   origem_aquisicao?: OrigemAquisicao | null
   created_by?: number | null
   created_at: string
@@ -40,6 +41,7 @@ export type AnimalCreate = {
   data_entrada?: string | null
   data_saida?: string | null
   motivo_saida?: string | null
+  observacao_saida?: string | null
   origem_aquisicao?: OrigemAquisicao | null
 }
 
@@ -86,6 +88,14 @@ export type ProximaAcao = {
   href_path: string
 }
 
+export type SaidaResumo = {
+  data_saida: string
+  motivo_saida?: string
+  motivo_label?: string
+  observacao_saida?: string
+  registrado_por?: string
+}
+
 export type AnimalContexto = {
   animal: Animal
   resumo_producao: ProducaoResumo
@@ -95,6 +105,44 @@ export type AnimalContexto = {
   timeline?: CicloTimelineItem[]
   proximas_acoes?: ProximaAcao[]
   registrado_por_cadastro?: string
+  fora_do_rebanho?: boolean
+  saida_resumo?: SaidaResumo | null
+}
+
+export const MOTIVOS_SAIDA = ['MORTE', 'VENDA', 'DOACAO', 'DESCARTE'] as const
+export type MotivoSaida = (typeof MOTIVOS_SAIDA)[number]
+
+export const MOTIVO_SAIDA_LABELS: Record<MotivoSaida, string> = {
+  MORTE: 'Morte',
+  VENDA: 'Venda',
+  DOACAO: 'Doação',
+  DESCARTE: 'Descarte (saída do animal)',
+}
+
+export type RegistrarBaixaPayload = {
+  data_saida: string
+  motivo_saida: MotivoSaida
+  observacao_saida?: string | null
+}
+
+/** Data civil local YYYY-MM-DD (alinha a BR-BAIXA-002 / CURRENT_DATE no servidor). */
+function localCivilDateISO(d: Date = new Date()): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** Extrai YYYY-MM-DD de `data_saida` (aceita ISO completo da API). */
+export function dataSaidaCivilISO(dataSaida: string): string {
+  return dataSaida.slice(0, 10)
+}
+
+/** Animal com data_saida no passado ou hoje (fora do rebanho operacional). */
+export function isAnimalForaDoRebanho(animal: Pick<Animal, 'data_saida'>): boolean {
+  if (!animal.data_saida) return false
+  const saida = dataSaidaCivilISO(animal.data_saida)
+  return saida <= localCivilDateISO()
 }
 
 // Origem de aquisição (nascido na propriedade vs comprado)
@@ -200,6 +248,10 @@ export type AnimaisListParams = {
   status_saude?: string
   lote_id?: number
   status_reprodutivo?: string
+  /** true (default): só no rebanho; false: incluir baixados */
+  no_rebanho?: boolean
+  /** ativos | baixa | todos */
+  rebanho?: string
 }
 
 function appendAnimaisListParams(
@@ -218,6 +270,9 @@ function appendAnimaisListParams(
   if (p.status_saude) sp.set('status_saude', p.status_saude)
   if (p.lote_id != null && p.lote_id > 0) sp.set('lote_id', String(p.lote_id))
   if (p.status_reprodutivo) sp.set('status_reprodutivo', p.status_reprodutivo)
+  if (p.rebanho) sp.set('rebanho', p.rebanho)
+  else if (p.no_rebanho === false) sp.set('no_rebanho', 'false')
+  else if (p.no_rebanho === true) sp.set('no_rebanho', 'true')
 }
 
 /** Listagem paginada (fazendas do usuário; `fazenda_id` opcional para filtrar). */
@@ -258,11 +313,39 @@ export function coerceAnimaisList(payload: unknown): Animal[] {
   return []
 }
 
-export async function listByFazenda(fazendaId: number): Promise<Animal[]> {
+export async function listByFazenda(
+  fazendaId: number,
+  options?: { no_rebanho?: boolean }
+): Promise<Animal[]> {
+  const sp = new URLSearchParams()
+  // Backend trata ausência de no_rebanho como true; enviar explicitamente false para incluir baixados.
+  const somenteNoRebanho = options?.no_rebanho !== false
+  sp.set('no_rebanho', somenteNoRebanho ? 'true' : 'false')
   const { data } = await api.get<ApiResponse<AnimaisListPayload>>(
-    `/api/v1/fazendas/${fazendaId}/animais`,
+    `/api/v1/fazendas/${fazendaId}/animais?${sp.toString()}`,
   )
   return coerceAnimaisList(data.data)
+}
+
+export async function registrarBaixa(
+  id: number,
+  payload: RegistrarBaixaPayload
+): Promise<Animal> {
+  const { data } = await api.post<ApiResponse<Animal>>(
+    `/api/v1/animais/${id}/baixa`,
+    payload
+  )
+  if (!data.data) throw new Error('Resposta inválida')
+  return data.data
+}
+
+export async function reverterBaixa(id: number): Promise<Animal> {
+  const { data } = await api.post<ApiResponse<Animal>>(
+    `/api/v1/animais/${id}/baixa/reverter`,
+    {}
+  )
+  if (!data.data) throw new Error('Resposta inválida')
+  return data.data
 }
 
 /** Listagem paginada por fazenda (use query `limit` na API). */

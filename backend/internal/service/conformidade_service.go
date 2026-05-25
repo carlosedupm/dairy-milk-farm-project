@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/ceialmilk/api/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -25,6 +26,9 @@ func NewConformidadeService(db *pgxpool.Pool) *ConformidadeService {
 	return &ConformidadeService{db: db}
 }
 
+// noRebanhoA fragmento AND para checks INT-001 a INT-006 (BR-AUDIT-009).
+var noRebanhoA = " AND " + repository.SQLNoRebanhoFor("a")
+
 // ListByFazenda executa checks read-only de integridade (BR-CICLO, BR-LEITE, BR-TOQUES).
 func (s *ConformidadeService) ListByFazenda(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
 	var out []ConformidadeAnomalia
@@ -35,6 +39,7 @@ func (s *ConformidadeService) ListByFazenda(ctx context.Context, fazendaID int64
 		s.checkRestricaoSemLactacao,
 		s.checkPrenheSemGestacaoConfirmada,
 		s.checkToquePositivoSemCobertura,
+		s.checkAnimalBaixadoComCicloAberto,
 	}
 	for _, fn := range checks {
 		items, err := fn(ctx, fazendaID)
@@ -50,13 +55,13 @@ func (s *ConformidadeService) ListByFazenda(ctx context.Context, fazendaID int64
 }
 
 func (s *ConformidadeService) checkMultiplasLactacoesAtivas(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
-	const q = `
+	q := `
 		SELECT a.id, a.identificacao
 		FROM lactacoes l
 		INNER JOIN animais a ON a.id = l.animal_id
 		WHERE l.fazenda_id = $1
 		  AND l.data_fim IS NULL
-		  AND (l.status IS NULL OR l.status = 'EM_ANDAMENTO')
+		  AND (l.status IS NULL OR l.status = 'EM_ANDAMENTO')` + noRebanhoA + `
 		GROUP BY a.id, a.identificacao
 		HAVING COUNT(*) > 1`
 	return s.scanAnimalRows(ctx, q, fazendaID, "INT-001", "ALTA",
@@ -64,11 +69,11 @@ func (s *ConformidadeService) checkMultiplasLactacoesAtivas(ctx context.Context,
 }
 
 func (s *ConformidadeService) checkProducaoSemLactacaoAtiva(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
-	const q = `
+	q := `
 		SELECT DISTINCT a.id, a.identificacao
 		FROM producao_leite p
 		INNER JOIN animais a ON a.id = p.animal_id
-		WHERE a.fazenda_id = $1
+		WHERE a.fazenda_id = $1` + noRebanhoA + `
 		  AND NOT EXISTS (
 		    SELECT 1 FROM lactacoes l
 		    WHERE l.animal_id = p.animal_id
@@ -82,12 +87,12 @@ func (s *ConformidadeService) checkProducaoSemLactacaoAtiva(ctx context.Context,
 }
 
 func (s *ConformidadeService) checkGestacaoSemToquePositivo(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
-	const q = `
+	q := `
 		SELECT a.id, a.identificacao
 		FROM gestacoes g
 		INNER JOIN animais a ON a.id = g.animal_id
 		WHERE g.fazenda_id = $1
-		  AND g.status = 'CONFIRMADA'
+		  AND g.status = 'CONFIRMADA'` + noRebanhoA + `
 		  AND NOT EXISTS (
 		    SELECT 1 FROM diagnosticos_gestacao d
 		    WHERE d.animal_id = g.animal_id
@@ -99,12 +104,12 @@ func (s *ConformidadeService) checkGestacaoSemToquePositivo(ctx context.Context,
 }
 
 func (s *ConformidadeService) checkRestricaoSemLactacao(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
-	const q = `
+	q := `
 		SELECT a.id, a.identificacao
 		FROM restricoes_leite r
 		INNER JOIN animais a ON a.id = r.animal_id
 		WHERE r.fazenda_id = $1
-		  AND r.status = 'AGUARDANDO_LAB'
+		  AND r.status = 'AGUARDANDO_LAB'` + noRebanhoA + `
 		  AND NOT EXISTS (
 		    SELECT 1 FROM lactacoes l
 		    WHERE l.animal_id = r.animal_id
@@ -117,11 +122,11 @@ func (s *ConformidadeService) checkRestricaoSemLactacao(ctx context.Context, faz
 }
 
 func (s *ConformidadeService) checkPrenheSemGestacaoConfirmada(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
-	const q = `
+	q := `
 		SELECT a.id, a.identificacao
 		FROM animais a
 		WHERE a.fazenda_id = $1
-		  AND a.status_reprodutivo = 'PRENHE'
+		  AND a.status_reprodutivo = 'PRENHE'` + noRebanhoA + `
 		  AND NOT EXISTS (
 		    SELECT 1 FROM gestacoes g
 		    WHERE g.animal_id = a.id
@@ -133,15 +138,42 @@ func (s *ConformidadeService) checkPrenheSemGestacaoConfirmada(ctx context.Conte
 }
 
 func (s *ConformidadeService) checkToquePositivoSemCobertura(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
-	const q = `
+	q := `
 		SELECT a.id, a.identificacao
 		FROM diagnosticos_gestacao d
 		INNER JOIN animais a ON a.id = d.animal_id
 		WHERE d.fazenda_id = $1
 		  AND d.resultado = 'POSITIVO'
-		  AND d.cobertura_id IS NULL`
+		  AND d.cobertura_id IS NULL` + noRebanhoA
 	return s.scanAnimalRows(ctx, q, fazendaID, "INT-006", "ALTA",
 		"Toque positivo sem cobertura vinculada (BR-TOQUES-002).")
+}
+
+func (s *ConformidadeService) checkAnimalBaixadoComCicloAberto(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
+	const q = `
+		SELECT DISTINCT a.id, a.identificacao
+		FROM animais a
+		WHERE a.fazenda_id = $1
+		  AND a.data_saida IS NOT NULL
+		  AND a.data_saida <= CURRENT_DATE
+		  AND (
+		    EXISTS (
+		      SELECT 1 FROM lactacoes l
+		      WHERE l.animal_id = a.id AND l.fazenda_id = $1
+		        AND l.data_fim IS NULL
+		        AND (l.status IS NULL OR l.status = 'EM_ANDAMENTO')
+		    )
+		    OR EXISTS (
+		      SELECT 1 FROM gestacoes g
+		      WHERE g.animal_id = a.id AND g.fazenda_id = $1 AND g.status = 'CONFIRMADA'
+		    )
+		    OR EXISTS (
+		      SELECT 1 FROM restricoes_leite r
+		      WHERE r.animal_id = a.id AND r.fazenda_id = $1 AND r.status = 'AGUARDANDO_LAB'
+		    )
+		  )`
+	return s.scanAnimalRows(ctx, q, fazendaID, "INT-007", "ALTA",
+		"Animal com baixa registrada mas lactação, gestação confirmada ou restrição de leite ainda aberta (BR-BAIXA-003 / reversão parcial).")
 }
 
 func (s *ConformidadeService) scanAnimalRows(
@@ -157,7 +189,6 @@ func (s *ConformidadeService) scanAnimalRows(
 	for rows.Next() {
 		var animalID int64
 		var ident string
-		// queries com COUNT extra ignoram coluna extra via Scan parcial — usar só 2 cols
 		if err := rows.Scan(&animalID, &ident); err != nil {
 			return nil, err
 		}

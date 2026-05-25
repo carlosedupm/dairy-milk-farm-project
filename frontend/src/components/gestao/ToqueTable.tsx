@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import type { DiagnosticoGestacao } from "@/services/toques";
-import { useAnimaisMap } from "@/components/gestao/useAnimaisMap";
+import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
+import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -45,7 +47,11 @@ function obsRowClass(obs: string): string {
 }
 
 export function ToqueTable({ items, fazendaId }: Props) {
-  const animaisMap = useAnimaisMap(fazendaId);
+  const animalIds = useMemo(
+    () => items.map((i) => i.animal_id),
+    [items],
+  );
+  const { animaisById } = useGestaoAnimaisByIdMap(fazendaId, animalIds);
 
   if (items.length === 0) {
     return (
@@ -56,14 +62,17 @@ export function ToqueTable({ items, fazendaId }: Props) {
   return (
     <ResponsiveListContainer
       mobile={items.map((item) => {
-        const animalLabel =
-          animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`;
         const obs = formatToqueObs(item);
         return (
           <MobileListCard
             key={item.id}
             href={`/animais/${item.animal_id}`}
-            title={animalLabel}
+            title={
+              <AnimalGestaoLabel
+                animalId={item.animal_id}
+                animaisById={animaisById}
+              />
+            }
             subtitle={formatDateTimePtBrOptional(item.data)}
             meta={
               <div className="space-y-1 min-w-0">
@@ -103,8 +112,10 @@ export function ToqueTable({ items, fazendaId }: Props) {
                     className={obs ? obsRowClass(obs) : undefined}
                   >
                     <TableCell className="font-medium">
-                      {animaisMap.get(item.animal_id) ??
-                        `Animal ${item.animal_id}`}
+                      <AnimalGestaoLabel
+                        animalId={item.animal_id}
+                        animaisById={animaisById}
+                      />
                     </TableCell>
                     <TableCell>
                       {formatDateTimePtBrOptional(item.data)}

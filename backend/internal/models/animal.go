@@ -21,8 +21,11 @@ type Animal struct {
 	DataEntrada       *time.Time `json:"data_entrada,omitempty" db:"data_entrada"`
 	DataSaida         *time.Time `json:"data_saida,omitempty" db:"data_saida"`
 	MotivoSaida       *string    `json:"motivo_saida,omitempty" db:"motivo_saida"`
-	OrigemAquisicao   *string    `json:"origem_aquisicao,omitempty" db:"origem_aquisicao"`
-	CreatedBy         *int64     `json:"created_by,omitempty" db:"created_by"`
+	ObservacaoSaida      *string `json:"observacao_saida,omitempty" db:"observacao_saida"`
+	BaixaRegistradoPor   *int64  `json:"baixa_registrado_por,omitempty" db:"baixa_registrado_por"`
+	BaixaRevertidoPor    *int64  `json:"baixa_revertido_por,omitempty" db:"baixa_revertido_por"`
+	OrigemAquisicao      *string `json:"origem_aquisicao,omitempty" db:"origem_aquisicao"`
+	CreatedBy            *int64  `json:"created_by,omitempty" db:"created_by"`
 	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
 }
@@ -176,4 +179,20 @@ func IsValidMotivoSaida(motivo string) bool {
 		}
 	}
 	return false
+}
+
+// IsForaDoRebanho indica se o animal já saiu do rebanho (data_saida <= hoje, data civil).
+func (a *Animal) IsForaDoRebanho() bool {
+	return IsDataSaidaEfetiva(a.DataSaida)
+}
+
+// IsDataSaidaEfetiva retorna true quando data_saida está preenchida e não é futura.
+func IsDataSaidaEfetiva(dataSaida *time.Time) bool {
+	if dataSaida == nil {
+		return false
+	}
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	sd := time.Date(dataSaida.Year(), dataSaida.Month(), dataSaida.Day(), 0, 0, 0, 0, dataSaida.Location())
+	return !sd.After(today)
 }

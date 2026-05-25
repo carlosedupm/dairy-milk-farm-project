@@ -78,9 +78,6 @@ export function AnimalForm({
   const [dataEntrada, setDataEntrada] = useState(
     initial?.data_entrada ? initial.data_entrada.slice(0, 10) : ""
   );
-  const [dataSaida, setDataSaida] = useState(
-    initial?.data_saida ? initial.data_saida.slice(0, 10) : ""
-  );
   const [sexo, setSexo] = useState<Sexo>((initial?.sexo as Sexo) ?? "F");
   const [statusSaude, setStatusSaude] = useState<StatusSaude>(
     (initial?.status_saude as StatusSaude) ?? "SAUDAVEL"
@@ -129,7 +126,6 @@ export function AnimalForm({
       payload.data_nascimento = null; // Limpar ao mudar para comprado
     }
     if (dataEntrada.trim()) payload.data_entrada = dataEntrada.trim();
-    if (dataSaida.trim()) payload.data_saida = dataSaida.trim();
 
     try {
       await onSubmit(payload);
@@ -248,16 +244,6 @@ export function AnimalForm({
                 id="dataEntrada"
                 value={dataEntrada || undefined}
                 onChange={(v) => setDataEntrada(v)}
-                placeholder="Selecione a data"
-                manualInput
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dataSaida">Data de saída</Label>
-              <DatePicker
-                id="dataSaida"
-                value={dataSaida || undefined}
-                onChange={(v) => setDataSaida(v)}
                 placeholder="Selecione a data"
                 manualInput
               />

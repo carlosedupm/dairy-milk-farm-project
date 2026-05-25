@@ -65,6 +65,9 @@ func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error 
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return errors.New("apenas femeas podem ter secagem")
 	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return err
+	}
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -98,20 +101,7 @@ func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error 
 }
 
 func (s *SecagemService) encerrarLactacaoAtivaSeExistirTx(ctx context.Context, tx pgx.Tx, sec *models.Secagem) error {
-	lact, err := s.lactacaoRepo.GetEmAndamentoByAnimalIDTx(ctx, tx, sec.AnimalID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-	fim := sec.DataSecagem
-	dias := diasLactacaoCivis(lact.DataInicio, fim)
-	st := models.LactacaoStatusEncerrada
-	lact.DataFim = &fim
-	lact.DiasLactacao = &dias
-	lact.Status = &st
-	return s.lactacaoRepo.UpdateTx(ctx, tx, lact)
+	return EncerrarLactacaoAtivaTx(ctx, tx, s.lactacaoRepo, sec.AnimalID, sec.DataSecagem)
 }
 
 func (s *SecagemService) GetByID(ctx context.Context, id int64) (*models.Secagem, error) {

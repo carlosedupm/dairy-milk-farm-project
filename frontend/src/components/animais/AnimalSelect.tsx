@@ -40,6 +40,8 @@ type Props = {
   femeasOnly?: boolean;
   /** Filtrar apenas touros e bois (para monta natural) */
   reprodutoresOnly?: boolean;
+  /** Excluir animais com baixa do rebanho */
+  semDataSaida?: boolean;
   id?: string;
 };
 
@@ -55,6 +57,7 @@ export function AnimalSelect({
   disabled = false,
   femeasOnly = false,
   reprodutoresOnly = false,
+  semDataSaida = false,
   id,
 }: Props) {
   const listboxId = useId();
@@ -80,8 +83,9 @@ export function AnimalSelect({
         query: debouncedQuery,
         femeasOnly,
         reprodutoresOnly,
+        semDataSaida,
       }),
-    [animaisList, debouncedQuery, femeasOnly, reprodutoresOnly],
+    [animaisList, debouncedQuery, femeasOnly, reprodutoresOnly, semDataSaida],
   );
 
   const visibleAnimais = useMemo(

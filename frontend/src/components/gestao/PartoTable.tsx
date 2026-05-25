@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Parto } from "@/services/partos";
 import { remove } from "@/services/partos";
-import { useAnimaisMap } from "@/components/gestao/useAnimaisMap";
-import { Button } from "@/components/ui/button";
+import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
+import {
+  animaisFazendaQueryKey,
+  useGestaoAnimaisByIdMap,
+} from "@/components/gestao/useAnimaisMap";
 import {
   Table,
   TableBody,
@@ -20,6 +22,8 @@ import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
+import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
+import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
 
 type Props = {
   items: Parto[];
@@ -28,7 +32,11 @@ type Props = {
 
 export function PartoTable({ items, fazendaId }: Props) {
   const queryClient = useQueryClient();
-  const animaisMap = useAnimaisMap(fazendaId);
+  const animalIds = useMemo(() => items.map((i) => i.animal_id), [items]);
+  const { animaisById, isResolved: animaisResolved } = useGestaoAnimaisByIdMap(
+    fazendaId,
+    animalIds,
+  );
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
@@ -39,7 +47,10 @@ export function PartoTable({ items, fazendaId }: Props) {
       queryClient.invalidateQueries({ queryKey: ["partos", fazendaId] });
       if (fazendaId != null && fazendaId > 0) {
         queryClient.invalidateQueries({
-          queryKey: ["animais", "by-fazenda", fazendaId],
+          queryKey: animaisFazendaQueryKey(fazendaId, "operacional"),
+        });
+        queryClient.invalidateQueries({
+          queryKey: animaisFazendaQueryKey(fazendaId, "todos"),
         });
         queryClient.invalidateQueries({
           queryKey: ["fazendas", fazendaId, "animais"],
@@ -65,13 +76,25 @@ export function PartoTable({ items, fazendaId }: Props) {
     <>
       <ResponsiveListContainer
         mobile={items.map((item) => {
-          const animalLabel =
-            animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`;
+          const baixado =
+            animaisResolved &&
+            isGestaoRegistroAnimalBaixado(item.animal_id, animaisById);
           return (
             <MobileListCard
               key={item.id}
-              href={`/gestao/partos/${item.id}/editar`}
-              title={animalLabel}
+              href={
+                baixado
+                  ? `/animais/${item.animal_id}`
+                  : animaisResolved
+                    ? `/gestao/partos/${item.id}/editar`
+                    : undefined
+              }
+              title={
+                <AnimalGestaoLabel
+                  animalId={item.animal_id}
+                  animaisById={animaisById}
+                />
+              }
               subtitle={formatDateTimePtBrOptional(item.data)}
               meta={
                 <span className="text-muted-foreground">
@@ -79,15 +102,17 @@ export function PartoTable({ items, fazendaId }: Props) {
                 </span>
               }
               actions={
-                <ListRowActionsMenu
-                  items={[
-                    {
-                      label: "Excluir",
-                      variant: "destructive",
-                      onSelect: () => setDeleteDialogOpenId(item.id),
-                    },
-                  ]}
-                />
+                baixado || !animaisResolved ? undefined : (
+                  <ListRowActionsMenu
+                    items={[
+                      {
+                        label: "Excluir",
+                        variant: "destructive",
+                        onSelect: () => setDeleteDialogOpenId(item.id),
+                      },
+                    ]}
+                  />
+                )
               }
             />
           );
@@ -107,8 +132,10 @@ export function PartoTable({ items, fazendaId }: Props) {
                 {items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
-                      {animaisMap.get(item.animal_id) ??
-                        `Animal ${item.animal_id}`}
+                      <AnimalGestaoLabel
+                        animalId={item.animal_id}
+                        animaisById={animaisById}
+                      />
                     </TableCell>
                     <TableCell>
                       {formatDateTimePtBrOptional(item.data)}
@@ -117,20 +144,13 @@ export function PartoTable({ items, fazendaId }: Props) {
                       {item.numero_crias}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2 flex-wrap">
-                        <Button variant="outline" size="default" asChild>
-                          <Link href={`/gestao/partos/${item.id}/editar`}>
-                            Editar
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="default"
-                          onClick={() => setDeleteDialogOpenId(item.id)}
-                        >
-                          Excluir
-                        </Button>
-                      </div>
+                      <GestaoRegistroRowActions
+                        animalId={item.animal_id}
+                        animaisById={animaisById}
+                        animaisResolved={animaisResolved}
+                        editHref={`/gestao/partos/${item.id}/editar`}
+                        onDelete={() => setDeleteDialogOpenId(item.id)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

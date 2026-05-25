@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
-import { listByFazenda } from "@/services/animais";
+import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { get, update, type Parto } from "@/services/partos";
 import { listByFazenda as listGestacoesByFazenda } from "@/services/gestacoes";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
@@ -19,6 +19,7 @@ import { getApiErrorMessage } from "@/lib/errors";
 import { toDatetimeLocalInputValue } from "@/lib/format";
 import { defaultCriaLinha } from "@/components/gestao/cria-constants";
 import { PartoEditCriasPanel } from "@/components/gestao/PartoEditCriasPanel";
+import { GestaoEditarBloqueadoGuard } from "@/components/gestao/GestaoEditarBloqueadoGuard";
 
 function initialFormState(parto: Parto): PartoFormState {
   return {
@@ -43,11 +44,7 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState(() => initialFormState(parto));
 
-  const { data: animais = [] } = useQuery({
-    queryKey: ["animais", "by-fazenda", fazendaId],
-    queryFn: () => listByFazenda(fazendaId),
-    enabled: fazendaId > 0,
-  });
+  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
   const { data: gestacoes = [] } = useQuery({
     queryKey: ["gestacoes", fazendaId],
     queryFn: () => listGestacoesByFazenda(fazendaId),
@@ -103,6 +100,7 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
         fazendaId={fazendaId}
         numeroCriasText={formState.numeroCrias}
         racaMae={racaMae || undefined}
+        matrizAnimalId={parto.animal_id}
       />
     </GestaoFormLayout>
   );
@@ -146,7 +144,15 @@ function EditarContent() {
     );
   }
 
-  return <PartoEditForm key={parto.id} parto={parto} fazendaId={fazendaAtiva.id} />;
+  return (
+    <GestaoEditarBloqueadoGuard
+      animalId={parto.animal_id}
+      fazendaId={fazendaAtiva.id}
+      backHref="/gestao/partos"
+    >
+      <PartoEditForm key={parto.id} parto={parto} fazendaId={fazendaAtiva.id} />
+    </GestaoEditarBloqueadoGuard>
+  );
 }
 
 export default function EditarPage() {

@@ -9,6 +9,7 @@ Documento **mestre** do domínio pecuário: como o CeialMilk deve acompanhar a v
 | [memory-bank/projectbrief.md](../../memory-bank/projectbrief.md) | Objetivos e fases do projeto |
 | [memory-bank/productContext.md](../../memory-bank/productContext.md) | Jornada e princípios de experiência |
 | [animais.md](./animais.md) | Busca contextual na home |
+| [baixa-rebanho.md](./baixa-rebanho.md) | Saída do rebanho (morte, venda, doação, descarte) |
 | [cios.md](./cios.md), [coberturas.md](./coberturas.md) | Detecção e inseminação/monta |
 | [leite-restricoes.md](./leite-restricoes.md) | Descarte / laboratório |
 | [acessos-perfil.md](./acessos-perfil.md) | Quem pode fazer o quê |
@@ -55,6 +56,7 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 - **Efeito**: bloqueio/atualização no servidor; UI exibe rótulo derivado do cadastro.
 - **Implementação**: `CoberturaService`, `DiagnosticoGestacaoService`, `CioService`, `PartoService`, `SecagemService` → `AnimalRepository.UpdateStatusReprodutivo`.
 - **Nota**: na UI/API de curral, o operador pode informar `classificacao_operacional` (`PRENHA`, `VAZIA`, … — ver [toques.md](./toques.md) BR-TOQUES-006); o servidor deriva `resultado` canônico antes de aplicar as regras acima.
+- **Exceção — baixa do rebanho**: a **saída** do animal ([baixa-rebanho.md](./baixa-rebanho.md) BR-BAIXA-008) **não** propaga `status_reprodutivo`; o valor mantém-se como arquivo «estado ao sair».
 - **Estado**: **implementado** (toque `INCONCLUSIVO` não altera status; edição manual no cadastro do animal ainda possível).
 
 ### BR-CICLO-003 — Gestação confirmada só após toque positivo
@@ -113,6 +115,14 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 - **Implementação**: `GET /api/v1/fazendas/:id/resumo-pecuario`, `PecuarioResumoHomePanel`, `ResumoKpiTile`, `lib/resumoPecuarioLinks.ts`; [gestacoes.md](./gestacoes.md) BR-GESTACOES-003 e BR-GESTACOES-004.
 - **Estado**: **implementado**.
 
+### BR-CICLO-011 — Saída do rebanho (baixa)
+
+- **Enunciado**: O fim da permanência do animal na exploração regista-se como **baixa** (`data_saida` + `motivo_saida`), com efeitos no ciclo (lactação, gestação confirmada, restrição de leite) e exclusão das operações correntes. Detalhe em [baixa-rebanho.md](./baixa-rebanho.md) (BR-BAIXA-001 a BR-BAIXA-010). Nas **listagens de Gestão**, o histórico permanece visível (BR-BAIXA-009); registos da fêmea baixada são só consulta — sem editar/excluir (BR-BAIXA-010).
+- **Escopo**: Transversal; animal como unidade.
+- **Efeito**: bloqueio de novos eventos; listagens operacionais por defeito só animais no rebanho.
+- **Implementação**: `AnimalBaixaService`, `POST /api/v1/animais/:id/baixa`, `POST .../baixa/reverter`.
+- **Estado**: **implementado**.
+
 ### BR-CICLO-010 — Sincronização documentação ↔ código
 
 - **Enunciado**: Qualquer mudança de comportamento de produto no ciclo do rebanho atualiza este ficheiro (se transversal) e o módulo em `docs/business/*.md` no **mesmo PR/ciclo**, com estado da regra atualizado.
@@ -139,6 +149,7 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 | Saúde (vacinas/tratamentos) | Planejado | Só `status_saude` |
 | Dashboard pecuário | Implementado | KPIs acionáveis (`ResumoKpiTile`, BR-GESTACOES-004) |
 | Ficha animal (timeline) | Implementado | BR-CICLO-008 |
+| Saída do rebanho (baixa) | Implementado | [baixa-rebanho.md](./baixa-rebanho.md) BR-CICLO-011; rótulos Gestão BR-BAIXA-009 |
 
 ---
 
@@ -150,4 +161,4 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 
 ---
 
-**Última atualização**: 2026-05-24 (KPIs acionáveis na home — BR-CICLO-009 drill-down)
+**Última atualização**: 2026-05-24 (baixa do rebanho — BR-CICLO-011)

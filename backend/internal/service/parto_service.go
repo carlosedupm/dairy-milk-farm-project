@@ -46,6 +46,9 @@ func (s *PartoService) validatePartoAnimalForCreate(ctx context.Context, p *mode
 	if animal.FazendaID != p.FazendaID {
 		return nil, errors.New("animal deve ser da mesma fazenda")
 	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return nil, err
+	}
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return nil, errors.New("apenas femeas podem ter parto")
 	}
@@ -248,6 +251,9 @@ func (s *PartoService) Update(ctx context.Context, p *models.Parto) error {
 			return errors.New("tipo de parto invalido")
 		}
 	}
+	if err := EnsureAnimalIDNoRebanho(ctx, s.animalRepo, p.AnimalID); err != nil {
+		return err
+	}
 	return s.repo.Update(ctx, p)
 }
 
@@ -260,6 +266,9 @@ func (s *PartoService) Delete(ctx context.Context, id int64) error {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrPartoNotFound
 		}
+		return err
+	}
+	if err := EnsureAnimalIDNoRebanho(ctx, s.animalRepo, p.AnimalID); err != nil {
 		return err
 	}
 	tx, err := s.pool.Begin(ctx)

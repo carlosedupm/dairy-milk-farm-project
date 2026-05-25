@@ -26,4 +26,5 @@ const (
 	AcaoRegistrarSecagem   = "REGISTRAR_SECAGEM"
 	AcaoRegistrarParto     = "REGISTRAR_PARTO"
 	AcaoRegistrarProducao  = "REGISTRAR_PRODUCAO"
+	AcaoRegistrarBaixa     = "REGISTRAR_BAIXA"
 )

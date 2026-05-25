@@ -223,9 +223,39 @@ func (s *AnimalCicloService) enrichRegistradoPor(ctx context.Context, items []mo
 	return nil
 }
 
+// PrependBaixaTimeline acrescenta o evento BAIXA no topo da timeline com auditoria (BR-AUDIT-008).
+func (s *AnimalCicloService) PrependBaixaTimeline(ctx context.Context, animal *models.Animal, items []models.CicloTimelineItem) ([]models.CicloTimelineItem, error) {
+	if animal == nil || !animal.IsForaDoRebanho() || animal.DataSaida == nil {
+		return items, nil
+	}
+	detalhe := ""
+	if animal.MotivoSaida != nil {
+		detalhe = MotivoBaixaLabel(*animal.MotivoSaida)
+	}
+	baixaItem := models.CicloTimelineItem{
+		Tipo:      "BAIXA",
+		Data:      *animal.DataSaida,
+		Titulo:    "Baixa do rebanho",
+		Detalhe:   detalhe,
+		CreatedBy: animal.BaixaRegistradoPor,
+	}
+	items = append([]models.CicloTimelineItem{baixaItem}, items...)
+	if err := s.enrichRegistradoPor(ctx, items); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 func (s *AnimalCicloService) BuildProximasAcoes(ctx context.Context, animal *models.Animal) ([]models.ProximaAcao, error) {
-	if animal.Sexo != nil && *animal.Sexo != models.SexoFemea {
+	if animal.IsForaDoRebanho() {
 		return nil, nil
+	}
+	if animal.Sexo != nil && *animal.Sexo != models.SexoFemea {
+		return []models.ProximaAcao{{
+			Codigo:   models.AcaoRegistrarBaixa,
+			Label:    "Registrar baixa",
+			HrefPath: fmt.Sprintf("/animais/baixa?animal_id=%d", animal.ID),
+		}}, nil
 	}
 	aid := animal.ID
 	var acoes []models.ProximaAcao
@@ -274,6 +304,12 @@ func (s *AnimalCicloService) BuildProximasAcoes(ctx context.Context, animal *mod
 			})
 		}
 	}
+
+	acoes = append(acoes, models.ProximaAcao{
+		Codigo:   models.AcaoRegistrarBaixa,
+		Label:    "Registrar baixa",
+		HrefPath: fmt.Sprintf("/animais/baixa?animal_id=%d", aid),
+	})
 
 	return acoes, nil
 }

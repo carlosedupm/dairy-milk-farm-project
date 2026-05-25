@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { create } from "@/services/secagens";
-import { listByFazenda } from "@/services/animais";
+import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -22,11 +22,7 @@ function NovoContent() {
   const [animalId, setAnimalId] = useState("");
   const [dataSecagem, setDataSecagem] = useState(new Date().toISOString().slice(0, 10));
 
-  const { data: animais = [] } = useQuery({
-    queryKey: ["animais", "by-fazenda", fazendaAtiva?.id],
-    queryFn: () => listByFazenda(fazendaAtiva!.id),
-    enabled: !!fazendaAtiva?.id,
-  });
+  const { data: animais = [] } = useAnimaisOperacionalList(fazendaAtiva?.id);
 
   const mutation = useMutation({
     mutationFn: () =>

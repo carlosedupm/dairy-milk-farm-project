@@ -164,6 +164,37 @@ func (r *GestacaoRepository) ListPartosPrevistosByFazendaID(ctx context.Context,
 	return list, rows.Err()
 }
 
+func (r *GestacaoRepository) GetAtivaConfirmadaByAnimalIDTx(ctx context.Context, tx pgx.Tx, animalID int64) (*models.Gestacao, error) {
+	query := `SELECT id, animal_id, cobertura_id, data_confirmacao, data_prevista_parto, status, observacoes, fazenda_id, created_at, updated_at
+		FROM gestacoes WHERE animal_id = $1 AND status = $2
+		ORDER BY data_confirmacao DESC LIMIT 1`
+	var g models.Gestacao
+	err := tx.QueryRow(ctx, query, animalID, models.GestacaoStatusConfirmada).Scan(
+		&g.ID, &g.AnimalID, &g.CoberturaID, &g.DataConfirmacao, &g.DataPrevistaParto,
+		&g.Status, &g.Observacoes, &g.FazendaID, &g.CreatedAt, &g.UpdatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &g, nil
+}
+
+// CloseConfirmadaComoPerdaTx altera gestação CONFIRMADA do animal para PERDA.
+func (r *GestacaoRepository) CloseConfirmadaComoPerdaTx(ctx context.Context, tx pgx.Tx, animalID int64) error {
+	g, err := r.GetAtivaConfirmadaByAnimalIDTx(ctx, tx, animalID)
+	if err != nil {
+		return err
+	}
+	if g == nil {
+		return nil
+	}
+	g.Status = models.GestacaoStatusPerda
+	return r.UpdateTx(ctx, tx, g)
+}
+
 func (r *GestacaoRepository) UpdateTx(ctx context.Context, tx pgx.Tx, g *models.Gestacao) error {
 	if g.ID <= 0 {
 		return fmt.Errorf("id invalido: %d", g.ID)

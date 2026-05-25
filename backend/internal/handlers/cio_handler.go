@@ -127,6 +127,9 @@ func (h *CioHandler) Update(c *gin.Context) {
 			response.ErrorNotFound(c, "Cio nao encontrado")
 			return
 		}
+		if RespondIfAnimalForaRebanho(c, err) {
+			return
+		}
 		response.ErrorInternal(c, "Erro ao atualizar cio", err.Error())
 		return
 	}
@@ -142,6 +145,9 @@ func (h *CioHandler) Delete(c *gin.Context) {
 	}
 	if !ValidateFazendaAccess(c, h.fazendaSvc, cio.FazendaID) { return }
 	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
+		if RespondIfAnimalForaRebanho(c, err) {
+			return
+		}
 		response.ErrorInternal(c, "Erro ao deletar cio", err.Error()); return
 	}
 	response.SuccessOK(c, nil, "Cio deletado com sucesso")

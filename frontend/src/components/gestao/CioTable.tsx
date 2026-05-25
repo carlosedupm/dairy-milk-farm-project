@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Cio } from "@/services/cios";
 import { remove } from "@/services/cios";
-import { useAnimaisMap } from "@/components/gestao/useAnimaisMap";
-import { Button } from "@/components/ui/button";
+import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
+import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
 import {
   Table,
   TableBody,
@@ -20,6 +19,8 @@ import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
+import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
+import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
 
 type Props = {
   items: Cio[];
@@ -28,7 +29,11 @@ type Props = {
 
 export function CioTable({ items, fazendaId }: Props) {
   const queryClient = useQueryClient();
-  const animaisMap = useAnimaisMap(fazendaId);
+  const animalIds = useMemo(() => items.map((i) => i.animal_id), [items]);
+  const { animaisById, isResolved: animaisResolved } = useGestaoAnimaisByIdMap(
+    fazendaId,
+    animalIds,
+  );
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
@@ -55,13 +60,25 @@ export function CioTable({ items, fazendaId }: Props) {
     <>
       <ResponsiveListContainer
         mobile={items.map((item) => {
-          const animalLabel =
-            animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`;
+          const baixado =
+            animaisResolved &&
+            isGestaoRegistroAnimalBaixado(item.animal_id, animaisById);
           return (
             <MobileListCard
               key={item.id}
-              href={`/gestao/cios/${item.id}/editar`}
-              title={animalLabel}
+              href={
+                baixado
+                  ? `/animais/${item.animal_id}`
+                  : animaisResolved
+                    ? `/gestao/cios/${item.id}/editar`
+                    : undefined
+              }
+              title={
+                <AnimalGestaoLabel
+                  animalId={item.animal_id}
+                  animaisById={animaisById}
+                />
+              }
               subtitle={formatDateTimePtBrOptional(item.data_detectado)}
               meta={
                 <span className="text-muted-foreground">
@@ -70,15 +87,17 @@ export function CioTable({ items, fazendaId }: Props) {
                 </span>
               }
               actions={
-                <ListRowActionsMenu
-                  items={[
-                    {
-                      label: "Excluir",
-                      variant: "destructive",
-                      onSelect: () => setDeleteDialogOpenId(item.id),
-                    },
-                  ]}
-                />
+                baixado || !animaisResolved ? undefined : (
+                  <ListRowActionsMenu
+                    items={[
+                      {
+                        label: "Excluir",
+                        variant: "destructive",
+                        onSelect: () => setDeleteDialogOpenId(item.id),
+                      },
+                    ]}
+                  />
+                )
               }
             />
           );
@@ -99,8 +118,10 @@ export function CioTable({ items, fazendaId }: Props) {
                 {items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
-                      {animaisMap.get(item.animal_id) ??
-                        `Animal ${item.animal_id}`}
+                      <AnimalGestaoLabel
+                        animalId={item.animal_id}
+                        animaisById={animaisById}
+                      />
                     </TableCell>
                     <TableCell>
                       {formatDateTimePtBrOptional(item.data_detectado)}
@@ -108,20 +129,13 @@ export function CioTable({ items, fazendaId }: Props) {
                     <TableCell>{item.metodo_deteccao ?? "—"}</TableCell>
                     <TableCell>{item.intensidade ?? "—"}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="default" asChild>
-                          <Link href={`/gestao/cios/${item.id}/editar`}>
-                            Editar
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="default"
-                          onClick={() => setDeleteDialogOpenId(item.id)}
-                        >
-                          Excluir
-                        </Button>
-                      </div>
+                      <GestaoRegistroRowActions
+                        animalId={item.animal_id}
+                        animaisById={animaisById}
+                        animaisResolved={animaisResolved}
+                        editHref={`/gestao/cios/${item.id}/editar`}
+                        onDelete={() => setDeleteDialogOpenId(item.id)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { create as createParto, type PartoCriaInput } from "@/services/partos";
-import { listByFazenda } from "@/services/animais";
+import {
+  animaisFazendaQueryKey,
+  useAnimaisOperacionalList,
+} from "@/components/gestao/useAnimaisMap";
 import { listByFazenda as listGestacoesByFazenda } from "@/services/gestacoes";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -40,11 +43,7 @@ function NovoContent() {
 
   const fazendaId = fazendaAtiva?.id ?? 0;
 
-  const { data: animais = [] } = useQuery({
-    queryKey: ["animais", "by-fazenda", fazendaId],
-    queryFn: () => listByFazenda(fazendaId),
-    enabled: fazendaId > 0,
-  });
+  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const { data: gestacoes = [] } = useQuery({
     queryKey: ["gestacoes", fazendaId],
@@ -96,9 +95,14 @@ function NovoContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["partos", fazendaAtiva?.id] });
-      queryClient.invalidateQueries({
-        queryKey: ["animais", "by-fazenda", fazendaAtiva?.id],
-      });
+      if (fazendaAtiva?.id) {
+        queryClient.invalidateQueries({
+          queryKey: animaisFazendaQueryKey(fazendaAtiva.id, "operacional"),
+        });
+        queryClient.invalidateQueries({
+          queryKey: animaisFazendaQueryKey(fazendaAtiva.id, "todos"),
+        });
+      }
       router.push("/gestao/partos");
     },
   });

@@ -20,6 +20,7 @@ var funcionarioGestaoPath = regexp.MustCompile(`^/api/v1/(cios|coberturas|partos
 // Crias: sub-recurso operacional de partos (listar/complementar na edição de parto).
 var funcionarioCriasPath = regexp.MustCompile(`^/api/v1/crias(/.*)?$`)
 var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
+var funcionarioAnimaisBaixaPath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/baixa$`)
 var funcionarioAssistentePath = regexp.MustCompile(`^/api/v1/assistente(/.*)?$`)
 
 // TODO(capabilities-assistente): liberar rotas de assistente para FUNCIONARIO
@@ -79,6 +80,9 @@ func requestAllowedForFuncionario(method, path string) bool {
 		return true
 	}
 	if method == http.MethodGet && funcionarioAnimaisPath.MatchString(path) {
+		return true
+	}
+	if method == http.MethodPost && funcionarioAnimaisBaixaPath.MatchString(path) {
 		return true
 	}
 	if method == http.MethodPost && path == "/api/v1/producao" {

@@ -47,6 +47,9 @@ func (s *DiagnosticoGestacaoService) Create(ctx context.Context, d *models.Diagn
 	if animal.FazendaID != d.FazendaID {
 		return errors.New("animal deve ser da mesma fazenda")
 	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return err
+	}
 
 	var coberturaID int64
 	if d.Resultado == models.DiagnosticoResultadoPositivo {

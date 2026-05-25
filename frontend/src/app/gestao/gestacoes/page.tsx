@@ -53,7 +53,7 @@ function Content() {
     : `Gestações – ${fazendaAtiva.nome}`;
 
   return (
-    <GestaoListLayout title={title} backHref="/gestao">
+    <GestaoListLayout title={title} backHref="/gestao" fazendaId={fazendaId}>
       {statusFilter && filterLabel ? (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="gap-1 pr-1">

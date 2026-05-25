@@ -146,6 +146,9 @@ func (h *CoberturaHandler) Update(c *gin.Context) {
 			response.ErrorNotFound(c, "Animal nao encontrado")
 			return
 		}
+		if RespondIfAnimalForaRebanho(c, err) {
+			return
+		}
 		response.ErrorInternal(c, "Erro ao atualizar cobertura", err.Error())
 		return
 	}
@@ -182,6 +185,9 @@ func (h *CoberturaHandler) Delete(c *gin.Context) {
 		}
 		if errors.Is(err, service.ErrCoberturaTemVinculos) {
 			response.ErrorConflict(c, "Cobertura possui gestacao ou diagnostico vinculado", nil)
+			return
+		}
+		if RespondIfAnimalForaRebanho(c, err) {
 			return
 		}
 		response.ErrorInternal(c, "Erro ao excluir cobertura", err.Error())
@@ -479,6 +485,9 @@ func (h *PartoHandler) Update(c *gin.Context) {
 			response.ErrorNotFound(c, "Parto nao encontrado")
 			return
 		}
+		if RespondIfAnimalForaRebanho(c, err) {
+			return
+		}
 		response.ErrorInternal(c, "Erro ao atualizar parto", err.Error())
 		return
 	}
@@ -502,6 +511,9 @@ func (h *PartoHandler) Delete(c *gin.Context) {
 	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
 		if errors.Is(err, service.ErrPartoNotFound) {
 			response.ErrorNotFound(c, "Parto nao encontrado")
+			return
+		}
+		if RespondIfAnimalForaRebanho(c, err) {
 			return
 		}
 		response.ErrorInternal(c, "Erro ao excluir parto", err.Error())
@@ -553,6 +565,9 @@ func (h *CriaHandler) Create(c *gin.Context) {
 	if err := h.svc.Create(c.Request.Context(), cria); err != nil {
 		if errors.Is(err, service.ErrAnimalIdentificacaoDuplicada) {
 			response.ErrorConflict(c, "Ja existe um animal com essa identificacao", nil)
+			return
+		}
+		if RespondIfAnimalForaRebanho(c, err) {
 			return
 		}
 		response.ErrorInternal(c, "Erro ao registrar cria", err.Error())

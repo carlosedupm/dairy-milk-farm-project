@@ -1,25 +1,48 @@
 "use client";
 
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { listByFazenda, type Animal } from "@/services/animais";
+import { useEffect, useMemo } from "react";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
+import { get, isAnimalForaDoRebanho, listByFazenda, type Animal } from "@/services/animais";
 
-function useAnimaisFazendaQuery(fazendaId: number | undefined) {
+export type AnimaisFazendaScope = "operacional" | "todos";
+
+export function animaisFazendaQueryKey(
+  fazendaId: number | undefined,
+  scope: AnimaisFazendaScope,
+) {
+  return ["animais", "by-fazenda", fazendaId, scope] as const;
+}
+
+/** Lista de animais da fazenda: operacional = só no rebanho; todos = inclui baixados (rótulos). */
+export function useAnimaisFazendaQuery(
+  fazendaId: number | undefined,
+  scope: AnimaisFazendaScope,
+) {
   return useQuery({
-    queryKey: ["animais", "by-fazenda", fazendaId],
-    queryFn: () => listByFazenda(fazendaId!),
+    queryKey: animaisFazendaQueryKey(fazendaId, scope),
+    queryFn: () =>
+      listByFazenda(fazendaId!, {
+        no_rebanho: scope === "operacional",
+      }),
     enabled: !!fazendaId && fazendaId > 0,
+    refetchOnWindowFocus: true,
   });
 }
 
+/** Animais no rebanho ativo — formulários e filtros operacionais. */
+export function useAnimaisOperacionalList(fazendaId: number | undefined) {
+  return useAnimaisFazendaQuery(fazendaId, "operacional");
+}
+
 /**
- * Hook que busca animais da fazenda e retorna um mapa animal_id -> identificacao.
- * Usado nas tabelas de Gestão Pecuária para exibir o nome do animal em vez do ID.
+ * Mapa animal_id → identificação (inclui baixados).
+ * @deprecated Preferir useAnimaisByIdMap + AnimalGestaoLabel para badge Baixado.
  */
 export function useAnimaisMap(fazendaId: number | undefined) {
-  const { data } = useAnimaisFazendaQuery(fazendaId);
+  const { data } = useAnimaisFazendaQuery(fazendaId, "todos");
 
-  const map = useMemo(() => {
+  return useMemo(() => {
     const m = new Map<number, string>();
     const animais = Array.isArray(data) ? data : [];
     for (const a of animais) {
@@ -27,20 +50,131 @@ export function useAnimaisMap(fazendaId: number | undefined) {
     }
     return m;
   }, [data]);
-
-  return map;
 }
 
-/** Mapa animal_id → registro completo (mesmo cache de `useAnimaisMap`). */
+/** Mapa animal_id → Animal (todos, para rótulos nas listagens de Gestão). */
 export function useAnimaisByIdMap(fazendaId: number | undefined) {
-  const { data } = useAnimaisFazendaQuery(fazendaId);
+  const { data } = useAnimaisFazendaQuery(fazendaId, "todos");
 
-  return useMemo(() => {
-    const m = new Map<number, Animal>();
-    const animais = Array.isArray(data) ? data : [];
-    for (const a of animais) {
-      m.set(a.id, a);
+  return useMemo(() => buildAnimaisByIdMap(data), [data]);
+}
+
+function buildAnimaisByIdMap(data: Animal[] | undefined): Map<number, Animal> {
+  const m = new Map<number, Animal>();
+  const animais = Array.isArray(data) ? data : [];
+  for (const a of animais) {
+    m.set(a.id, a);
+  }
+  return m;
+}
+
+/** Atualiza caches da fazenda após baixa/reversão (evita UI stale em Gestão). */
+export function patchAnimalInFazendaCaches(
+  queryClient: QueryClient,
+  animal: Animal,
+) {
+  const fid = animal.fazenda_id;
+  if (!fid) return;
+
+  queryClient.setQueryData(["animais", animal.id], animal);
+
+  queryClient.setQueryData<Animal[]>(
+    animaisFazendaQueryKey(fid, "todos"),
+    (old) => {
+      if (!Array.isArray(old)) return old;
+      const idx = old.findIndex((a) => a.id === animal.id);
+      if (idx >= 0) {
+        const next = [...old];
+        next[idx] = animal;
+        return next;
+      }
+      return [...old, animal];
+    },
+  );
+
+  queryClient.setQueryData<Animal[]>(
+    animaisFazendaQueryKey(fid, "operacional"),
+    (old) => {
+      if (!Array.isArray(old)) return old;
+      if (isAnimalForaDoRebanho(animal)) {
+        return old.filter((a) => a.id !== animal.id);
+      }
+      const idx = old.findIndex((a) => a.id === animal.id);
+      if (idx >= 0) {
+        const next = [...old];
+        next[idx] = animal;
+        return next;
+      }
+      return [...old, animal];
+    },
+  );
+}
+
+function uniquePositiveAnimalIds(animalIds: number[]): number[] {
+  const seen = new Set<number>();
+  const ids: number[] = [];
+  for (const id of animalIds) {
+    if (id <= 0 || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+  return ids;
+}
+
+/**
+ * Mapa para tabelas de Gestão: lista `todos` + GET por ID (autoritativo para `data_saida`).
+ * O detalhe sobrescreve entradas stale da lista (BR-BAIXA-009).
+ */
+export function useGestaoAnimaisByIdMap(
+  fazendaId: number | undefined,
+  animalIds: number[],
+) {
+  const {
+    data: list,
+    isLoading: listLoading,
+    isFetched: listFetched,
+  } = useAnimaisFazendaQuery(fazendaId, "todos");
+
+  const baseMap = useMemo(() => buildAnimaisByIdMap(list), [list]);
+
+  const uniqueIds = useMemo(
+    () => uniquePositiveAnimalIds(animalIds),
+    [animalIds],
+  );
+
+  const detailQueries = useQueries({
+    queries: uniqueIds.map((id) => ({
+      queryKey: ["animais", id] as const,
+      queryFn: () => get(id),
+      enabled: !!fazendaId && fazendaId > 0 && listFetched,
+      staleTime: 0,
+      refetchOnMount: "always" as const,
+    })),
+  });
+
+  const animaisById = useMemo(() => {
+    const m = new Map(baseMap);
+    for (const q of detailQueries) {
+      if (q.data) m.set(q.data.id, q.data);
     }
     return m;
-  }, [data]);
+  }, [baseMap, detailQueries]);
+
+  const detailsLoading =
+    uniqueIds.length > 0 && detailQueries.some((q) => q.isLoading);
+  const isResolved =
+    listFetched && !listLoading && (!uniqueIds.length || !detailsLoading);
+
+  return { animaisById, isResolved };
+}
+
+/** Invalida lista `todos` ao entrar em listagens de Gestão (complementa GET por ID). */
+export function useGestaoAnimaisCacheRefresh(fazendaId: number | undefined) {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!fazendaId || fazendaId <= 0) return;
+    void queryClient.invalidateQueries({
+      queryKey: animaisFazendaQueryKey(fazendaId, "todos"),
+    });
+  }, [fazendaId, queryClient]);
 }

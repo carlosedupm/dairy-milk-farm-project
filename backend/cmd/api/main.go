@@ -148,6 +148,7 @@ func main() {
 					producaoSvc := service.NewProducaoService(producaoRepo, animalRepo, lactacaoRepo)
 					restricaoLeiteRepo := repository.NewRestricaoLeiteRepository(pool)
 					restricaoLeiteSvc := service.NewRestricaoLeiteService(restricaoLeiteRepo, animalRepo, lactacaoRepo)
+					animalBaixaSvc := service.NewAnimalBaixaService(pool, animalRepo, lactacaoRepo, gestacaoRepo, restricaoLeiteRepo)
 					refreshTokenSvc := service.NewRefreshTokenService(refreshTokenRepo)
 					cookieSameSite := http.SameSiteStrictMode
 					if !strings.Contains(cfg.CORSOrigin, "localhost") {
@@ -175,7 +176,7 @@ func main() {
 					animalCicloSvc := service.NewAnimalCicloService(cioRepo, coberturaRepo, diagnosticoGestacaoRepo, gestacaoRepo, secagemRepo, partoRepo, lactacaoRepo, producaoRepo, userRepo)
 					conformidadeSvc := service.NewConformidadeService(pool)
 					conformidadeHandler := handlers.NewConformidadeHandler(conformidadeSvc, fazendaSvc)
-					animalHandler := handlers.NewAnimalHandler(animalSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc, animalCicloSvc, userRepo)
+					animalHandler := handlers.NewAnimalHandler(animalSvc, animalBaixaSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc, animalCicloSvc, userRepo)
 					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
 					partoSvc := service.NewPartoService(pool, partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo, criaSvc)
 					secagemSvc := service.NewSecagemService(pool, secagemRepo, lactacaoRepo, animalRepo, fazendaRepo)
@@ -280,6 +281,8 @@ func main() {
 						animais.GET("/filter/by-status-reprodutivo", animalHandler.GetByStatusReprodutivo)
 						animais.POST("/reclassificar-categoria", animalHandler.RunReclassificacaoPorIdade)
 						animais.GET("/:id/contexto", animalHandler.GetContextoByID)
+						animais.POST("/:id/baixa/reverter", animalHandler.ReverterBaixa)
+						animais.POST("/:id/baixa", animalHandler.RegistrarBaixa)
 						animais.GET("/:id", animalHandler.GetByID)
 						animais.POST("", animalHandler.Create)
 						animais.PUT("/:id", animalHandler.Update)

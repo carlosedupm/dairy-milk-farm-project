@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 
 	"github.com/ceialmilk/api/internal/models"
@@ -147,4 +148,19 @@ func ResolveFazendaIDsForList(c *gin.Context, fazendaSvc *service.FazendaService
 	}
 
 	return fazendaIDs, true
+}
+
+// RespondIfAnimalForaRebanho mapeia ErrAnimalForaDoRebanho para 400 ANIMAL_FORA_REBANHO (BR-BAIXA-007/010).
+func RespondIfAnimalForaRebanho(c *gin.Context, err error) bool {
+	if errors.Is(err, service.ErrAnimalForaDoRebanho) {
+		response.Error(
+			c,
+			http.StatusBadRequest,
+			response.CodeAnimalForaRebanho,
+			"Animal fora do rebanho: não é possível alterar ou excluir este registo do ciclo",
+			nil,
+		)
+		return true
+	}
+	return false
 }

@@ -33,6 +33,7 @@ function Content() {
     <GestaoListLayout
       title={`Partos – ${fazendaAtiva.nome}`}
       backHref="/gestao"
+      fazendaId={fazendaId}
       newHref="/gestao/partos/novo"
     >
       {isLoading && <p className="text-muted-foreground">Carregando…</p>}

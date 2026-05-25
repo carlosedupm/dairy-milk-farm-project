@@ -157,6 +157,15 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**: migration `backend/migrations/21_usuarios_fazendas_papel.up.sql` (constraint `chk_usuarios_fazendas_papel`; backfill: vínculos de utilizadores com `perfil = 'PROPRIETARIO'` → `TITULAR`); `backend/internal/models/vinculo_fazenda.go` (`PapelVinculoTitular`, `PapelVinculoOperacional`); `backend/internal/models/fazenda.go` (campo JSON `papel` quando aplicável); `backend/internal/repository/fazenda_repository.go` (`GetFazendasByUsuarioID`, `SetFazendasForUsuario`, `CreateFazendaAndLinkUsuario`); `frontend/src/services/fazendas.ts` (tipo `Fazenda.papel`). **UI global do perfil RBAC** (nome + etiqueta “Proprietário”, etc.): `frontend/src/lib/perfilLabels.ts`, `frontend/src/components/layout/Header.tsx` — distinto do **`papel`** do vínculo.
 - **Estado**: Implementado.
 
+### BR-ACESSO-016 — Baixa do rebanho: FUNCIONARIO só morte
+
+- **Enunciado**: `FUNCIONARIO` pode `POST /api/v1/animais/:id/baixa` **apenas** com `motivo_saida = MORTE`. Outros motivos e `POST .../baixa/reverter` exigem perfis com API completa (gestão/titular/admin).
+- **Escopo**: API e rota UI `/animais/baixa`.
+- **Perfis / permissões**: `FUNCIONARIO` (morte); `GERENTE`, `GESTAO`, `PROPRIETARIO`, `ADMIN`, `DEVELOPER` (todos os motivos + reversão).
+- **Efeito**: bloqueio 403/400 no servidor; UI limita opções de motivo.
+- **Implementação**: `perfil_access.go` (`funcionarioAnimaisBaixaPath`); `AnimalBaixaService.RegistrarBaixa`; `appAccess.ts` (`canRegistrarBaixa`, `motivosBaixaParaPerfil`).
+- **Estado**: Implementado.
+
 ### BR-ACESSO-013 — Folgas e rotas “OrGestão”: atalho sem vínculo só plataforma
 
 - **Enunciado**: Em rotas que usam `ValidateFazendaAccessOrGestao` e na validação de acesso a folgas no serviço, apenas **ADMIN**, **DEVELOPER** e **GESTAO** podem aceder a uma fazenda **sem** linha em `usuarios_fazendas`. **GERENTE** e **PROPRIETARIO** exigem vínculo, garantindo isolamento de dados entre explorações.
@@ -166,4 +175,4 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ---
 
-**Última atualização**: 2026-05-24 (BR-ACESSO-015: `POST /api/v1/toques/lote` para FUNCIONARIO)
+**Última atualização**: 2026-05-24 (BR-ACESSO-016: baixa do rebanho — FUNCIONARIO só MORTE)

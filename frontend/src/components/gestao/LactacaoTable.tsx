@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import type { Lactacao } from "@/services/lactacoes";
-import { useAnimaisMap } from "@/components/gestao/useAnimaisMap";
+import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
+import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
 import {
   Table,
   TableBody,
@@ -20,7 +22,11 @@ type Props = {
 };
 
 export function LactacaoTable({ items, fazendaId }: Props) {
-  const animaisMap = useAnimaisMap(fazendaId);
+  const animalIds = useMemo(
+    () => items.map((i) => i.animal_id),
+    [items],
+  );
+  const { animaisById } = useGestaoAnimaisByIdMap(fazendaId, animalIds);
 
   if (items.length === 0) {
     return (
@@ -30,23 +36,24 @@ export function LactacaoTable({ items, fazendaId }: Props) {
 
   return (
     <ResponsiveListContainer
-      mobile={items.map((item) => {
-        const animalLabel =
-          animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`;
-        return (
-          <MobileListCard
-            key={item.id}
-            href={`/animais/${item.animal_id}`}
-            title={animalLabel}
-            subtitle={`Lactação #${item.numero_lactacao}`}
-            meta={
-              <span className="text-muted-foreground">
-                Início: {formatDatePtBr(item.data_inicio)}
-              </span>
-            }
-          />
-        );
-      })}
+      mobile={items.map((item) => (
+        <MobileListCard
+          key={item.id}
+          href={`/animais/${item.animal_id}`}
+          title={
+            <AnimalGestaoLabel
+              animalId={item.animal_id}
+              animaisById={animaisById}
+            />
+          }
+          subtitle={`Lactação #${item.numero_lactacao}`}
+          meta={
+            <span className="text-muted-foreground">
+              Início: {formatDatePtBr(item.data_inicio)}
+            </span>
+          }
+        />
+      ))}
       desktop={
         <div className="overflow-x-auto -mx-4 sm:mx-0">
           <Table>
@@ -61,8 +68,10 @@ export function LactacaoTable({ items, fazendaId }: Props) {
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
-                    {animaisMap.get(item.animal_id) ??
-                      `Animal ${item.animal_id}`}
+                    <AnimalGestaoLabel
+                      animalId={item.animal_id}
+                      animaisById={animaisById}
+                    />
                   </TableCell>
                   <TableCell>#{item.numero_lactacao}</TableCell>
                   <TableCell>{formatDatePtBr(item.data_inicio)}</TableCell>

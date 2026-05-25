@@ -3,6 +3,7 @@ import {
   type StatusReprodutivo,
   STATUS_REPRODUTIVO_LABELS,
   getCategoriaLabel,
+  isAnimalForaDoRebanho,
 } from "@/services/animais";
 
 export const ANIMAL_SELECT_MAX_VISIBLE = 50;
@@ -11,6 +12,8 @@ export type AnimalSelectFilterOptions = {
   query?: string;
   femeasOnly?: boolean;
   reprodutoresOnly?: boolean;
+  /** Exclui animais com baixa efetiva */
+  semDataSaida?: boolean;
 };
 
 function normalizeSearchText(value: string): string {
@@ -43,20 +46,27 @@ export function getAnimalSearchableText(animal: Animal): string {
 
 export function applyAnimalProfileFilters(
   animais: Animal[],
-  options: Pick<AnimalSelectFilterOptions, "femeasOnly" | "reprodutoresOnly">,
+  options: Pick<
+    AnimalSelectFilterOptions,
+    "femeasOnly" | "reprodutoresOnly" | "semDataSaida"
+  >,
 ): Animal[] {
-  const { femeasOnly, reprodutoresOnly } = options;
+  const { femeasOnly, reprodutoresOnly, semDataSaida } = options;
+  let list = animais;
+  if (semDataSaida) {
+    list = list.filter((a) => !isAnimalForaDoRebanho(a));
+  }
   if (femeasOnly) {
-    return animais.filter((a) => a.sexo === "F");
+    return list.filter((a) => a.sexo === "F");
   }
   if (reprodutoresOnly) {
-    return animais.filter(
+    return list.filter(
       (a) =>
         a.sexo === "M" &&
         (a.categoria === "TOURO" || a.categoria === "BOI"),
     );
   }
-  return animais;
+  return list;
 }
 
 export function sortAnimaisByIdentificacao(animais: Animal[]): Animal[] {
@@ -71,10 +81,11 @@ export function filterAnimais(
   animais: Animal[],
   options: AnimalSelectFilterOptions = {},
 ): Animal[] {
-  const { query = "", femeasOnly, reprodutoresOnly } = options;
+  const { query = "", femeasOnly, reprodutoresOnly, semDataSaida } = options;
   const profileFiltered = applyAnimalProfileFilters(animais, {
     femeasOnly,
     reprodutoresOnly,
+    semDataSaida,
   });
   const sorted = sortAnimaisByIdentificacao(profileFiltered);
 

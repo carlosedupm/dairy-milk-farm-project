@@ -16,6 +16,7 @@ import (
 
 type AnimalHandler struct {
 	service              *service.AnimalService
+	baixaSvc             *service.AnimalBaixaService
 	fazendaSvc           *service.FazendaService
 	producaoSvc          *service.ProducaoService
 	reclassificacaoSvc   *service.ReclassificacaoCategoriaService
@@ -27,6 +28,7 @@ type AnimalHandler struct {
 
 func NewAnimalHandler(
 	service *service.AnimalService,
+	baixaSvc *service.AnimalBaixaService,
 	fazendaSvc *service.FazendaService,
 	producaoSvc *service.ProducaoService,
 	reclassificacaoSvc *service.ReclassificacaoCategoriaService,
@@ -37,6 +39,7 @@ func NewAnimalHandler(
 ) *AnimalHandler {
 	return &AnimalHandler{
 		service:            service,
+		baixaSvc:           baixaSvc,
 		fazendaSvc:         fazendaSvc,
 		producaoSvc:        producaoSvc,
 		reclassificacaoSvc: reclassificacaoSvc,
@@ -63,7 +66,14 @@ type CreateAnimalRequest struct {
 	DataEntrada       *string  `json:"data_entrada"`   // ISO date YYYY-MM-DD
 	DataSaida         *string  `json:"data_saida"`     // ISO date YYYY-MM-DD
 	MotivoSaida       *string  `json:"motivo_saida"`
+	ObservacaoSaida   *string  `json:"observacao_saida"`
 	OrigemAquisicao   *string  `json:"origem_aquisicao"` // NASCIDO ou COMPRADO
+}
+
+type RegistrarBaixaRequest struct {
+	DataSaida       string  `json:"data_saida" binding:"required"`
+	MotivoSaida     string  `json:"motivo_saida" binding:"required"`
+	ObservacaoSaida *string `json:"observacao_saida"`
 }
 
 type UpdateAnimalRequest struct {
@@ -82,7 +92,34 @@ type UpdateAnimalRequest struct {
 	DataEntrada       *string  `json:"data_entrada"`   // ISO date YYYY-MM-DD
 	DataSaida         *string  `json:"data_saida"`     // ISO date YYYY-MM-DD
 	MotivoSaida       *string  `json:"motivo_saida"`
+	ObservacaoSaida   *string  `json:"observacao_saida"`
 	OrigemAquisicao   *string  `json:"origem_aquisicao"` // NASCIDO ou COMPRADO
+}
+
+func parseNoRebanhoQuery(v string) bool {
+	if v == "" || v == "true" || v == "1" {
+		return true
+	}
+	return false
+}
+
+func (h *AnimalHandler) mapBaixaError(c *gin.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+	switch {
+	case errors.Is(err, service.ErrAnimalNotFound):
+		response.ErrorNotFound(c, "Animal não encontrado")
+	case errors.Is(err, service.ErrAnimalJaBaixado):
+		response.ErrorConflict(c, "Animal já possui baixa registrada", nil)
+	case errors.Is(err, service.ErrAnimalSemBaixa):
+		response.ErrorBadRequest(c, "Animal não possui baixa para reverter", nil)
+	case errors.Is(err, service.ErrMotivoBaixaPerfil):
+		response.ErrorForbidden(c, "Perfil não autorizado para este motivo de baixa")
+	default:
+		response.ErrorValidation(c, err.Error(), nil)
+	}
+	return true
 }
 
 func (h *AnimalHandler) Create(c *gin.Context) {
@@ -119,6 +156,7 @@ func (h *AnimalHandler) Create(c *gin.Context) {
 		LoteID:            req.LoteID,
 		PesoNascimento:    req.PesoNascimento,
 		MotivoSaida:       req.MotivoSaida,
+		ObservacaoSaida:   req.ObservacaoSaida,
 		OrigemAquisicao:   &origem,
 	}
 
@@ -235,6 +273,11 @@ func (h *AnimalHandler) GetAll(c *gin.Context) {
 		Sexo:              c.Query("sexo"),
 		StatusSaude:       c.Query("status_saude"),
 		StatusReprodutivo: c.Query("status_reprodutivo"),
+		NoRebanho:         parseNoRebanhoQuery(c.Query("no_rebanho")),
+		RebanhoFiltro:     c.Query("rebanho"),
+	}
+	if q.RebanhoFiltro == "" && c.Query("no_rebanho") == "false" {
+		q.RebanhoFiltro = "todos"
 	}
 	if ls := c.Query("lote_id"); ls != "" {
 		lid, err := strconv.ParseInt(ls, 10, 64)
@@ -268,7 +311,13 @@ func (h *AnimalHandler) GetByFazendaID(c *gin.Context) {
 	}
 
 	if c.Query("limit") == "" {
-		animais, err := h.service.GetByFazendaID(c.Request.Context(), fazendaID)
+		var animais []*models.Animal
+		var err error
+		if parseNoRebanhoQuery(c.Query("no_rebanho")) {
+			animais, err = h.service.GetByFazendaIDNoRebanho(c.Request.Context(), fazendaID)
+		} else {
+			animais, err = h.service.GetByFazendaID(c.Request.Context(), fazendaID)
+		}
 		if err != nil {
 			if errors.Is(err, service.ErrFazendaNotFound) {
 				response.ErrorNotFound(c, "Fazenda não encontrada")
@@ -296,6 +345,10 @@ func (h *AnimalHandler) GetByFazendaID(c *gin.Context) {
 		Sexo:              c.Query("sexo"),
 		StatusSaude:       c.Query("status_saude"),
 		StatusReprodutivo: c.Query("status_reprodutivo"),
+		RebanhoFiltro:     c.Query("rebanho"),
+	}
+	if q.RebanhoFiltro == "" && c.Query("no_rebanho") == "false" {
+		q.RebanhoFiltro = "todos"
 	}
 	if ls := c.Query("lote_id"); ls != "" {
 		lid, err := strconv.ParseInt(ls, 10, 64)
@@ -429,6 +482,9 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 	if req.MotivoSaida == nil {
 		animal.MotivoSaida = animalExistente.MotivoSaida
 	}
+	if req.ObservacaoSaida == nil {
+		animal.ObservacaoSaida = animalExistente.ObservacaoSaida
+	}
 
 	if dataNascimento, err := parseDate(req.DataNascimento); err != nil {
 		response.ErrorValidation(c, "Data de nascimento inválida", err.Error())
@@ -506,31 +562,24 @@ func (h *AnimalHandler) SearchByIdentificacao(c *gin.Context) {
 		return
 	}
 
-	list, err := h.service.SearchByIdentificacao(c.Request.Context(), identificacao)
-	if err != nil {
-		response.ErrorInternal(c, "Erro ao buscar", err.Error())
-		return
-	}
-
 	fazendas, err := h.fazendaSvc.GetByUsuarioID(c.Request.Context(), userID)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao validar acesso à fazenda", err.Error())
 		return
 	}
-
-	allowedFazendas := make(map[int64]struct{}, len(fazendas))
+	fazendaIDs := make([]int64, 0, len(fazendas))
 	for _, f := range fazendas {
-		allowedFazendas[f.ID] = struct{}{}
+		fazendaIDs = append(fazendaIDs, f.ID)
 	}
 
-	filtered := make([]*models.Animal, 0, len(list))
-	for _, animal := range list {
-		if _, allowed := allowedFazendas[animal.FazendaID]; allowed {
-			filtered = append(filtered, animal)
-		}
+	noRebanho := parseNoRebanhoQuery(c.Query("no_rebanho"))
+	list, err := h.service.SearchByIdentificacaoForFazendas(c.Request.Context(), identificacao, fazendaIDs, noRebanho)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao buscar", err.Error())
+		return
 	}
 
-	response.SuccessOK(c, filtered, "Busca realizada com sucesso")
+	response.SuccessOK(c, list, "Busca realizada com sucesso")
 }
 
 func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
@@ -568,6 +617,18 @@ func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
 	payload := gin.H{
 		"animal":          animal,
 		"resumo_producao": resumo,
+		"fora_do_rebanho": animal.IsForaDoRebanho(),
+	}
+	if sr := service.SaidaResumo(animal); sr != nil {
+		if animal.BaixaRegistradoPor != nil && *animal.BaixaRegistradoPor > 0 && h.usuarioRepo != nil {
+			if names, err := h.usuarioRepo.GetNamesByIDs(c.Request.Context(), []int64{*animal.BaixaRegistradoPor}); err != nil {
+				response.ErrorInternal(c, "Erro ao buscar autor da baixa", err.Error())
+				return
+			} else if nome := names[*animal.BaixaRegistradoPor]; nome != "" {
+				sr["registrado_por"] = nome
+			}
+		}
+		payload["saida_resumo"] = sr
 	}
 	if h.restricaoLeiteSvc != nil {
 		rl, err := h.restricaoLeiteSvc.GetAtivaByAnimalID(c.Request.Context(), id)
@@ -601,6 +662,11 @@ func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
 		timeline, err := h.cicloSvc.BuildTimeline(c.Request.Context(), id)
 		if err != nil {
 			response.ErrorInternal(c, "Erro ao buscar histórico do animal", err.Error())
+			return
+		}
+		timeline, err = h.cicloSvc.PrependBaixaTimeline(c.Request.Context(), animal, timeline)
+		if err != nil {
+			response.ErrorInternal(c, "Erro ao montar histórico da baixa", err.Error())
 			return
 		}
 		payload["timeline"] = timeline
@@ -750,6 +816,78 @@ func (h *AnimalHandler) RunReclassificacaoPorIdade(c *gin.Context) {
 		return
 	}
 	response.SuccessOK(c, res, "Reclassificação por idade concluída")
+}
+
+func (h *AnimalHandler) RegistrarBaixa(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+	var req RegistrarBaixaRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorValidation(c, "Dados inválidos", err.Error())
+		return
+	}
+	animal, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
+		return
+	}
+	dataSaida, err := service.ValidateBaixaRequest(req.DataSaida, req.MotivoSaida)
+	if err != nil {
+		response.ErrorValidation(c, err.Error(), nil)
+		return
+	}
+	actorID, ok := GetActorUserID(c)
+	if !ok {
+		response.ErrorUnauthorized(c, "Usuário não identificado")
+		return
+	}
+	perfil, _ := c.Get("perfil")
+	perfilStr, _ := perfil.(string)
+	updated, err := h.baixaSvc.RegistrarBaixa(c.Request.Context(), id, dataSaida, req.MotivoSaida, req.ObservacaoSaida, perfilStr, actorID)
+	if h.mapBaixaError(c, err) {
+		return
+	}
+	response.SuccessOK(c, updated, "Baixa registrada com sucesso")
+}
+
+func (h *AnimalHandler) ReverterBaixa(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+	animal, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
+		return
+	}
+	actorID, ok := GetActorUserID(c)
+	if !ok {
+		response.ErrorUnauthorized(c, "Usuário não identificado")
+		return
+	}
+	updated, err := h.baixaSvc.ReverterBaixa(c.Request.Context(), id, actorID)
+	if h.mapBaixaError(c, err) {
+		return
+	}
+	response.SuccessOK(c, updated, "Baixa revertida com sucesso")
 }
 
 func parseQueryIntPositiveDef(s string, def int) int {

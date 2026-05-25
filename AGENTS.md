@@ -226,5 +226,11 @@ Produção **Render + Vercel**; **Fase 2** (ciclo integrado + auditoria UI) fech
 
 ---
 
+## Baixa do rebanho
+
+Fluxo dedicado de saída do animal (morte, venda, doação, descarte): `POST /api/v1/animais/:id/baixa`, reversão `POST .../baixa/reverter`, filtro `rebanho`/`no_rebanho` nas listagens. Catálogo: `docs/business/baixa-rebanho.md` (BR-BAIXA-001–007). UI: `/animais/baixa`. **FUNCIONARIO**: só motivo `MORTE`.
+
+---
+
 **Última atualização**: 2026-05-24
-**Versão**: 2.4 (jornada toques operacionais do curral; classificação operacional + lote JWT)
+**Versão**: 2.5 (baixa do rebanho — fluxo transacional, filtro no_rebanho, INT-007, M2M leitura)

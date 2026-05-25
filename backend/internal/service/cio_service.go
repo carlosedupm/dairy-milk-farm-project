@@ -35,6 +35,9 @@ func (s *CioService) Create(ctx context.Context, c *models.Cio) error {
 	if animal.FazendaID != c.FazendaID {
 		return errors.New("animal deve ser da mesma fazenda")
 	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return err
+	}
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return errors.New("apenas femeas podem ter registro de cio")
 	}
@@ -146,15 +149,21 @@ func (s *CioService) Update(ctx context.Context, c *models.Cio) error {
 			return errors.New("intensidade invalida")
 		}
 	}
+	if err := EnsureAnimalIDNoRebanho(ctx, s.animalRepo, c.AnimalID); err != nil {
+		return err
+	}
 	return s.repo.Update(ctx, c)
 }
 
 func (s *CioService) Delete(ctx context.Context, id int64) error {
-	_, err := s.repo.GetByID(ctx, id)
+	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrCioNotFound
 		}
+		return err
+	}
+	if err := EnsureAnimalIDNoRebanho(ctx, s.animalRepo, existing.AnimalID); err != nil {
 		return err
 	}
 	return s.repo.Delete(ctx, id)

@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery } from "@tanstack/react-query";
-import { listByFazenda as listAnimaisByFazenda } from "@/services/animais";
 import { listByFazenda } from "@/services/coberturas";
+import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -33,11 +33,7 @@ function Content() {
     enabled: fazendaId > 0,
   });
 
-  const { data: animais = [] } = useQuery({
-    queryKey: ["animais", "by-fazenda", fazendaId],
-    queryFn: () => listAnimaisByFazenda(fazendaId),
-    enabled: fazendaId > 0,
-  });
+  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const filterParams = useMemo(
     () => coberturasFilterStateToParams(filterState),
@@ -72,6 +68,7 @@ function Content() {
     <GestaoListLayout
       title={`Coberturas – ${fazendaAtiva.nome}${titleSuffix}`}
       backHref="/gestao"
+      fazendaId={fazendaId}
       newHref="/gestao/coberturas/novo"
     >
       <div className="space-y-6">

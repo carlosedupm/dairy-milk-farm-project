@@ -6,7 +6,7 @@ import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Cio } from "@/services/cios";
 import { get, update } from "@/services/cios";
-import { listByFazenda } from "@/services/animais";
+import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import type { Animal } from "@/services/animais";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -17,6 +17,7 @@ import {
   cioFormSubmitDisabled,
   type CioFormState,
 } from "@/components/gestao/CioFormFields";
+import { GestaoEditarBloqueadoGuard } from "@/components/gestao/GestaoEditarBloqueadoGuard";
 import { getApiErrorMessage } from "@/lib/errors";
 import { toDatetimeLocalInputValue } from "@/lib/format";
 
@@ -86,11 +87,7 @@ function EditarContent() {
     enabled: id > 0,
   });
 
-  const { data: animais = [] } = useQuery({
-    queryKey: ["animais", "by-fazenda", fazendaAtiva?.id],
-    queryFn: () => listByFazenda(fazendaAtiva!.id),
-    enabled: !!fazendaAtiva?.id,
-  });
+  const { data: animais = [] } = useAnimaisOperacionalList(fazendaAtiva?.id);
 
   if (!fazendaAtiva) {
     return (
@@ -129,7 +126,13 @@ function EditarContent() {
   }
 
   return (
-    <CioEditForm key={cio.id} cio={cio} animais={animais} fazendaId={fazendaAtiva.id} />
+    <GestaoEditarBloqueadoGuard
+      animalId={cio.animal_id}
+      fazendaId={fazendaAtiva.id}
+      backHref="/gestao/cios"
+    >
+      <CioEditForm key={cio.id} cio={cio} animais={animais} fazendaId={fazendaAtiva.id} />
+    </GestaoEditarBloqueadoGuard>
   );
 }
 

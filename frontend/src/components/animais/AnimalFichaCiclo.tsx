@@ -32,6 +32,27 @@ export function AnimalFichaCiclo({ contexto }: Props) {
           <CardTitle className="text-base">Estado atual</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm min-w-0">
+          {contexto.fora_do_rebanho ? (
+            <div
+              className="rounded-md border border-muted-foreground/30 bg-muted/50 p-3"
+              role="status"
+            >
+              <p className="font-medium">Animal fora do rebanho</p>
+              {contexto.saida_resumo?.motivo_label ? (
+                <p className="text-muted-foreground mt-1">
+                  {contexto.saida_resumo.motivo_label}
+                  {contexto.saida_resumo.data_saida
+                    ? ` — ${formatDatePtBr(contexto.saida_resumo.data_saida)}`
+                    : null}
+                </p>
+              ) : null}
+              {contexto.saida_resumo?.registrado_por ? (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Baixa registada por {contexto.saida_resumo.registrado_por}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {contexto.registrado_por_cadastro ? (
             <p className="text-xs text-muted-foreground">
               Animal registado por {contexto.registrado_por_cadastro}
@@ -53,7 +74,11 @@ export function AnimalFichaCiclo({ contexto }: Props) {
           ) : null}
           {contexto.animal.status_reprodutivo ? (
             <p>
-              <span className="text-muted-foreground">Reprodução: </span>
+              <span className="text-muted-foreground">
+                {contexto.fora_do_rebanho
+                  ? "Estado reprodutivo ao sair: "
+                  : "Reprodução: "}
+              </span>
               {getStatusReprodutivoLabel(contexto.animal.status_reprodutivo)}
             </p>
           ) : null}

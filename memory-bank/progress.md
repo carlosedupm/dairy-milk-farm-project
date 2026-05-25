@@ -2,7 +2,7 @@
 
 ## 📊 Status Geral do Projeto
 
-### **Completude Geral**: 98% — **Fase 2 (ciclo + auditoria UI)**: 100% em código; checklist de regressão documentado (execução em staging pendente)
+### **Completude Geral**: 99% — **Fase 2 (ciclo + auditoria UI)**: 100% em código; **baixa do rebanho** entregue (2026-05-24); checklist de regressão documentado (execução em staging pendente)
 
 ```bash
 🏗️  Infraestrutura: 95% ✅
@@ -22,6 +22,15 @@
 - **Progresso sprint**: Fase 2 fechada em desenvolvimento
 
 ## ✅ O que foi concluído
+
+### **Baixa do rebanho (✅ 2026-05-24; Gestão BR-BAIXA-009/010 validado 2026-05-25)**
+
+- [x] Catálogo `docs/business/baixa-rebanho.md` (BR-BAIXA-001–010, BR-CICLO-011, BR-ACESSO-016, INT-007)
+- [x] Backend: migration 27–28, `AnimalBaixaService`, guarda, RBAC FUNCIONARIO+MORTE, filtro listagem, conformidade INT-007
+- [x] Frontend: `/animais/baixa`, ficha/lista/busca, remoção de `data_saida` do formulário genérico
+- [x] Gestão pós-baixa: badge «Baixado», bloqueio edição, `useGestaoAnimaisByIdMap`, correção `isAnimalForaDoRebanho` (data civil — baixa no dia corrente)
+- [x] M2M: campos de saída no OpenAPI; busca exclui baixados (BR-INTEG-008)
+- [x] Checklist manual: `docs/tests/baixa-rebanho-checklist.md` (secção BR-BAIXA-009 validada pelo utilizador)
 
 ### **Migração Arquitetural (✅ 65%)**
 
@@ -688,6 +697,6 @@
 
 ---
 
-**Última atualização**: 2026-05-24 (jornada toques operacionais do curral)
+**Última atualização**: 2026-05-25 (Gestão pós-baixa — badge e data civil)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | **Coberturas com filtros** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

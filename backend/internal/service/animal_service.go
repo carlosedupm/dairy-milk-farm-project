@@ -124,7 +124,18 @@ func (s *AnimalService) GetByFazendaID(ctx context.Context, fazendaID int64) ([]
 		return nil, err
 	}
 
-	return s.repo.GetByFazendaID(ctx, fazendaID)
+	return s.repo.GetByFazendaID(ctx, fazendaID, false)
+}
+
+func (s *AnimalService) GetByFazendaIDNoRebanho(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	_, err := s.fazendaRepo.GetByID(ctx, fazendaID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrFazendaNotFound
+		}
+		return nil, err
+	}
+	return s.repo.GetByFazendaID(ctx, fazendaID, true)
 }
 
 func (s *AnimalService) ListEmLactacaoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
@@ -216,7 +227,17 @@ func equivalenteIdentificacao(ident string) string {
 }
 
 func (s *AnimalService) SearchByIdentificacao(ctx context.Context, identificacao string) ([]*models.Animal, error) {
-	list, err := s.repo.SearchByIdentificacao(ctx, identificacao)
+	return s.SearchByIdentificacaoForFazendas(ctx, identificacao, nil, false)
+}
+
+func (s *AnimalService) SearchByIdentificacaoForFazendas(ctx context.Context, identificacao string, fazendaIDs []int64, noRebanho bool) ([]*models.Animal, error) {
+	var list []*models.Animal
+	var err error
+	if noRebanho && len(fazendaIDs) > 0 {
+		list, err = s.repo.SearchByIdentificacaoNoRebanho(ctx, identificacao, fazendaIDs)
+	} else {
+		list, err = s.repo.SearchByIdentificacao(ctx, identificacao)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +247,11 @@ func (s *AnimalService) SearchByIdentificacao(ctx context.Context, identificacao
 	// Nenhum resultado: tentar equivalente número ↔ por extenso (ex.: "1" ↔ "um")
 	equiv := equivalenteIdentificacao(identificacao)
 	if equiv != "" {
-		list, err = s.repo.SearchByIdentificacao(ctx, equiv)
+		if noRebanho && len(fazendaIDs) > 0 {
+			list, err = s.repo.SearchByIdentificacaoNoRebanho(ctx, equiv, fazendaIDs)
+		} else {
+			list, err = s.repo.SearchByIdentificacao(ctx, equiv)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -281,6 +306,8 @@ type AnimalListQuery struct {
 	StatusSaude       string
 	LoteID            int64 // 0 = sem filtro
 	StatusReprodutivo string
+	NoRebanho         bool // true = só animais no rebanho (default no handler)
+	RebanhoFiltro     string // ativos | baixa | todos
 }
 
 // ListAnimaisPaginatedForFazendas lista animais restritos às fazendas informadas (já validadas no handler).
@@ -342,6 +369,16 @@ func (s *AnimalService) ListAnimaisPaginatedForFazendas(ctx context.Context, faz
 		}
 		sr := q.StatusReprodutivo
 		f.StatusReprodutivo = &sr
+	}
+	switch q.RebanhoFiltro {
+	case "baixa":
+		f.SomenteBaixados = true
+	case "todos":
+		// sem filtro de saída
+	default:
+		if q.NoRebanho || q.RebanhoFiltro == "" || q.RebanhoFiltro == "ativos" {
+			f.SomenteNoRebanho = true
+		}
 	}
 
 	return s.repo.ListAnimaisFilteredPaginated(ctx, f, limit, offset)

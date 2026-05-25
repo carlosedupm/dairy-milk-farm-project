@@ -3,6 +3,12 @@
  * backend/internal/auth/perfil_access.go ao alterar permissões.
  */
 
+import {
+  MOTIVOS_SAIDA,
+  MOTIVO_SAIDA_LABELS,
+  type MotivoSaida,
+} from "@/services/animais";
+
 export type AppArea =
   | "fazendas"
   | "animais"
@@ -95,6 +101,7 @@ const FUNCIONARIO_GESTAO_PATHS = [
 function isFuncionarioAllowedPath(path: string): boolean {
   if (path === "/") return true;
   if (path === "/animais") return true;
+  if (path === "/animais/baixa") return true;
   if (/^\/animais\/\d+$/.test(path)) return true;
   if (path === "/producao/novo") return true;
   if (path === "/folgas" || path.startsWith("/folgas/")) return true;
@@ -148,7 +155,26 @@ export function showAssistenteForPerfil(perfil: string | undefined): boolean {
   return isAssistenteEnabledForPerfil(perfil);
 }
 
-/** Painel de conformidade/auditoria na home — gestão e titular; não FUNCIONARIO nem USER pendente. */
+export function canRegistrarBaixa(perfil: string | undefined): boolean {
+  if (!perfil) return false;
+  if (perfil === "USER") return false;
+  if (perfil === "FUNCIONARIO") return true;
+  return true;
+}
+
+export function canReverterBaixa(perfil: string | undefined): boolean {
+  if (!perfil) return false;
+  if (perfil === "FUNCIONARIO" || perfil === "USER") return false;
+  return true;
+}
+
+export function motivosBaixaParaPerfil(
+  perfil: string | undefined
+): MotivoSaida[] {
+  if (perfil === "FUNCIONARIO") return ["MORTE"];
+  return [...MOTIVOS_SAIDA];
+}
+
 export function showConformidadePanelForPerfil(
   perfil: string | undefined
 ): boolean {

@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import type { Secagem } from "@/services/secagens";
-import { useAnimaisMap } from "@/components/gestao/useAnimaisMap";
+import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
+import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
 import {
   Table,
   TableBody,
@@ -20,7 +22,11 @@ type Props = {
 };
 
 export function SecagemTable({ items, fazendaId }: Props) {
-  const animaisMap = useAnimaisMap(fazendaId);
+  const animalIds = useMemo(
+    () => items.map((i) => i.animal_id),
+    [items],
+  );
+  const { animaisById } = useGestaoAnimaisByIdMap(fazendaId, animalIds);
 
   if (items.length === 0) {
     return (
@@ -30,18 +36,19 @@ export function SecagemTable({ items, fazendaId }: Props) {
 
   return (
     <ResponsiveListContainer
-      mobile={items.map((item) => {
-        const animalLabel =
-          animaisMap.get(item.animal_id) ?? `Animal ${item.animal_id}`;
-        return (
-          <MobileListCard
-            key={item.id}
-            href={`/animais/${item.animal_id}`}
-            title={animalLabel}
-            subtitle={`Secagem: ${formatDatePtBr(item.data_secagem)}`}
-          />
-        );
-      })}
+      mobile={items.map((item) => (
+        <MobileListCard
+          key={item.id}
+          href={`/animais/${item.animal_id}`}
+          title={
+            <AnimalGestaoLabel
+              animalId={item.animal_id}
+              animaisById={animaisById}
+            />
+          }
+          subtitle={`Secagem: ${formatDatePtBr(item.data_secagem)}`}
+        />
+      ))}
       desktop={
         <div className="overflow-x-auto -mx-4 sm:mx-0">
           <Table>
@@ -55,8 +62,10 @@ export function SecagemTable({ items, fazendaId }: Props) {
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
-                    {animaisMap.get(item.animal_id) ??
-                      `Animal ${item.animal_id}`}
+                    <AnimalGestaoLabel
+                      animalId={item.animal_id}
+                      animaisById={animaisById}
+                    />
                   </TableCell>
                   <TableCell>{formatDatePtBr(item.data_secagem)}</TableCell>
                 </TableRow>

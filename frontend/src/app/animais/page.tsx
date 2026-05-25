@@ -89,6 +89,7 @@ function AnimaisContent() {
       status_saude: filters.status_saude || undefined,
       status_reprodutivo: filters.status_reprodutivo || undefined,
       lote_id: !Number.isNaN(loteNum) && loteNum > 0 ? loteNum : undefined,
+      rebanho: filters.rebanho,
     }),
     [
       pageSize,
@@ -100,6 +101,7 @@ function AnimaisContent() {
       filters.status_saude,
       filters.status_reprodutivo,
       loteNum,
+      filters.rebanho,
     ]
   );
 
@@ -114,7 +116,7 @@ function AnimaisContent() {
   const items = data?.animais ?? [];
   const total = data?.total ?? 0;
 
-  const filterKey = `${debouncedIdent}|${fazendaId ?? ""}|${filters.categoria}|${filters.sexo}|${filters.status_saude}|${filters.status_reprodutivo}|${filters.lote_id}|${pageSize}`;
+  const filterKey = `${debouncedIdent}|${fazendaId ?? ""}|${filters.categoria}|${filters.sexo}|${filters.status_saude}|${filters.status_reprodutivo}|${filters.lote_id}|${filters.rebanho}|${pageSize}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);

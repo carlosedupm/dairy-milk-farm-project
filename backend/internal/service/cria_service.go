@@ -59,6 +59,9 @@ func (s *CriaService) Create(ctx context.Context, c *models.Cria) error {
 		}
 		return err
 	}
+	if err := EnsureAnimalIDNoRebanho(ctx, s.animalRepo, parto.AnimalID); err != nil {
+		return err
+	}
 
 	identUser := strings.TrimSpace(ptrStr(c.AnimalIdentificacao))
 	var racaPtr *string

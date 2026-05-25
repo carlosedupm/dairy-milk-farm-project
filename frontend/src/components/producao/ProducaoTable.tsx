@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ProducaoLeite } from "@/services/producao";
 import { remove } from "@/services/producao";
-import { useAnimaisMap } from "@/components/gestao/useAnimaisMap";
+import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
+import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
 import { formatDateTimePtBr } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +47,17 @@ export function ProducaoTable({
   showAnimal = false,
 }: Props) {
   const queryClient = useQueryClient();
-  const animaisMap = useAnimaisMap(showAnimal ? fazendaId : undefined);
+  const animalIds = useMemo(
+    () =>
+      showAnimal
+        ? items.map((i) => i.animal_id).filter((id): id is number => id > 0)
+        : [],
+    [items, showAnimal],
+  );
+  const { animaisById } = useGestaoAnimaisByIdMap(
+    showAnimal ? fazendaId : undefined,
+    animalIds,
+  );
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
@@ -89,16 +100,19 @@ export function ProducaoTable({
     <>
       <ResponsiveListContainer
         mobile={items.map((p) => {
-          const animalLabel = showAnimal
-            ? (animaisMap.get(p.animal_id) ?? `Animal ${p.animal_id}`)
-            : null;
+          const animalTitle = showAnimal ? (
+            <AnimalGestaoLabel
+              animalId={p.animal_id}
+              animaisById={animaisById}
+            />
+          ) : null;
           return (
             <MobileListCard
               key={p.id}
               href={`/producao/${p.id}/editar`}
-              title={animalLabel ?? formatDateTimePtBr(p.data_hora)}
+              title={animalTitle ?? formatDateTimePtBr(p.data_hora)}
               subtitle={
-                animalLabel ? formatDateTimePtBr(p.data_hora) : undefined
+                animalTitle ? formatDateTimePtBr(p.data_hora) : undefined
               }
               meta={
                 <div className="flex flex-wrap items-center gap-2">
@@ -145,8 +159,10 @@ export function ProducaoTable({
                           href={`/animais/${p.animal_id}`}
                           className="text-primary hover:underline break-words"
                         >
-                          {animaisMap.get(p.animal_id) ??
-                            `Animal ${p.animal_id}`}
+                          <AnimalGestaoLabel
+                            animalId={p.animal_id}
+                            animaisById={animaisById}
+                          />
                         </Link>
                       </TableCell>
                     ) : null}

@@ -7,11 +7,19 @@ import {
   get as getAnimal,
   getContexto,
   remove,
+  reverterBaixa,
   SEXO_LABELS,
   STATUS_SAUDE_LABELS,
   getCategoriaLabel,
   ORIGEM_LABELS,
+  isAnimalForaDoRebanho,
+  MOTIVO_SAIDA_LABELS,
+  type MotivoSaida,
 } from "@/services/animais";
+import {
+  canRegistrarBaixa,
+  canReverterBaixa,
+} from "@/config/appAccess";
 import { getStatusReprodutivoLabel } from "@/components/animais/animalResumoUtils";
 import { AnimalFichaCiclo } from "@/components/animais/AnimalFichaCiclo";
 import type { OrigemAquisicao } from "@/services/animais";
@@ -35,8 +43,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Beef, Edit, Trash2, PlusCircle, Milk } from "lucide-react";
+import { Beef, Edit, Trash2, PlusCircle, Milk, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  animaisFazendaQueryKey,
+  patchAnimalInFazendaCaches,
+} from "@/components/gestao/useAnimaisMap";
 
 const STATUS_VARIANT: Record<
   StatusSaude,
@@ -76,8 +88,34 @@ function AnimalDetailContent() {
     enabled: !Number.isNaN(id) && !!animal,
   });
 
+  const foraDoRebanho =
+    contexto?.fora_do_rebanho ?? (animal ? isAnimalForaDoRebanho(animal) : false);
+
   const canRegistrarProducao =
-    !!user?.perfil && isPathAllowedForPerfil(user.perfil, "/producao/novo");
+    !!user?.perfil &&
+    isPathAllowedForPerfil(user.perfil, "/producao/novo") &&
+    !foraDoRebanho;
+
+  const revertMutation = useMutation({
+    mutationFn: () => reverterBaixa(id),
+    onSuccess: (animalAtualizado) => {
+      patchAnimalInFazendaCaches(queryClient, animalAtualizado);
+      const fid = animalAtualizado.fazenda_id ?? animal?.fazenda_id;
+      queryClient.invalidateQueries({ queryKey: ["animais"] });
+      if (fid) {
+        queryClient.invalidateQueries({
+          queryKey: animaisFazendaQueryKey(fid, "operacional"),
+        });
+        queryClient.invalidateQueries({
+          queryKey: animaisFazendaQueryKey(fid, "todos"),
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["animais", id] });
+      queryClient.invalidateQueries({ queryKey: ["animais", id, "contexto"] });
+      queryClient.invalidateQueries({ queryKey: ["conformidade"] });
+      queryClient.invalidateQueries({ queryKey: ["resumo-pecuario"] });
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: () => remove(id),
@@ -121,6 +159,10 @@ function AnimalDetailContent() {
   const statusSaude = animal.status_saude as StatusSaude | undefined;
   const sexo = animal.sexo as Sexo | undefined;
   const canManageAnimal = user?.perfil !== "FUNCIONARIO";
+  const showRegistrarBaixa =
+    canRegistrarBaixa(user?.perfil) && !foraDoRebanho;
+  const showReverterBaixa =
+    canReverterBaixa(user?.perfil) && foraDoRebanho;
 
   return (
     <PageContainer variant="narrow">
@@ -130,9 +172,12 @@ function AnimalDetailContent() {
 
       <div className="space-y-6">
         <Card>
-          <CardHeader className="flex flex-row items-center gap-2 space-y-0 pb-2">
+          <CardHeader className="flex flex-row flex-wrap items-center gap-2 space-y-0 pb-2">
             <Beef className="h-5 w-5 text-muted-foreground" />
             <CardTitle className="text-xl">{animal.identificacao}</CardTitle>
+            {foraDoRebanho ? (
+              <Badge variant="secondary">Fora do rebanho</Badge>
+            ) : null}
           </CardHeader>
           <CardContent className="space-y-4">
             <dl className="grid gap-3 sm:grid-cols-2">
@@ -170,12 +215,50 @@ function AnimalDetailContent() {
                 </dt>
                 <dd className="mt-0.5">{formatDatePtBr(animal.data_entrada)}</dd>
               </div>
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">
-                  Data de saída
-                </dt>
-                <dd className="mt-0.5">{formatDatePtBr(animal.data_saida)}</dd>
-              </div>
+              {foraDoRebanho ? (
+                <>
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">
+                      Data de saída
+                    </dt>
+                    <dd className="mt-0.5">
+                      {formatDatePtBr(animal.data_saida)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">
+                      Motivo da baixa
+                    </dt>
+                    <dd className="mt-0.5">
+                      {animal.motivo_saida
+                        ? MOTIVO_SAIDA_LABELS[
+                            animal.motivo_saida as MotivoSaida
+                          ] ?? animal.motivo_saida
+                        : "—"}
+                    </dd>
+                  </div>
+                  {animal.observacao_saida ? (
+                    <div className="sm:col-span-2">
+                      <dt className="text-sm font-medium text-muted-foreground">
+                        Observação
+                      </dt>
+                      <dd className="mt-0.5 whitespace-pre-wrap">
+                        {animal.observacao_saida}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {contexto?.saida_resumo?.registrado_por ? (
+                    <div className="sm:col-span-2">
+                      <dt className="text-sm font-medium text-muted-foreground">
+                        Baixa registada por
+                      </dt>
+                      <dd className="mt-0.5">
+                        {contexto.saida_resumo.registrado_por}
+                      </dd>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">
                   Sexo
@@ -200,7 +283,9 @@ function AnimalDetailContent() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">
-                  Status reprodutivo
+                  {foraDoRebanho
+                    ? "Estado reprodutivo ao sair"
+                    : "Status reprodutivo"}
                 </dt>
                 <dd className="mt-0.5">
                   {animal.status_reprodutivo
@@ -210,14 +295,59 @@ function AnimalDetailContent() {
               </div>
             </dl>
 
-            {canManageAnimal && (
+            {(canManageAnimal || showRegistrarBaixa || showReverterBaixa) && (
               <div className="flex flex-wrap gap-2 pt-2">
+                {showRegistrarBaixa && (
+                  <Button variant="default" size="default" asChild>
+                    <Link href={`/animais/baixa?animal_id=${id}`}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Registrar baixa
+                    </Link>
+                  </Button>
+                )}
+                {showReverterBaixa && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="default">
+                        Reverter baixa
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Reverter baixa</DialogTitle>
+                        <DialogDescription>
+                          Remove a data e o motivo de saída deste animal. Não
+                          reabre automaticamente lactação, gestação ou
+                          restrição de leite — corrija manualmente se
+                          necessário. O painel de conformidade pode sinalizar
+                          inconsistências (INT-007).
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <Button variant="outline">Cancelar</Button>
+                        </DialogClose>
+                        <Button
+                          onClick={() => revertMutation.mutate()}
+                          disabled={revertMutation.isPending}
+                        >
+                          {revertMutation.isPending
+                            ? "A reverter…"
+                            : "Confirmar reversão"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                {canManageAnimal && (
                 <Button variant="outline" size="default" asChild>
                   <Link href={`/animais/${id}/editar`}>
                     <Edit className="mr-2 h-4 w-4" />
                     Editar
                   </Link>
                 </Button>
+                )}
+                {canManageAnimal && (
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="destructive" size="default">
@@ -248,6 +378,7 @@ function AnimalDetailContent() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+                )}
               </div>
             )}
           </CardContent>

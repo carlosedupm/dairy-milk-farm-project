@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { create } from "@/services/toques";
-import { listByFazenda as listAnimaisByFazenda } from "@/services/animais";
+import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { listByFazenda as listCoberturasByFazenda } from "@/services/coberturas";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -51,11 +51,7 @@ function NovoContent() {
   const fazendaId = fazendaAtiva?.id ?? 0;
   const precisaCobertura = classificacaoRequiresCobertura(formState.classificacao);
 
-  const { data: animais = [] } = useQuery({
-    queryKey: ["animais", "by-fazenda", fazendaId],
-    queryFn: () => listAnimaisByFazenda(fazendaId),
-    enabled: fazendaId > 0,
-  });
+  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const { data: coberturasFazenda = [] } = useQuery({
     queryKey: ["coberturas", fazendaId],

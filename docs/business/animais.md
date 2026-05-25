@@ -61,6 +61,14 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 - **Implementação**: `AnimalCicloService` em `backend/internal/service/animal_ciclo_service.go`; `AnimalHandler.GetContextoByID`.
 - **Estado**: implementado.
 
+### BR-ANIMAIS-006 — Baixa do rebanho (fluxo dedicado)
+
+- **Enunciado**: A saída do animal da exploração **não** se regista pelo formulário genérico de edição; usa-se o fluxo **Registrar baixa** (`/animais/baixa` ou atalho na ficha). Regras completas em [baixa-rebanho.md](./baixa-rebanho.md).
+- **Escopo**: API `POST /api/v1/animais/:id/baixa`; UI dedicada.
+- **Efeito**: bloqueio operacional fora do fluxo de baixa; contexto com `fora_do_rebanho`.
+- **Implementação**: `AnimalBaixaService`, `RegistrarBaixaForm.tsx`.
+- **Estado**: implementado.
+
 ### BR-ANIMAIS-005 — Rastreabilidade do cadastro
 
 - **Enunciado**: Todo animal criado no sistema (API, assistente ou nascimento no parto) deve ter `created_by` preenchido pelo servidor com o utilizador que executou a ação de criação, quando autenticado.

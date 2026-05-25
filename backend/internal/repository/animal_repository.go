@@ -20,7 +20,20 @@ func NewAnimalRepository(db *pgxpool.Pool) *AnimalRepository {
 	return &AnimalRepository{db: db}
 }
 
-const animalSelectColumns = `id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, origem_aquisicao, created_by, created_at, updated_at`
+const animalSelectColumns = `id, identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, observacao_saida, baixa_registrado_por, baixa_revertido_por, origem_aquisicao, created_by, created_at, updated_at`
+
+// SQLNoRebanho filtra animais ainda no rebanho operacional (BR-BAIXA-002, BR-AUDIT-009).
+const SQLNoRebanho = `(data_saida IS NULL OR data_saida > CURRENT_DATE)`
+
+const sqlNoRebanho = SQLNoRebanho
+
+// SQLNoRebanhoFor devolve o mesmo critério com prefixo de tabela/alias (ex.: "a").
+func SQLNoRebanhoFor(alias string) string {
+	if alias == "" {
+		return SQLNoRebanho
+	}
+	return fmt.Sprintf("(%s.data_saida IS NULL OR %s.data_saida > CURRENT_DATE)", alias, alias)
+}
 
 func animalSelectWithPrefix(prefix string) string {
 	if prefix == "" {
@@ -55,6 +68,9 @@ func scanAnimal(a *models.Animal, s animalRowScanner) error {
 		&a.DataEntrada,
 		&a.DataSaida,
 		&a.MotivoSaida,
+		&a.ObservacaoSaida,
+		&a.BaixaRegistradoPor,
+		&a.BaixaRevertidoPor,
 		&a.OrigemAquisicao,
 		&a.CreatedBy,
 		&a.CreatedAt,
@@ -64,8 +80,8 @@ func scanAnimal(a *models.Animal, s animalRowScanner) error {
 
 func (r *AnimalRepository) Create(ctx context.Context, animal *models.Animal) error {
 	query := `
-		INSERT INTO animais (identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, origem_aquisicao, created_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		INSERT INTO animais (identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, observacao_saida, origem_aquisicao, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -87,6 +103,7 @@ func (r *AnimalRepository) Create(ctx context.Context, animal *models.Animal) er
 		animal.DataEntrada,
 		animal.DataSaida,
 		animal.MotivoSaida,
+		animal.ObservacaoSaida,
 		animal.OrigemAquisicao,
 		animal.CreatedBy,
 	).Scan(&animal.ID, &animal.CreatedAt, &animal.UpdatedAt)
@@ -96,8 +113,8 @@ func (r *AnimalRepository) Create(ctx context.Context, animal *models.Animal) er
 
 func (r *AnimalRepository) CreateTx(ctx context.Context, tx pgx.Tx, animal *models.Animal) error {
 	query := `
-		INSERT INTO animais (identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, origem_aquisicao, created_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		INSERT INTO animais (identificacao, raca, data_nascimento, sexo, status_saude, fazenda_id, categoria, status_reprodutivo, mae_id, pai_info, lote_id, peso_nascimento, data_entrada, data_saida, motivo_saida, observacao_saida, origem_aquisicao, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		RETURNING id, created_at, updated_at
 	`
 	return tx.QueryRow(
@@ -118,6 +135,7 @@ func (r *AnimalRepository) CreateTx(ctx context.Context, tx pgx.Tx, animal *mode
 		animal.DataEntrada,
 		animal.DataSaida,
 		animal.MotivoSaida,
+		animal.ObservacaoSaida,
 		animal.OrigemAquisicao,
 		animal.CreatedBy,
 	).Scan(&animal.ID, &animal.CreatedAt, &animal.UpdatedAt)
@@ -151,8 +169,12 @@ func (r *AnimalRepository) GetAll(ctx context.Context) ([]*models.Animal, error)
 	return r.queryList(ctx, query)
 }
 
-func (r *AnimalRepository) GetByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
-	query := fmt.Sprintf(`SELECT %s FROM animais WHERE fazenda_id = $1 ORDER BY created_at DESC`, animalSelectColumns)
+func (r *AnimalRepository) GetByFazendaID(ctx context.Context, fazendaID int64, somenteNoRebanho bool) ([]*models.Animal, error) {
+	where := "fazenda_id = $1"
+	if somenteNoRebanho {
+		where += " AND " + sqlNoRebanho
+	}
+	query := fmt.Sprintf(`SELECT %s FROM animais WHERE %s ORDER BY created_at DESC`, animalSelectColumns, where)
 	return r.queryList(ctx, query, fazendaID)
 }
 
@@ -162,6 +184,7 @@ func (r *AnimalRepository) ListEmLactacaoByFazendaID(ctx context.Context, fazend
 		SELECT %s
 		FROM animais a
 		WHERE a.fazenda_id = $1
+		AND `+sqlNoRebanho+`
 		AND EXISTS (
 			SELECT 1 FROM lactacoes l
 			WHERE l.animal_id = a.id
@@ -195,8 +218,8 @@ func (r *AnimalRepository) Update(ctx context.Context, animal *models.Animal) er
 	}
 	query := `
 		UPDATE animais
-		SET identificacao = $1, raca = $2, data_nascimento = $3, sexo = $4, status_saude = $5, fazenda_id = $6, categoria = $7, status_reprodutivo = $8, mae_id = $9, pai_info = $10, lote_id = $11, peso_nascimento = $12, data_entrada = $13, data_saida = $14, motivo_saida = $15, origem_aquisicao = $16, updated_at = $17
-		WHERE id = $18
+		SET identificacao = $1, raca = $2, data_nascimento = $3, sexo = $4, status_saude = $5, fazenda_id = $6, categoria = $7, status_reprodutivo = $8, mae_id = $9, pai_info = $10, lote_id = $11, peso_nascimento = $12, data_entrada = $13, data_saida = $14, motivo_saida = $15, observacao_saida = $16, origem_aquisicao = $17, updated_at = $18
+		WHERE id = $19
 	`
 
 	cmd, err := r.db.Exec(
@@ -217,6 +240,7 @@ func (r *AnimalRepository) Update(ctx context.Context, animal *models.Animal) er
 		animal.DataEntrada,
 		animal.DataSaida,
 		animal.MotivoSaida,
+		animal.ObservacaoSaida,
 		animal.OrigemAquisicao,
 		time.Now(),
 		animal.ID,
@@ -316,6 +340,8 @@ type AnimalListFilters struct {
 	StatusSaude        *string
 	LoteID             *int64
 	StatusReprodutivo  *string
+	SomenteNoRebanho   bool
+	SomenteBaixados    bool
 }
 
 // ListAnimaisFilteredPaginated lista animais com filtros; total reflete o COUNT antes do LIMIT.
@@ -398,8 +424,63 @@ func buildAnimalListWhereClause(f AnimalListFilters) (string, []interface{}) {
 		parts = append(parts, fmt.Sprintf("status_reprodutivo = $%d", len(args)+1))
 		args = append(args, *f.StatusReprodutivo)
 	}
+	if f.SomenteBaixados {
+		parts = append(parts, `(data_saida IS NOT NULL AND data_saida <= CURRENT_DATE)`)
+	} else if f.SomenteNoRebanho {
+		parts = append(parts, sqlNoRebanho)
+	}
 
 	return strings.Join(parts, " AND "), args
+}
+
+func (r *AnimalRepository) UpdateSaidaTx(ctx context.Context, tx pgx.Tx, animalID int64, dataSaida time.Time, motivo string, observacao *string, registradoPor int64) error {
+	var regPor *int64
+	if registradoPor > 0 {
+		regPor = &registradoPor
+	}
+	query := `
+		UPDATE animais
+		SET data_saida = $1, motivo_saida = $2, observacao_saida = $3,
+		    baixa_registrado_por = $4, baixa_revertido_por = NULL, updated_at = $5
+		WHERE id = $6
+	`
+	cmd, err := tx.Exec(ctx, query, dataSaida, motivo, observacao, regPor, time.Now(), animalID)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return errors.New("animal nao encontrado")
+	}
+	return nil
+}
+
+func (r *AnimalRepository) ClearSaidaTx(ctx context.Context, tx pgx.Tx, animalID int64, revertidoPor int64) error {
+	var revPor *int64
+	if revertidoPor > 0 {
+		revPor = &revertidoPor
+	}
+	query := `
+		UPDATE animais
+		SET data_saida = NULL, motivo_saida = NULL, observacao_saida = NULL,
+		    baixa_registrado_por = NULL, baixa_revertido_por = $1, updated_at = $2
+		WHERE id = $3
+	`
+	cmd, err := tx.Exec(ctx, query, revPor, time.Now(), animalID)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return errors.New("animal nao encontrado")
+	}
+	return nil
+}
+
+func (r *AnimalRepository) SearchByIdentificacaoNoRebanho(ctx context.Context, identificacao string, fazendaIDs []int64) ([]*models.Animal, error) {
+	if len(fazendaIDs) == 0 {
+		return []*models.Animal{}, nil
+	}
+	query := fmt.Sprintf(`SELECT %s FROM animais WHERE identificacao ILIKE '%%' || $1 || '%%' AND fazenda_id = ANY($2::bigint[]) AND %s ORDER BY created_at DESC`, animalSelectColumns, sqlNoRebanho)
+	return r.queryList(ctx, query, identificacao, fazendaIDs)
 }
 
 func (r *AnimalRepository) ExistsByIdentificacao(ctx context.Context, identificacao string) (bool, error) {

@@ -37,6 +37,7 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 | Coberturas (reprodução) | [coberturas.md](./coberturas.md) | ✅ |
 | Cios (detecção) | [cios.md](./cios.md) | ✅ |
 | Animais (busca contextual) | [animais.md](./animais.md) | ✅ |
+| Baixa do rebanho | [baixa-rebanho.md](./baixa-rebanho.md) | ✅ |
 | Leite — descarte / laboratório | [leite-restricoes.md](./leite-restricoes.md) | ✅ |
 | Acessos por perfil (RBAC) | [acessos-perfil.md](./acessos-perfil.md) | ✅ |
 | Partos e crias | [partos.md](./partos.md) | ✅ |
@@ -51,4 +52,4 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 
 ---
 
-**Última atualização**: 2026-05-21
+**Última atualização**: 2026-05-24

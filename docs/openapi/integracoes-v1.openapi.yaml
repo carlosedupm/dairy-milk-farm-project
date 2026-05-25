@@ -439,6 +439,23 @@ components:
         status_reprodutivo:
           type: string
           nullable: true
+        data_saida:
+          type: string
+          format: date
+          nullable: true
+          description: Data de saída do rebanho (baixa)
+        motivo_saida:
+          type: string
+          enum: [VENDA, MORTE, DESCARTE, DOACAO]
+          nullable: true
+        observacao_saida:
+          type: string
+          nullable: true
+        baixa_registrado_por:
+          type: integer
+          format: int64
+          nullable: true
+          description: Utilizador que registou a baixa (leitura)
         created_at:
           type: string
           format: date-time

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { create as createCria, listByParto } from "@/services/crias";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,15 @@ import {
   defaultCriaLinha,
   type CriaLinhaFormState,
 } from "@/components/gestao/cria-constants";
-import { useAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
+import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
+import { GestaoRegistroBaixadoAlert } from "@/components/gestao/GestaoRegistroBaixadoAlert";
+import {
+  isGestaoRegistroAnimalBaixado,
+} from "@/components/gestao/gestaoRebanhoUtils";
+import {
+  animaisFazendaQueryKey,
+  useGestaoAnimaisByIdMap,
+} from "@/components/gestao/useAnimaisMap";
 import { getApiErrorMessage } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import { getCategoriaLabel, type Animal } from "@/services/animais";
@@ -38,6 +46,8 @@ type Props = {
   partoId: number;
   fazendaId: number;
   numeroCriasText: string;
+  /** ID da matriz do parto — para bloquear novo cadastro de cria se baixada. */
+  matrizAnimalId: number;
   /** Raça da vaca selecionada no formulário (placeholder na raça da cria). */
   racaMae?: string;
 };
@@ -50,15 +60,6 @@ function condicaoLabel(v: string): string {
   return CRIA_CONDICAO_OPTIONS.find((o) => o.value === v)?.label ?? v;
 }
 
-function formatAnimalGeradoResumo(animal: Animal): string {
-  const partes: string[] = [animal.identificacao];
-  const categoria = getCategoriaLabel(animal.categoria);
-  if (categoria !== "—") partes.push(categoria);
-  const raca = (animal.raca ?? "").trim();
-  if (raca) partes.push(raca);
-  return partes.join(" · ");
-}
-
 function renderColunaCadastro(cria: Cria, animaisById: Map<number, Animal>) {
   if (cria.condicao === "NATIMORTO") {
     return <span className="text-muted-foreground text-sm">Natimorto (sem cadastro)</span>;
@@ -67,20 +68,40 @@ function renderColunaCadastro(cria: Cria, animaisById: Map<number, Animal>) {
     return <span className="text-muted-foreground text-sm">Cadastro pendente</span>;
   }
   const animal = animaisById.get(cria.animal_id);
-  const resumo = animal ? formatAnimalGeradoResumo(animal) : "Ver ficha do animal";
+  const categoria = animal ? getCategoriaLabel(animal.categoria) : null;
+  const raca = (animal?.raca ?? "").trim();
+  const meta =
+    animal && (categoria !== "—" || raca)
+      ? [categoria !== "—" ? categoria : null, raca || null]
+          .filter(Boolean)
+          .join(" · ")
+      : null;
   return (
     <Link
       href={`/animais/${cria.animal_id}`}
-      className="text-primary underline-offset-4 hover:underline text-sm font-medium"
+      className="text-primary underline-offset-4 hover:underline text-sm font-medium inline-flex flex-col gap-0.5 min-w-0"
     >
-      {resumo}
+      <AnimalGestaoLabel
+        animalId={cria.animal_id}
+        animaisById={animaisById}
+      />
+      {meta ? (
+        <span className="text-muted-foreground font-normal text-xs">
+          {meta}
+        </span>
+      ) : null}
     </Link>
   );
 }
 
-export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaMae }: Props) {
+export function PartoEditCriasPanel({
+  partoId,
+  fazendaId,
+  numeroCriasText,
+  matrizAnimalId,
+  racaMae,
+}: Props) {
   const queryClient = useQueryClient();
-  const animaisById = useAnimaisByIdMap(fazendaId);
   const esperado = Math.max(1, parseInt(numeroCriasText, 10) || 1);
   const [draft, setDraft] = useState<CriaLinhaFormState>(() => defaultCriaLinha());
   const [localError, setLocalError] = useState<string | null>(null);
@@ -94,6 +115,17 @@ export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaM
     queryKey: ["crias", partoId],
     queryFn: () => listByParto(partoId),
   });
+
+  const animalIds = useMemo(() => {
+    const ids = [matrizAnimalId];
+    for (const c of crias) {
+      if (c.animal_id) ids.push(c.animal_id);
+    }
+    return ids;
+  }, [matrizAnimalId, crias]);
+
+  const { animaisById } = useGestaoAnimaisByIdMap(fazendaId, animalIds);
+  const matrizBaixada = isGestaoRegistroAnimalBaixado(matrizAnimalId, animaisById);
 
   const loadErrorMessage = isError
     ? getApiErrorMessage(loadError, "Não foi possível carregar as crias deste parto.")
@@ -130,7 +162,10 @@ export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaM
       setDraft(defaultCriaLinha());
       queryClient.invalidateQueries({ queryKey: ["crias", partoId] });
       queryClient.invalidateQueries({
-        queryKey: ["animais", "by-fazenda", fazendaId],
+        queryKey: animaisFazendaQueryKey(fazendaId, "operacional"),
+      });
+      queryClient.invalidateQueries({
+        queryKey: animaisFazendaQueryKey(fazendaId, "todos"),
       });
     },
     onError: (err) => {
@@ -222,7 +257,14 @@ export function PartoEditCriasPanel({ partoId, fazendaId, numeroCriasText, racaM
         </div>
       )}
 
-      {faltaCadastrar ? (
+      {matrizBaixada ? (
+        <GestaoRegistroBaixadoAlert
+          animalId={matrizAnimalId}
+          animaisById={animaisById}
+        />
+      ) : null}
+
+      {faltaCadastrar && !matrizBaixada ? (
         <div className="rounded-md border border-border bg-muted/20 p-3 space-y-3">
           <p className="text-sm font-medium text-foreground">Registrar próxima cria</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

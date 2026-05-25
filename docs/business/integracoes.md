@@ -49,6 +49,13 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 - **Efeito**: resposta com `total`, `sucesso`, `falhas[]` e lista de registos criados (`toques_criados[]` ou `coberturas_criadas[]`); HTTP 200 quando a requisição foi processada.
 - **Estado**: implementado.
 
+### BR-INTEG-008 — Busca de animais exclui baixados por defeito
+
+- **Enunciado**: `GET /api/v1/integracoes/animais` (busca por `identificacao` + `fazenda_id`) devolve apenas animais **no rebanho** (`data_saida` nula ou futura), alinhado a BR-BAIXA-002.
+- **Efeito**: integradores não sugerem animal fora do rebanho em fluxos operacionais; detalhe por `GET .../animais/:id` continua a expor `data_saida`, `motivo_saida`, `observacao_saida` quando existirem.
+- **Implementação**: `IntegracaoHandler.SearchAnimais` → `SearchByIdentificacaoForFazendas(..., somenteNoRebanho=true)`; schema OpenAPI `Animal`.
+- **Estado**: implementado.
+
 ### BR-INTEG-007 — Classificação operacional em toques M2M
 
 - **Enunciado**: Toques unitários e em lote aceitam `classificacao_operacional` (`PRENHA`, `VAZIA`, `VAZIA_PEV`, `CLOE`, `CL`, `RETOQUE`) e campos opcionais `dias_gestacao_estimados`, `metodo`, `observacoes`; o servidor deriva `resultado` canônico conforme [toques.md](./toques.md) (BR-TOQUES-006).
@@ -58,4 +65,4 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 
 ---
 
-**Última atualização**: 2026-05-24
+**Última atualização**: 2026-05-24 (BR-INTEG-008 — busca M2M exclui baixados)

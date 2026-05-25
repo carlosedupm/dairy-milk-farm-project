@@ -129,6 +129,16 @@ func (r *RestricaoLeiteRepository) Create(ctx context.Context, row *models.Restr
 	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt)
 }
 
+func (r *RestricaoLeiteRepository) CancelAguardandoByAnimalTx(ctx context.Context, tx pgx.Tx, animalID int64) error {
+	const q = `
+		UPDATE restricoes_leite
+		SET status = $2, updated_at = NOW()
+		WHERE animal_id = $1 AND status = $3
+	`
+	_, err := tx.Exec(ctx, q, animalID, models.RestricaoLeiteStatusCancelado, models.RestricaoLeiteStatusAguardandoLab)
+	return err
+}
+
 func (r *RestricaoLeiteRepository) Liberar(ctx context.Context, id int64, liberadoEm time.Time, liberadoObs *string, liberadoPor *int64) error {
 	const q = `
 		UPDATE restricoes_leite

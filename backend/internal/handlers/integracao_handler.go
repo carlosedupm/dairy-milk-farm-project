@@ -64,18 +64,14 @@ func (h *IntegracaoHandler) SearchAnimais(c *gin.Context) {
 	if !ValidateFazendaIntegracao(c, fazendaID) {
 		return
 	}
-	list, err := h.animalSvc.SearchByIdentificacao(c.Request.Context(), identificacao)
+	list, err := h.animalSvc.SearchByIdentificacaoForFazendas(
+		c.Request.Context(), identificacao, []int64{fazendaID}, true,
+	)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao buscar", err.Error())
 		return
 	}
-	filtered := make([]*models.Animal, 0)
-	for _, a := range list {
-		if a.FazendaID == fazendaID {
-			filtered = append(filtered, a)
-		}
-	}
-	response.SuccessOK(c, filtered, "OK")
+	response.SuccessOK(c, list, "OK")
 }
 
 func (h *IntegracaoHandler) GetAnimal(c *gin.Context) {

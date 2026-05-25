@@ -65,6 +65,9 @@ func (s *CoberturaService) validateCoberturaRegras(ctx context.Context, c *model
 	if animal.FazendaID != c.FazendaID {
 		return ErrCoberturaAnimalFazendaDiferente
 	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return err
+	}
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return ErrCoberturaApenasFemea
 	}
@@ -143,11 +146,14 @@ func (s *CoberturaService) Update(ctx context.Context, c *models.Cobertura) erro
 }
 
 func (s *CoberturaService) Delete(ctx context.Context, id int64) error {
-	_, err := s.repo.GetByID(ctx, id)
+	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrCoberturaNotFound
 		}
+		return err
+	}
+	if err := EnsureAnimalIDNoRebanho(ctx, s.animalRepo, existing.AnimalID); err != nil {
 		return err
 	}
 	hasGest, err := s.gestacaoRepo.ExistsByCoberturaID(ctx, id)

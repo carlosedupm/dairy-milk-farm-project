@@ -42,6 +42,7 @@ function Content() {
     <GestaoListLayout
       title={`Toques (Diagnósticos) – ${fazendaAtiva.nome}`}
       backHref="/gestao"
+      fazendaId={fazendaId}
       newHref="/gestao/toques/novo"
       secondaryHref="/gestao/toques/lote"
       secondaryLabel="Registrar em lote"
