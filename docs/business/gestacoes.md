@@ -32,6 +32,14 @@ Registro de **gestação confirmada** após toque positivo e acompanhamento até
 - **Implementação**: `ResumoPecuarioService.Build`, `GestacaoRepository.ListPartosPrevistosByFazendaID`; `PecuarioResumoHomePanel`.
 - **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-009).
 
+### BR-GESTACOES-004 — Drill-down «Prenhes» na home
+
+- **Enunciado**: O contador «Prenhes» no painel pecuário da home (`prenhes_total`) reflete gestações com `status = CONFIRMADA`; ao clicar, o utilizador abre a lista de gestações com o mesmo critério (`/gestao/gestacoes?status=CONFIRMADA`), não o filtro `status_reprodutivo = PRENHE` em animais.
+- **Escopo**: Fazenda ativa; perfis com dashboard completo (não FUNCIONARIO restrito).
+- **Efeito**: navegação; lista vazia quando contador é zero.
+- **Implementação**: `ResumoKpiTile` em `PecuarioResumoHomePanel`; filtro client-side em `frontend/src/app/gestao/gestacoes/page.tsx`; lista com link à ficha `/animais/:id` (mobile e desktop em `GestacaoTable`).
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-19
+**Última atualização**: 2026-05-24

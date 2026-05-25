@@ -123,6 +123,8 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 50. ✅ **Fase 2 — Ciclo integrado do rebanho (entregas 1–6)**: secagem encerra lactação + bloqueio 2ª lactação ativa (`secagens.md`, `lactacoes.md`); FUNCIONARIO com POST toques e produção (BR-ACESSO-015); `GET /animais/:id/contexto` com timeline e próximas ações (`AnimalCicloService`, `AnimalFichaCiclo`); `GET /fazendas/:id/resumo-pecuario` + `PecuarioResumoHomePanel`; produção exige lactação ativa (`ProducaoService`, aviso em `ProducaoForm`); catálogo `partos.md`, `toques.md`, `gestacoes.md`, `producao-leite.md`; BR-CICLO-005 a 009 implementados em `ciclo-rebanho.md`.
 51. ✅ **Produção — combo só matrizes em lactação**: `ProducaoForm` usa `listEmLactacaoByFazenda` + `femeasOnly` (sem novilhas/bois fora de lactação); alinhado a BR-PRODUCAO-003 / BR-CICLO-007.
 52. ✅ **Toque positivo — propagação do ciclo**: `DiagnosticoGestacaoService` resolve/vincula cobertura antes de gravar; cria gestação + `PRENHE`; UI `/gestao/toques/novo` com seletor de cobertura, `?animal_id=`, invalidação de contexto/resumo pecuário e redirect à ficha; **BR-TOQUES-002** atualizado.
+53. ✅ **KPIs acionáveis na home (resumo pecuário)**: `ResumoKpiTile` + `lib/resumoPecuarioLinks.ts`; Prenhes → `/gestao/gestacoes?status=CONFIRMADA`; Restrições → `/#restricoes-leite`; Leite hoje / 7 dias → `/producao?start&end`; **BR-CICLO-009** e **BR-GESTACOES-004**.
+54. ✅ **Home — busca sem duplicar no corpo (opção A)**: removido `AnimalSearchHome` do `Dashboard`; busca por identificação via header + atalho mobile «Buscar animal»; **BR-ANIMAIS-001** atualizado.
 
 ### 📋 Próximos passos imediatos:
 

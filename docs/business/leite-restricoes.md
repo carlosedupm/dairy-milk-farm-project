@@ -6,7 +6,7 @@ Operação em que o leite do animal **não deve ir para o tanque** (ordenha em b
 
 - Banco: migration `backend/migrations/20_add_restricoes_leite.up.sql` — tabela `restricoes_leite`, índice único parcial `uq_restricoes_leite_animal_aguardando` (no máximo um `AGUARDANDO_LAB` por `animal_id`).
 - Backend: `backend/internal/models/restricao_leite.go`, `backend/internal/repository/restricao_leite_repository.go`, `backend/internal/repository/lactacao_repository.go` (`ExistsAtivaNaFazenda`), `backend/internal/repository/animal_repository.go` (`ListEmLactacaoByFazendaID`), `backend/internal/service/restricao_leite_service.go`, `backend/internal/handlers/restricao_leite_handler.go`, `backend/internal/handlers/animal_handler.go` (`GET .../animais/em-lactacao`), rotas em `backend/cmd/api/main.go`; contexto do animal em `animal_handler.go` (`GET /api/v1/animais/:id/contexto`).
-- Frontend: `frontend/src/services/restricoesLeite.ts`, `frontend/src/components/leite/RestricoesLeiteHomePanel.tsx`, home `frontend/src/app/page.tsx`; alerta na busca inteligente em `frontend/src/components/animais/AnimalSearchHome.tsx`.
+- Frontend: `frontend/src/services/restricoesLeite.ts`, `frontend/src/components/leite/RestricoesLeiteHomePanel.tsx`, home `frontend/src/app/page.tsx`; alerta na busca inteligente em `frontend/src/components/animais/AnimalSearchPanel.tsx` (header/diálogo).
 - RBAC API (FUNCIONARIO): `backend/internal/auth/perfil_access.go` — `GET|POST` em `/api/v1/fazendas/:id/restricoes-leite` e `/ativas`; `GET` em `/api/v1/fazendas/:id/animais/em-lactacao` (mesma whitelist que animais por fazenda).
 
 ---

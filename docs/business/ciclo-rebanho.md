@@ -109,8 +109,8 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 
 - **Enunciado**: Titular/gerente vê na home indicadores acionáveis: partos previstos em janela configurável, contagem de prenhes, restrições ativas, produção do dia/semana.
 - **Escopo**: Fazenda ativa; oculto para FUNCIONARIO em modo restrito na UI.
-- **Efeito**: informativo.
-- **Implementação**: `GET /api/v1/fazendas/:id/resumo-pecuario`, `PecuarioResumoHomePanel`; [gestacoes.md](./gestacoes.md) BR-GESTACOES-003.
+- **Efeito**: informativo com **drill-down** — cada KPI do painel pecuário navega para a lista/fonte correspondente (gestações `CONFIRMADA`, âncora de restrições na home, produção filtrada por período); partos previstos com link à ficha do animal.
+- **Implementação**: `GET /api/v1/fazendas/:id/resumo-pecuario`, `PecuarioResumoHomePanel`, `ResumoKpiTile`, `lib/resumoPecuarioLinks.ts`; [gestacoes.md](./gestacoes.md) BR-GESTACOES-003 e BR-GESTACOES-004.
 - **Estado**: **implementado**.
 
 ### BR-CICLO-010 — Sincronização documentação ↔ código
@@ -137,7 +137,7 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 | Produção | Implementado | Lactação ativa obrigatória (BR-CICLO-007); FUNCIONARIO POST |
 | Restrição leite | Implementado | [leite-restricoes.md](./leite-restricoes.md) |
 | Saúde (vacinas/tratamentos) | Planejado | Só `status_saude` |
-| Dashboard pecuário | Implementado | `PecuarioResumoHomePanel` |
+| Dashboard pecuário | Implementado | KPIs acionáveis (`ResumoKpiTile`, BR-GESTACOES-004) |
 | Ficha animal (timeline) | Implementado | BR-CICLO-008 |
 
 ---
@@ -150,4 +150,4 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 
 ---
 
-**Última atualização**: 2026-05-24 (nota classificação operacional em BR-CICLO-002)
+**Última atualização**: 2026-05-24 (KPIs acionáveis na home — BR-CICLO-009 drill-down)

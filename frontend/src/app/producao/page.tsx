@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { list, listByDateRange } from "@/services/producao";
@@ -32,6 +32,21 @@ function ProducaoContent() {
   const [offset, setOffset] = useState(0);
 
   const dateFilterActive = Boolean(startDate && endDate);
+
+  useEffect(() => {
+    const start = searchParams.get("start")?.trim();
+    const end = searchParams.get("end")?.trim();
+    if (!start || !end) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setStartDate(start);
+      setEndDate(end);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
 
   useEffect(() => {
     const param = searchParams.get("fazenda_id");
@@ -206,7 +221,15 @@ function ProducaoContent() {
 export default function ProducaoPage() {
   return (
     <ProtectedRoute>
-      <ProducaoContent />
+      <Suspense
+        fallback={
+          <PageContainer variant="default">
+            <p className="text-muted-foreground">Carregando…</p>
+          </PageContainer>
+        }
+      >
+        <ProducaoContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

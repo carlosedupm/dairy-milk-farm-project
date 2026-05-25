@@ -23,7 +23,6 @@ import {
   Plus,
   type LucideIcon,
 } from "lucide-react";
-import { AnimalSearchHome } from "@/components/animais/AnimalSearchHome";
 import { RestricoesLeiteHomePanel } from "@/components/leite/RestricoesLeiteHomePanel";
 import { PecuarioResumoHomePanel } from "@/components/dashboard/PecuarioResumoHomePanel";
 import { ConformidadeHomePanel } from "@/components/dashboard/ConformidadeHomePanel";
@@ -188,13 +187,6 @@ export function Dashboard() {
           <RestricoesLeiteHomePanel />
           {!restrictedMode ? <PecuarioResumoHomePanel /> : null}
           {showConformidade ? <ConformidadeHomePanel /> : null}
-        </section>
-
-        <section aria-labelledby="busca-heading" className="hidden md:block">
-          <h2 id="busca-heading" className="sr-only">
-            Busca de animal
-          </h2>
-          <AnimalSearchHome />
         </section>
 
         <section className="space-y-3" aria-labelledby="acesso-rapido-heading">

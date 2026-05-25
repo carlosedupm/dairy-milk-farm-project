@@ -161,7 +161,7 @@
 
 - [x] Ficha do animal com timeline e estado (BR-CICLO-008)
 - [x] Secagem encerra lactação ativa + uma lactação ativa (BR-CICLO-005/006)
-- [x] Dashboard pecuário na home (BR-CICLO-009)
+- [x] Dashboard pecuário na home (BR-CICLO-009) com KPIs acionáveis / drill-down (BR-GESTACOES-004)
 - [x] Produção exige lactação ativa (BR-CICLO-007)
 - [x] API contexto enriquecido (`AnimalCicloService`)
 - [x] Catálogo: partos, lactações, toques, secagens, gestações, produção (`docs/business/`)

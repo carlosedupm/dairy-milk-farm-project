@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Gestacao } from "@/services/gestacoes";
 import { useAnimaisMap } from "@/components/gestao/useAnimaisMap";
 import {
@@ -17,14 +18,20 @@ import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveList
 type Props = {
   items: Gestacao[];
   fazendaId: number | undefined;
+  /** Mensagem quando a lista está vazia (ex.: filtro «confirmadas»). */
+  emptyMessage?: string;
 };
 
-export function GestacaoTable({ items, fazendaId }: Props) {
+export function GestacaoTable({
+  items,
+  fazendaId,
+  emptyMessage = "Nenhum registro.",
+}: Props) {
   const animaisMap = useAnimaisMap(fazendaId);
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>
+      <p className="py-8 text-center text-muted-foreground">{emptyMessage}</p>
     );
   }
 
@@ -58,16 +65,27 @@ export function GestacaoTable({ items, fazendaId }: Props) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {animaisMap.get(item.animal_id) ??
-                      `Animal ${item.animal_id}`}
-                  </TableCell>
-                  <TableCell>{item.status}</TableCell>
-                  <TableCell>{formatDatePtBr(item.data_confirmacao)}</TableCell>
-                </TableRow>
-              ))}
+              {items.map((item) => {
+                const animalLabel =
+                  animaisMap.get(item.animal_id) ??
+                  `Animal ${item.animal_id}`;
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/animais/${item.animal_id}`}
+                        className="inline-flex min-h-[44px] min-w-0 items-center text-primary underline-offset-4 hover:underline"
+                      >
+                        {animalLabel}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{item.status}</TableCell>
+                    <TableCell>
+                      {formatDatePtBr(item.data_confirmacao)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

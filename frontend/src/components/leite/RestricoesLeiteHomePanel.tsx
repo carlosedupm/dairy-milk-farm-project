@@ -198,7 +198,10 @@ export function RestricoesLeiteHomePanel() {
 
   return (
     <>
-      <Card className="border-amber-500/30">
+      <Card
+        id="restricoes-leite"
+        className="border-amber-500/30 scroll-mt-20"
+      >
         <CardHeader className="space-y-3 pb-2">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div className="min-w-0 space-y-1">

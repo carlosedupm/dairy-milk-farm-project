@@ -5,8 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { getResumoPecuario } from "@/services/resumoPecuario";
 import { formatDatePtBr } from "@/lib/format";
+import {
+  buildProducaoListHref,
+  getResumoProducaoHojeRange,
+  getResumoProducaoSemanaRange,
+} from "@/lib/resumoPecuarioLinks";
 import { getApiErrorMessage } from "@/lib/errors";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResumoKpiTile } from "@/components/dashboard/ResumoKpiTile";
 import { Baby, Droplets, AlertTriangle, Heart } from "lucide-react";
 
 export function PecuarioResumoHomePanel() {
@@ -20,6 +26,9 @@ export function PecuarioResumoHomePanel() {
   });
 
   if (!fazendaAtiva) return null;
+
+  const hojeRange = getResumoProducaoHojeRange();
+  const semanaRange = getResumoProducaoSemanaRange();
 
   return (
     <Card>
@@ -37,39 +46,47 @@ export function PecuarioResumoHomePanel() {
         )}
         {data && (
           <>
-            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-              <div className="rounded-lg border p-3 min-w-0">
-                <dt className="flex items-center gap-1 text-muted-foreground">
-                  <Heart className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  Prenhes
-                </dt>
-                <dd className="text-xl font-semibold mt-1">{data.prenhes_total}</dd>
-              </div>
-              <div className="rounded-lg border p-3 min-w-0">
-                <dt className="flex items-center gap-1 text-muted-foreground">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  Restrições leite
-                </dt>
-                <dd className="text-xl font-semibold mt-1">
-                  {data.restricoes_ativas_total}
-                </dd>
-              </div>
-              <div className="rounded-lg border p-3 min-w-0">
-                <dt className="flex items-center gap-1 text-muted-foreground">
-                  <Droplets className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  Leite hoje
-                </dt>
-                <dd className="text-xl font-semibold mt-1">
-                  {data.producao_hoje_litros.toFixed(1)} L
-                </dd>
-              </div>
-              <div className="rounded-lg border p-3 min-w-0">
-                <dt className="text-muted-foreground">7 dias</dt>
-                <dd className="text-xl font-semibold mt-1">
-                  {data.producao_semana_litros.toFixed(1)} L
-                </dd>
-              </div>
-            </dl>
+            <div
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm"
+              role="list"
+              aria-label="Indicadores do rebanho"
+            >
+              <ResumoKpiTile
+                label="Prenhes"
+                icon={Heart}
+                value={data.prenhes_total}
+                href="/gestao/gestacoes?status=CONFIRMADA"
+                ariaLabel={
+                  data.prenhes_total === 1
+                    ? "Ver 1 gestação confirmada"
+                    : `Ver ${data.prenhes_total} gestações confirmadas`
+                }
+              />
+              <ResumoKpiTile
+                label="Restrições leite"
+                icon={AlertTriangle}
+                value={data.restricoes_ativas_total}
+                href="/#restricoes-leite"
+                ariaLabel={
+                  data.restricoes_ativas_total === 1
+                    ? "Ver 1 restrição de leite ativa"
+                    : `Ver ${data.restricoes_ativas_total} restrições de leite ativas`
+                }
+              />
+              <ResumoKpiTile
+                label="Leite hoje"
+                icon={Droplets}
+                value={`${data.producao_hoje_litros.toFixed(1)} L`}
+                href={buildProducaoListHref(hojeRange.start, hojeRange.end)}
+                ariaLabel={`Ver produção de leite de hoje, ${data.producao_hoje_litros.toFixed(1)} litros`}
+              />
+              <ResumoKpiTile
+                label="7 dias"
+                value={`${data.producao_semana_litros.toFixed(1)} L`}
+                href={buildProducaoListHref(semanaRange.start, semanaRange.end)}
+                ariaLabel={`Ver produção dos últimos 7 dias, ${data.producao_semana_litros.toFixed(1)} litros`}
+              />
+            </div>
 
             {data.partos_previstos.length > 0 ? (
               <div className="min-w-0">
