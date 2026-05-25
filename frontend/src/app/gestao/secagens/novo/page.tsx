@@ -12,6 +12,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { DatePicker } from "@/components/ui/date-picker";
+import { todayISODate } from "@/lib/date-limits";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
 
@@ -66,7 +67,12 @@ function NovoContent() {
       />
       <div>
         <Label>Data da secagem</Label>
-        <DatePicker value={dataSecagem} onChange={setDataSecagem} placeholder="Selecione a data" />
+        <DatePicker
+          value={dataSecagem}
+          onChange={setDataSecagem}
+          maxDate={todayISODate()}
+          placeholder="Selecione a data"
+        />
       </div>
     </GestaoFormLayout>
   );

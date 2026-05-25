@@ -52,10 +52,17 @@ Registro de **toque** (diagnóstico de gestação) após cobertura, com resultad
 - **Implementação**: `NormalizeDiagnosticoGestacao` (`diagnostico_gestacao_normalize.go`); migration `26_add_classificacao_operacional_toques`.
 - **Estado**: implementado.
 
+### BR-TOQUES-007 — Data do toque (temporal)
+
+- **Enunciado**: `data` não futura; ≥ entrada/nascimento; se `cobertura_id`, ≥ data da cobertura — [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-012–014 (TMP-001 a TMP-003). Aplica-se a toque unitário, lote JWT e M2M.
+- **Efeito**: bloqueio no servidor (400).
+- **Implementação**: `DiagnosticoGestacaoService` + `ciclo_integridade_temporal.go`; `ToqueFormFields` e `/gestao/toques/lote` com `maxDate` agora.
+- **Estado**: implementado.
+
 ### Canal de integração externa
 
 - Registo via `POST /api/v1/integracoes/toques` ou lote `POST /api/v1/integracoes/toques/lote` (scope `toques:write`) — ver [integracoes.md](./integracoes.md) (`BR-INTEG-*`). Aceita `classificacao_operacional`, `dias_gestacao_estimados` e `metodo`.
 
 ---
 
-**Última atualização**: 2026-05-24
+**Última atualização**: 2026-05-25 (BR-TOQUES-007 — validação temporal)

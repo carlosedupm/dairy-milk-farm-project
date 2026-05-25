@@ -44,6 +44,13 @@ Registro de **parto** da matriz, opcionalmente com **crias** no mesmo POST, aber
 - **Implementação**: `PartoService.Delete`.
 - **Estado**: implementado (detalhe de vínculos no código).
 
+### BR-PARTOS-006 — Data do parto (temporal)
+
+- **Enunciado**: `data` não futura; ≥ entrada/nascimento; se `gestacao_id`, ≥ `data_confirmacao` da gestação — BR-CICLO-012–014 (TMP-001, TMP-002, TMP-004).
+- **Efeito**: bloqueio no servidor (400).
+- **Implementação**: `PartoService` + `ciclo_integridade_temporal.go`; `PartoFormFields` com `maxDate` agora.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-19
+**Última atualização**: 2026-05-25 (BR-PARTOS-006 — validação temporal)

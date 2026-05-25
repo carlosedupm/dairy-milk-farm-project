@@ -24,6 +24,7 @@ import { getMinhasFazendas, type Fazenda } from "@/services/fazendas";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { todayISODate } from "@/lib/date-limits";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getApiErrorMessage } from "@/lib/errors";
+import { getApiErrorMessage, parsePrefixedConformidadeMessage } from "@/lib/errors";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 
 type Props = {
   initial?: Animal | null;
@@ -226,6 +228,7 @@ export function AnimalForm({
                   id="dataNascimento"
                   value={dataNascimento || undefined}
                   onChange={(v) => setDataNascimento(v)}
+                  maxDate={todayISODate()}
                   placeholder="Selecione a data"
                   manualInput
                 />
@@ -244,6 +247,7 @@ export function AnimalForm({
                 id="dataEntrada"
                 value={dataEntrada || undefined}
                 onChange={(v) => setDataEntrada(v)}
+                maxDate={todayISODate()}
                 placeholder="Selecione a data"
                 manualInput
               />
@@ -309,7 +313,11 @@ export function AnimalForm({
             </div>
           </div>
 
-          {error && <p className="text-base text-destructive">{error}</p>}
+          {error ? (
+            <FormValidationAlert
+              {...parsePrefixedConformidadeMessage(error)}
+            />
+          ) : null}
 
           <Button type="submit" size="lg" disabled={isPending}>
             {isPending ? "Salvando…" : submitLabel}

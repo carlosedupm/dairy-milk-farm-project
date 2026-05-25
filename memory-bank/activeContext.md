@@ -61,7 +61,9 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
-1. ✅ **Gestão — badge «Baixado» (validado em produção/dev)**: (a) cache — `useGestaoAnimaisByIdMap` com GET por ID + `useGestaoAnimaisCacheRefresh`; (b) **data civil** — `isAnimalForaDoRebanho` em `services/animais.ts` compara `YYYY-MM-DD` local (evita falso negativo quando `data_saida` = hoje; caso real: ident. 22 vs 01). BR-BAIXA-009/010.
+1. ✅ **Validações temporais do ciclo (BR-CICLO-012–014)**: `ciclo_integridade_temporal.go` (TMP-001–006) em Create/Update de cio, cobertura, toque, parto, secagem, lactação, produção, restrição, animal e baixa; handlers com `RespondIfIntegridadeCiclo`; pickers com `maxDate`/`minDate` + `date-limits.ts`; baixa sem `data_saida` futura (BR-BAIXA-001/002); catálogo e checklist `docs/tests/validacao-temporal-ciclo.md`.
+1. ✅ **Integridade preventiva (BR-AUDIT-010)**: validações na escrita alinhadas a INT-001–006 — `ciclo_integridade.go`, produção por data da lactação, parto encerra lactação anterior, cadastro PRENHE exige gestação confirmada; API devolve `details.conformidade`; painel home clarifica auditoria vs bloqueio na hora.
+2. ✅ **Gestão — badge «Baixado» (validado em produção/dev)**: (a) cache — `useGestaoAnimaisByIdMap` com GET por ID + `useGestaoAnimaisCacheRefresh`; (b) **data civil** — `isAnimalForaDoRebanho` em `services/animais.ts` compara `YYYY-MM-DD` local (evita falso negativo quando `data_saida` = hoje; caso real: ident. 22 vs 01). BR-BAIXA-009/010.
 1. ✅ **Conformidade operacional vs baixa**: INT-001–006 com `SQLNoRebanho`; BR-AUDIT-009, BR-BAIXA-008; UI painel + ficha «Estado reprodutivo ao sair».
 2. ✅ **Baixa do rebanho (fluxo completo)**: endpoints dedicados, filtro operacional, reversão v1 (gestão), morte no curral por FUNCIONARIO, OpenAPI M2M com campos de saída, testes unitários de validação/guarda, documentação BR-* e memory bank.
 1. ✅ **Toques (diagnósticos) — jornada operacional do curral**: classificação operacional (`PRENHA`, `VAZIA`, `VAZIA_PEV`, `CLOE`, `CL`, `RETOQUE`) com mapeamento para `resultado` canônico (BR-TOQUES-006); campos clínicos na UI (`observacoes`, idade gestacional, método, veterinário); listagem estilo planilha (Animal | Diagnóstico | OBS) com filtro por dia; `POST /api/v1/toques/lote` (JWT) + extensão M2M/OpenAPI; migration `26_add_classificacao_operacional_toques`; rotas `/gestao/toques/novo`, `/gestao/toques/lote`.
@@ -205,5 +207,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-05-25 (Gestão pós-baixa — badge «Baixado» e data civil validados)
+**Última atualização**: 2026-05-25 (validações temporais BR-CICLO-012–014, TMP-001–006, UI maxDate)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Integrações M2M** | **Toques operacionais** (planilha do dia + lote JWT) | Listagens `*Table` com UX mobile (card + ⋮) | **Coberturas com filtros na listagem** | Recuperação senha aguarda SMTP | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)

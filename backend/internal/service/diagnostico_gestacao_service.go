@@ -50,6 +50,9 @@ func (s *DiagnosticoGestacaoService) Create(ctx context.Context, d *models.Diagn
 	if err := EnsureAnimalNoRebanho(animal); err != nil {
 		return err
 	}
+	if err := ValidateEventoDateTimeTemporal(animal, d.Data); err != nil {
+		return err
+	}
 
 	var coberturaID int64
 	if d.Resultado == models.DiagnosticoResultadoPositivo {
@@ -65,6 +68,10 @@ func (s *DiagnosticoGestacaoService) Create(ctx context.Context, d *models.Diagn
 			return err
 		}
 		d.CoberturaID = &coberturaID
+	}
+
+	if err := ValidateToqueAposCobertura(ctx, s.coberturaRepo, d); err != nil {
+		return err
 	}
 
 	if err := s.repo.Create(ctx, d); err != nil {

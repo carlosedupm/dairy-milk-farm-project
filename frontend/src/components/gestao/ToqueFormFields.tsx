@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
+import { todayISODate } from "@/lib/date-limits";
 import {
   Select,
   SelectContent,
@@ -88,6 +89,7 @@ export function ToqueFormFields({
         <DateTimePickerPtBr
           id="toque-data-hora"
           value={formState.data}
+          maxDate={todayISODate()}
           onChange={(data) => setFormState((s) => ({ ...s, data }))}
           placeholder="Selecione data e hora"
         />

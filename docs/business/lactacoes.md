@@ -33,6 +33,13 @@ Ciclo de **lactação** por animal, normalmente aberto automaticamente no parto.
 - **Enunciado**: Restrições de leite e (Fase 2) registro de produção exigem lactação ativa; ver [leite-restricoes.md](./leite-restricoes.md) e [producao-leite.md](./producao-leite.md).
 - **Estado**: implementado (restrição); produção na entrega BR-CICLO-007.
 
+### BR-LACTACAO-005 — Data de início (temporal)
+
+- **Enunciado**: `data_inicio` não futura nem anterior à entrada/nascimento — BR-CICLO-012–013 (TMP-001, TMP-002).
+- **Efeito**: bloqueio no servidor (400).
+- **Implementação**: `LactacaoService` + `ciclo_integridade_temporal.go`; `/gestao/lactacoes/novo` com `maxDate=hoje`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-19
+**Última atualização**: 2026-05-25 (BR-LACTACAO-005 — validação temporal)

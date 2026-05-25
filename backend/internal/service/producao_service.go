@@ -52,13 +52,15 @@ func (s *ProducaoService) Create(ctx context.Context, producao *models.ProducaoL
 	if err := EnsureAnimalNoRebanho(animal); err != nil {
 		return err
 	}
-
-	emLactacao, err := s.lactacaoRepo.ExistsAtivaNaFazenda(ctx, animal.FazendaID, producao.AnimalID)
-	if err != nil {
+	if err := ValidateEventoDateTimeTemporal(animal, producao.DataHora); err != nil {
 		return err
 	}
-	if !emLactacao {
-		return ErrProducaoSemLactacaoAtiva
+
+	if err := ValidateLactacaoAtivaParaProducao(ctx, s.lactacaoRepo, animal.FazendaID, producao.AnimalID, producao.DataHora); err != nil {
+		return err
+	}
+	if err := ValidateProducaoDentroLactacao(ctx, s.lactacaoRepo, animal.FazendaID, producao.AnimalID, producao.DataHora); err != nil {
+		return err
 	}
 
 	// Validar qualidade se fornecida (1-10)
@@ -140,12 +142,26 @@ func (s *ProducaoService) Update(ctx context.Context, producao *models.ProducaoL
 		return err
 	}
 
-	// Verificar se o animal existe
-	_, err = s.animalRepo.GetByID(ctx, producao.AnimalID)
+	animal, err := s.animalRepo.GetByID(ctx, producao.AnimalID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrAnimalNotFound
 		}
+		return err
+	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return err
+	}
+	if producao.DataHora.IsZero() {
+		return errors.New("data_hora é obrigatória")
+	}
+	if err := ValidateEventoDateTimeTemporal(animal, producao.DataHora); err != nil {
+		return err
+	}
+	if err := ValidateLactacaoAtivaParaProducao(ctx, s.lactacaoRepo, animal.FazendaID, producao.AnimalID, producao.DataHora); err != nil {
+		return err
+	}
+	if err := ValidateProducaoDentroLactacao(ctx, s.lactacaoRepo, animal.FazendaID, producao.AnimalID, producao.DataHora); err != nil {
 		return err
 	}
 

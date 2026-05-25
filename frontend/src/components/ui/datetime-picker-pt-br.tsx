@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DatePickerOverlay } from "@/components/ui/date-picker-overlay";
 import { DatePickerPanel } from "@/components/ui/date-picker-panel";
+import { nowDatetimeLocalMax, todayISODate } from "@/lib/date-limits";
 
 export type DatetimeParts = {
   year: number;
@@ -50,6 +51,10 @@ export type DateTimePickerPtBrProps = {
   placeholder?: string;
   minYear?: number;
   maxYear?: number;
+  /** Data civil máxima (YYYY-MM-DD); default sem limite */
+  maxDate?: string;
+  /** DateTime máximo local (YYYY-MM-DDTHH:mm); se omitido e maxDate=hoje, usa agora */
+  maxDateTime?: string;
 };
 
 /**
@@ -65,8 +70,24 @@ export function DateTimePickerPtBr({
   placeholder = "Selecione data e hora",
   minYear = 1950,
   maxYear = new Date().getFullYear() + 2,
+  maxDate,
+  maxDateTime,
 }: DateTimePickerPtBrProps) {
   const [open, setOpen] = React.useState(false);
+
+  const handleChange = React.useCallback(
+    (next: string) => {
+      const cap =
+        maxDateTime ??
+        (maxDate === todayISODate() ? nowDatetimeLocalMax() : undefined);
+      if (cap && next > cap) {
+        onChange(cap);
+        return;
+      }
+      onChange(next);
+    },
+    [maxDate, maxDateTime, onChange]
+  );
 
   const parts = React.useMemo(
     () => parseValueToDatetimeParts(value),
@@ -120,9 +141,10 @@ export function DateTimePickerPtBr({
       <DatePickerPanel
         mode="datetime"
         value={value}
-        onChange={onChange}
+        onChange={handleChange}
         minYear={minYear}
         maxYear={maxYear}
+        maxDate={maxDate}
         onDone={() => setOpen(false)}
       />
     </DatePickerOverlay>

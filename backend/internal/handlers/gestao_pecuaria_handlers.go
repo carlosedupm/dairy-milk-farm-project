@@ -67,6 +67,13 @@ func (h *CoberturaHandler) Create(c *gin.Context) {
 		cobertura.CreatedBy = &actorID
 	}
 	if err := h.svc.Create(c.Request.Context(), cobertura); err != nil {
+		if RespondIfDomainWriteError(c, err) {
+			return
+		}
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal nao encontrado")
+			return
+		}
 		response.ErrorInternal(c, "Erro ao registrar cobertura", err.Error())
 		return
 	}
@@ -146,7 +153,7 @@ func (h *CoberturaHandler) Update(c *gin.Context) {
 			response.ErrorNotFound(c, "Animal nao encontrado")
 			return
 		}
-		if RespondIfAnimalForaRebanho(c, err) {
+		if RespondIfDomainWriteError(c, err) {
 			return
 		}
 		response.ErrorInternal(c, "Erro ao atualizar cobertura", err.Error())
@@ -414,6 +421,9 @@ func (h *PartoHandler) Create(c *gin.Context) {
 			}
 		}
 		if err := h.svc.CreateWithCrias(c.Request.Context(), p, crias); err != nil {
+			if RespondIfDomainWriteError(c, err) {
+				return
+			}
 			if errors.Is(err, service.ErrPartoCriasCountMismatch) {
 				response.ErrorBadRequest(c, err.Error(), nil)
 				return
@@ -422,11 +432,22 @@ func (h *PartoHandler) Create(c *gin.Context) {
 				response.ErrorConflict(c, "Ja existe um animal com essa identificacao", nil)
 				return
 			}
+			if errors.Is(err, service.ErrAnimalNotFound) {
+				response.ErrorNotFound(c, "Animal nao encontrado")
+				return
+			}
 			response.ErrorInternal(c, "Erro ao registrar parto", err.Error())
 			return
 		}
 	} else {
 		if err := h.svc.Create(c.Request.Context(), p); err != nil {
+			if RespondIfDomainWriteError(c, err) {
+				return
+			}
+			if errors.Is(err, service.ErrAnimalNotFound) {
+				response.ErrorNotFound(c, "Animal nao encontrado")
+				return
+			}
 			response.ErrorInternal(c, "Erro ao registrar parto", err.Error())
 			return
 		}
@@ -485,7 +506,7 @@ func (h *PartoHandler) Update(c *gin.Context) {
 			response.ErrorNotFound(c, "Parto nao encontrado")
 			return
 		}
-		if RespondIfAnimalForaRebanho(c, err) {
+		if RespondIfDomainWriteError(c, err) {
 			return
 		}
 		response.ErrorInternal(c, "Erro ao atualizar parto", err.Error())
@@ -633,6 +654,13 @@ func (h *SecagemHandler) Create(c *gin.Context) {
 		sec.DataPrevistaParto = &t2
 	}
 	if err := h.svc.Create(c.Request.Context(), sec); err != nil {
+		if RespondIfDomainWriteError(c, err) {
+			return
+		}
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal nao encontrado")
+			return
+		}
 		response.ErrorInternal(c, "Erro ao registrar secagem", err.Error())
 		return
 	}
@@ -687,6 +715,17 @@ func (h *LactacaoHandler) Create(c *gin.Context) {
 	}
 	l := &models.Lactacao{AnimalID: req.AnimalID, NumeroLactacao: req.NumeroLactacao, DataInicio: t, FazendaID: req.FazendaID, PartoID: req.PartoID, Status: req.Status}
 	if err := h.svc.Create(c.Request.Context(), l); err != nil {
+		if RespondIfDomainWriteError(c, err) {
+			return
+		}
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal nao encontrado")
+			return
+		}
+		if errors.Is(err, service.ErrLactacaoAtivaJaExiste) {
+			response.ErrorValidation(c, err.Error(), nil)
+			return
+		}
 		response.ErrorInternal(c, "Erro ao registrar lactacao", err.Error())
 		return
 	}

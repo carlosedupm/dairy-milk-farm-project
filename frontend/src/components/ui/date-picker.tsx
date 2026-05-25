@@ -22,6 +22,8 @@ type DatePickerProps = {
   manualInput?: boolean;
   minYear?: number;
   maxYear?: number;
+  minDate?: string;
+  maxDate?: string;
 };
 
 /** Seleção de data com calendário em Dialog (todos os breakpoints). */
@@ -35,6 +37,8 @@ export function DatePicker({
   manualInput = false,
   minYear = 1950,
   maxYear = new Date().getFullYear() + 1,
+  minDate,
+  maxDate,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
   const date = value ? new Date(value + "T12:00:00") : undefined;
@@ -91,9 +95,15 @@ export function DatePicker({
       }
 
       const iso = format(candidate, "yyyy-MM-dd");
+      if (maxDate && iso > maxDate) {
+        return { iso: "", isValid: false };
+      }
+      if (minDate && iso < minDate) {
+        return { iso: "", isValid: false };
+      }
       return { iso, isValid: true };
     },
-    [digitsOnly, maxYear, minYear]
+    [digitsOnly, maxDate, minDate, maxYear, minYear]
   );
 
   React.useEffect(() => {
@@ -142,6 +152,8 @@ export function DatePicker({
       onChange={handleChange}
       minYear={minYear}
       maxYear={maxYear}
+      minDate={minDate}
+      maxDate={maxDate}
       onDone={() => setOpen(false)}
       closeOnSelect
     />

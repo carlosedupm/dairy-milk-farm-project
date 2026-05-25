@@ -6,7 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
-import { getApiErrorMessage } from "@/lib/errors";
+import { getApiErrorMessage, parsePrefixedConformidadeMessage } from "@/lib/errors";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { formatDatePtBr } from "@/lib/format";
 import { listEmLactacaoByFazenda } from "@/services/animais";
 import {
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { DatePicker } from "@/components/ui/date-picker";
+import { todayISODate } from "@/lib/date-limits";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -414,6 +416,7 @@ export function RestricoesLeiteHomePanel() {
               <DatePicker
                 value={inicioEm || undefined}
                 onChange={(v) => setInicioEm(v)}
+                maxDate={todayISODate()}
                 manualInput
               />
               <p className="text-xs text-muted-foreground">
@@ -431,7 +434,9 @@ export function RestricoesLeiteHomePanel() {
               />
             </div>
             {formErro ? (
-              <p className="text-sm text-destructive">{formErro}</p>
+              <FormValidationAlert
+                {...parsePrefixedConformidadeMessage(formErro)}
+              />
             ) : null}
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -500,7 +505,9 @@ export function RestricoesLeiteHomePanel() {
                 />
               </div>
               {liberarErro ? (
-                <p className="text-sm text-destructive">{liberarErro}</p>
+                <FormValidationAlert
+                  {...parsePrefixedConformidadeMessage(liberarErro)}
+                />
               ) : null}
             </div>
           ) : null}

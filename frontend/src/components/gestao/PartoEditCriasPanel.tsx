@@ -37,7 +37,8 @@ import {
   animaisFazendaQueryKey,
   useGestaoAnimaisByIdMap,
 } from "@/components/gestao/useAnimaisMap";
-import { getApiErrorMessage } from "@/lib/errors";
+import { getApiErrorMessage, parsePrefixedConformidadeMessage } from "@/lib/errors";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { cn } from "@/lib/utils";
 import { getCategoriaLabel, type Animal } from "@/services/animais";
 import type { Cria } from "@/services/crias";
@@ -188,9 +189,10 @@ export function PartoEditCriasPanel({
       </div>
 
       {loadErrorMessage ? (
-        <p className="text-sm text-destructive" role="alert">
-          {loadErrorMessage}
-        </p>
+        <FormValidationAlert
+          title="Não foi possível carregar"
+          {...parsePrefixedConformidadeMessage(loadErrorMessage)}
+        />
       ) : null}
 
       {showCountBanner && (
@@ -350,7 +352,11 @@ export function PartoEditCriasPanel({
               />
             </div>
           </div>
-          {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
+          {submitError ? (
+            <FormValidationAlert
+              {...parsePrefixedConformidadeMessage(submitError)}
+            />
+          ) : null}
           <Button type="button" variant="secondary" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
             {mutation.isPending ? "Registrando…" : "Registrar cria"}
           </Button>

@@ -87,6 +87,9 @@ func (h *RestricaoLeiteHandler) Create(c *gin.Context) {
 	}
 	row, err := h.svc.Create(c.Request.Context(), in)
 	if err != nil {
+		if RespondIfDomainWriteError(c, err) {
+			return
+		}
 		switch {
 		case errors.Is(err, service.ErrRestricaoLeiteMotivoInvalido):
 			response.ErrorValidation(c, err.Error(), nil)

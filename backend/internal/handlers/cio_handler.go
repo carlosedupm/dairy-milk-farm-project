@@ -44,6 +44,13 @@ func (h *CioHandler) Create(c *gin.Context) {
 		cio.UsuarioID = &actorID
 	}
 	if err := h.svc.Create(c.Request.Context(), cio); err != nil {
+		if RespondIfDomainWriteError(c, err) {
+			return
+		}
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal nao encontrado")
+			return
+		}
 		response.ErrorInternal(c, "Erro ao registrar cio", err.Error())
 		return
 	}
@@ -123,6 +130,9 @@ func (h *CioHandler) Update(c *gin.Context) {
 	cio.Observacoes = req.Observacoes
 	cio.FazendaID = req.FazendaID
 	if err := h.svc.Update(c.Request.Context(), cio); err != nil {
+		if RespondIfDomainWriteError(c, err) {
+			return
+		}
 		if errors.Is(err, service.ErrCioNotFound) {
 			response.ErrorNotFound(c, "Cio nao encontrado")
 			return

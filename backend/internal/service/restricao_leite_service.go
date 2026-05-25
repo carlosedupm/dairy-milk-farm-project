@@ -66,19 +66,22 @@ func (s *RestricaoLeiteService) Create(ctx context.Context, in CreateRestricaoLe
 		return nil, err
 	}
 
+	inicio := time.Now().UTC()
+	if in.InicioEm != nil {
+		inicio = normalizeDateUTC(*in.InicioEm)
+	} else {
+		inicio = truncateToDateUTC(inicio)
+	}
+	if err := ValidateEventoDataCivilTemporal(animal, inicio); err != nil {
+		return nil, err
+	}
+
 	emLactacao, err := s.lactacaoRepo.ExistsAtivaNaFazenda(ctx, in.FazendaID, in.AnimalID)
 	if err != nil {
 		return nil, err
 	}
 	if !emLactacao {
 		return nil, ErrRestricaoLeiteAnimalSemLactacao
-	}
-
-	inicio := time.Now().UTC()
-	if in.InicioEm != nil {
-		inicio = normalizeDateUTC(*in.InicioEm)
-	} else {
-		inicio = truncateToDateUTC(inicio)
 	}
 
 	row := &models.RestricaoLeite{

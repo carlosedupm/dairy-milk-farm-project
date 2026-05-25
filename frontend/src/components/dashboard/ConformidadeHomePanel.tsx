@@ -39,9 +39,9 @@ export function ConformidadeHomePanel() {
       </CardHeader>
       <CardContent className="space-y-3 min-w-0">
         <p className="text-xs text-muted-foreground">
-          Verificação do <span className="font-medium">rebanho ativo</span> (INT-001 a
-          INT-006). Animais com baixa e ciclo incompleto aparecem como{" "}
-          <span className="font-medium">INT-007</span>.
+          Auditoria do <span className="font-medium">rebanho ativo</span> (INT-001 a
+          INT-006) e pós-baixa (INT-007). Novos registos são validados na hora; este
+          painel destaca dados legados ou exceções a corrigir.
         </p>
         {isLoading && (
           <p className="text-sm text-muted-foreground">A verificar integridade…</p>

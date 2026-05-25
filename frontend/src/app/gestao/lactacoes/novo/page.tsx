@@ -12,6 +12,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { DatePicker } from "@/components/ui/date-picker";
+import { todayISODate } from "@/lib/date-limits";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
@@ -78,7 +79,12 @@ function NovoContent() {
       </div>
       <div>
         <Label>Data de início</Label>
-        <DatePicker value={dataInicio} onChange={setDataInicio} placeholder="Selecione a data" />
+        <DatePicker
+          value={dataInicio}
+          onChange={setDataInicio}
+          maxDate={todayISODate()}
+          placeholder="Selecione a data"
+        />
       </div>
     </GestaoFormLayout>
   );

@@ -352,6 +352,12 @@ func (h *IntegracaoHandler) CreateCoberturaLote(c *gin.Context) {
 }
 
 func mapToqueError(c *gin.Context, err error) {
+	if RespondIfIntegridadeCiclo(c, err) {
+		return
+	}
+	if RespondIfAnimalForaRebanho(c, err) {
+		return
+	}
 	switch {
 	case errors.Is(err, service.ErrToquePositivoSemCobertura),
 		errors.Is(err, service.ErrToquePositivoGestacaoAtiva),
@@ -368,6 +374,9 @@ func mapToqueError(c *gin.Context, err error) {
 }
 
 func mapCoberturaError(c *gin.Context, err error) {
+	if RespondIfDomainWriteError(c, err) {
+		return
+	}
 	switch {
 	case errors.Is(err, service.ErrAnimalNotFound):
 		response.ErrorNotFound(c, "Animal nao encontrado")

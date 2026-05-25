@@ -30,7 +30,7 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 
 ### BR-AUDIT-003 — Relatório de conformidade por fazenda
 
-- **Enunciado**: Gestão pode consultar anomalias de integridade (dados que violam regras transversais) via API, com código, animal, severidade e descrição.
+- **Enunciado**: Gestão pode consultar anomalias de integridade (dados que violam regras transversais) via API, com código, animal, severidade e descrição. Complementa as validações **na escrita** (BR-AUDIT-010) para dados legados ou correções manuais.
 - **Escopo**: Fazenda ativa; leitura apenas.
 - **Perfis**: acesso à fazenda (vínculo ou ADMIN/DEVELOPER/GESTAO conforme `ValidateFazendaAccessOrGestao`); **não** exposto a FUNCIONARIO na UI (evolução futura).
 - **Efeito**: informativo; não altera dados automaticamente.
@@ -91,6 +91,37 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 - **Implementação**: `ConformidadeService` — consulta INT-007.
 - **Estado**: implementado.
 
+### BR-AUDIT-010 — Validação preventiva na escrita (integridade do ciclo)
+
+- **Enunciado**: As mesmas regras que alimentam INT-001 a INT-006 (rebanho ativo) devem ser **bloqueadas no servidor** ao registar ou alterar eventos, sempre que o negócio exija coerência imediata. O painel de conformidade permanece para **auditoria** e dados **legados**; novos registos não devem criar novas anomalias quando a API for usada corretamente.
+- **Escopo**: Escritas de ciclo e cadastro (ver matriz abaixo).
+- **Efeito**: HTTP 400 `VALIDATION_ERROR` com `details.conformidade` = código INT (quando aplicável); mensagem orienta a ação correta (ex.: registar toque positivo antes de marcar PRENHE).
+- **Matriz preventiva (implementado)**:
+
+| Código | Regra | Bloqueio na escrita |
+|--------|--------|---------------------|
+| INT-001 | Uma lactação ativa | Parto encerra lactação anterior antes de abrir a nova; criação manual de lactação (`ErrLactacaoAtivaJaExiste`) |
+| INT-002 | Produção com lactação na data | `ProducaoService` Create/Update — `ValidateLactacaoAtivaParaProducao` |
+| INT-003 | Gestação confirmada só após toque+ | Apenas via `DiagnosticoGestacaoService.Create` (não há POST direto em gestações) |
+| INT-004 | Restrição com lactação ativa | `RestricaoLeiteService.Create` — `ExistsAtivaNaFazenda` |
+| INT-005 | PRENHE com gestação confirmada | `AnimalService.Update` — `ValidateStatusReprodutivoPrenhe` |
+| INT-006 | Toque+ com cobertura | `DiagnosticoGestacaoService.Create` — `ErrToquePositivoSemCobertura` |
+| INT-007 | Baixa fecha ciclo | `AnimalBaixaService.RegistrarBaixa` (TX); reversão não reabre ciclo — INT-007 só legado/painel |
+
+**Validação temporal preventiva (TMP-*, BR-CICLO-012–014)** — bloqueio na escrita; **não** entram no painel INT-001–007 (auditoria de estado legado):
+
+| Código | Regra | Bloqueio na escrita |
+|--------|--------|---------------------|
+| TMP-001 | Data/hora não futura | Todos os eventos de ciclo, cadastro animal, baixa |
+| TMP-002 | Evento ≥ entrada/nascimento | Eventos de ciclo; nascimento ≤ entrada no cadastro |
+| TMP-003 | Cobertura ≥ cio; toque ≥ cobertura | `CoberturaService`, `DiagnosticoGestacaoService` |
+| TMP-004 | Parto ≥ confirmação gestação | `PartoService` |
+| TMP-005 | Secagem ≥ início lactação ativa | `SecagemService` |
+| TMP-006 | Produção ≤ fim lactação encerrada | `ProducaoService` (complementa INT-002) |
+
+- **Implementação**: `backend/internal/service/ciclo_integridade.go` (INT), `ciclo_integridade_temporal.go` (TMP); `RespondIfIntegridadeCiclo` / `RespondIfDomainWriteError` em `handlers/access_helper.go`; repositório `ExistsAtivaNaFazendaNaData`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-24 (BR-AUDIT-009 — conformidade só no rebanho ativo)
+**Última atualização**: 2026-05-25 (BR-AUDIT-010 — INT-001 a INT-007 + TMP-001 a TMP-006)

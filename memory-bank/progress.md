@@ -23,6 +23,13 @@
 
 ## ✅ O que foi concluído
 
+### **Validações temporais do ciclo (✅ 2026-05-25)**
+
+- [x] Backend: `ciclo_integridade_temporal.go` (TMP-001–006), services Create/Update, handlers `RespondIfIntegridadeCiclo`
+- [x] Frontend: `maxDate`/`minDate` nos pickers; `date-limits.ts`; formulários de gestão, produção, baixa, animal, restrições
+- [x] Catálogo BR-CICLO-012–014, BR-BAIXA-001/002, BR-AUDIT-010 (matriz TMP), módulos do ciclo
+- [x] Checklist: `docs/tests/validacao-temporal-ciclo.md`; `getApiErrorMessage` com prefixo `[TMP-*]` / `[INT-*]`
+
 ### **Baixa do rebanho (✅ 2026-05-24; Gestão BR-BAIXA-009/010 validado 2026-05-25)**
 
 - [x] Catálogo `docs/business/baixa-rebanho.md` (BR-BAIXA-001–010, BR-CICLO-011, BR-ACESSO-016, INT-007)

@@ -33,6 +33,13 @@ Registro de **detecção de cio** na matriz (data/hora e metadados opcionais).
 - **Implementação**: `CioService.Create` + `applyStatusAfterCio`; `CioHandler.Create` preenche `usuario_id`.
 - **Estado**: implementado.
 
+### BR-CIOS-004 — Data do cio (temporal)
+
+- **Enunciado**: `data_detectado` não pode ser futura nem anterior à entrada/nascimento do animal; alinhado a [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-012–013 (TMP-001, TMP-002).
+- **Efeito**: bloqueio no servidor (400).
+- **Implementação**: `CioService` + `ciclo_integridade_temporal.go`; `CioFormFields` com `maxDate` agora.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-20
+**Última atualização**: 2026-05-25 (BR-CIOS-004 — validação temporal)

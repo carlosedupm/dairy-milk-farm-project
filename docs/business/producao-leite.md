@@ -24,12 +24,19 @@ Registro diário de **volume de leite** por animal na fazenda.
 - **Efeito**: bloqueio no servidor.
 - **Estado**: implementado.
 
-### BR-PRODUCAO-003 — Produção exige lactação ativa
+### BR-PRODUCAO-003 — Produção exige lactação ativa na data do registo
 
-- **Enunciado**: Não é permitido registrar produção para animal **sem** lactação ativa na fazenda (`data_fim` nula; status nulo ou `EM_ANDAMENTO`).
-- **Escopo**: `POST` criação; alinhado a [leite-restricoes.md](./leite-restricoes.md) BR-LEITE-005.
-- **Efeito**: bloqueio no servidor (400); aviso na UI antes do envio.
-- **Implementação**: `ProducaoService.Create` + `LactacaoRepository.ExistsAtivaNaFazenda`; `ProducaoForm` lista apenas animais de `GET .../animais/em-lactacao` (mesmo critério que restrições de leite); [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-007.
+- **Enunciado**: Não é permitido registrar ou editar produção sem lactação ativa na **data** do registo (`data_inicio` da lactação ≤ data da produção; lactação com `data_fim` nula e status nulo ou `EM_ANDAMENTO`). Alinhado a INT-002 / BR-AUDIT-010.
+- **Escopo**: `POST` e `PUT` produção; alinhado a [leite-restricoes.md](./leite-restricoes.md) BR-LEITE-005.
+- **Efeito**: bloqueio no servidor (400, `details.conformidade`: `INT-002`); aviso na UI antes do envio.
+- **Implementação**: `ValidateLactacaoAtivaParaProducao`, `LactacaoRepository.ExistsAtivaNaFazendaNaData`; `ProducaoForm` lista apenas animais de `GET .../animais/em-lactacao`; [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-007.
+- **Estado**: implementado.
+
+### BR-PRODUCAO-005 — Data/hora da produção (temporal)
+
+- **Enunciado**: `data_hora` não futura; ≥ entrada/nascimento; lactação na data (INT-002); se lactação encerrada, produção ≤ `data_fim` — BR-CICLO-012–014 (TMP-001, TMP-002, TMP-006).
+- **Efeito**: bloqueio no servidor (400, `details.conformidade` TMP-* ou INT-002).
+- **Implementação**: `ProducaoService` + `ciclo_integridade_temporal.go`; `ProducaoForm` com `maxDate` agora.
 - **Estado**: implementado.
 
 ---
@@ -43,4 +50,4 @@ Registro diário de **volume de leite** por animal na fazenda.
 
 ---
 
-**Última atualização**: 2026-05-20
+**Última atualização**: 2026-05-25 (BR-PRODUCAO-005 — validação temporal)

@@ -13,16 +13,16 @@ Registo formal de **saída do animal** da exploração (morte, venda, doação, 
 
 ### BR-BAIXA-001 — Dados obrigatórios da baixa
 
-- **Enunciado**: Registrar baixa exige `data_saida` e `motivo_saida` válido (`VENDA`, `MORTE`, `DESCARTE`, `DOACAO`). Se `data_entrada` estiver preenchida, `data_saida` não pode ser anterior.
+- **Enunciado**: Registrar baixa exige `data_saida` e `motivo_saida` válido (`VENDA`, `MORTE`, `DESCARTE`, `DOACAO`). `data_saida` **não pode ser futura** (≤ hoje, data civil — BR-CICLO-012 / TMP-001). Se `data_entrada` estiver preenchida, `data_saida` não pode ser anterior.
 - **Escopo**: Por animal na fazenda.
 - **Perfis**: conforme BR-BAIXA-006.
 - **Efeito**: bloqueio no servidor (400).
-- **Implementação**: `AnimalBaixaService.RegistrarBaixa`.
+- **Implementação**: `AnimalBaixaService.ValidateBaixaRequest`, `RegistrarBaixa`; UI `RegistrarBaixaForm` com `maxDate=hoje`.
 - **Estado**: implementado.
 
 ### BR-BAIXA-002 — Animal fora do rebanho
 
-- **Enunciado**: Animal com `data_saida` preenchida e `data_saida <= CURRENT_DATE` está **fora do rebanho**. Por defeito, listagens operacionais, `AnimalSelect`, busca contextual e `proximas_acoes` excluem esses animais. Filtro explícito `no_rebanho=false` inclui todos.
+- **Enunciado**: Animal com `data_saida` preenchida e `data_saida <= CURRENT_DATE` está **fora do rebanho**. **Novas baixas** não podem agendar saída futura (BR-BAIXA-001). Registos **legados** com `data_saida` futura continuam no painel/conformidade até corrigidos (reversão + nova baixa). Por defeito, listagens operacionais, `AnimalSelect`, busca contextual e `proximas_acoes` excluem animais fora do rebanho. Filtro explícito `no_rebanho=false` inclui todos.
 - **Escopo**: Fazenda; listagens e seletores.
 - **Efeito**: exclusão em queries; UI com filtro Ativos / Com baixa / Todos.
 - **Implementação**: `AnimalListFilters.SomenteNoRebanho`, `ListEmLactacaoByFazendaID`, `SearchByIdentificacao` (escopo fazenda).
@@ -96,4 +96,4 @@ Registo formal de **saída do animal** da exploração (morte, venda, doação, 
 
 ---
 
-**Última atualização**: 2026-05-25 (BR-BAIXA-009 — data civil no badge)
+**Última atualização**: 2026-05-25 (BR-BAIXA-001/002 — data_saida não futura; legado com saída futura)

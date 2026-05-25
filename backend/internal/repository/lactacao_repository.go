@@ -110,6 +110,23 @@ func (r *LactacaoRepository) ExistsAtivaNaFazenda(ctx context.Context, fazendaID
 	return ok, err
 }
 
+// ExistsAtivaNaFazendaNaData indica lactação ativa cuja data_inicio <= dataRef (BR-CICLO-007 / INT-002).
+func (r *LactacaoRepository) ExistsAtivaNaFazendaNaData(ctx context.Context, fazendaID, animalID int64, dataRef time.Time) (bool, error) {
+	y, m, d := dataRef.Date()
+	dataRef = time.Date(y, m, d, 0, 0, 0, 0, dataRef.Location())
+	const q = `
+		SELECT EXISTS (
+			SELECT 1 FROM lactacoes l
+			WHERE l.animal_id = $1 AND l.fazenda_id = $2
+			AND l.data_fim IS NULL
+			AND (l.status IS NULL OR l.status = 'EM_ANDAMENTO')
+			AND l.data_inicio <= $3::date
+		)`
+	var ok bool
+	err := r.db.QueryRow(ctx, q, animalID, fazendaID, dataRef).Scan(&ok)
+	return ok, err
+}
+
 func (r *LactacaoRepository) GetEmAndamentoByAnimalID(ctx context.Context, animalID int64) (*models.Lactacao, error) {
 	query := `SELECT id, animal_id, numero_lactacao, parto_id, data_inicio, data_fim, dias_lactacao, producao_total, media_diaria, status, fazenda_id, created_at, updated_at
 		FROM lactacoes WHERE animal_id = $1 AND data_fim IS NULL AND (status IS NULL OR status = 'EM_ANDAMENTO') ORDER BY data_inicio DESC LIMIT 1`

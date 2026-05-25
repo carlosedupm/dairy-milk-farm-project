@@ -40,10 +40,14 @@ Checklist manual para fechar a Fase 2. Executar em ambiente com migrações 1–
 - Home: secção **Conformidade dos dados** (gestão).
 - Ficha `/animais/:id`: histórico com «Registado por Nome» nos eventos recentes.
 
+## Validação temporal (TMP-001–006)
+
+Checklist dedicado: [validacao-temporal-ciclo.md](./validacao-temporal-ciclo.md) — datas futuras, piso do animal, cronologia cio→cobertura→toque→parto→secagem→produção, baixa sem `data_saida` futura.
+
 ## Automatizado
 
 - `cd backend && go test ./internal/service/... -count=1`
 - TestSprite `TC001`–`TC009` em `testsprite_tests/` (API base).
 - Playwright: `frontend/tests/e2e/` (auth/navegação; estender para gestão quando necessário).
 
-**Última atualização**: 2026-05-20
+**Última atualização**: 2026-05-25

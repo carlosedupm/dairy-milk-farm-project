@@ -30,6 +30,7 @@ type CoberturaService struct {
 	fazendaRepo             *repository.FazendaRepository
 	gestacaoRepo            *repository.GestacaoRepository
 	diagnosticoGestacaoRepo *repository.DiagnosticoGestacaoRepository
+	cioRepo                 *repository.CioRepository
 }
 
 func NewCoberturaService(
@@ -38,6 +39,7 @@ func NewCoberturaService(
 	fazendaRepo *repository.FazendaRepository,
 	gestacaoRepo *repository.GestacaoRepository,
 	diagnosticoGestacaoRepo *repository.DiagnosticoGestacaoRepository,
+	cioRepo *repository.CioRepository,
 ) *CoberturaService {
 	return &CoberturaService{
 		repo:                    repo,
@@ -45,6 +47,7 @@ func NewCoberturaService(
 		fazendaRepo:             fazendaRepo,
 		gestacaoRepo:            gestacaoRepo,
 		diagnosticoGestacaoRepo: diagnosticoGestacaoRepo,
+		cioRepo:                 cioRepo,
 	}
 }
 
@@ -95,7 +98,10 @@ func (s *CoberturaService) validateCoberturaRegras(ctx context.Context, c *model
 			return ErrCoberturaReprodutorInvalido
 		}
 	}
-	return nil
+	if err := ValidateEventoDateTimeTemporal(animal, c.Data); err != nil {
+		return err
+	}
+	return ValidateCoberturaAposCio(ctx, s.cioRepo, c)
 }
 
 func (s *CoberturaService) Create(ctx context.Context, c *models.Cobertura) error {

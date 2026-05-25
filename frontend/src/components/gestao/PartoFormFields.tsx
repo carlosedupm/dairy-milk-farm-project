@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
+import { todayISODate } from "@/lib/date-limits";
 import {
   Select,
   SelectContent,
@@ -99,6 +100,7 @@ export function PartoFormFields({
         <DateTimePickerPtBr
           id="parto-data-hora"
           value={formState.data}
+          maxDate={todayISODate()}
           onChange={(v) => setFormState((s) => ({ ...s, data: v }))}
           placeholder="Selecione data e hora"
         />

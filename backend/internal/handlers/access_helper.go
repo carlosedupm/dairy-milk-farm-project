@@ -164,3 +164,28 @@ func RespondIfAnimalForaRebanho(c *gin.Context, err error) bool {
 	}
 	return false
 }
+
+// RespondIfDomainWriteError trata erros de integridade (INT/TMP) e animal fora do rebanho.
+func RespondIfDomainWriteError(c *gin.Context, err error) bool {
+	if RespondIfIntegridadeCiclo(c, err) {
+		return true
+	}
+	return RespondIfAnimalForaRebanho(c, err)
+}
+
+// RespondIfIntegridadeCiclo mapeia violações preventivas (INT-xxx / TMP-xxx) para 400 com código de conformidade.
+func RespondIfIntegridadeCiclo(c *gin.Context, err error) bool {
+	if ie, ok := service.AsIntegridadeCiclo(err); ok {
+		response.ErrorValidation(c, ie.Message, map[string]string{"conformidade": ie.IntCodigo})
+		return true
+	}
+	if errors.Is(err, service.ErrPrenheSemGestacao) {
+		response.ErrorValidation(c, err.Error(), map[string]string{"conformidade": "INT-005"})
+		return true
+	}
+	if errors.Is(err, service.ErrProducaoSemLactacaoNaData) {
+		response.ErrorValidation(c, err.Error(), map[string]string{"conformidade": "INT-002"})
+		return true
+	}
+	return false
+}

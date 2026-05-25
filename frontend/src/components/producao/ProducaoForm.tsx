@@ -28,7 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getApiErrorMessage } from "@/lib/errors";
+import { getApiErrorMessage, parsePrefixedConformidadeMessage } from "@/lib/errors";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
+import { todayISODate } from "@/lib/date-limits";
 import {
   nowDatetimeLocalInputValue,
   toDatetimeLocalInputValue,
@@ -249,6 +251,7 @@ export function ProducaoForm({
               <DateTimePickerPtBr
                 id="dataHora"
                 value={dataHora}
+                maxDate={todayISODate()}
                 onChange={setDataHora}
               />
             </div>
@@ -289,9 +292,13 @@ export function ProducaoForm({
             </div>
           </div>
 
-          {error && <p className="text-base text-destructive">{error}</p>}
+          {error ? (
+            <FormValidationAlert
+              {...parsePrefixedConformidadeMessage(error)}
+            />
+          ) : null}
 
-          <Button type="submit" size="lg" disabled={isPending}>
+          <Button type="submit" size="lg" disabled={isPending} className="min-h-[44px]">
             {isPending ? "Salvando…" : submitLabel}
           </Button>
         </form>

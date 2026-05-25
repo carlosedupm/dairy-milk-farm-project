@@ -49,6 +49,12 @@ func (s *PartoService) validatePartoAnimalForCreate(ctx context.Context, p *mode
 	if err := EnsureAnimalNoRebanho(animal); err != nil {
 		return nil, err
 	}
+	if err := ValidateEventoDateTimeTemporal(animal, p.Data); err != nil {
+		return nil, err
+	}
+	if err := ValidatePartoAposGestacao(ctx, s.gestacaoRepo, p); err != nil {
+		return nil, err
+	}
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return nil, errors.New("apenas femeas podem ter parto")
 	}
@@ -84,6 +90,9 @@ func (s *PartoService) applyAfterPartoCreate(ctx context.Context, p *models.Part
 			_ = s.gestacaoRepo.Update(ctx, g)
 		}
 	}
+	if err := EncerrarLactacaoAtiva(ctx, s.lactacaoRepo, p.AnimalID, p.Data); err != nil {
+		return err
+	}
 	numLact, _ := s.lactacaoRepo.CountByAnimalID(ctx, p.AnimalID)
 	lactacao := &models.Lactacao{
 		AnimalID:       p.AnimalID,
@@ -117,6 +126,9 @@ func (s *PartoService) applyAfterPartoCreateTx(ctx context.Context, tx pgx.Tx, p
 			g.Status = models.GestacaoStatusPartoRealizado
 			_ = s.gestacaoRepo.UpdateTx(ctx, tx, g)
 		}
+	}
+	if err := EncerrarLactacaoAtivaTx(ctx, tx, s.lactacaoRepo, p.AnimalID, p.Data); err != nil {
+		return err
 	}
 	numLact, _ := s.lactacaoRepo.CountByAnimalIDTx(ctx, tx, p.AnimalID)
 	lactacao := &models.Lactacao{
@@ -252,6 +264,19 @@ func (s *PartoService) Update(ctx context.Context, p *models.Parto) error {
 		}
 	}
 	if err := EnsureAnimalIDNoRebanho(ctx, s.animalRepo, p.AnimalID); err != nil {
+		return err
+	}
+	animal, err := s.animalRepo.GetByID(ctx, p.AnimalID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrAnimalNotFound
+		}
+		return err
+	}
+	if err := ValidateEventoDateTimeTemporal(animal, p.Data); err != nil {
+		return err
+	}
+	if err := ValidatePartoAposGestacao(ctx, s.gestacaoRepo, p); err != nil {
 		return err
 	}
 	return s.repo.Update(ctx, p)

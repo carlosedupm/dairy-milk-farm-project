@@ -12,6 +12,7 @@ import {
   parseValueToDatetimeParts,
   type DatetimeParts,
 } from "@/components/ui/datetime-picker-pt-br";
+import { parseISODateLocal, todayISODate } from "@/lib/date-limits";
 
 export type DatePickerPanelMode = "date" | "datetime";
 
@@ -22,6 +23,9 @@ export type DatePickerPanelProps = {
   onChange: (value: string) => void;
   minYear?: number;
   maxYear?: number;
+  /** Limite inferior/superior civil (YYYY-MM-DD) */
+  minDate?: string;
+  maxDate?: string;
   /** Fecha o modal */
   onDone?: () => void;
   /** Modo date: fecha ao selecionar um dia */
@@ -60,10 +64,39 @@ export function DatePickerPanel({
   onChange,
   minYear = 1950,
   maxYear = new Date().getFullYear() + 2,
+  minDate,
+  maxDate,
   onDone,
   closeOnSelect = mode === "date",
   className,
 }: DatePickerPanelProps) {
+  const minD = React.useMemo(
+    () => (minDate ? parseISODateLocal(minDate) : undefined),
+    [minDate]
+  );
+  const maxD = React.useMemo(
+    () => (maxDate ? parseISODateLocal(maxDate) : undefined),
+    [maxDate]
+  );
+
+  const isDayDisabled = React.useCallback(
+    (day: Date) => {
+      const civil = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+      if (minD && civil < minD) return true;
+      if (maxD && civil > maxD) return true;
+      return false;
+    },
+    [minD, maxD]
+  );
+
+  const nowParts = React.useMemo(() => {
+    const n = new Date();
+    return {
+      hour: n.getHours(),
+      minute: n.getMinutes(),
+      today: todayISODate(),
+    };
+  }, []);
   const dateValue = React.useMemo(() => {
     if (mode === "date") return value.trim();
     const parts = parseValueToDatetimeParts(value);
@@ -112,9 +145,24 @@ export function DatePickerPanel({
 
   const commitDatetime = React.useCallback(
     (next: DatetimeParts) => {
-      onChange(composeLocalDatetimeString(next));
+      let hour = next.hour;
+      let minute = next.minute;
+      const dayIso = `${next.year}-${pad2(next.month)}-${pad2(next.day)}`;
+      if (maxDate && dayIso === nowParts.today) {
+        if (hour > nowParts.hour) hour = nowParts.hour;
+        if (hour === nowParts.hour && minute > nowParts.minute) {
+          minute = nowParts.minute;
+        }
+      }
+      onChange(
+        composeLocalDatetimeString({
+          ...next,
+          hour,
+          minute,
+        })
+      );
     },
-    [onChange]
+    [maxDate, nowParts, onChange]
   );
 
   const calendarBlock = (
@@ -123,6 +171,7 @@ export function DatePickerPanel({
         mode="single"
         selected={calendarSelected}
         onSelect={handleDateSelect}
+        disabled={isDayDisabled}
         captionLayout="dropdown-years"
         startMonth={new Date(minYear, 0)}
         endMonth={new Date(maxYear, 11)}
@@ -152,7 +201,12 @@ export function DatePickerPanel({
             }
             aria-label="Hora"
           >
-            {HOURS.map((h) => (
+            {HOURS.filter((h) => {
+              if (!parts || !maxDate) return true;
+              const dayIso = `${parts.year}-${pad2(parts.month)}-${pad2(parts.day)}`;
+              if (dayIso !== nowParts.today) return true;
+              return h <= nowParts.hour;
+            }).map((h) => (
               <option key={h} value={h}>
                 {pad2(h)}
               </option>
@@ -172,7 +226,14 @@ export function DatePickerPanel({
             }
             aria-label="Minutos"
           >
-            {MINUTES.map((m) => (
+            {MINUTES.filter((m) => {
+              if (!parts || !maxDate) return true;
+              const dayIso = `${parts.year}-${pad2(parts.month)}-${pad2(parts.day)}`;
+              if (dayIso !== nowParts.today) return true;
+              if (parts.hour < nowParts.hour) return true;
+              if (parts.hour > nowParts.hour) return false;
+              return m <= nowParts.minute;
+            }).map((m) => (
               <option key={m} value={m}>
                 {pad2(m)}
               </option>

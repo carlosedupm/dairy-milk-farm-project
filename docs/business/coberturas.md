@@ -40,10 +40,17 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 - **Implementação**: `CoberturaService.Delete` (`ErrCoberturaTemVinculos`); `GestacaoRepository.ExistsByCoberturaID`, `DiagnosticoGestacaoRepository.ExistsByCoberturaID`; `CoberturaHandler.Delete`.
 - **Estado**: Implementado.
 
+### BR-COBERTURAS-005 — Data da cobertura (temporal)
+
+- **Enunciado**: `data` não futura; ≥ entrada/nascimento; se `cio_id`, ≥ data do cio — [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-012–014 (TMP-001 a TMP-003).
+- **Efeito**: bloqueio no servidor (400).
+- **Implementação**: `CoberturaService` + `ciclo_integridade_temporal.go`; `CoberturaFormFields` com `maxDate` agora.
+- **Estado**: implementado.
+
 ### Canal de integração externa
 
 - Registo via `POST /api/v1/integracoes/coberturas` ou lote `POST /api/v1/integracoes/coberturas/lote` (scope `coberturas:write`) — ver [integracoes.md](./integracoes.md) (`BR-INTEG-*`). Listagem: `GET /api/v1/integracoes/coberturas?animal_id=` (scope `coberturas:read`).
 
 ---
 
-**Última atualização**: 2026-05-23
+**Última atualização**: 2026-05-25 (BR-COBERTURAS-005 — validação temporal)

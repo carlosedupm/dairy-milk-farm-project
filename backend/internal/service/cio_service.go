@@ -38,6 +38,9 @@ func (s *CioService) Create(ctx context.Context, c *models.Cio) error {
 	if err := EnsureAnimalNoRebanho(animal); err != nil {
 		return err
 	}
+	if err := ValidateEventoCioTemporal(animal, c.DataDetectado); err != nil {
+		return err
+	}
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return errors.New("apenas femeas podem ter registro de cio")
 	}
@@ -150,6 +153,16 @@ func (s *CioService) Update(ctx context.Context, c *models.Cio) error {
 		}
 	}
 	if err := EnsureAnimalIDNoRebanho(ctx, s.animalRepo, c.AnimalID); err != nil {
+		return err
+	}
+	animal, err := s.animalRepo.GetByID(ctx, c.AnimalID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrAnimalNotFound
+		}
+		return err
+	}
+	if err := ValidateEventoCioTemporal(animal, c.DataDetectado); err != nil {
 		return err
 	}
 	return s.repo.Update(ctx, c)

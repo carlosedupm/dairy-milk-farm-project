@@ -38,6 +38,12 @@ func (s *LactacaoService) Create(ctx context.Context, l *models.Lactacao) error 
 	if animal.FazendaID != l.FazendaID {
 		return errors.New("animal deve ser da mesma fazenda")
 	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return err
+	}
+	if err := ValidateEventoDataCivilTemporal(animal, l.DataInicio); err != nil {
+		return err
+	}
 	if l.Status != nil && *l.Status != "" {
 		valid := false
 		for _, st := range models.ValidStatusLactacao() {
@@ -86,11 +92,28 @@ func (s *LactacaoService) Update(ctx context.Context, l *models.Lactacao) error 
 	if l.ID <= 0 {
 		return errors.New("id invalido")
 	}
-	_, err := s.repo.GetByID(ctx, l.ID)
+	existing, err := s.repo.GetByID(ctx, l.ID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrLactacaoNotFound
 		}
+		return err
+	}
+	animal, err := s.animalRepo.GetByID(ctx, l.AnimalID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrAnimalNotFound
+		}
+		return err
+	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return err
+	}
+	dataInicio := l.DataInicio
+	if dataInicio.IsZero() {
+		dataInicio = existing.DataInicio
+	}
+	if err := ValidateEventoDataCivilTemporal(animal, dataInicio); err != nil {
 		return err
 	}
 	return s.repo.Update(ctx, l)

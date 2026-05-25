@@ -81,8 +81,15 @@ func (h *ProducaoHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(c.Request.Context(), producao); err != nil {
+		if RespondIfIntegridadeCiclo(c, err) {
+			return
+		}
 		if errors.Is(err, service.ErrProducaoSemLactacaoAtiva) {
 			response.ErrorValidation(c, "Animal sem lactação ativa", err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrAnimalForaDoRebanho) {
+			RespondIfAnimalForaRebanho(c, err)
 			return
 		}
 		if errors.Is(err, service.ErrAnimalNotFound) {
@@ -288,11 +295,23 @@ func (h *ProducaoHandler) Update(c *gin.Context) {
 			}
 		}
 		producao.DataHora = dataHora
+	} else {
+		producao.DataHora = producaoExistente.DataHora
 	}
 
 	if err := h.service.Update(c.Request.Context(), producao); err != nil {
+		if RespondIfIntegridadeCiclo(c, err) {
+			return
+		}
+		if RespondIfAnimalForaRebanho(c, err) {
+			return
+		}
 		if errors.Is(err, service.ErrProducaoNotFound) {
 			response.ErrorNotFound(c, "Registro de produção não encontrado")
+			return
+		}
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
 			return
 		}
 		response.ErrorInternal(c, "Erro ao atualizar produção", err.Error())

@@ -15,6 +15,7 @@ import {
   type ToqueLoteLinha,
 } from "@/components/gestao/ToqueLoteEditor";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
+import { todayISODate } from "@/lib/date-limits";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
@@ -104,6 +105,7 @@ function Content() {
         <DateTimePickerPtBr
           id="lote-data"
           value={data}
+          maxDate={todayISODate()}
           onChange={setData}
           placeholder="Selecione data e hora"
         />

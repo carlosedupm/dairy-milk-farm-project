@@ -68,6 +68,12 @@ func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error 
 	if err := EnsureAnimalNoRebanho(animal); err != nil {
 		return err
 	}
+	if err := ValidateEventoDataCivilTemporal(animal, sec.DataSecagem); err != nil {
+		return err
+	}
+	if err := ValidateSecagemAposInicioLactacao(ctx, s.lactacaoRepo, sec); err != nil {
+		return err
+	}
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {

@@ -79,8 +79,8 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 
 - **Enunciado**: Por animal, no máximo **uma** lactação com `data_fim` nula e `status` nulo ou `EM_ANDAMENTO` na fazenda.
 - **Escopo**: `lactacoes`; usado também em restrições de leite ([leite-restricoes.md](./leite-restricoes.md) BR-LEITE-005).
-- **Efeito**: bloqueio ao abrir segunda lactação; secagem deve encerrar a ativa (ver BR-CICLO-006).
-- **Implementação**: `LactacaoRepository.ExistsAtivaNaFazenda`; criação automática no parto.
+- **Efeito**: bloqueio ao abrir segunda lactação; secagem e **parto** encerram a lactação anterior antes de abrir nova (INT-001 / BR-AUDIT-010).
+- **Implementação**: `LactacaoRepository.ExistsAtivaNaFazenda`; `EncerrarLactacaoAtiva` no `PartoService`; criação manual bloqueada (`ErrLactacaoAtivaJaExiste`).
 - **Estado**: **implementado** — criação manual bloqueada se já houver lactação ativa; secagem encerra lactação (BR-SECAGENS-002).
 
 ### BR-CICLO-006 — Secagem encerra lactação ativa
@@ -93,10 +93,10 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 
 ### BR-CICLO-007 — Produção de leite alinhada à lactação
 
-- **Enunciado**: Registro de produção diária exige **lactação ativa** do animal na fazenda.
-- **Escopo**: `producao_leite` + `lactacoes`.
-- **Efeito**: bloqueio no servidor (400); aviso na UI em `/producao/novo`.
-- **Implementação**: `ProducaoService.Create` + `ExistsAtivaNaFazenda`; [producao-leite.md](./producao-leite.md) BR-PRODUCAO-003.
+- **Enunciado**: Registro de produção diária exige **lactação ativa na data do registo** (não apenas “existe lactação hoje” com início posterior à data da ordenha).
+- **Escopo**: `producao_leite` + `lactacoes`; Create e Update.
+- **Efeito**: bloqueio no servidor (400, INT-002); aviso na UI em `/producao/novo`.
+- **Implementação**: `ValidateLactacaoAtivaParaProducao`; [producao-leite.md](./producao-leite.md) BR-PRODUCAO-003; [auditoria.md](./auditoria.md) BR-AUDIT-010.
 - **Estado**: **implementado**.
 
 ### BR-CICLO-008 — Ficha do animal com histórico unificado
@@ -131,6 +131,31 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 - **Implementação**: [AGENTS.md](../../AGENTS.md), `.cursor/rules/documentation-maintenance.mdc`.
 - **Estado**: **implementado** (processo e catálogo dos módulos do ciclo pecuário na Fase 2).
 
+### BR-CICLO-012 — Eventos do ciclo não podem ser futuros
+
+- **Enunciado**: Ao registar ou alterar marcos do ciclo (cio, cobertura, toque, parto, secagem, início de lactação, produção, restrição de leite) e ao cadastrar **baixa** ou datas de **nascimento/entrada** do animal, a data (ou data/hora) do evento **não pode ser posterior a hoje** (data civil local no servidor; data/hora ≤ agora para campos com hora).
+- **Escopo**: Escritas de ciclo e cadastro animal; integrações M2M passam pelos mesmos services.
+- **Perfis**: conforme módulo.
+- **Efeito**: bloqueio no servidor (400) com código **TMP-001** em `details.conformidade`; UI limita pickers com `maxDate` / `max` agora (`frontend/src/lib/date-limits.ts`).
+- **Implementação**: `backend/internal/service/ciclo_integridade_temporal.go` (`ValidateDataNaoFutura`, `ValidateDateTimeNaoFuturo`); formulários em gestão, produção, baixa, animal, restrições.
+- **Estado**: **implementado**.
+
+### BR-CICLO-013 — Evento não anterior à entrada ou nascimento
+
+- **Enunciado**: A data do evento deve ser **≥ `data_entrada`** quando preenchida e **≥ `data_nascimento`** quando preenchida. No cadastro do animal, `data_nascimento` e `data_entrada` não podem ser futuras; se ambas existirem, `data_nascimento` ≤ `data_entrada`.
+- **Escopo**: Por animal; todas as escritas de ciclo listadas em BR-CICLO-012; baixa exige `data_saida` ≥ `data_entrada` (já em BR-BAIXA-001).
+- **Efeito**: bloqueio no servidor com **TMP-002**.
+- **Implementação**: `ValidateEventoAposReferenciaAnimal`, `ValidateAnimalDatasCadastro`; `AnimalBaixaService.ValidateBaixaRequest`.
+- **Estado**: **implementado**.
+
+### BR-CICLO-014 — Cronologia entre marcos vinculados
+
+- **Enunciado**: Quando existir vínculo explícito entre registos, a data do evento posterior não pode ser **anterior** à do antecedente: cobertura ≥ cio (`cio_id`); toque ≥ cobertura (`cobertura_id`); parto ≥ confirmação da gestação (`gestacao_id`); secagem ≥ início da lactação ativa; produção ≤ `data_fim` da lactação quando encerrada (complementa INT-002 / BR-CICLO-007).
+- **Escopo**: Por vínculo opcional em cada entidade.
+- **Efeito**: bloqueio no servidor com **TMP-003** a **TMP-006** conforme o par de entidades.
+- **Implementação**: `ValidateCoberturaAposCio`, `ValidateToqueAposCobertura`, `ValidatePartoAposGestacao`, `ValidateSecagemAposInicioLactacao`, `ValidateProducaoDentroLactacao`; chamadas nos `*Service` Create/Update.
+- **Estado**: **implementado**.
+
 ---
 
 ## Matriz de aderência atual (resumo)
@@ -150,6 +175,7 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 | Dashboard pecuário | Implementado | KPIs acionáveis (`ResumoKpiTile`, BR-GESTACOES-004) |
 | Ficha animal (timeline) | Implementado | BR-CICLO-008 |
 | Saída do rebanho (baixa) | Implementado | [baixa-rebanho.md](./baixa-rebanho.md) BR-CICLO-011; rótulos Gestão BR-BAIXA-009 |
+| Validação temporal (escrita) | Implementado | BR-CICLO-012–014; TMP-001–006; ver [auditoria.md](./auditoria.md) BR-AUDIT-010 |
 
 ---
 
@@ -161,4 +187,4 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 
 ---
 
-**Última atualização**: 2026-05-24 (baixa do rebanho — BR-CICLO-011)
+**Última atualização**: 2026-05-25 (validações temporais — BR-CICLO-012 a BR-CICLO-014)

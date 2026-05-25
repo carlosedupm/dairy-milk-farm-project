@@ -53,6 +53,13 @@ Operação em que o leite do animal **não deve ir para o tanque** (ordenha em b
 - **Implementação**: `AnimalHandler.GetContextoByID` + `RestricaoLeiteService.GetAtivaByAnimalID`.
 - **Estado**: implementado.
 
+### BR-LEITE-006 — Início da restrição (temporal)
+
+- **Enunciado**: `inicio_em` não pode ser futuro nem anterior à entrada/nascimento do animal — [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-012–013 (TMP-001, TMP-002).
+- **Efeito**: bloqueio no servidor (400).
+- **Implementação**: `RestricaoLeiteService` + `ciclo_integridade_temporal.go`; `RestricoesLeiteHomePanel` com `maxDate=hoje` no registro.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-12 (BR-LEITE-003: inclusão de PROPRIETARIO em liberar)
+**Última atualização**: 2026-05-25 (BR-LEITE-006 — validação temporal)

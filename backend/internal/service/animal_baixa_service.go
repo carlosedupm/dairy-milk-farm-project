@@ -188,5 +188,8 @@ func ValidateBaixaRequest(dataSaidaStr, motivo string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, fmt.Errorf("data de saida invalida: %w", err)
 	}
+	if err := ValidateDataNaoFutura(t); err != nil {
+		return time.Time{}, err
+	}
 	return t, nil
 }

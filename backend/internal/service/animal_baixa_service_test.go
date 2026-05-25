@@ -18,6 +18,15 @@ func TestValidateBaixaRequest(t *testing.T) {
 	if _, err := ValidateBaixaRequest("", models.MotivoSaidaVenda); err == nil {
 		t.Fatal("expected error for empty date")
 	}
+	future := CivilToday().AddDate(0, 0, 2).Format("2006-01-02")
+	_, errFuture := ValidateBaixaRequest(future, models.MotivoSaidaVenda)
+	if errFuture == nil {
+		t.Fatal("expected error for future data_saida")
+	}
+	ie, ok := AsIntegridadeCiclo(errFuture)
+	if !ok || ie.IntCodigo != "TMP-001" {
+		t.Fatalf("expected TMP-001, got %+v", errFuture)
+	}
 }
 
 func TestIsDataSaidaEfetiva(t *testing.T) {

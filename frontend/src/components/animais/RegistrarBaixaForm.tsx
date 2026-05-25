@@ -23,6 +23,7 @@ import { MOTIVO_SAIDA_LABELS } from "@/services/animais";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { DatePicker } from "@/components/ui/date-picker";
+import { todayISODate } from "@/lib/date-limits";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -162,8 +163,12 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
           <DatePicker
             value={dataSaida || undefined}
             onChange={(v) => setDataSaida(v)}
+            maxDate={todayISODate()}
             placeholder="Selecione a data"
           />
+          <p className="text-xs text-muted-foreground">
+            A data da baixa não pode ser futura.
+          </p>
         </div>
         <div className="space-y-2">
           <Label>Motivo *</Label>

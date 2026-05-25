@@ -30,6 +30,13 @@ Registro de **secagem** da matriz (período seco antes do parto ou por baixa pro
 - **Efeito**: bloqueio no servidor.
 - **Estado**: implementado.
 
+### BR-SECAGENS-004 — Data da secagem (temporal)
+
+- **Enunciado**: `data_secagem` não futura; ≥ entrada/nascimento; ≥ início da lactação ativa quando existir — BR-CICLO-012–014 (TMP-001, TMP-002, TMP-005).
+- **Efeito**: bloqueio no servidor (400).
+- **Implementação**: `SecagemService` + `ciclo_integridade_temporal.go`; formulário `/gestao/secagens/novo` com `maxDate=hoje`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-19
+**Última atualização**: 2026-05-25 (BR-SECAGENS-004 — validação temporal)

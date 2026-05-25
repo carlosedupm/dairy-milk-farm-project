@@ -30,12 +30,13 @@ var ErrAnimalNotFound = errors.New("animal não encontrado")
 var ErrAnimalIdentificacaoDuplicada = errors.New("identificação já existe")
 
 type AnimalService struct {
-	repo        *repository.AnimalRepository
-	fazendaRepo *repository.FazendaRepository
+	repo         *repository.AnimalRepository
+	fazendaRepo  *repository.FazendaRepository
+	gestacaoRepo *repository.GestacaoRepository
 }
 
-func NewAnimalService(repo *repository.AnimalRepository, fazendaRepo *repository.FazendaRepository) *AnimalService {
-	return &AnimalService{repo: repo, fazendaRepo: fazendaRepo}
+func NewAnimalService(repo *repository.AnimalRepository, fazendaRepo *repository.FazendaRepository, gestacaoRepo *repository.GestacaoRepository) *AnimalService {
+	return &AnimalService{repo: repo, fazendaRepo: fazendaRepo, gestacaoRepo: gestacaoRepo}
 }
 
 func (s *AnimalService) Create(ctx context.Context, animal *models.Animal) error {
@@ -94,6 +95,10 @@ func (s *AnimalService) Create(ctx context.Context, animal *models.Animal) error
 	}
 	if animal.MotivoSaida != nil && *animal.MotivoSaida != "" && !models.IsValidMotivoSaida(*animal.MotivoSaida) {
 		return errors.New("motivo de saída inválido")
+	}
+
+	if err := ValidateAnimalDatasCadastro(animal); err != nil {
+		return err
 	}
 
 	return s.repo.Create(ctx, animal)
@@ -193,6 +198,13 @@ func (s *AnimalService) Update(ctx context.Context, animal *models.Animal) error
 	}
 	if animal.MotivoSaida != nil && *animal.MotivoSaida != "" && !models.IsValidMotivoSaida(*animal.MotivoSaida) {
 		return errors.New("motivo de saída inválido")
+	}
+
+	if err := ValidateAnimalDatasCadastro(animal); err != nil {
+		return err
+	}
+	if err := ValidateStatusReprodutivoPrenhe(ctx, s.gestacaoRepo, animal.FazendaID, animal.ID, animal.StatusReprodutivo); err != nil {
+		return err
 	}
 
 	return s.repo.Update(ctx, animal)

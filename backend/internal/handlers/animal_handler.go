@@ -184,6 +184,13 @@ func (h *AnimalHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.service.Create(c.Request.Context(), animal); err != nil {
+		if RespondIfIntegridadeCiclo(c, err) {
+			return
+		}
+		if errors.Is(err, service.ErrAnimalIdentificacaoDuplicada) {
+			response.ErrorConflict(c, "Já existe um animal com essa identificação", nil)
+			return
+		}
 		response.ErrorInternal(c, "Erro ao criar animal", err.Error())
 		return
 	}
@@ -498,6 +505,9 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.service.Update(c.Request.Context(), animal); err != nil {
+		if RespondIfIntegridadeCiclo(c, err) {
+			return
+		}
 		if errors.Is(err, service.ErrAnimalNotFound) {
 			response.ErrorNotFound(c, "Animal não encontrado")
 			return
