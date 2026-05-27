@@ -381,7 +381,15 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 ### **Proteção**
 
 - **CORS**: Configurado estritamente para domínio da Vercel
-- **Rate Limiting**: Limitação de requisições por IP (futuro)
+- **Rate limiting**:
+  - **Auth (público, por IP)**: `middleware/auth_rate_limit.go` em `POST /api/auth/login`, `/register`, `/refresh`. Defaults: login 10/15 min, registo 5/h, refresh 30/h. Env: `AUTH_LOGIN_RATE_LIMIT`, `AUTH_LOGIN_RATE_WINDOW_MINUTES`, `AUTH_REGISTER_RATE_LIMIT`, `AUTH_REFRESH_RATE_LIMIT`. Resposta **429** + header `Retry-After`; frontend trata em `frontend/src/lib/errors.ts`.
+  - **Dev Studio**: 5 req/h por `user_id` — `middleware/rate_limit.go` (`DevStudioRateLimit`).
+  - **Integrações M2M**: por `client_id` — `middleware/integration_rate_limit.go` + `INTEGRATION_RATE_LIMIT_PER_HOUR`.
+  - **Produção (Render)**: `SetTrustedProxies` em `cmd/api/main.go` para `c.ClientIP()` refletir o IP real via `X-Forwarded-For`.
+- **Security headers HTTP**:
+  - **Backend**: `middleware/security_headers.go` global — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`; **HSTS** só com `ENV=production`.
+  - **Frontend**: `frontend/next.config.js` — mesmos headers básicos em `/:path*` (sem CSP nesta fase).
+- **Graceful shutdown**: `SIGINT`/`SIGTERM` → `http.Server.Shutdown` (timeout 5s) + flush Sentry + `defer pool.Close()` — `cmd/api/main.go`.
 - **Input Validation**: Validação em todas as entradas (struct tags)
 - **SQL Injection**: Prevenido com prepared statements
 - **XSS**: Prevenido com sanitização no frontend
@@ -679,4 +687,4 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 **Versão dos Padrões**: 2.26 (Go + Next.js) — Toques operacionais do curral (`ToqueFormFields`, lote JWT, classificação operacional).
 
-**Última atualização**: 2026-05-24 (gestão — jornada toques alinhada à planilha do dia)
+**Última atualização**: 2026-05-27 (rate limit auth por IP, security headers, graceful shutdown)

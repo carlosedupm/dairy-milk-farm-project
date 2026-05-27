@@ -23,6 +23,13 @@
 
 ## ✅ O que foi concluído
 
+### **Segurança HTTP e rate limit de auth (✅ 2026-05-27)**
+
+- [x] Backend: `AuthRateLimit` por IP (login/registro/refresh); env `AUTH_*_RATE_LIMIT`; `SecurityHeadersMiddleware`; `SetTrustedProxies` em produção
+- [x] Frontend: headers básicos em `next.config.js` (sem CSP)
+- [x] Testes: `backend/internal/middleware/auth_rate_limit_test.go`
+- [x] Documentação: `systemPatterns.md`, `techContext.md`, `deploy-notes.md`
+
 ### **Validações temporais do ciclo (✅ 2026-05-25)**
 
 - [x] Backend: `ciclo_integridade_temporal.go` (TMP-001–006), services Create/Update, handlers `RespondIfIntegridadeCiclo`
@@ -704,6 +711,6 @@
 
 ---
 
-**Última atualização**: 2026-05-25 (Gestão pós-baixa — badge e data civil)
+**Última atualização**: 2026-05-27 (segurança HTTP — rate limit auth + security headers)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | **Coberturas com filtros** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

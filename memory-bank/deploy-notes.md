@@ -41,6 +41,15 @@ O arquivo `render.yaml` define:
 
 Fluxo `forgot-password` / `reset-password` **não implementado** até escolha do provedor de e-mail transacional (ex.: Resend, SendGrid, Amazon SES, SMTP do Render). Quando definido, documentar aqui: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, e URL base do frontend para links de reset.
 
+#### Opcionais (auth — rate limit por IP)
+
+- `AUTH_LOGIN_RATE_LIMIT` - Tentativas de login por IP por janela (default: **10**).
+- `AUTH_LOGIN_RATE_WINDOW_MINUTES` - Janela do login em minutos (default: **15**).
+- `AUTH_REGISTER_RATE_LIMIT` - Registos públicos por IP por hora (default: **5**).
+- `AUTH_REFRESH_RATE_LIMIT` - Refresh tokens por IP por hora (default: **30**).
+
+Em produção (`ENV=production`), o Gin confia em proxies (`SetTrustedProxies`) para obter o IP real do cliente via `X-Forwarded-For` (Render). Em desenvolvimento, proxies não são confiados — `ClientIP()` usa `RemoteAddr`.
+
 #### Opcionais (integrações M2M)
 
 - `INTEGRATION_RATE_LIMIT_PER_HOUR` - Limite de requisições por cliente de integração (default: **300**). Aplica-se a rotas autenticadas em `/api/v1/integracoes/*` (não às rotas públicas de documentação).
@@ -68,6 +77,16 @@ Fluxo `forgot-password` / `reset-password` **não implementado** até escolha do
 **Formato**: `{version}_{descrição}.up.sql` e `{version}_{descrição}.down.sql` (ex.: `1_add_remaining_tables.up.sql`, `2_add_indexes_to_fazendas.up.sql`, `3_seed_admin.up.sql`, `4_add_refresh_tokens.up.sql`)
 
 **Row Level Security (RLS)**: A migração `19_enable_row_level_security_public_tables` ativa RLS em todas as tabelas de domínio em `public`, sem políticas para `anon`/`authenticated`. Isso alinha com linters de ambientes que expõem `public` ao PostgREST (ex.: Supabase). O backend CeialMilk usa `DATABASE_URL` com usuário que **é dono das tabelas**: no PostgreSQL, o dono ignora RLS por padrão (salvo `FORCE ROW LEVEL SECURITY`), portanto a API Go/sqlx segue inalterada. Se no futuro um cliente usar papel não-dono com menos privilégios, será preciso criar políticas RLS ou `GRANT` adequados.
+
+### Graceful shutdown (containers)
+
+O binário `./api` trata **SIGTERM** e **SIGINT** (Render envia SIGTERM ao parar o container):
+
+1. Para de aceitar novas conexões (`http.Server.Shutdown`, timeout **5 segundos**).
+2. Flush do Sentry.
+3. Fecho do pool PostgreSQL (`defer pool.Close()` no arranque).
+
+Não é necessária configuração extra no `render.yaml` para este comportamento.
 
 ### Dockerfile
 
@@ -372,7 +391,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 ---
 
-**Última atualização**: 2026-05-24 (migration 26 — classificação operacional de toques)
+**Última atualização**: 2026-05-27 (rate limit auth, security headers, graceful shutdown)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

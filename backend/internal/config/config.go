@@ -24,6 +24,10 @@ type Config struct {
 	GitHubRepo            string
 	GitHubContextBranch              string // branch de produção para contexto Dev Studio (default: main)
 	IntegrationRateLimitPerHour      int    // rate limit M2M por cliente (default: 300)
+	AuthLoginRateLimit               int    // tentativas de login por IP por janela (default: 10)
+	AuthLoginRateWindowMinutes       int    // janela do login em minutos (default: 15)
+	AuthRegisterRateLimit            int    // registos por IP por hora (default: 5)
+	AuthRefreshRateLimit             int    // refresh por IP por hora (default: 30)
 }
 
 func Load() *Config {
@@ -77,6 +81,10 @@ func Load() *Config {
 		GitHubRepo:            getEnv("GITHUB_REPO", ""),
 		GitHubContextBranch:         getEnv("GITHUB_CONTEXT_BRANCH", "main"),
 		IntegrationRateLimitPerHour: getEnvInt("INTEGRATION_RATE_LIMIT_PER_HOUR", 300),
+		AuthLoginRateLimit:          getEnvInt("AUTH_LOGIN_RATE_LIMIT", 10),
+		AuthLoginRateWindowMinutes:  getEnvInt("AUTH_LOGIN_RATE_WINDOW_MINUTES", 15),
+		AuthRegisterRateLimit:       getEnvInt("AUTH_REGISTER_RATE_LIMIT", 5),
+		AuthRefreshRateLimit:        getEnvInt("AUTH_REFRESH_RATE_LIMIT", 30),
 	}
 }
 

@@ -60,6 +60,15 @@ func main() {
 
 	router := gin.New()
 
+	if cfg.Env == "production" {
+		// Render e outros LB enviam X-Forwarded-For; necessário para rate limit por IP real.
+		if err := router.SetTrustedProxies([]string{"0.0.0.0/0", "::/0"}); err != nil {
+			slog.Warn("Falha ao configurar trusted proxies", "error", err)
+		}
+	} else {
+		_ = router.SetTrustedProxies(nil)
+	}
+
 	// Middlewares de observabilidade (ordem importa)
 	router.Use(middleware.CorrelationIDMiddleware())     // Correlation ID primeiro
 	router.Use(middleware.PrometheusMiddleware())        // Métricas Prometheus
@@ -68,6 +77,7 @@ func main() {
 
 	// CORS
 	router.Use(corsMiddleware(cfg.CORSOrigin))
+	router.Use(middleware.SecurityHeadersMiddleware(cfg.Env == "production"))
 
 	// Endpoint de métricas Prometheus
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
@@ -211,11 +221,37 @@ func main() {
 					receitaAgricolaHandler := handlers.NewReceitaAgricolaHandler(receitaAgricolaSvc, safraCulturaSvc, areaSvc, fazendaSvc)
 					resultadoAgricolaHandler := handlers.NewResultadoAgricolaHandler(resultadoAgricolaSvc, areaSvc, fazendaSvc)
 					api := router.Group("/api")
-					api.POST("/auth/register", authHandler.Register)
-					api.POST("/auth/login", authHandler.Login)
-					api.POST("/auth/logout", authHandler.Logout)
-					api.POST("/auth/refresh", authHandler.Refresh)
-					api.POST("/auth/validate", authHandler.Validate)
+					authPublic := api.Group("/auth")
+					loginWindow := time.Duration(cfg.AuthLoginRateWindowMinutes) * time.Minute
+					if cfg.AuthLoginRateWindowMinutes <= 0 {
+						loginWindow = 15 * time.Minute
+					}
+					loginLimit := cfg.AuthLoginRateLimit
+					if loginLimit <= 0 {
+						loginLimit = 10
+					}
+					registerLimit := cfg.AuthRegisterRateLimit
+					if registerLimit <= 0 {
+						registerLimit = 5
+					}
+					refreshLimit := cfg.AuthRefreshRateLimit
+					if refreshLimit <= 0 {
+						refreshLimit = 30
+					}
+					authPublic.POST("/register",
+						middleware.AuthRateLimit(middleware.AuthRateLimitConfig{Limit: registerLimit, Window: time.Hour}),
+						authHandler.Register,
+					)
+					authPublic.POST("/login",
+						middleware.AuthRateLimit(middleware.AuthRateLimitConfig{Limit: loginLimit, Window: loginWindow}),
+						authHandler.Login,
+					)
+					authPublic.POST("/logout", authHandler.Logout)
+					authPublic.POST("/refresh",
+						middleware.AuthRateLimit(middleware.AuthRateLimitConfig{Limit: refreshLimit, Window: time.Hour}),
+						authHandler.Refresh,
+					)
+					authPublic.POST("/validate", authHandler.Validate)
 
 					// Minhas fazendas (usuário logado)
 					me := api.Group("/v1/me", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())

@@ -51,6 +51,9 @@
   - `LOG_LEVEL`: Nível de log (DEBUG, INFO, WARN, ERROR) - padrão: INFO
   - `ENV`: Ambiente (development, production) - padrão: development
   - `INTEGRATION_RATE_LIMIT_PER_HOUR`: Rate limit por cliente M2M (default: 300) — rotas `/api/v1/integracoes/*`
+  - `AUTH_LOGIN_RATE_LIMIT` (default: 10), `AUTH_LOGIN_RATE_WINDOW_MINUTES` (default: 15): rate limit por IP em `POST /api/auth/login`
+  - `AUTH_REGISTER_RATE_LIMIT` (default: 5): rate limit por IP/hora em `POST /api/auth/register`
+  - `AUTH_REFRESH_RATE_LIMIT` (default: 30): rate limit por IP/hora em `POST /api/auth/refresh`
   - **Docs OpenAPI integrações** (públicas): `GET /api/v1/integracoes/openapi.yaml`, `GET /api/v1/integracoes/docs` (Swagger UI); spec embed em `backend/internal/openapi/`
   - **Dev Studio e Assistente** (opcional): `GEMINI_API_KEY`; `GEMINI_MODEL` (default `gemini-2.0-flash`) para Dev Studio; `GEMINI_MODEL_ASSISTENTE` (opcional, se vazio usa `GEMINI_MODEL`; recomendado `gemini-2.5-flash-lite` para custo menor). GitHub: `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_CONTEXT_BRANCH` (default `main`). Ver `docs/dev-studio/SETUP.md`.
 
@@ -270,5 +273,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-24 (toques operacionais; migration 26; `POST /api/v1/toques/lote`)
+**Última atualização**: 2026-05-27 (env AUTH_* rate limit; security headers)
 **Stack**: Go + Next.js 16 — Fase 2 concluída; Folgas 5x1; restrições de leite; Módulo Agrícola; Dev Studio; TestSprite (`testsprite_tests/`)
