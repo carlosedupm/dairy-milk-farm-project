@@ -45,6 +45,20 @@
 - [x] Testes: novos testes em service e handler para regras centrais e parsing de payload.
 - [x] Documentação: catálogo `docs/business/saude-animal.md` + índice atualizado.
 
+### **Onda 1.3 saúde animal — RBAC (✅ 2026-05-28)**
+
+- [x] Backend: `funcionarioAnimaisSaudePath` em `perfil_access.go` — FUNCIONARIO `GET|POST` em `/api/v1/animais/:id/saude`; `PUT|DELETE` → 403; USER sem acesso.
+- [x] Testes: `perfil_access_test.go` (tabela de métodos/rotas de saúde).
+- [x] Frontend: rotas `/animais/:id/saude` e `/animais/:id/saude/novo` em `appAccess.ts`; helpers `canCriarRegistroSaude`, `canEditarRegistroSaude`, `canExcluirRegistroSaude`.
+- [x] Documentação: BR-SAUDE-001 (matriz de perfis), BR-ACESSO-017.
+
+### **Onda 1.4 saúde animal — UI (✅ 2026-05-28)**
+
+- [x] Serviço `frontend/src/services/animalSaude.ts` (listagem, CRUD).
+- [x] `AnimalSaudeForm` + `AnimalSaudeFormFields`; páginas listagem, novo e editar.
+- [x] `AnimalSaudeTable` com ações condicionadas por perfil (Novo / Editar / Excluir).
+- [x] Atalho «Saúde» na ficha do animal (`/animais/:id`).
+
 ### **Validações temporais do ciclo (✅ 2026-05-25)**
 
 - [x] Backend: `ciclo_integridade_temporal.go` (TMP-001–006), services Create/Update, handlers `RespondIfIntegridadeCiclo`
@@ -726,6 +740,6 @@
 
 ---
 
-**Última atualização**: 2026-05-28 (Onda 1.2 CRUD AnimalSaude)
+**Última atualização**: 2026-05-28 (Onda 1.4 UI saúde animal)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | **Coberturas com filtros** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

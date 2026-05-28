@@ -157,6 +157,15 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**: migration `backend/migrations/21_usuarios_fazendas_papel.up.sql` (constraint `chk_usuarios_fazendas_papel`; backfill: vínculos de utilizadores com `perfil = 'PROPRIETARIO'` → `TITULAR`); `backend/internal/models/vinculo_fazenda.go` (`PapelVinculoTitular`, `PapelVinculoOperacional`); `backend/internal/models/fazenda.go` (campo JSON `papel` quando aplicável); `backend/internal/repository/fazenda_repository.go` (`GetFazendasByUsuarioID`, `SetFazendasForUsuario`, `CreateFazendaAndLinkUsuario`); `frontend/src/services/fazendas.ts` (tipo `Fazenda.papel`). **UI global do perfil RBAC** (nome + etiqueta “Proprietário”, etc.): `frontend/src/lib/perfilLabels.ts`, `frontend/src/components/layout/Header.tsx` — distinto do **`papel`** do vínculo.
 - **Estado**: Implementado.
 
+### BR-ACESSO-017 — Saúde animal: FUNCIONARIO regista e consulta
+
+- **Enunciado**: `FUNCIONARIO` pode listar e consultar casos de saúde do animal (`GET /api/v1/animais/:id/saude` e `GET .../saude/:saudeId`) e **registar** novo caso (`POST .../saude`); não pode editar nem excluir (`PUT`/`DELETE` → 403). Perfis com API completa mantêm CRUD. `USER` sem acesso.
+- **Escopo**: sub-recurso `/api/v1/animais/:id/saude*`; rotas UI `/animais/:id/saude`, `/animais/:id/saude/novo` (condicionamento visual de botões na Onda 1.4).
+- **Perfis / permissões**: ver [saude-animal.md](./saude-animal.md) — BR-SAUDE-001.
+- **Efeito**: bloqueio 403 no servidor; UI (1.4) usa `canCriarRegistroSaude` / `canEditarRegistroSaude` / `canExcluirRegistroSaude`.
+- **Implementação**: `perfil_access.go` (`funcionarioAnimaisSaudePath`); `appAccess.ts` (`isFuncionarioAllowedPath`, helpers de escrita).
+- **Estado**: Implementado.
+
 ### BR-ACESSO-016 — Baixa do rebanho: FUNCIONARIO só morte
 
 - **Enunciado**: `FUNCIONARIO` pode `POST /api/v1/animais/:id/baixa` **apenas** com `motivo_saida = MORTE`. Outros motivos e `POST .../baixa/reverter` exigem perfis com API completa (gestão/titular/admin).
@@ -175,4 +184,4 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ---
 
-**Última atualização**: 2026-05-24 (BR-ACESSO-016: baixa do rebanho — FUNCIONARIO só MORTE)
+**Última atualização**: 2026-05-28 (BR-ACESSO-017: saúde animal — FUNCIONARIO POST+GET)

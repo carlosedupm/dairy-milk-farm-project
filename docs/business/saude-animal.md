@@ -7,11 +7,17 @@ Módulo de registo de casos clínicos por animal (`animal_saude`) com CRUD no ba
 ### BR-SAUDE-001 — CRUD por sub-recurso de animal
 - **Enunciado**: cada caso de saúde pertence a um animal e é gerido por sub-recurso.
 - **Escopo**: animal individual dentro da fazenda do utilizador.
-- **Perfis / permissões**: segue matriz existente de `/api/v1/animais/*` (leituras permitidas para perfis com leitura de animais; escritas conforme RBAC atual).
-- **Efeito**: bloqueio no servidor para animal/caso inexistente ou fora de escopo.
+- **Perfis / permissões**:
+  - `ADMIN`, `DEVELOPER`, `GESTAO`, `PROPRIETARIO`, `GERENTE`: CRUD completo (`GET|POST|PUT|DELETE`).
+  - `FUNCIONARIO`: `GET` (listagem e detalhe) + `POST` (novo caso); `PUT` e `DELETE` → 403.
+  - `USER`: sem acesso (403 em qualquer método).
+- **Efeito**: bloqueio no servidor para animal/caso inexistente, fora de escopo ou perfil sem permissão de escrita.
 - **Implementação**:
   - Rotas: `GET|POST /api/v1/animais/:id/saude`, `GET|PUT|DELETE /api/v1/animais/:id/saude/:saudeId`
-  - Arquivos: `backend/internal/handlers/animal_saude_handler.go`, `backend/internal/service/animal_saude_service.go`, `backend/internal/repository/animal_saude_repository.go`
+  - RBAC API: `backend/internal/auth/perfil_access.go` (`funcionarioAnimaisSaudePath`); ver [acessos-perfil.md](./acessos-perfil.md) — BR-ACESSO-017.
+  - RBAC UI: `frontend/src/config/appAccess.ts` (`isFuncionarioAllowedPath`, `canCriarRegistroSaude`, `canEditarRegistroSaude`, `canExcluirRegistroSaude`).
+  - Frontend: `frontend/src/services/animalSaude.ts`, `frontend/src/components/animais/AnimalSaudeForm.tsx`, `AnimalSaudeTable.tsx`, rotas `/animais/:id/saude`, `/novo`, `/[saudeId]/editar`.
+  - Handlers/service: `backend/internal/handlers/animal_saude_handler.go`, `backend/internal/service/animal_saude_service.go`, `backend/internal/repository/animal_saude_repository.go`
 - **Estado**: implementado.
 
 ### BR-SAUDE-002 — Validação de domínio do caso de saúde
@@ -53,4 +59,4 @@ Módulo de registo de casos clínicos por animal (`animal_saude`) com CRUD no ba
 
 ---
 
-**Última atualização**: 2026-05-28
+**Última atualização**: 2026-05-28 (Onda 1.4: UI formulário e listagem)

@@ -43,7 +43,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Beef, Edit, Trash2, PlusCircle, Milk, LogOut } from "lucide-react";
+import { Beef, Edit, Trash2, PlusCircle, Milk, LogOut, Stethoscope } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   animaisFazendaQueryKey,
@@ -295,8 +295,19 @@ function AnimalDetailContent() {
               </div>
             </dl>
 
-            {(canManageAnimal || showRegistrarBaixa || showReverterBaixa) && (
+            {(canManageAnimal ||
+              showRegistrarBaixa ||
+              showReverterBaixa ||
+              !foraDoRebanho) && (
               <div className="flex flex-wrap gap-2 pt-2">
+                {!foraDoRebanho && (
+                  <Button variant="outline" size="default" asChild>
+                    <Link href={`/animais/${id}/saude`}>
+                      <Stethoscope className="mr-2 h-4 w-4" />
+                      Saúde
+                    </Link>
+                  </Button>
+                )}
                 {showRegistrarBaixa && (
                   <Button variant="default" size="default" asChild>
                     <Link href={`/animais/baixa?animal_id=${id}`}>

@@ -103,6 +103,8 @@ function isFuncionarioAllowedPath(path: string): boolean {
   if (path === "/animais") return true;
   if (path === "/animais/baixa") return true;
   if (/^\/animais\/\d+$/.test(path)) return true;
+  if (/^\/animais\/\d+\/saude$/.test(path)) return true;
+  if (/^\/animais\/\d+\/saude\/novo$/.test(path)) return true;
   if (path === "/producao/novo") return true;
   if (path === "/folgas" || path.startsWith("/folgas/")) return true;
   return FUNCIONARIO_GESTAO_PATHS.some(
@@ -166,6 +168,23 @@ export function canReverterBaixa(perfil: string | undefined): boolean {
   if (!perfil) return false;
   if (perfil === "FUNCIONARIO" || perfil === "USER") return false;
   return true;
+}
+
+/** POST /api/v1/animais/:id/saude — FUNCIONARIO e perfis operacionais. */
+export function canCriarRegistroSaude(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER") return false;
+  return true;
+}
+
+/** PUT /api/v1/animais/:id/saude/:saudeId — exceto FUNCIONARIO e USER. */
+export function canEditarRegistroSaude(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER" || perfil === "FUNCIONARIO") return false;
+  return true;
+}
+
+/** DELETE /api/v1/animais/:id/saude/:saudeId — mesma matriz que editar. */
+export function canExcluirRegistroSaude(perfil: string | undefined): boolean {
+  return canEditarRegistroSaude(perfil);
 }
 
 export function motivosBaixaParaPerfil(

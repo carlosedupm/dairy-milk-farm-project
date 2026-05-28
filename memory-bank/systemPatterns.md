@@ -352,7 +352,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 - **Role-Based**: Controle de acesso baseado em roles (`USER`, `FUNCIONARIO`, `GERENTE`, `GESTAO`, `PROPRIETARIO`, `ADMIN`, `DEVELOPER`)
 - **USER**: Perfil **pendente de provisão** após registo público: na UI só rotas utilitárias (`/`, `/onboarding`, `/fazendas`, `/fazendas/selecionar/*`) até ter fazenda e perfil adequados. **Não** cria fazenda via `POST /api/v1/me/fazendas` (bloqueado em `requestAllowedForUser` e no serviço). Na API, `RequirePerfilAPIAccess` permite prefixo `/api/v1/me/` com exceção explícita desse `POST`; demais `/api/v1/*` retornam 403 enquanto `perfil` for `USER`.
 - **PROPRIETARIO**: Titular da exploração; acesso operacional completo na UI alinhado a `GERENTE`/`GESTAO` para navegação, **sempre** filtrado por `usuarios_fazendas`. Não acede a `/api/v1/admin/*` nem à listagem global de fazendas.
-- **FUNCIONARIO**: Pode acessar a home (`/`), visualizar Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`); também acessa Gestão parcial (Cios/Coberturas/Partos/Secagens) e Animais em modo consulta; na home pode **registrar** restrição de leite (`POST .../restricoes-leite`) e listar ativas, mas **não** liberar após laboratório (`PATCH .../liberar` → 403). Escritas de Animais seguem bloqueadas por matriz configurável (ver abaixo).
+- **FUNCIONARIO**: Pode acessar a home (`/`), visualizar Folgas da fazenda vinculada e registrar **justificativa** apenas no próprio dia de folga (`POST .../folgas/justificativas`); também acessa Gestão parcial (Cios/Coberturas/Partos/Secagens) e Animais em modo consulta; na home pode **registrar** restrição de leite (`POST .../restricoes-leite`) e listar ativas, mas **não** liberar após laboratório (`PATCH .../liberar` → 403). Em saúde animal: `GET|POST` em `/api/v1/animais/:id/saude` (`funcionarioAnimaisSaudePath`); `PUT|DELETE` → 403. Escritas genéricas de Animais seguem bloqueadas por matriz configurável (ver abaixo).
 - **GESTAO**: Pode **configurar**, **gerar** e **alterar** escala de folgas (`RequireGestaoFolgas` inclui `PROPRIETARIO` e `GERENTE`), com **atalho sem vínculo** a qualquer fazenda existente apenas para **GESTAO**, **ADMIN** e **DEVELOPER** (`PodeAcessarFazendaSemVinculoGestao` em `ValidateFazendaAccessOrGestao` e `validarAcessoFazenda`).
 - **GERENTE**: Gere escala de folgas nas fazendas **vinculadas**; **não** utiliza atalho sem vínculo (isolamento por fazenda).
 - **ADMIN**: Perfil para acesso à área administrativa (`/api/v1/admin/*`); requer `auth.RequireAdmin()` (ADMIN ou DEVELOPER).
@@ -687,6 +687,6 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Versão dos Padrões**: 2.27 (Go + Next.js) — CRUD backend de saúde animal (`/api/v1/animais/:id/saude`) com sincronização de `status_saude`.
+**Versão dos Padrões**: 2.28 (Go + Next.js) — RBAC saúde animal (FUNCIONARIO GET+POST; PUT/DELETE restritos).
 
-**Última atualização**: 2026-05-28 (Onda 1.2 saúde animal no backend)
+**Última atualização**: 2026-05-28 (Onda 1.3 RBAC saúde animal)
