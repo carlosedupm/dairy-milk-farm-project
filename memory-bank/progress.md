@@ -30,6 +30,12 @@
 - [x] Testes: `backend/internal/middleware/auth_rate_limit_test.go`
 - [x] Documentação: `systemPatterns.md`, `techContext.md`, `deploy-notes.md`
 
+### **Onda 1.1 saúde animal (✅ 2026-05-28)**
+
+- [x] Migration `30_add_animal_saude.up.sql`: tabela `animal_saude` com FKs para `animais`/`usuarios`, `CHECK` para `tipo_caso` e `status`, `created_at` com `NOW()` e constraint `chk_animal_saude_data_fim`.
+- [x] Índices operacionais: `idx_animal_saude_animal_status` e `idx_animal_saude_animal_data`.
+- [x] Rollback: migration `30_add_animal_saude.down.sql` com `DROP TABLE IF EXISTS animal_saude`.
+
 ### **Validações temporais do ciclo (✅ 2026-05-25)**
 
 - [x] Backend: `ciclo_integridade_temporal.go` (TMP-001–006), services Create/Update, handlers `RespondIfIntegridadeCiclo`
@@ -711,6 +717,6 @@
 
 ---
 
-**Última atualização**: 2026-05-27 (segurança HTTP — rate limit auth + security headers)
+**Última atualização**: 2026-05-28 (migration 30 saúde animal)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | **Coberturas com filtros** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2
