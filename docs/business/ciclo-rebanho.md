@@ -171,7 +171,7 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 | Parto + lactação | Implementado | |
 | Produção | Implementado | Lactação ativa obrigatória (BR-CICLO-007); FUNCIONARIO POST |
 | Restrição leite | Implementado | [leite-restricoes.md](./leite-restricoes.md) |
-| Saúde (vacinas/tratamentos) | Planejado | Só `status_saude` |
+| Saúde (casos clínicos) | Implementado | CRUD + timeline (`BR-SAUDE-005`); vacinas/alertas Meta 3 |
 | Dashboard pecuário | Implementado | KPIs acionáveis (`ResumoKpiTile`, BR-GESTACOES-004) |
 | Ficha animal (timeline) | Implementado | BR-CICLO-008 |
 | Saída do rebanho (baixa) | Implementado | [baixa-rebanho.md](./baixa-rebanho.md) BR-CICLO-011; rótulos Gestão BR-BAIXA-009 |

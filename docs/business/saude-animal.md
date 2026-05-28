@@ -16,7 +16,7 @@ Módulo de registo de casos clínicos por animal (`animal_saude`) com CRUD no ba
   - Rotas: `GET|POST /api/v1/animais/:id/saude`, `GET|PUT|DELETE /api/v1/animais/:id/saude/:saudeId`
   - RBAC API: `backend/internal/auth/perfil_access.go` (`funcionarioAnimaisSaudePath`); ver [acessos-perfil.md](./acessos-perfil.md) — BR-ACESSO-017.
   - RBAC UI: `frontend/src/config/appAccess.ts` (`isFuncionarioAllowedPath`, `canCriarRegistroSaude`, `canEditarRegistroSaude`, `canExcluirRegistroSaude`).
-  - Frontend: `frontend/src/services/animalSaude.ts`, `frontend/src/components/animais/AnimalSaudeForm.tsx`, `AnimalSaudeTable.tsx`, rotas `/animais/:id/saude`, `/novo`, `/[saudeId]/editar`.
+  - Frontend: `frontend/src/services/animalSaude.ts`, `frontend/src/components/animais/AnimalSaudeForm.tsx`, `AnimalSaudeList.tsx`, rotas `/animais/:id/saude`, `/novo`, `/[saudeId]/editar`.
   - Handlers/service: `backend/internal/handlers/animal_saude_handler.go`, `backend/internal/service/animal_saude_service.go`, `backend/internal/repository/animal_saude_repository.go`
 - **Estado**: implementado.
 
@@ -57,6 +57,16 @@ Módulo de registo de casos clínicos por animal (`animal_saude`) com CRUD no ba
   - Arquivos: `backend/internal/service/animal_saude_service.go`, `backend/internal/repository/animal_repository.go`
 - **Estado**: implementado.
 
+### BR-SAUDE-005 — Casos de saúde na timeline da ficha
+- **Enunciado**: cada caso de saúde do animal aparece na timeline do `GET /api/v1/animais/:id/contexto`, intercalado por data com eventos de ciclo.
+- **Escopo**: ficha `/animais/:id`; um evento por caso na `data_inicio` (sem evento duplicado em `data_fim`).
+- **Perfis / permissões**: quem pode consultar o contexto do animal.
+- **Efeito**: informativo na timeline (`tipo=SAUDE`); link para edição na UI apenas para perfis com `canEditarRegistroSaude`.
+- **Implementação**:
+  - Backend: `appendCasosSaudeToTimeline` em `backend/internal/service/animal_ciclo_service.go` (`BuildTimeline`)
+  - Frontend: `frontend/src/components/animais/AnimalFichaCiclo.tsx` (ícone Pill, badge «Saúde»)
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-28 (Onda 1.4: UI formulário e listagem)
+**Última atualização**: 2026-05-28 (Onda 1.5: listagem refinada + timeline)

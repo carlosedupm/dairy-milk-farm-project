@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/repository"
@@ -22,6 +23,7 @@ type AnimalCicloService struct {
 	partoRepo       *repository.PartoRepository
 	lactacaoRepo    *repository.LactacaoRepository
 	producaoRepo    *repository.ProducaoRepository
+	animalSaudeRepo *repository.AnimalSaudeRepository
 	usuarioRepo     *repository.UsuarioRepository
 }
 
@@ -34,6 +36,7 @@ func NewAnimalCicloService(
 	partoRepo *repository.PartoRepository,
 	lactacaoRepo *repository.LactacaoRepository,
 	producaoRepo *repository.ProducaoRepository,
+	animalSaudeRepo *repository.AnimalSaudeRepository,
 	usuarioRepo *repository.UsuarioRepository,
 ) *AnimalCicloService {
 	return &AnimalCicloService{
@@ -45,6 +48,7 @@ func NewAnimalCicloService(
 		partoRepo:       partoRepo,
 		lactacaoRepo:    lactacaoRepo,
 		producaoRepo:    producaoRepo,
+		animalSaudeRepo: animalSaudeRepo,
 		usuarioRepo:     usuarioRepo,
 	}
 }
@@ -174,6 +178,14 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 			CreatedBy: p.CreatedBy,
 		})
 		n++
+	}
+
+	if s.animalSaudeRepo != nil {
+		casos, err := s.animalSaudeRepo.ListByAnimalID(ctx, animalID)
+		if err != nil {
+			return nil, err
+		}
+		items = appendCasosSaudeToTimeline(items, casos)
 	}
 
 	sort.Slice(items, func(i, j int) bool {
@@ -336,4 +348,69 @@ func formatToqueDetalhe(d *models.DiagnosticoGestacao) string {
 		return fmt.Sprintf("%d dias", dias)
 	}
 	return ""
+}
+
+func appendCasosSaudeToTimeline(items []models.CicloTimelineItem, casos []*models.AnimalSaude) []models.CicloTimelineItem {
+	for _, c := range casos {
+		if c == nil {
+			continue
+		}
+		detalhe := truncateTimelineDetalhe(c.Observacoes)
+		items = append(items, models.CicloTimelineItem{
+			Tipo:      "SAUDE",
+			Data:      c.DataInicio,
+			Titulo:    formatSaudeTimelineTitulo(c.TipoCaso, c.Status),
+			Detalhe:   detalhe,
+			RefID:     c.ID,
+			CreatedBy: c.CreatedBy,
+		})
+	}
+	return items
+}
+
+func formatSaudeTimelineTitulo(tipoCaso, status string) string {
+	return fmt.Sprintf("%s (%s)", animalSaudeTipoLabel(tipoCaso), animalSaudeStatusLabel(status))
+}
+
+func animalSaudeTipoLabel(tipo string) string {
+	switch tipo {
+	case models.AnimalSaudeTipoTratamento:
+		return "Tratamento"
+	case models.AnimalSaudeTipoPreventivo:
+		return "Preventivo"
+	case models.AnimalSaudeTipoCirurgia:
+		return "Cirurgia"
+	case models.AnimalSaudeTipoOutro:
+		return "Outro"
+	default:
+		return tipo
+	}
+}
+
+func animalSaudeStatusLabel(status string) string {
+	switch status {
+	case models.AnimalSaudeStatusAtivo:
+		return "Ativo"
+	case models.AnimalSaudeStatusConcluido:
+		return "Concluído"
+	case models.AnimalSaudeStatusCancelado:
+		return "Cancelado"
+	default:
+		return status
+	}
+}
+
+func truncateTimelineDetalhe(obs *string) string {
+	if obs == nil {
+		return ""
+	}
+	s := strings.TrimSpace(*obs)
+	if s == "" {
+		return ""
+	}
+	const maxLen = 120
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "…"
 }

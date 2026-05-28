@@ -17,6 +17,7 @@ import {
   canExcluirRegistroSaude,
 } from "@/config/appAccess";
 import { formatDatePtBr } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -34,6 +35,9 @@ import {
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 
+export const ANIMAL_SAUDE_EMPTY_MESSAGE =
+  "Nenhum registo de saúde para este animal.";
+
 type Props = {
   animalId: number;
   items: AnimalSaudeRegistro[];
@@ -48,15 +52,29 @@ function statusLabel(s: string): string {
   return STATUS_CASO_SAUDE_LABELS[s as StatusCasoSaude] ?? s;
 }
 
-function statusVariant(
+function statusBadgeClassName(s: string): string | undefined {
+  if (s === "CONCLUIDO") {
+    return "border-green-600/40 bg-green-500/10 text-green-700 dark:text-green-400";
+  }
+  if (s === "CANCELADO") {
+    return "border-muted-foreground/30 bg-muted text-muted-foreground";
+  }
+  return undefined;
+}
+
+function statusBadgeVariant(
   s: string
 ): "default" | "secondary" | "destructive" | "outline" {
   if (s === "ATIVO") return "destructive";
-  if (s === "CONCLUIDO") return "secondary";
   return "outline";
 }
 
-export function AnimalSaudeTable({ animalId, items, perfil }: Props) {
+function observacoesDisplay(obs?: string | null): string {
+  if (!obs?.trim()) return "—";
+  return obs.trim();
+}
+
+export function AnimalSaudeList({ animalId, items, perfil }: Props) {
   const queryClient = useQueryClient();
   const canEdit = canEditarRegistroSaude(perfil);
   const canDelete = canExcluirRegistroSaude(perfil);
@@ -79,7 +97,7 @@ export function AnimalSaudeTable({ animalId, items, perfil }: Props) {
   if (items.length === 0) {
     return (
       <p className="py-8 text-center text-muted-foreground">
-        Nenhum registo de saúde para este animal.
+        {ANIMAL_SAUDE_EMPTY_MESSAGE}
       </p>
     );
   }
@@ -102,6 +120,15 @@ export function AnimalSaudeTable({ animalId, items, perfil }: Props) {
     return actions;
   };
 
+  const statusBadge = (status: string) => (
+    <Badge
+      variant={statusBadgeVariant(status)}
+      className={cn("shrink-0", statusBadgeClassName(status))}
+    >
+      {statusLabel(status)}
+    </Badge>
+  );
+
   return (
     <>
       <ResponsiveListContainer
@@ -114,16 +141,18 @@ export function AnimalSaudeTable({ animalId, items, perfil }: Props) {
                 : undefined
             }
             title={tipoLabel(item.tipo_caso)}
-            subtitle={`Início: ${formatDatePtBr(item.data_inicio)}`}
+            subtitle={`Início: ${formatDatePtBr(item.data_inicio)}${
+              item.data_fim
+                ? ` · Fim: ${formatDatePtBr(item.data_fim)}`
+                : ""
+            }`}
             meta={
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant={statusVariant(item.status)}>
-                  {statusLabel(item.status)}
-                </Badge>
-                {item.data_fim ? (
-                  <span className="text-muted-foreground text-sm">
-                    Fim: {formatDatePtBr(item.data_fim)}
-                  </span>
+              <div className="space-y-2 min-w-0">
+                {statusBadge(item.status)}
+                {item.observacoes?.trim() ? (
+                  <p className="text-sm text-muted-foreground line-clamp-2 break-words">
+                    {item.observacoes.trim()}
+                  </p>
                 ) : null}
               </div>
             }
@@ -138,10 +167,11 @@ export function AnimalSaudeTable({ animalId, items, perfil }: Props) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Início</TableHead>
-                <TableHead>Fim</TableHead>
+                <TableHead>Tipo caso</TableHead>
+                <TableHead>Data início</TableHead>
+                <TableHead>Data fim</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Observações</TableHead>
                 <TableHead className="w-[1%]">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -162,10 +192,9 @@ export function AnimalSaudeTable({ animalId, items, perfil }: Props) {
                   </TableCell>
                   <TableCell>{formatDatePtBr(item.data_inicio)}</TableCell>
                   <TableCell>{formatDatePtBr(item.data_fim)}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariant(item.status)}>
-                      {statusLabel(item.status)}
-                    </Badge>
+                  <TableCell>{statusBadge(item.status)}</TableCell>
+                  <TableCell className="max-w-[16rem] break-words text-sm">
+                    {observacoesDisplay(item.observacoes)}
                   </TableCell>
                   <TableCell>
                     {menuItems(item).length > 0 ? (

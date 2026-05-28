@@ -185,7 +185,7 @@ func main() {
 					coberturaSvc := service.NewCoberturaService(coberturaRepo, animalRepo, fazendaRepo, gestacaoRepo, diagnosticoGestacaoRepo, cioRepo)
 					diagnosticoGestacaoSvc := service.NewDiagnosticoGestacaoService(diagnosticoGestacaoRepo, animalRepo, gestacaoRepo, coberturaRepo, fazendaRepo)
 					gestacaoSvc := service.NewGestacaoService(gestacaoRepo, animalRepo, fazendaRepo)
-					animalCicloSvc := service.NewAnimalCicloService(cioRepo, coberturaRepo, diagnosticoGestacaoRepo, gestacaoRepo, secagemRepo, partoRepo, lactacaoRepo, producaoRepo, userRepo)
+					animalCicloSvc := service.NewAnimalCicloService(cioRepo, coberturaRepo, diagnosticoGestacaoRepo, gestacaoRepo, secagemRepo, partoRepo, lactacaoRepo, producaoRepo, animalSaudeRepo, userRepo)
 					conformidadeSvc := service.NewConformidadeService(pool)
 					conformidadeHandler := handlers.NewConformidadeHandler(conformidadeSvc, fazendaSvc)
 					animalHandler := handlers.NewAnimalHandler(animalSvc, animalBaixaSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc, animalCicloSvc, userRepo)

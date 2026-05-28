@@ -59,6 +59,12 @@
 - [x] `AnimalSaudeTable` com ações condicionadas por perfil (Novo / Editar / Excluir).
 - [x] Atalho «Saúde» na ficha do animal (`/animais/:id`).
 
+### **Onda 1.5 saúde animal — listagem + timeline (✅ 2026-05-28)**
+
+- [x] `AnimalSaudeList` (cards mobile, tabela desktop, coluna Observações, badges por status, paginação client 20).
+- [x] Página `/animais/:id/saude`: `PageBreadcrumb`, título, `QueryListContent`.
+- [x] Timeline: casos em `BuildTimeline` (`tipo=SAUDE`); `AnimalFichaCiclo` com ícone Pill e link para editar; BR-SAUDE-005.
+
 ### **Validações temporais do ciclo (✅ 2026-05-25)**
 
 - [x] Backend: `ciclo_integridade_temporal.go` (TMP-001–006), services Create/Update, handlers `RespondIfIntegridadeCiclo`
@@ -740,6 +746,6 @@
 
 ---
 
-**Última atualização**: 2026-05-28 (Onda 1.4 UI saúde animal)
+**Última atualização**: 2026-05-28 (Onda 1.5 listagem + timeline saúde)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | **Coberturas com filtros** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

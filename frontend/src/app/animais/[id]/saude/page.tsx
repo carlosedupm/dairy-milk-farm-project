@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { BackLink } from "@/components/layout/BackLink";
+import { PageBreadcrumb } from "@/components/layout/PageBreadcrumb";
+import { QueryListContent } from "@/components/layout/QueryListContent";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AnimalSaudeTable } from "@/components/animais/AnimalSaudeTable";
+import { AnimalSaudeList } from "@/components/animais/AnimalSaudeList";
+import { ListPaginationBar } from "@/components/ui/pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { canCriarRegistroSaude } from "@/config/appAccess";
 import { get as getAnimal, isAnimalForaDoRebanho } from "@/services/animais";
@@ -16,13 +18,15 @@ import {
   animalSaudeListQueryKey,
   listByAnimal,
 } from "@/services/animalSaude";
-import { getApiErrorMessage } from "@/lib/errors";
-import { Plus, Stethoscope } from "lucide-react";
+import { Plus } from "lucide-react";
+
+const PAGE_SIZE = 20;
 
 function SaudeListContent() {
   const params = useParams();
   const animalId = Number(params.id);
   const { user } = useAuth();
+  const [offset, setOffset] = useState(0);
 
   const {
     data: animal,
@@ -35,7 +39,7 @@ function SaudeListContent() {
   });
 
   const {
-    data: items = [],
+    data: allItems = [],
     isLoading: loadingList,
     error: listError,
   } = useQuery({
@@ -44,11 +48,14 @@ function SaudeListContent() {
     enabled: !Number.isNaN(animalId) && animalId > 0,
   });
 
+  const pageItems = useMemo(() => {
+    return allItems.slice(offset, offset + PAGE_SIZE);
+  }, [allItems, offset]);
+
   if (Number.isNaN(animalId) || animalId <= 0) {
     return (
       <PageContainer variant="default">
         <p className="text-destructive">ID inválido.</p>
-        <BackLink href="/animais">Voltar</BackLink>
       </PageContainer>
     );
   }
@@ -65,59 +72,64 @@ function SaudeListContent() {
     return (
       <PageContainer variant="default">
         <p className="text-destructive">Animal não encontrado.</p>
-        <BackLink href="/animais">Voltar</BackLink>
       </PageContainer>
     );
   }
 
   const foraDoRebanho = isAnimalForaDoRebanho(animal);
-  const showNovo =
-    canCriarRegistroSaude(user?.perfil) && !foraDoRebanho;
+  const showNovo = canCriarRegistroSaude(user?.perfil) && !foraDoRebanho;
 
   return (
     <PageContainer variant="default">
-      <BackLink href={`/animais/${animalId}`}>Voltar à ficha</BackLink>
-      <Card className="mt-4">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between space-y-0 pb-4">
-          <div className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>
-              Saúde — {animal.identificacao}
-            </CardTitle>
-          </div>
-          {showNovo ? (
-            <Button asChild className="min-h-[44px]">
-              <Link href={`/animais/${animalId}/saude/novo`}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo registro
-              </Link>
-            </Button>
-          ) : null}
-        </CardHeader>
-        <CardContent>
-          {foraDoRebanho ? (
-            <p className="text-muted-foreground text-sm mb-4">
-              Animal fora do rebanho — não é possível registar novos casos de
-              saúde.
-            </p>
-          ) : null}
-          {loadingList && (
-            <p className="text-muted-foreground">Carregando registos…</p>
-          )}
-          {listError && (
-            <p className="text-destructive">
-              {getApiErrorMessage(listError, "Erro ao carregar registos.")}
-            </p>
-          )}
-          {!loadingList && !listError && (
-            <AnimalSaudeTable
-              animalId={animalId}
-              items={items}
-              perfil={user?.perfil}
+      <PageBreadcrumb
+        items={[
+          { label: "Animais", href: "/animais" },
+          { label: animal.identificacao, href: `/animais/${animalId}` },
+          { label: "Saúde" },
+        ]}
+      />
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Saúde do animal {animal.identificacao}
+        </h1>
+        {showNovo ? (
+          <Button asChild className="min-h-[44px] shrink-0">
+            <Link href={`/animais/${animalId}/saude/novo`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo registro
+            </Link>
+          </Button>
+        ) : null}
+      </div>
+
+      {foraDoRebanho ? (
+        <p className="text-muted-foreground text-sm">
+          Animal fora do rebanho — não é possível registar novos casos de saúde.
+        </p>
+      ) : null}
+
+      <QueryListContent
+        isLoading={loadingList}
+        error={listError}
+        errorFallback="Erro ao carregar registos."
+      >
+        <div className="space-y-4">
+          <AnimalSaudeList
+            animalId={animalId}
+            items={pageItems}
+            perfil={user?.perfil}
+          />
+          {allItems.length > 0 ? (
+            <ListPaginationBar
+              total={allItems.length}
+              pageSize={PAGE_SIZE}
+              offset={offset}
+              onOffsetChange={setOffset}
             />
-          )}
-        </CardContent>
-      </Card>
+          ) : null}
+        </div>
+      </QueryListContent>
     </PageContainer>
   );
 }
