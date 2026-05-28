@@ -293,6 +293,18 @@ func (r *AnimalRepository) UpdateStatusReprodutivo(ctx context.Context, animalID
 	return err
 }
 
+func (r *AnimalRepository) UpdateStatusSaude(ctx context.Context, animalID int64, status *string) error {
+	query := `UPDATE animais SET status_saude = $1, updated_at = $2 WHERE id = $3`
+	tag, err := r.db.Exec(ctx, query, status, time.Now(), animalID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
 func (r *AnimalRepository) UpdateStatusReprodutivoTx(ctx context.Context, tx pgx.Tx, animalID int64, status *string) error {
 	query := `UPDATE animais SET status_reprodutivo = $1, updated_at = $2 WHERE id = $3`
 	_, err := tx.Exec(ctx, query, status, time.Now(), animalID)

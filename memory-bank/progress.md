@@ -36,6 +36,15 @@
 - [x] Índices operacionais: `idx_animal_saude_animal_status` e `idx_animal_saude_animal_data`.
 - [x] Rollback: migration `30_add_animal_saude.down.sql` com `DROP TABLE IF EXISTS animal_saude`.
 
+### **Onda 1.2 saúde animal (✅ 2026-05-28)**
+
+- [x] Backend: CRUD completo de `animal_saude` em sub-recurso do animal (`GET|POST /api/v1/animais/:id/saude`, `GET|PUT|DELETE /api/v1/animais/:id/saude/:saudeId`).
+- [x] Domínio: validação de `tipo_caso`, `status` e intervalo (`data_fim >= data_inicio`) em service/model.
+- [x] Regra operacional: CRUD permitido apenas para animal no rebanho (`EnsureAnimalNoRebanho`) e com acesso válido à fazenda.
+- [x] Sincronização: recálculo automático de `animais.status_saude` após create/update/delete (`EM_TRATAMENTO` > `DOENTE` > `SAUDAVEL`).
+- [x] Testes: novos testes em service e handler para regras centrais e parsing de payload.
+- [x] Documentação: catálogo `docs/business/saude-animal.md` + índice atualizado.
+
 ### **Validações temporais do ciclo (✅ 2026-05-25)**
 
 - [x] Backend: `ciclo_integridade_temporal.go` (TMP-001–006), services Create/Update, handlers `RespondIfIntegridadeCiclo`
@@ -717,6 +726,6 @@
 
 ---
 
-**Última atualização**: 2026-05-28 (migration 30 saúde animal)
+**Última atualização**: 2026-05-28 (Onda 1.2 CRUD AnimalSaude)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | **Coberturas com filtros** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

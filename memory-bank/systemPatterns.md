@@ -160,6 +160,7 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 - `GET|PUT /api/v1/fazendas/:id/folgas/config` | `GET /api/v1/fazendas/:id/folgas/escala` (resposta: `linhas` + `rodizio_por_dia` por data) | `GET /api/v1/fazendas/:id/folgas/resumo-equidade?inicio&fim` (GESTAO/ADMIN/DEVELOPER: registradas vs previstas do 5x1 por slot) | `POST /api/v1/fazendas/:id/folgas/gerar` | `POST /api/v1/fazendas/:id/folgas/alteracoes` | `POST /api/v1/fazendas/:id/folgas/justificativas` | `GET /api/v1/fazendas/:id/folgas/alteracoes` | `GET /api/v1/fazendas/:id/folgas/alertas`
 - `GET|POST|PUT|DELETE /api/v1/producao` (+ `GET /count`, `GET /filter/by-date?start&end&fazenda_id`) — listagens filtradas pelas fazendas do usuário; query `fazenda_id` opcional restringe a uma fazenda vinculada
 - `GET /api/v1/animais/:id/producao` (+ `/count`, `/resumo`) — histórico e resumo por animal; `POST /api/v1/producao` exige lactação ativa (ver `docs/business/producao-leite.md`)
+- `GET|POST /api/v1/animais/:id/saude` + `GET|PUT|DELETE /api/v1/animais/:id/saude/:saudeId` — CRUD de saúde animal por sub-recurso; create/update/delete recalculam `animais.status_saude` com base nos casos ativos (`EM_TRATAMENTO` > `DOENTE` > `SAUDAVEL`)
 - `GET /api/v1/fazendas/:id/animais/em-lactacao` (animais com lactação ativa; mesma autorização que listagem por fazenda)
 - `GET /api/v1/fazendas/:id/restricoes-leite/ativas` | `POST /api/v1/fazendas/:id/restricoes-leite` | `PATCH /api/v1/fazendas/:id/restricoes-leite/:restricaoId/liberar` (descarte até laboratório; ver `docs/business/leite-restricoes.md`)
 - `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`
@@ -294,6 +295,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 
 - **Resources**: Entidades como recursos (`/api/v1/fazendas`, `/api/v1/animais`)
 - **Sub-recursos de ação**: operações de domínio que não são CRUD genérico usam rotas dedicadas — ex.: `POST /api/v1/animais/:id/baixa` e `POST .../baixa/reverter` (`AnimalBaixaService`, transação única espelhando `SecagemService`). Campos de saída (`data_saida`, `motivo_saida`, `observacao_saida`) **não** vão no `PUT` genérico do animal.
+- **Sub-recursos de domínio (CRUD contextual)**: quando o dado pertence intrinsecamente ao animal, usar sub-recurso em `/api/v1/animais/:id/*` (ex.: saúde animal em `/saude`) com validação de acesso via fazenda do animal e guarda de rebanho no service.
 - **Filtro operacional em listagem**: query `rebanho=ativos|baixa|todos` (alias `no_rebanho` boolean) em `GET /api/v1/animais` — default **ativos** = `(data_saida IS NULL OR data_saida > CURRENT_DATE)`; busca por identificação e M2M seguem o mesmo critério por defeito.
 - **Guarda transversal**: `EnsureAnimalNoRebanho` nos services de ciclo/produção → HTTP 400 com `ANIMAL_FORA_REBANHO`.
 - **Conformidade (auditoria + preventiva)**: `ConformidadeService` — INT-001 a INT-006 com `repository.SQLNoRebanhoFor("a")` (painel, BR-AUDIT-009); INT-007 pós-baixa. **Escrita**: `ciclo_integridade.go` + `RespondIfIntegridadeCiclo` bloqueiam novas violações (BR-AUDIT-010) — produção na data (INT-002), PRENHE com gestação (INT-005), parto encerra lactação antes da nova (INT-001), toque+/restrição/baixa já cobertos nos respetivos services.
@@ -685,6 +687,6 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Versão dos Padrões**: 2.26 (Go + Next.js) — Toques operacionais do curral (`ToqueFormFields`, lote JWT, classificação operacional).
+**Versão dos Padrões**: 2.27 (Go + Next.js) — CRUD backend de saúde animal (`/api/v1/animais/:id/saude`) com sincronização de `status_saude`.
 
-**Última atualização**: 2026-05-27 (rate limit auth por IP, security headers, graceful shutdown)
+**Última atualização**: 2026-05-28 (Onda 1.2 saúde animal no backend)

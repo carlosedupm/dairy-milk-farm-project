@@ -14,9 +14,9 @@ import (
 	"github.com/ceialmilk/api/internal/auth"
 	"github.com/ceialmilk/api/internal/config"
 	"github.com/ceialmilk/api/internal/handlers"
-	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/logger"
 	"github.com/ceialmilk/api/internal/middleware"
+	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/observability"
 	apidocs "github.com/ceialmilk/api/internal/openapi"
 	"github.com/ceialmilk/api/internal/repository"
@@ -128,6 +128,7 @@ func main() {
 					userRepo := repository.NewUsuarioRepository(pool)
 					fazendaRepo := repository.NewFazendaRepository(pool)
 					animalRepo := repository.NewAnimalRepository(pool)
+					animalSaudeRepo := repository.NewAnimalSaudeRepository(pool)
 					producaoRepo := repository.NewProducaoRepository(pool)
 					loteRepo := repository.NewLoteRepository(pool)
 					movimentacaoLoteRepo := repository.NewMovimentacaoLoteRepository(pool)
@@ -154,6 +155,7 @@ func main() {
 					folgasSvc := service.NewFolgasService(folgasRepo, fazendaSvc)
 					folgasHandler := handlers.NewFolgasHandler(folgasSvc)
 					animalSvc := service.NewAnimalService(animalRepo, fazendaRepo, gestacaoRepo)
+					animalSaudeSvc := service.NewAnimalSaudeService(animalSaudeRepo, animalRepo)
 					reclassificacaoCategoriaSvc := service.NewReclassificacaoCategoriaService(animalRepo)
 					producaoSvc := service.NewProducaoService(producaoRepo, animalRepo, lactacaoRepo)
 					restricaoLeiteRepo := repository.NewRestricaoLeiteRepository(pool)
@@ -187,6 +189,7 @@ func main() {
 					conformidadeSvc := service.NewConformidadeService(pool)
 					conformidadeHandler := handlers.NewConformidadeHandler(conformidadeSvc, fazendaSvc)
 					animalHandler := handlers.NewAnimalHandler(animalSvc, animalBaixaSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc, animalCicloSvc, userRepo)
+					animalSaudeHandler := handlers.NewAnimalSaudeHandler(animalSaudeSvc, animalSvc, fazendaSvc)
 					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
 					partoSvc := service.NewPartoService(pool, partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo, criaSvc)
 					secagemSvc := service.NewSecagemService(pool, secagemRepo, lactacaoRepo, animalRepo, fazendaRepo)
@@ -317,6 +320,11 @@ func main() {
 						animais.GET("/filter/by-status-reprodutivo", animalHandler.GetByStatusReprodutivo)
 						animais.POST("/reclassificar-categoria", animalHandler.RunReclassificacaoPorIdade)
 						animais.GET("/:id/contexto", animalHandler.GetContextoByID)
+						animais.GET("/:id/saude", animalSaudeHandler.List)
+						animais.GET("/:id/saude/:saudeId", animalSaudeHandler.GetByID)
+						animais.POST("/:id/saude", animalSaudeHandler.Create)
+						animais.PUT("/:id/saude/:saudeId", animalSaudeHandler.Update)
+						animais.DELETE("/:id/saude/:saudeId", animalSaudeHandler.Delete)
 						animais.POST("/:id/baixa/reverter", animalHandler.ReverterBaixa)
 						animais.POST("/:id/baixa", animalHandler.RegistrarBaixa)
 						animais.GET("/:id", animalHandler.GetByID)

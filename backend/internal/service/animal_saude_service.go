@@ -1,0 +1,197 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"time"
+
+	"github.com/ceialmilk/api/internal/models"
+	"github.com/ceialmilk/api/internal/repository"
+	"github.com/jackc/pgx/v5"
+)
+
+var (
+	ErrAnimalSaudeNotFound         = errors.New("caso de saude animal nao encontrado")
+	ErrAnimalSaudeTipoCasoInvalido = errors.New("tipo_caso inválido")
+	ErrAnimalSaudeStatusInvalido   = errors.New("status inválido")
+	ErrAnimalSaudeDataFimInvalida  = errors.New("data_fim deve ser maior ou igual a data_inicio")
+)
+
+type AnimalSaudeService struct {
+	repo       *repository.AnimalSaudeRepository
+	animalRepo *repository.AnimalRepository
+}
+
+func NewAnimalSaudeService(repo *repository.AnimalSaudeRepository, animalRepo *repository.AnimalRepository) *AnimalSaudeService {
+	return &AnimalSaudeService{
+		repo:       repo,
+		animalRepo: animalRepo,
+	}
+}
+
+type SaveAnimalSaudeInput struct {
+	TipoCaso    string
+	DataInicio  time.Time
+	DataFim     *time.Time
+	Status      string
+	Observacoes *string
+	CreatedBy   *int64
+}
+
+func (s *AnimalSaudeService) ListByAnimalID(ctx context.Context, animalID int64) ([]*models.AnimalSaude, error) {
+	if _, err := s.ensureAnimalAtivo(ctx, animalID); err != nil {
+		return nil, err
+	}
+	return s.repo.ListByAnimalID(ctx, animalID)
+}
+
+func (s *AnimalSaudeService) GetByID(ctx context.Context, animalID, saudeID int64) (*models.AnimalSaude, error) {
+	if _, err := s.ensureAnimalAtivo(ctx, animalID); err != nil {
+		return nil, err
+	}
+	row, err := s.repo.GetByID(ctx, animalID, saudeID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrAnimalSaudeNotFound
+		}
+		return nil, err
+	}
+	return row, nil
+}
+
+func (s *AnimalSaudeService) Create(ctx context.Context, animalID int64, in SaveAnimalSaudeInput) (*models.AnimalSaude, error) {
+	if _, err := s.ensureAnimalAtivo(ctx, animalID); err != nil {
+		return nil, err
+	}
+	if err := validateAnimalSaudeInput(in); err != nil {
+		return nil, err
+	}
+
+	row := &models.AnimalSaude{
+		AnimalID:    animalID,
+		TipoCaso:    in.TipoCaso,
+		DataInicio:  normalizeAnimalSaudeDate(in.DataInicio),
+		DataFim:     normalizeOptionalAnimalSaudeDate(in.DataFim),
+		Status:      in.Status,
+		Observacoes: in.Observacoes,
+		CreatedBy:   in.CreatedBy,
+	}
+	if err := s.repo.Create(ctx, row); err != nil {
+		return nil, err
+	}
+	if err := s.syncAnimalStatusSaude(ctx, animalID); err != nil {
+		return nil, err
+	}
+	return row, nil
+}
+
+func (s *AnimalSaudeService) Update(ctx context.Context, animalID, saudeID int64, in SaveAnimalSaudeInput) (*models.AnimalSaude, error) {
+	if _, err := s.ensureAnimalAtivo(ctx, animalID); err != nil {
+		return nil, err
+	}
+	if err := validateAnimalSaudeInput(in); err != nil {
+		return nil, err
+	}
+
+	existing, err := s.repo.GetByID(ctx, animalID, saudeID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrAnimalSaudeNotFound
+		}
+		return nil, err
+	}
+
+	existing.TipoCaso = in.TipoCaso
+	existing.DataInicio = normalizeAnimalSaudeDate(in.DataInicio)
+	existing.DataFim = normalizeOptionalAnimalSaudeDate(in.DataFim)
+	existing.Status = in.Status
+	existing.Observacoes = in.Observacoes
+	if err := s.repo.Update(ctx, existing); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrAnimalSaudeNotFound
+		}
+		return nil, err
+	}
+	if err := s.syncAnimalStatusSaude(ctx, animalID); err != nil {
+		return nil, err
+	}
+	return existing, nil
+}
+
+func (s *AnimalSaudeService) Delete(ctx context.Context, animalID, saudeID int64) error {
+	if _, err := s.ensureAnimalAtivo(ctx, animalID); err != nil {
+		return err
+	}
+	if err := s.repo.Delete(ctx, animalID, saudeID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrAnimalSaudeNotFound
+		}
+		return err
+	}
+	return s.syncAnimalStatusSaude(ctx, animalID)
+}
+
+func (s *AnimalSaudeService) ensureAnimalAtivo(ctx context.Context, animalID int64) (*models.Animal, error) {
+	animal, err := s.animalRepo.GetByID(ctx, animalID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrAnimalNotFound
+		}
+		return nil, err
+	}
+	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return nil, err
+	}
+	return animal, nil
+}
+
+func (s *AnimalSaudeService) syncAnimalStatusSaude(ctx context.Context, animalID int64) error {
+	ativos, err := s.repo.ListAtivosByAnimalID(ctx, animalID)
+	if err != nil {
+		return err
+	}
+	nextStatus := deriveAnimalStatusSaudeFromCasosAtivos(ativos)
+	return s.animalRepo.UpdateStatusSaude(ctx, animalID, &nextStatus)
+}
+
+func validateAnimalSaudeInput(in SaveAnimalSaudeInput) error {
+	if !models.IsValidAnimalSaudeTipo(in.TipoCaso) {
+		return ErrAnimalSaudeTipoCasoInvalido
+	}
+	if !models.IsValidAnimalSaudeStatus(in.Status) {
+		return ErrAnimalSaudeStatusInvalido
+	}
+	dataInicio := normalizeAnimalSaudeDate(in.DataInicio)
+	if in.DataFim != nil {
+		dataFim := normalizeAnimalSaudeDate(*in.DataFim)
+		if dataFim.Before(dataInicio) {
+			return ErrAnimalSaudeDataFimInvalida
+		}
+	}
+	return nil
+}
+
+func deriveAnimalStatusSaudeFromCasosAtivos(casos []*models.AnimalSaude) string {
+	for _, c := range casos {
+		if c.TipoCaso == models.AnimalSaudeTipoTratamento || c.TipoCaso == models.AnimalSaudeTipoCirurgia {
+			return models.StatusTratamento
+		}
+	}
+	if len(casos) > 0 {
+		return models.StatusDoente
+	}
+	return models.StatusSaudavel
+}
+
+func normalizeAnimalSaudeDate(t time.Time) time.Time {
+	u := t.UTC()
+	return time.Date(u.Year(), u.Month(), u.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func normalizeOptionalAnimalSaudeDate(t *time.Time) *time.Time {
+	if t == nil {
+		return nil
+	}
+	n := normalizeAnimalSaudeDate(*t)
+	return &n
+}
