@@ -40,6 +40,7 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 | Baixa do rebanho | [baixa-rebanho.md](./baixa-rebanho.md) | ✅ |
 | Leite — descarte / laboratório | [leite-restricoes.md](./leite-restricoes.md) | ✅ |
 | Saúde animal | [saude-animal.md](./saude-animal.md) | ✅ |
+| **Alertas proativos** | [alertas.md](./alertas.md) | ✅ |
 | Acessos por perfil (RBAC) | [acessos-perfil.md](./acessos-perfil.md) | ✅ |
 | Partos e crias | [partos.md](./partos.md) | ✅ |
 | Toques (diagnóstico gestação) | [toques.md](./toques.md) | ✅ |
@@ -53,4 +54,4 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 
 ---
 
-**Última atualização**: 2026-05-28
+**Última atualização**: 2026-05-29

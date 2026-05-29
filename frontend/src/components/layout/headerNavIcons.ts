@@ -1,6 +1,7 @@
 import {
   Building2,
   List,
+  Bell,
   Droplets,
   Layers,
   ClipboardList,
@@ -16,6 +17,7 @@ import type { HeaderNavSystemId } from "@/config/headerNav";
 export const AREA_ICON: Record<AppArea, LucideIcon> = {
   fazendas: Building2,
   animais: List,
+  alertas: Bell,
   producao: Droplets,
   lotes: Layers,
   agricultura: Wheat,

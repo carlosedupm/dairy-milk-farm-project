@@ -24,6 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { RestricoesLeiteHomePanel } from "@/components/leite/RestricoesLeiteHomePanel";
+import { AlertasHomePanel } from "@/components/dashboard/AlertasHomePanel";
 import { PecuarioResumoHomePanel } from "@/components/dashboard/PecuarioResumoHomePanel";
 import { ConformidadeHomePanel } from "@/components/dashboard/ConformidadeHomePanel";
 import { showConformidadePanelForPerfil } from "@/config/appAccess";
@@ -185,6 +186,7 @@ export function Dashboard() {
             Prioridades e alertas
           </h2>
           <RestricoesLeiteHomePanel />
+          <AlertasHomePanel />
           {!restrictedMode ? <PecuarioResumoHomePanel /> : null}
           {showConformidade ? <ConformidadeHomePanel /> : null}
         </section>

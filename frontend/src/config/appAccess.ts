@@ -12,6 +12,7 @@ import {
 export type AppArea =
   | "fazendas"
   | "animais"
+  | "alertas"
   | "producao"
   | "lotes"
   | "agricultura"
@@ -21,6 +22,7 @@ export type AppArea =
 /** Ordem dos itens no menu principal (exceto Fazendas/Admin/Dev, tratados à parte). */
 export const MAIN_NAV_AREA_ORDER: AppArea[] = [
   "animais",
+  "alertas",
   "producao",
   "lotes",
   "agricultura",
@@ -31,6 +33,7 @@ export const MAIN_NAV_AREA_ORDER: AppArea[] = [
 const AREA_PATH_PREFIX: Record<AppArea, string> = {
   fazendas: "/fazendas",
   animais: "/animais",
+  alertas: "/alertas",
   producao: "/producao",
   lotes: "/lotes",
   agricultura: "/agricultura",
@@ -46,6 +49,7 @@ export function getAreaHref(area: AppArea): string {
 export const AREA_LABEL: Record<AppArea, string> = {
   fazendas: "Fazendas",
   animais: "Animais",
+  alertas: "Alertas",
   producao: "Produção",
   lotes: "Lotes",
   agricultura: "Agricultura",
@@ -57,7 +61,7 @@ export const AREA_LABEL: Record<AppArea, string> = {
  * Perfis com lista explícita: apenas essas áreas. Ausente = acesso a todas as áreas.
  */
 export const PERFIL_AREAS: Partial<Record<string, AppArea[]>> = {
-  FUNCIONARIO: ["animais", "gestao", "folgas"],
+  FUNCIONARIO: ["animais", "alertas", "gestao", "folgas"],
 };
 
 export type AreasMode = AppArea[] | "full" | "pending";
@@ -107,6 +111,7 @@ function isFuncionarioAllowedPath(path: string): boolean {
   if (/^\/animais\/\d+\/saude\/novo$/.test(path)) return true;
   if (path === "/producao/novo") return true;
   if (path === "/folgas" || path.startsWith("/folgas/")) return true;
+  if (path === "/alertas" || path.startsWith("/alertas/")) return true;
   return FUNCIONARIO_GESTAO_PATHS.some(
     (base) => path === base || path.startsWith(`${base}/`)
   );
@@ -185,6 +190,28 @@ export function canEditarRegistroSaude(perfil: string | undefined): boolean {
 /** DELETE /api/v1/animais/:id/saude/:saudeId — mesma matriz que editar. */
 export function canExcluirRegistroSaude(perfil: string | undefined): boolean {
   return canEditarRegistroSaude(perfil);
+}
+
+/** POST /api/v1/fazendas/:id/alertas — GERENTE, GESTAO, PROPRIETARIO, ADMIN, DEVELOPER. */
+export function canCriarAlertaManual(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER" || perfil === "FUNCIONARIO") return false;
+  return true;
+}
+
+/** DELETE /api/v1/fazendas/:id/alertas/:id — GERENTE+. */
+export function canExcluirAlerta(perfil: string | undefined): boolean {
+  return canCriarAlertaManual(perfil);
+}
+
+/** PATCH status → RESOLVIDO | IGNORADO — GERENTE+. */
+export function canResolverAlerta(perfil: string | undefined): boolean {
+  return canCriarAlertaManual(perfil);
+}
+
+/** PATCH status ABERTO → EM_ANDAMENTO — FUNCIONARIO+. */
+export function canMarcarAlertaEmAndamento(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER") return false;
+  return true;
 }
 
 export function motivosBaixaParaPerfil(

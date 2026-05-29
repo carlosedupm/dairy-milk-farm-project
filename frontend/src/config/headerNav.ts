@@ -11,6 +11,7 @@ import {
 /** Áreas sempre visíveis como links no desktop (ordem de MAIN_NAV_AREA_ORDER). */
 const PRINCIPAL_AREA_ORDER: AppArea[] = [
   "animais",
+  "alertas",
   "producao",
   "gestao",
   "folgas",

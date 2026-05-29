@@ -160,6 +160,8 @@ func main() {
 					producaoSvc := service.NewProducaoService(producaoRepo, animalRepo, lactacaoRepo)
 					restricaoLeiteRepo := repository.NewRestricaoLeiteRepository(pool)
 					restricaoLeiteSvc := service.NewRestricaoLeiteService(restricaoLeiteRepo, animalRepo, lactacaoRepo)
+					alertaRepo := repository.NewAlertaRepository(pool)
+					alertaSvc := service.NewAlertaService(alertaRepo, animalRepo)
 					animalBaixaSvc := service.NewAnimalBaixaService(pool, animalRepo, lactacaoRepo, gestacaoRepo, restricaoLeiteRepo)
 					refreshTokenSvc := service.NewRefreshTokenService(refreshTokenRepo)
 					cookieSameSite := http.SameSiteStrictMode
@@ -171,6 +173,7 @@ func main() {
 					resumoPecuarioSvc := service.NewResumoPecuarioService(gestacaoRepo, restricaoLeiteRepo, producaoRepo)
 					resumoPecuarioHandler := handlers.NewResumoPecuarioHandler(resumoPecuarioSvc, fazendaSvc)
 					restricaoLeiteHandler := handlers.NewRestricaoLeiteHandler(restricaoLeiteSvc, fazendaSvc)
+					alertaHandler := handlers.NewAlertaHandler(alertaSvc, fazendaSvc)
 					producaoHandler := handlers.NewProducaoHandler(producaoSvc, animalSvc, fazendaSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
 					adminHandler := handlers.NewAdminHandler(usuarioSvc, fazendaSvc)
@@ -288,6 +291,12 @@ func main() {
 						v1.GET("/:id/restricoes-leite/ativas", restricaoLeiteHandler.GetAtivas)
 						v1.POST("/:id/restricoes-leite", restricaoLeiteHandler.Create)
 						v1.PATCH("/:id/restricoes-leite/:restricaoId/liberar", restricaoLeiteHandler.Liberar)
+						// Alertas proativos
+						v1.GET("/:id/alertas", alertaHandler.List)
+						v1.POST("/:id/alertas", alertaHandler.Create)
+						v1.GET("/:id/alertas/:alertaId", alertaHandler.GetByID)
+						v1.PATCH("/:id/alertas/:alertaId/status", alertaHandler.UpdateStatus)
+						v1.DELETE("/:id/alertas/:alertaId", alertaHandler.Delete)
 						// Módulo agrícola: fornecedores e áreas por fazenda
 						v1.GET("/:id/fornecedores/comparativo/:ano", resultadoAgricolaHandler.GetComparativoFornecedores)
 						v1.GET("/:id/fornecedores", fornecedorHandler.GetByFazendaID)

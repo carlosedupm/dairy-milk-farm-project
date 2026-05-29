@@ -23,6 +23,13 @@
 
 ## ✅ O que foi concluído
 
+### **Onda 2.1 — Sistema de Alertas (✅ 2026-05-29)**
+
+- [x] Migration `31_add_alertas`: tabela `alertas`, constraints, índices, RLS
+- [x] Backend: model, repository, service, handler; rotas fazenda-scoped; RBAC FUNCIONARIO vs GERENTE+
+- [x] Frontend: `alertas.ts`, `/alertas`, `AlertasHomePanel`, menu Bell, `appAccess.ts`
+- [x] Catálogo: `docs/business/alertas.md` (BR-ALERTA-001–007)
+
 ### **Segurança HTTP e rate limit de auth (✅ 2026-05-27)**
 
 - [x] Backend: `AuthRateLimit` por IP (login/registro/refresh); env `AUTH_*_RATE_LIMIT`; `SecurityHeadersMiddleware`; `SetTrustedProxies` em produção
