@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -96,16 +97,27 @@ function statusLabel(s: string): string {
   return STATUS_ALERTA_LABELS[s as StatusAlerta] ?? s;
 }
 
+function isValidTipoFilter(t: string): t is TipoAlerta {
+  return (TIPOS_ALERTA as readonly string[]).includes(t);
+}
+
 function AlertasContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { fazendaAtiva } = useFazendaAtiva();
   const { user } = useAuth();
   const perfil = user?.perfil;
   const queryClient = useQueryClient();
   const fazendaId = fazendaAtiva?.id ?? 0;
 
+  const tipoParam = searchParams.get("tipo");
+  const tipoFromUrl =
+    tipoParam && isValidTipoFilter(tipoParam) ? tipoParam : null;
+
   const [statusFilter, setStatusFilter] = useState<string>(FILTER_ALL);
   const [tipoFilter, setTipoFilter] = useState<string>(FILTER_ALL);
   const [severidadeFilter, setSeveridadeFilter] = useState<string>(FILTER_ALL);
+  const activeTipoFilter = tipoFromUrl ?? tipoFilter;
   const [offset, setOffset] = useState(0);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -118,15 +130,15 @@ function AlertasContent() {
   const listParams = useMemo(
     () => ({
       status: statusFilter === FILTER_ALL ? undefined : statusFilter,
-      tipo: tipoFilter === FILTER_ALL ? undefined : tipoFilter,
+      tipo: activeTipoFilter === FILTER_ALL ? undefined : activeTipoFilter,
       severidade: severidadeFilter === FILTER_ALL ? undefined : severidadeFilter,
       limit: PAGE_SIZE,
       offset,
     }),
-    [statusFilter, tipoFilter, severidadeFilter, offset]
+    [statusFilter, activeTipoFilter, severidadeFilter, offset]
   );
 
-  const filterKey = `${statusFilter}|${tipoFilter}|${severidadeFilter}`;
+  const filterKey = `${statusFilter}|${activeTipoFilter}|${severidadeFilter}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
@@ -278,7 +290,15 @@ function AlertasContent() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="filtro-tipo">Tipo</Label>
-            <Select value={tipoFilter} onValueChange={setTipoFilter}>
+            <Select
+              value={activeTipoFilter}
+              onValueChange={(value) => {
+                setTipoFilter(value);
+                if (tipoFromUrl) {
+                  router.replace("/alertas", { scroll: false });
+                }
+              }}
+            >
               <SelectTrigger id="filtro-tipo">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
@@ -558,7 +578,15 @@ function AlertasContent() {
 export default function AlertasPage() {
   return (
     <ProtectedRoute>
-      <AlertasContent />
+      <Suspense
+        fallback={
+          <PageContainer>
+            <p className="text-muted-foreground text-sm">A carregar…</p>
+          </PageContainer>
+        }
+      >
+        <AlertasContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

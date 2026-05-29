@@ -398,3 +398,63 @@ func (r *FazendaRepository) CreateFazendaAndLinkUsuario(ctx context.Context, faz
 	}
 	return tx.Commit(ctx)
 }
+
+// UsuarioVinculadoAFazenda verifica vínculo N:N usuário–fazenda.
+func (r *FazendaRepository) UsuarioVinculadoAFazenda(ctx context.Context, usuarioID, fazendaID int64) (bool, error) {
+	var ok bool
+	err := r.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM usuarios_fazendas WHERE usuario_id = $1 AND fazenda_id = $2)`,
+		usuarioID, fazendaID,
+	).Scan(&ok)
+	return ok, err
+}
+
+// UpdateUsuarioFazendaAtiva persiste a fazenda ativa do utilizador (valida vínculo).
+func (r *FazendaRepository) UpdateUsuarioFazendaAtiva(ctx context.Context, usuarioID, fazendaID int64) error {
+	linked, err := r.UsuarioVinculadoAFazenda(ctx, usuarioID, fazendaID)
+	if err != nil {
+		return err
+	}
+	if !linked {
+		return pgx.ErrNoRows
+	}
+	tag, err := r.db.Exec(ctx,
+		`UPDATE usuarios SET fazenda_ativa_id = $2, updated_at = NOW() WHERE id = $1`,
+		usuarioID, fazendaID,
+	)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
+// ListUsuarioIDsForAlertaPush devolve IDs de utilizadores elegíveis a receber push para alertas da fazenda.
+func (r *FazendaRepository) ListUsuarioIDsForAlertaPush(ctx context.Context, fazendaID int64) ([]int64, error) {
+	const q = `
+		SELECT DISTINCT u.id
+		FROM usuarios u
+		INNER JOIN usuarios_fazendas uf ON uf.usuario_id = u.id AND uf.fazenda_id = $1
+		INNER JOIN push_subscriptions ps ON ps.usuario_id = u.id
+		WHERE u.enabled = true
+		  AND u.fazenda_ativa_id = $1
+		  AND u.perfil NOT IN ('USER', 'INTEGRACAO')
+		ORDER BY u.id ASC
+	`
+	rows, err := r.db.Query(ctx, q, fazendaID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}

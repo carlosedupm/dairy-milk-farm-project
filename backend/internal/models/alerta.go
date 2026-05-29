@@ -163,3 +163,39 @@ func IsTransicaoAlertaStatusValida(from, to string) bool {
 		return false
 	}
 }
+
+func LabelTipoAlerta(tipo string) string {
+	switch tipo {
+	case AlertaTipoTratamentoVencido:
+		return "Tratamento vencido"
+	case AlertaTipoPartoPrevisto:
+		return "Parto previsto"
+	case AlertaTipoRestricaoLeiteAtiva:
+		return "Restrição de leite ativa"
+	case AlertaTipoNaoConformidade:
+		return "Não conformidade"
+	case AlertaTipoGestacaoSemSecagem:
+		return "Gestação sem secagem"
+	case AlertaTipoCioDetectado:
+		return "Cio detectado"
+	case AlertaTipoManual:
+		return "Manual"
+	default:
+		return tipo
+	}
+}
+
+func SeveridadePushPrefix(severidade string) string {
+	switch severidade {
+	case AlertaSeveridadeCritica:
+		return "[CRÍTICA]"
+	case AlertaSeveridadeAlta:
+		return "[ALTA]"
+	default:
+		return ""
+	}
+}
+
+func ShouldNotifyPushForSeveridade(severidade string) bool {
+	return severidade == AlertaSeveridadeCritica || severidade == AlertaSeveridadeAlta
+}

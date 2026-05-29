@@ -38,6 +38,7 @@ type AlertaGeracaoService struct {
 	conformidadeSvc  *ConformidadeService
 	estadoRepo       *repository.AlertasGeracaoEstadoRepository
 	usuarioRepo      *repository.UsuarioRepository
+	pushSvc          *PushNotificationService
 	sistemaUserID    int64
 	tz               *time.Location
 }
@@ -87,6 +88,10 @@ func NewAlertaGeracaoService(
 	}
 	s.sistemaUserID = u.ID
 	return s, nil
+}
+
+func (s *AlertaGeracaoService) SetPushNotificationService(pushSvc *PushNotificationService) {
+	s.pushSvc = pushSvc
 }
 
 func (s *AlertaGeracaoService) GerarAlertasDiarios(ctx context.Context, refDate time.Time) (GerarAlertasResultado, error) {
@@ -313,6 +318,11 @@ func (s *AlertaGeracaoService) tryCreateAlerta(
 			return 0, 1, nil
 		}
 		return 0, 0, err
+	}
+	if s.pushSvc != nil {
+		if created, err := s.alertaRepo.GetByID(ctx, fazendaID, row.ID); err == nil && created != nil {
+			s.pushSvc.NotifyAlertaCreated(created)
+		}
 	}
 	return 1, 0, nil
 }

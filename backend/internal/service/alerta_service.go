@@ -27,10 +27,15 @@ var (
 type AlertaService struct {
 	repo       *repository.AlertaRepository
 	animalRepo *repository.AnimalRepository
+	pushSvc    *PushNotificationService
 }
 
 func NewAlertaService(repo *repository.AlertaRepository, animalRepo *repository.AnimalRepository) *AlertaService {
 	return &AlertaService{repo: repo, animalRepo: animalRepo}
+}
+
+func (s *AlertaService) SetPushNotificationService(pushSvc *PushNotificationService) {
+	s.pushSvc = pushSvc
 }
 
 type AlertaListQuery struct {
@@ -141,7 +146,14 @@ func (s *AlertaService) Create(ctx context.Context, in CreateAlertaInput, perfil
 	if err := s.repo.Create(ctx, row); err != nil {
 		return nil, err
 	}
-	return s.repo.GetByID(ctx, in.FazendaID, row.ID)
+	created, err := s.repo.GetByID(ctx, in.FazendaID, row.ID)
+	if err != nil {
+		return nil, err
+	}
+	if s.pushSvc != nil {
+		s.pushSvc.NotifyAlertaCreated(created)
+	}
+	return created, nil
 }
 
 type UpdateAlertaStatusInput struct {

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
+import { PushPermissionBanner } from "@/components/layout/PushPermissionBanner";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { HeaderDesktopNav } from "@/components/layout/HeaderDesktopNav";
 import { HeaderMobileNavSections } from "@/components/layout/HeaderMobileNavSections";
@@ -185,6 +186,7 @@ export function Header() {
         </div>
 
         <PWAInstallPrompt />
+        <PushPermissionBanner />
       </div>
 
       {/* Mobile menu overlay */}

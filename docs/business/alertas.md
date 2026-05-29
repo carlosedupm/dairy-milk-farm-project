@@ -4,16 +4,16 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 
 **Implementação principal**
 
-- Banco: migrations `backend/migrations/31_add_alertas.up.sql`, `32_alertas_geracao_automatica.up.sql` — tabela `alertas`, `alertas_geracao_estado`, índice único parcial `uq_alertas_aberto_tipo_animal`, utilizador técnico `sistema@interno.ceialmilk`.
-- Backend: `backend/internal/models/alerta.go`, `backend/internal/repository/alerta_repository.go`, `backend/internal/service/alerta_service.go`, `backend/internal/service/alerta_geracao_service.go`, `backend/internal/service/alerta_cron.go`, `backend/internal/handlers/alerta_handler.go`, `backend/internal/handlers/alerta_admin_handler.go`, rotas em `backend/cmd/api/main.go`.
-- Frontend: `frontend/src/services/alertas.ts`, `frontend/src/app/alertas/page.tsx`, `frontend/src/components/dashboard/AlertasHomePanel.tsx`.
+- Banco: migrations `backend/migrations/31_add_alertas.up.sql`, `32_alertas_geracao_automatica.up.sql`, `33_push_subscriptions_fazenda_ativa.up.sql` — tabela `alertas`, `alertas_geracao_estado`, `push_subscriptions`, coluna `usuarios.fazenda_ativa_id`, índice único parcial `uq_alertas_aberto_tipo_animal`, utilizador técnico `sistema@interno.ceialmilk`.
+- Backend: `backend/internal/models/alerta.go`, `backend/internal/repository/alerta_repository.go`, `backend/internal/service/alerta_service.go`, `backend/internal/service/alerta_geracao_service.go`, `backend/internal/service/alerta_cron.go`, `backend/internal/service/push_notification_service.go`, `backend/internal/handlers/alerta_handler.go`, `backend/internal/handlers/alerta_admin_handler.go`, `backend/internal/handlers/push_handler.go`, rotas em `backend/cmd/api/main.go`.
+- Frontend: `frontend/src/services/alertas.ts`, `frontend/src/services/pushNotifications.ts`, `frontend/src/app/alertas/page.tsx`, `frontend/src/components/dashboard/AlertasHomePanel.tsx`, `frontend/src/components/layout/PushPermissionBanner.tsx`, `frontend/src/app/sw.js/route.ts`.
 - RBAC API (FUNCIONARIO): `backend/internal/auth/perfil_access.go` — `GET` e `PATCH .../status`; `POST`/`DELETE` negados na whitelist (403).
 
 ---
 
 ### BR-ALERTA-001 — Vínculo fazenda / animal
 
-- **Enunciado**: Todo alerta pertence a uma `fazenda_id`. `animal_id` é opcional; quando informado, o animal deve pertencer à mesma fazenda e estar no rebanho ativo (`EnsureAnimalNoRebanho`).
+- **Enunciado**: Todo alerta pertence a uma `fazenda_id`. `animal_id` é opcional; quando informado, o animal deve pertencer à mesma fazenda e estar no rebanho ativo (`EnsureAnimalNoRebanho`). **Web Push (BR-ALERTA-012)**: o utilizador só recebe push de alertas da fazenda em que tem vínculo **e** cuja `fazenda_id` coincide com `usuarios.fazenda_ativa_id` sincronizada via `PUT /api/v1/me/fazenda-ativa`.
 - **Escopo**: Criação manual e futura geração automática.
 - **Perfis / permissões**: validação no servidor para qualquer escrita.
 - **Efeito**: bloqueio 400/403 (`ErrAlertaAnimalFazenda`, `ErrAnimalNotFound`, regras de baixa).
@@ -91,6 +91,22 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 - **Escopo**: Eventos de escrita nos serviços de saúde, secagem e restrição.
 - **Efeito**: atualização em `alertas`; falha na resolução automática não bloqueia a operação principal.
 - **Implementação**: `AnimalSaudeService`, `SecagemService`, `RestricaoLeiteService` + `AlertaGeracaoService.ResolveOpenByAnimal`.
+- **Estado**: implementado.
+
+### BR-ALERTA-011 — Web Push para severidade CRÍTICA e ALTA
+
+- **Enunciado**: Ao criar alerta (manual ou automático) com severidade `CRITICA` ou `ALTA`, o sistema envia notificação Web Push aos destinatários elegíveis (BR-ALERTA-012). Severidades `MEDIA` e `BAIXA` **não** disparam push.
+- **Escopo**: Criação em `AlertaService.Create` e `AlertaGeracaoService.tryCreateAlerta`.
+- **Efeito**: push assíncrono; falha no envio não bloqueia a criação do alerta.
+- **Implementação**: `PushNotificationService.NotifyAlertaCreated`, `models.ShouldNotifyPushForSeveridade`.
+- **Estado**: implementado.
+
+### BR-ALERTA-012 — Destinatários e conteúdo do push
+
+- **Enunciado**: Push apenas se: (1) utilizador com vínculo em `usuarios_fazendas` à fazenda do alerta; (2) `usuarios.fazenda_ativa_id` = `alerta.fazenda_id`; (3) subscription em `push_subscriptions`; (4) perfil operacional (`≠ USER`, `≠ INTEGRACAO`); (5) permissão de notificação concedida no browser. Título: prefixo `[CRÍTICA]` ou `[ALTA]` + título; corpo: tipo + identificação do animal; ícone PWA; badge = contagem de alertas `CRITICA` abertos/em andamento na fazenda; clique abre `/alertas?tipo={tipo}`.
+- **Escopo**: API `GET/PUT/DELETE /api/v1/me/push-*`, `PUT /api/v1/me/fazenda-ativa`; UI `PushPermissionBanner`; SW em `/sw.js`.
+- **Efeito**: informativo no SO; utilizador pode negar permissão (sem insistência após `denied`).
+- **Implementação**: `push_handler.go`, `FazendaContext` + `putFazendaAtiva`, migration V33.
 - **Estado**: implementado.
 
 ---

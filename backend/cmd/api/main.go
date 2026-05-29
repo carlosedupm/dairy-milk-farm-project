@@ -163,6 +163,10 @@ func main() {
 					restricaoLeiteSvc := service.NewRestricaoLeiteService(restricaoLeiteRepo, animalRepo, lactacaoRepo)
 					alertaRepo := repository.NewAlertaRepository(pool)
 					alertaSvc := service.NewAlertaService(alertaRepo, animalRepo)
+					pushSubRepo := repository.NewPushSubscriptionRepository(pool)
+					pushSvc := service.NewPushNotificationService(cfg, pushSubRepo, fazendaRepo, alertaRepo)
+					alertaSvc.SetPushNotificationService(pushSvc)
+					pushHandler := handlers.NewPushHandler(pushSvc)
 					animalBaixaSvc := service.NewAnimalBaixaService(pool, animalRepo, lactacaoRepo, gestacaoRepo, restricaoLeiteRepo)
 					refreshTokenSvc := service.NewRefreshTokenService(refreshTokenRepo)
 					cookieSameSite := http.SameSiteStrictMode
@@ -213,6 +217,7 @@ func main() {
 					if geracaoErr != nil {
 						slog.Warn("Geração automática de alertas indisponível", "error", geracaoErr)
 					} else {
+						alertaGeracaoSvc.SetPushNotificationService(pushSvc)
 						animalSaudeSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
 						restricaoLeiteSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
 						cronCtx, cancel := context.WithCancel(context.Background())
@@ -299,6 +304,10 @@ func main() {
 					{
 						me.GET("/fazendas", fazendaHandler.GetMinhasFazendas)
 						me.POST("/fazendas", fazendaHandler.CreateMinha)
+						me.PUT("/fazenda-ativa", pushHandler.UpdateFazendaAtiva)
+						me.GET("/push/vapid-public-key", pushHandler.GetVapidPublicKey)
+						me.PUT("/push-subscription", pushHandler.UpsertSubscription)
+						me.DELETE("/push-subscription", pushHandler.DeleteSubscription)
 					}
 
 					v1 := api.Group("/v1/fazendas", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())

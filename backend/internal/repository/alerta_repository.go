@@ -252,3 +252,15 @@ func (r *AlertaRepository) ResolveOpenByFazendaTipoAnimal(ctx context.Context, f
 	_, err := r.db.Exec(ctx, q, fazendaID, tipo, animalID)
 	return err
 }
+
+func (r *AlertaRepository) CountCriticosAbertosByFazenda(ctx context.Context, fazendaID int64) (int64, error) {
+	const q = `
+		SELECT COUNT(*) FROM alertas
+		WHERE fazenda_id = $1
+		  AND severidade = 'CRITICA'
+		  AND status IN ('ABERTO', 'EM_ANDAMENTO')
+	`
+	var n int64
+	err := r.db.QueryRow(ctx, q, fazendaID).Scan(&n)
+	return n, err
+}

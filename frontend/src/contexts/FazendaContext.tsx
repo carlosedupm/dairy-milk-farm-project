@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { useAuth } from './AuthContext'
-import { getMinhasFazendas, type Fazenda } from '@/services/fazendas'
+import { getMinhasFazendas, putFazendaAtiva, type Fazenda } from '@/services/fazendas'
 
 const STORAGE_KEY = 'ceialmilk_fazenda_ativa'
 
@@ -22,6 +22,12 @@ type FazendaContextValue = {
 }
 
 const FazendaContext = createContext<FazendaContextValue | null>(null)
+
+function syncFazendaAtivaServer(fazendaId: number) {
+  putFazendaAtiva(fazendaId).catch(() => {
+    // fire-and-forget; push depende desta sync mas não bloqueia UI
+  })
+}
 
 export function FazendaProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, isReady: authReady } = useAuth()
@@ -83,6 +89,7 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
         if (fazendas.length === 1) {
           localStorage.setItem(STORAGE_KEY, fazendas[0].id.toString())
           setFazendaAtivaState(fazendas[0])
+          syncFazendaAtivaServer(fazendas[0].id)
           return
         }
 
@@ -93,6 +100,7 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
             const fazenda = fazendas.find((f) => f.id === fazendaId)
             if (fazenda) {
               setFazendaAtivaState(fazenda)
+              syncFazendaAtivaServer(fazenda.id)
               return
             }
             // Salvo não está mais vinculado
@@ -129,6 +137,7 @@ export function FazendaProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem(STORAGE_KEY, fazenda.id.toString())
       setFazendaAtivaState(fazenda)
+      syncFazendaAtivaServer(fazenda.id)
     },
     [validateFazenda]
   )

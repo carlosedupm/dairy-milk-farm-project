@@ -71,3 +71,8 @@ export async function getMinhasFazendas(): Promise<Fazenda[]> {
   const { data } = await api.get<ApiResponse<Fazenda[]>>("/api/v1/me/fazendas");
   return data.data ?? [];
 }
+
+/** Sincroniza fazenda ativa no servidor (Web Push — BR-ALERTA-012). */
+export async function putFazendaAtiva(fazendaId: number): Promise<void> {
+  await api.put("/api/v1/me/fazenda-ativa", { fazenda_id: fazendaId });
+}

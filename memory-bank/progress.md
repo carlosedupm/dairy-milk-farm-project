@@ -37,6 +37,14 @@
 - [x] Cron in-process + `POST /api/v1/admin/alertas/gerar`; teste `TestGerarAlertasDiarios_NaoDuplica`
 - [x] Catálogo: BR-ALERTA-008–010; extensões ciclo/leite/auditoria
 
+### **Onda 2.5 — Web Push alertas CRÍTICA/ALTA (✅ 2026-05-29)**
+
+- [x] Migration `33_push_subscriptions_fazenda_ativa`: `push_subscriptions`, `usuarios.fazenda_ativa_id`
+- [x] Backend: `PushNotificationService` (webpush-go + VAPID), hooks em `AlertaService` / `AlertaGeracaoService`
+- [x] API: `GET/PUT/DELETE /api/v1/me/push-*`, `PUT /api/v1/me/fazenda-ativa`
+- [x] Frontend: SW push/click, `PushPermissionBanner`, sync `FazendaContext`, deep link `/alertas?tipo=`
+- [x] Catálogo: BR-ALERTA-011–012; `deploy-notes.md` (VAPID)
+
 ### **Segurança HTTP e rate limit de auth (✅ 2026-05-27)**
 
 - [x] Backend: `AuthRateLimit` por IP (login/registro/refresh); env `AUTH_*_RATE_LIMIT`; `SecurityHeadersMiddleware`; `SetTrustedProxies` em produção

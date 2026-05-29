@@ -31,6 +31,9 @@ type Config struct {
 	AlertasCronEnabled               bool   // geração diária de alertas (default: true)
 	AlertasCronHour                  int    // hora local do disparo (default: 6)
 	AlertasTZ                        string // timezone do cron (default: America/Sao_Paulo)
+	VAPIDPublicKey                   string // chave pública Web Push (VAPID)
+	VAPIDPrivateKey                  string // chave privada Web Push (VAPID)
+	VAPIDSubject                     string // contact URI (ex.: mailto:suporte@ceialmilk.com)
 }
 
 func Load() *Config {
@@ -91,6 +94,9 @@ func Load() *Config {
 		AlertasCronEnabled:          getEnvBool("ALERTAS_CRON_ENABLED", true),
 		AlertasCronHour:             getEnvInt("ALERTAS_CRON_HOUR", 6),
 		AlertasTZ:                   getEnv("ALERTAS_TZ", "America/Sao_Paulo"),
+		VAPIDPublicKey:              getEnv("VAPID_PUBLIC_KEY", ""),
+		VAPIDPrivateKey:             getEnv("VAPID_PRIVATE_KEY", ""),
+		VAPIDSubject:                getEnv("VAPID_SUBJECT", "mailto:suporte@ceialmilk.com"),
 	}
 }
 

@@ -225,6 +225,26 @@ Para o banner "Instale o CeialMilk" e a opção de instalação funcionarem em p
 - **Service worker**: Registrado cedo via `ServiceWorkerRegistration` (em `Providers`) e também no `PWAInstallPrompt`.
 - Se o botão "Instalar" não disparar o prompt nativo, o dialog mostra instruções manuais (menu do navegador → "Instalar aplicativo" / "Adicionar à tela inicial"). A opção no menu só aparece quando os [critérios de instalabilidade](https://developer.chrome.com/blog/update-install-criteria) do Chrome são atendidos (HTTPS, manifest válido, SW registrado com fetch).
 
+### Web Push (alertas CRÍTICA/ALTA)
+
+Variáveis obrigatórias no **backend (Render)** para push em produção:
+
+| Variável | Descrição |
+|----------|-----------|
+| `VAPID_PUBLIC_KEY` | Chave pública VAPID (base64url) |
+| `VAPID_PRIVATE_KEY` | Chave privada VAPID |
+| `VAPID_SUBJECT` | Contact URI (ex.: `mailto:suporte@ceialmilk.com`) |
+
+Gerar par de chaves (local):
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+- Migration **33**: `push_subscriptions`, `usuarios.fazenda_ativa_id`.
+- Sem `VAPID_*` configuradas, o backend sobe normalmente mas push fica desabilitado (log warn); o banner de permissão no frontend não aparece.
+- **Safari/iOS**: Web Push exige PWA instalado (iOS 16.4+); fora do escopo DoD atual (Chrome/Firefox desktop + Android).
+
 ## Segurança
 
 ### Credenciais

@@ -54,6 +54,7 @@
   - `AUTH_LOGIN_RATE_LIMIT` (default: 10), `AUTH_LOGIN_RATE_WINDOW_MINUTES` (default: 15): rate limit por IP em `POST /api/auth/login`
   - `AUTH_REGISTER_RATE_LIMIT` (default: 5): rate limit por IP/hora em `POST /api/auth/register`
   - `AUTH_REFRESH_RATE_LIMIT` (default: 30): rate limit por IP/hora em `POST /api/auth/refresh`
+  - **Web Push (alertas)**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (ex.: `mailto:suporte@ceialmilk.com`) — ver `deploy-notes.md`; lib `github.com/SherClockHolmes/webpush-go`
   - **Docs OpenAPI integrações** (públicas): `GET /api/v1/integracoes/openapi.yaml`, `GET /api/v1/integracoes/docs` (Swagger UI); spec embed em `backend/internal/openapi/`
   - **Dev Studio e Assistente** (opcional): `GEMINI_API_KEY`; `GEMINI_MODEL` (default `gemini-2.0-flash`) para Dev Studio; `GEMINI_MODEL_ASSISTENTE` (opcional, se vazio usa `GEMINI_MODEL`; recomendado `gemini-2.5-flash-lite` para custo menor). GitHub: `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_CONTEXT_BRANCH` (default `main`). Ver `docs/dev-studio/SETUP.md`.
 
@@ -88,6 +89,7 @@ require (
     github.com/google/generative-ai-go v0.20.1
     github.com/gorilla/websocket v1.5.3
     github.com/jackc/pgx/v5 v5.5.4
+    github.com/SherClockHolmes/webpush-go v1.3.0
     golang.org/x/crypto v0.45.0
 )
 ```
