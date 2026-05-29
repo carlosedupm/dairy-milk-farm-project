@@ -21,13 +21,18 @@ var (
 )
 
 type RestricaoLeiteService struct {
-	repo         *repository.RestricaoLeiteRepository
-	animalRepo   *repository.AnimalRepository
-	lactacaoRepo *repository.LactacaoRepository
+	repo           *repository.RestricaoLeiteRepository
+	animalRepo     *repository.AnimalRepository
+	lactacaoRepo   *repository.LactacaoRepository
+	alertaResolver AlertaAutoResolver
 }
 
 func NewRestricaoLeiteService(repo *repository.RestricaoLeiteRepository, animalRepo *repository.AnimalRepository, lactacaoRepo *repository.LactacaoRepository) *RestricaoLeiteService {
 	return &RestricaoLeiteService{repo: repo, animalRepo: animalRepo, lactacaoRepo: lactacaoRepo}
+}
+
+func (s *RestricaoLeiteService) SetAlertaAutoResolver(r AlertaAutoResolver) {
+	s.alertaResolver = r
 }
 
 func (s *RestricaoLeiteService) ListAtivasByFazenda(ctx context.Context, fazendaID int64) ([]models.RestricaoLeiteAtiva, error) {
@@ -136,6 +141,7 @@ func (s *RestricaoLeiteService) Liberar(ctx context.Context, fazendaID, restrica
 	if err != nil || out == nil {
 		return nil, err
 	}
+	resolveAlertaSilencioso(ctx, s.alertaResolver, fazendaID, out.AnimalID, models.AlertaTipoRestricaoLeiteAtiva)
 	return out, nil
 }
 

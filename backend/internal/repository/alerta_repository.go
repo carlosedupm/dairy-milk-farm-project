@@ -225,3 +225,30 @@ func (r *AlertaRepository) Delete(ctx context.Context, fazendaID, alertaID int64
 	}
 	return nil
 }
+
+func (r *AlertaRepository) ExistsOpenByFazendaTipoAnimal(ctx context.Context, fazendaID int64, tipo string, animalID int64) (bool, error) {
+	const q = `
+		SELECT EXISTS(
+			SELECT 1 FROM alertas
+			WHERE fazenda_id = $1 AND tipo = $2 AND animal_id = $3
+			  AND status IN ('ABERTO', 'EM_ANDAMENTO')
+		)
+	`
+	var exists bool
+	err := r.db.QueryRow(ctx, q, fazendaID, tipo, animalID).Scan(&exists)
+	return exists, err
+}
+
+func (r *AlertaRepository) ResolveOpenByFazendaTipoAnimal(ctx context.Context, fazendaID int64, tipo string, animalID int64) error {
+	const q = `
+		UPDATE alertas
+		SET status = 'RESOLVIDO',
+		    resolvido_por = NULL,
+		    resolvido_em = NOW(),
+		    updated_at = NOW()
+		WHERE fazenda_id = $1 AND tipo = $2 AND animal_id = $3
+		  AND status IN ('ABERTO', 'EM_ANDAMENTO')
+	`
+	_, err := r.db.Exec(ctx, q, fazendaID, tipo, animalID)
+	return err
+}

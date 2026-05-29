@@ -13,11 +13,12 @@ import (
 var ErrSecagemNotFound = errors.New("secagem nao encontrada")
 
 type SecagemService struct {
-	pool        *pgxpool.Pool
-	repo        *repository.SecagemRepository
-	lactacaoRepo *repository.LactacaoRepository
-	animalRepo  *repository.AnimalRepository
-	fazendaRepo *repository.FazendaRepository
+	pool           *pgxpool.Pool
+	repo           *repository.SecagemRepository
+	lactacaoRepo   *repository.LactacaoRepository
+	animalRepo     *repository.AnimalRepository
+	fazendaRepo    *repository.FazendaRepository
+	alertaResolver AlertaAutoResolver
 }
 
 func NewSecagemService(
@@ -34,6 +35,10 @@ func NewSecagemService(
 		animalRepo:   animalRepo,
 		fazendaRepo:  fazendaRepo,
 	}
+}
+
+func (s *SecagemService) SetAlertaAutoResolver(r AlertaAutoResolver) {
+	s.alertaResolver = r
 }
 
 func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error {
@@ -103,6 +108,7 @@ func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error 
 		return err
 	}
 	committed = true
+	resolveAlertaSilencioso(ctx, s.alertaResolver, sec.FazendaID, sec.AnimalID, models.AlertaTipoGestacaoSemSecagem)
 	return nil
 }
 

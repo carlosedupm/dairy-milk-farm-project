@@ -30,6 +30,13 @@
 - [x] Frontend: `alertas.ts`, `/alertas`, `AlertasHomePanel`, menu Bell, `appAccess.ts`
 - [x] Catálogo: `docs/business/alertas.md` (BR-ALERTA-001–007)
 
+### **Onda 2.2 — Geração automática de alertas (✅ 2026-05-29)**
+
+- [x] Migration `32_alertas_geracao_automatica`: usuário sistema, `alertas_geracao_estado`, índice dedup
+- [x] `AlertaGeracaoService.GerarAlertasDiarios` — 6 regras; deduplicação; resolução automática
+- [x] Cron in-process + `POST /api/v1/admin/alertas/gerar`; teste `TestGerarAlertasDiarios_NaoDuplica`
+- [x] Catálogo: BR-ALERTA-008–010; extensões ciclo/leite/auditoria
+
 ### **Segurança HTTP e rate limit de auth (✅ 2026-05-27)**
 
 - [x] Backend: `AuthRateLimit` por IP (login/registro/refresh); env `AUTH_*_RATE_LIMIT`; `SecurityHeadersMiddleware`; `SetTrustedProxies` em produção
@@ -253,7 +260,8 @@
 ### **Meta 3: Saúde e inteligência** *(Fase 3 — `projectbrief.md`)*
 
 - [ ] Módulo saúde (vacinas/tratamentos)
-- [ ] Predições e alertas automáticos (reprodução, saúde, produção)
+- [x] Alertas automáticos de ciclo/saúde/conformidade (Onda 2.2 — ver progress Onda 2.2)
+- [ ] Predições avançadas (reprodução, produção)
 - [ ] Assistente por capacidades; integração IoT (opcional)
 - [ ] Testes de integração cobrindo 70%+
 

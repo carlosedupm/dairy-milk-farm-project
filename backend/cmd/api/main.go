@@ -95,6 +95,7 @@ func main() {
 	slog.Info("Rotas OpenAPI integracoes registradas: /api/v1/integracoes/openapi.yaml, /docs")
 
 	var apiRoutesRegistered bool
+	var alertasCronCancel context.CancelFunc
 	if cfg.DatabaseURL == "" {
 		slog.Warn("DATABASE_URL não definida: apenas /health disponível")
 	} else {
@@ -191,11 +192,45 @@ func main() {
 					animalCicloSvc := service.NewAnimalCicloService(cioRepo, coberturaRepo, diagnosticoGestacaoRepo, gestacaoRepo, secagemRepo, partoRepo, lactacaoRepo, producaoRepo, animalSaudeRepo, userRepo)
 					conformidadeSvc := service.NewConformidadeService(pool)
 					conformidadeHandler := handlers.NewConformidadeHandler(conformidadeSvc, fazendaSvc)
+					alertasEstadoRepo := repository.NewAlertasGeracaoEstadoRepository(pool)
+					alertaGeracaoLoc, locErr := time.LoadLocation(cfg.AlertasTZ)
+					if locErr != nil || cfg.AlertasTZ == "" {
+						alertaGeracaoLoc, _ = time.LoadLocation("America/Sao_Paulo")
+					}
+					var alertaGeracaoSvc *service.AlertaGeracaoService
+					alertaGeracaoSvc, geracaoErr := service.NewAlertaGeracaoService(
+						alertaRepo,
+						fazendaRepo,
+						animalSaudeRepo,
+						gestacaoRepo,
+						restricaoLeiteRepo,
+						cioRepo,
+						conformidadeSvc,
+						alertasEstadoRepo,
+						userRepo,
+						alertaGeracaoLoc,
+					)
+					if geracaoErr != nil {
+						slog.Warn("Geração automática de alertas indisponível", "error", geracaoErr)
+					} else {
+						animalSaudeSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
+						restricaoLeiteSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
+						cronCtx, cancel := context.WithCancel(context.Background())
+						alertasCronCancel = cancel
+						service.RunAlertasCron(cronCtx, cfg, alertaGeracaoSvc)
+					}
+					var alertaAdminHandler *handlers.AlertaAdminHandler
+					if alertaGeracaoSvc != nil {
+						alertaAdminHandler = handlers.NewAlertaAdminHandler(alertaGeracaoSvc)
+					}
 					animalHandler := handlers.NewAnimalHandler(animalSvc, animalBaixaSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc, animalCicloSvc, userRepo)
 					animalSaudeHandler := handlers.NewAnimalSaudeHandler(animalSaudeSvc, animalSvc, fazendaSvc)
 					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
 					partoSvc := service.NewPartoService(pool, partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo, criaSvc)
 					secagemSvc := service.NewSecagemService(pool, secagemRepo, lactacaoRepo, animalRepo, fazendaRepo)
+					if alertaGeracaoSvc != nil {
+						secagemSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
+					}
 					lactacaoSvc := service.NewLactacaoService(lactacaoRepo, animalRepo, fazendaRepo)
 					coberturaHandler := handlers.NewCoberturaHandler(coberturaSvc, fazendaSvc)
 					diagnosticoGestacaoHandler := handlers.NewDiagnosticoGestacaoHandler(diagnosticoGestacaoSvc, fazendaSvc, animalSvc)
@@ -486,6 +521,9 @@ func main() {
 						admin.POST("/integracoes/:id/rotacionar-chave", integracaoAdminHandler.RotacionarChave)
 						admin.POST("/integracoes/:id/revogar", integracaoAdminHandler.Revogar)
 						admin.GET("/integracoes/:id/chamadas", integracaoAdminHandler.ListChamadas)
+						if alertaAdminHandler != nil {
+							admin.POST("/alertas/gerar", alertaAdminHandler.GerarAlertasDiarios)
+						}
 					}
 					slog.Info("Rotas de Admin registradas")
 
@@ -651,6 +689,9 @@ func main() {
 	<-quit
 
 	slog.Info("Encerrando servidor...")
+	if alertasCronCancel != nil {
+		alertasCronCancel()
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

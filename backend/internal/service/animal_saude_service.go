@@ -18,8 +18,9 @@ var (
 )
 
 type AnimalSaudeService struct {
-	repo       *repository.AnimalSaudeRepository
-	animalRepo *repository.AnimalRepository
+	repo            *repository.AnimalSaudeRepository
+	animalRepo      *repository.AnimalRepository
+	alertaResolver  AlertaAutoResolver
 }
 
 func NewAnimalSaudeService(repo *repository.AnimalSaudeRepository, animalRepo *repository.AnimalRepository) *AnimalSaudeService {
@@ -27,6 +28,10 @@ func NewAnimalSaudeService(repo *repository.AnimalSaudeRepository, animalRepo *r
 		repo:       repo,
 		animalRepo: animalRepo,
 	}
+}
+
+func (s *AnimalSaudeService) SetAlertaAutoResolver(r AlertaAutoResolver) {
+	s.alertaResolver = r
 }
 
 type SaveAnimalSaudeInput struct {
@@ -82,6 +87,7 @@ func (s *AnimalSaudeService) Create(ctx context.Context, animalID int64, in Save
 	if err := s.syncAnimalStatusSaude(ctx, animalID); err != nil {
 		return nil, err
 	}
+	s.maybeResolveTratamentoVencido(ctx, animalID, in)
 	return row, nil
 }
 
@@ -115,6 +121,7 @@ func (s *AnimalSaudeService) Update(ctx context.Context, animalID, saudeID int64
 	if err := s.syncAnimalStatusSaude(ctx, animalID); err != nil {
 		return nil, err
 	}
+	s.maybeResolveTratamentoVencido(ctx, animalID, in)
 	return existing, nil
 }
 
@@ -143,6 +150,20 @@ func (s *AnimalSaudeService) ensureAnimalAtivo(ctx context.Context, animalID int
 		return nil, err
 	}
 	return animal, nil
+}
+
+func (s *AnimalSaudeService) maybeResolveTratamentoVencido(ctx context.Context, animalID int64, in SaveAnimalSaudeInput) {
+	if in.Status != models.AnimalSaudeStatusConcluido {
+		return
+	}
+	if in.TipoCaso != models.AnimalSaudeTipoTratamento {
+		return
+	}
+	animal, err := s.animalRepo.GetByID(ctx, animalID)
+	if err != nil || animal == nil {
+		return
+	}
+	resolveAlertaSilencioso(ctx, s.alertaResolver, animal.FazendaID, animalID, models.AlertaTipoTratamentoVencido)
 }
 
 func (s *AnimalSaudeService) syncAnimalStatusSaude(ctx context.Context, animalID int64) error {

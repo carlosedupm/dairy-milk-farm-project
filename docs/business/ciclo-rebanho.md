@@ -88,7 +88,7 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 - **Enunciado**: Ao registrar secagem, encerrar a lactação ativa do animal (`data_fim`, status encerrado) e atualizar `status_reprodutivo` para `SECA`.
 - **Escopo**: Por secagem; transação única.
 - **Efeito**: bloqueio/consistência no servidor; sem lactação ativa a secagem prossegue (pré-parto).
-- **Implementação**: `SecagemService.Create`; [secagens.md](./secagens.md) BR-SECAGENS-002; migration `22_close_lactacao_on_seca_animals` para legado.
+- **Implementação**: `SecagemService.Create`; [secagens.md](./secagens.md) BR-SECAGENS-002; migration `22_close_lactacao_on_seca_animals` para legado; alerta automático `GESTACAO_SEM_SECAGEM` (>250 dias sem secagem) — [alertas.md](./alertas.md) BR-ALERTA-008.
 - **Estado**: **implementado**.
 
 ### BR-CICLO-007 — Produção de leite alinhada à lactação
@@ -112,7 +112,7 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 - **Enunciado**: Titular/gerente vê na home indicadores acionáveis: partos previstos em janela configurável, contagem de prenhes, restrições ativas, produção do dia/semana.
 - **Escopo**: Fazenda ativa; oculto para FUNCIONARIO em modo restrito na UI.
 - **Efeito**: informativo com **drill-down** — cada KPI do painel pecuário navega para a lista/fonte correspondente (gestações `CONFIRMADA`, âncora de restrições na home, produção filtrada por período); partos previstos com link à ficha do animal.
-- **Implementação**: `GET /api/v1/fazendas/:id/resumo-pecuario`, `PecuarioResumoHomePanel`, `ResumoKpiTile`, `lib/resumoPecuarioLinks.ts`; [gestacoes.md](./gestacoes.md) BR-GESTACOES-003 e BR-GESTACOES-004.
+- **Implementação**: `GET /api/v1/fazendas/:id/resumo-pecuario`, `PecuarioResumoHomePanel`, `ResumoKpiTile`, `lib/resumoPecuarioLinks.ts`; [gestacoes.md](./gestacoes.md) BR-GESTACOES-003 e BR-GESTACOES-004; alerta automático `PARTO_PREVISTO` (janela 14 dias) — [alertas.md](./alertas.md) BR-ALERTA-008.
 - **Estado**: **implementado**.
 
 ### BR-CICLO-011 — Saída do rebanho (baixa)

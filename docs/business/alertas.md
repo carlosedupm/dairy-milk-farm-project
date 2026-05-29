@@ -4,8 +4,8 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 
 **Implementação principal**
 
-- Banco: migration `backend/migrations/31_add_alertas.up.sql` — tabela `alertas`, constraint `chk_alertas_resolvido`, índices por fazenda/status/tipo/severidade (parcial em abertos).
-- Backend: `backend/internal/models/alerta.go`, `backend/internal/repository/alerta_repository.go`, `backend/internal/service/alerta_service.go`, `backend/internal/handlers/alerta_handler.go`, rotas em `backend/cmd/api/main.go`.
+- Banco: migrations `backend/migrations/31_add_alertas.up.sql`, `32_alertas_geracao_automatica.up.sql` — tabela `alertas`, `alertas_geracao_estado`, índice único parcial `uq_alertas_aberto_tipo_animal`, utilizador técnico `sistema@interno.ceialmilk`.
+- Backend: `backend/internal/models/alerta.go`, `backend/internal/repository/alerta_repository.go`, `backend/internal/service/alerta_service.go`, `backend/internal/service/alerta_geracao_service.go`, `backend/internal/service/alerta_cron.go`, `backend/internal/handlers/alerta_handler.go`, `backend/internal/handlers/alerta_admin_handler.go`, rotas em `backend/cmd/api/main.go`.
 - Frontend: `frontend/src/services/alertas.ts`, `frontend/src/app/alertas/page.tsx`, `frontend/src/components/dashboard/AlertasHomePanel.tsx`.
 - RBAC API (FUNCIONARIO): `backend/internal/auth/perfil_access.go` — `GET` e `PATCH .../status`; `POST`/`DELETE` negados na whitelist (403).
 
@@ -25,8 +25,8 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 - **Enunciado**: Cada tipo de alerta de sistema tem severidade padrão: `TRATAMENTO_VENCIDO`/`PARTO_PREVISTO`/`GESTACAO_SEM_SECAGEM` → ALTA; `RESTRICAO_LEITE_ATIVA` → MEDIA; `NAO_CONFORMIDADE` → CRITICA; `CIO_DETECTADO` → BAIXA. Alertas **MANUAL** exigem severidade informada no `POST`.
 - **Escopo**: Tipos definidos na migration; geração automática usará `SeveridadePadraoPorTipo` em `alerta.go`.
 - **Efeito**: bloqueio na criação manual se severidade inválida ou ausente.
-- **Implementação**: `models.SeveridadePadraoPorTipo`, `AlertaService.Create`.
-- **Estado**: implementado (manual); geração automática **planejada**.
+- **Implementação**: `models.SeveridadePadraoPorTipo`, `AlertaService.Create`, `AlertaGeracaoService.tryCreateAlerta`.
+- **Estado**: implementado (manual e geração automática).
 
 ### BR-ALERTA-003 — Transição válida de status
 
@@ -51,7 +51,7 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 - **Escopo**: Tipos automáticos na tabela.
 - **Efeito**: bloqueio em `DELETE`; ausência de endpoint de update de campos.
 - **Implementação**: `AlertaService.Delete`; API expõe só list/get/create(manual)/patch status/delete(manual).
-- **Estado**: implementado (infra); população automática **planejada**.
+- **Estado**: implementado.
 
 ### BR-ALERTA-006 — Ordenação padrão da listagem
 
@@ -67,6 +67,30 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 - **Escopo**: UI `/alertas` e `PATCH .../status`.
 - **Efeito**: bloqueio 403 (`ErrAlertaForbidden`).
 - **Implementação**: `models.PodeMarcarAlertaEmAndamento`, `PodeResolverOuIgnorarAlerta`; `frontend/src/config/appAccess.ts` (`canMarcarAlertaEmAndamento`, `canResolverAlerta`).
+- **Estado**: implementado.
+
+### BR-ALERTA-008 — Geração automática diária
+
+- **Enunciado**: O sistema executa diariamente (cron in-process + `POST /api/v1/admin/alertas/gerar`) e cria alertas de sistema quando detecta: tratamento `ATIVO` sem `data_fim` há >14 dias; parto previsto nos próximos 14 dias; restrição `AGUARDANDO_LAB` há >7 dias; nova não-conformidade INT-001–INT-007 desde a última verificação; gestação confirmada há >250 dias sem secagem; cio registrado no dia (timezone `America/Sao_Paulo`).
+- **Escopo**: Todas as fazendas; `created_by` = utilizador técnico sistema.
+- **Efeito**: persistência em `alertas`; erros numa regra não interrompem as demais (sem panic).
+- **Implementação**: `AlertaGeracaoService.GerarAlertasDiarios`, `RunAlertasCron`, migration V32.
+- **Estado**: implementado.
+
+### BR-ALERTA-009 — Deduplicação de alertas abertos
+
+- **Enunciado**: Não cria novo alerta se já existir registro `ABERTO` ou `EM_ANDAMENTO` com o mesmo `tipo` e `animal_id` na fazenda.
+- **Escopo**: Tipos automáticos (≠ MANUAL).
+- **Efeito**: skip silencioso; índice `uq_alertas_aberto_tipo_animal` reforça no banco.
+- **Implementação**: `AlertaRepository.ExistsOpenByFazendaTipoAnimal`, `AlertaGeracaoService.tryCreateAlerta`.
+- **Estado**: implementado.
+
+### BR-ALERTA-010 — Resolução automática ao resolver evento-fonte
+
+- **Enunciado**: Ao concluir tratamento (`animal_saude.status = CONCLUIDO`), alertas `TRATAMENTO_VENCIDO` do animal passam a `RESOLVIDO`. Ao registrar secagem, `GESTACAO_SEM_SECAGEM` → `RESOLVIDO`. Ao liberar restrição de leite, `RESTRICAO_LEITE_ATIVA` → `RESOLVIDO`. Resolução automática usa `resolvido_por` nulo (actor sistema).
+- **Escopo**: Eventos de escrita nos serviços de saúde, secagem e restrição.
+- **Efeito**: atualização em `alertas`; falha na resolução automática não bloqueia a operação principal.
+- **Implementação**: `AnimalSaudeService`, `SecagemService`, `RestricaoLeiteService` + `AlertaGeracaoService.ResolveOpenByAnimal`.
 - **Estado**: implementado.
 
 ---

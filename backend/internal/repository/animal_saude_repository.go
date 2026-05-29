@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/jackc/pgx/v5"
@@ -162,4 +163,42 @@ func (r *AnimalSaudeRepository) Delete(ctx context.Context, animalID, saudeID in
 		return pgx.ErrNoRows
 	}
 	return nil
+}
+
+// AlertaAnimalIdentificacao candidato para alertas automáticos de saúde.
+type AlertaAnimalIdentificacao struct {
+	AnimalID      int64
+	Identificacao string
+}
+
+func (r *AnimalSaudeRepository) ListTratamentosSemFimVencidosByFazendaID(ctx context.Context, fazendaID int64, limiteDataInicio time.Time) ([]AlertaAnimalIdentificacao, error) {
+	q := `
+		SELECT DISTINCT a.id, a.identificacao
+		FROM animal_saude s
+		INNER JOIN animais a ON a.id = s.animal_id
+		WHERE a.fazenda_id = $1
+		  AND s.status = 'ATIVO'
+		  AND s.tipo_caso = 'TRATAMENTO'
+		  AND s.data_fim IS NULL
+		  AND s.data_inicio::date <= $2::date
+		  AND ` + SQLNoRebanhoFor("a") + `
+		ORDER BY a.identificacao ASC
+	`
+	rows, err := r.db.Query(ctx, q, fazendaID, limiteDataInicio)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []AlertaAnimalIdentificacao
+	for rows.Next() {
+		var item AlertaAnimalIdentificacao
+		if err := rows.Scan(&item.AnimalID, &item.Identificacao); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	if out == nil {
+		out = []AlertaAnimalIdentificacao{}
+	}
+	return out, rows.Err()
 }

@@ -256,6 +256,15 @@ A categoria do animal (BEZERRA, NOVILHA, MATRIZ, etc.) pode ser atualizada autom
 
 Para agendamento periódico (cron), chamar o endpoint acima (ex.: diariamente ou semanalmente) com um job externo ou scheduler.
 
+### **Alertas automáticos (geração diária — Onda 2.2)**
+
+- **Serviço**: `AlertaGeracaoService.GerarAlertasDiarios` — seis regras (tratamento vencido, parto previsto, restrição leite, não-conformidade INT-*, gestação sem secagem, cio do dia).
+- **Deduplicação**: `ExistsOpenByFazendaTipoAnimal` + índice parcial `uq_alertas_aberto_tipo_animal` (migration 32).
+- **Resolução automática**: `ResolveOpenByAnimal` após concluir tratamento, registrar secagem ou liberar restrição (`AlertaAutoResolver` injetado nos services).
+- **Agendamento**: goroutine `RunAlertasCron` no startup (`ALERTAS_CRON_ENABLED`, `ALERTAS_CRON_HOUR`, `ALERTAS_TZ`); disparo manual `POST /api/v1/admin/alertas/gerar` (ADMIN/DEVELOPER).
+- **Actor sistema**: `created_by` = utilizador `sistema@interno.ceialmilk` (migration 32); snapshot INT em `alertas_geracao_estado`.
+- **Catálogo**: `docs/business/alertas.md` (BR-ALERTA-008 a BR-ALERTA-010).
+
 ### **Origem de aquisição (animais)**
 
 O cadastro de animais distingue dois cenários via `origem_aquisicao` (NASCIDO | COMPRADO):

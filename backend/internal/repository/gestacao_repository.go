@@ -138,17 +138,26 @@ func (r *GestacaoRepository) CountConfirmadasByFazendaID(ctx context.Context, fa
 }
 
 func (r *GestacaoRepository) ListPartosPrevistosByFazendaID(ctx context.Context, fazendaID int64, ate time.Time) ([]models.PartoPrevistoResumo, error) {
-	const q = `
+	return r.ListPartosPrevistosNaJanelaByFazendaID(ctx, fazendaID, time.Time{}, ate)
+}
+
+func (r *GestacaoRepository) ListPartosPrevistosNaJanelaByFazendaID(ctx context.Context, fazendaID int64, de, ate time.Time) ([]models.PartoPrevistoResumo, error) {
+	q := `
 		SELECT g.animal_id, a.identificacao, g.id, g.data_prevista_parto
 		FROM gestacoes g
 		INNER JOIN animais a ON a.id = g.animal_id
 		WHERE g.fazenda_id = $1 AND g.status = $2
 		  AND g.data_prevista_parto IS NOT NULL
 		  AND g.data_prevista_parto::date <= $3::date
-		ORDER BY g.data_prevista_parto ASC
-		LIMIT 50
-	`
-	rows, err := r.db.Query(ctx, q, fazendaID, models.GestacaoStatusConfirmada, ate)
+		  AND ` + SQLNoRebanhoFor("a")
+	args := []interface{}{fazendaID, models.GestacaoStatusConfirmada, ate}
+	if !de.IsZero() {
+		q += ` AND g.data_prevista_parto::date >= $4::date`
+		args = append(args, de)
+	}
+	q += ` ORDER BY g.data_prevista_parto ASC LIMIT 200`
+
+	rows, err := r.db.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +170,43 @@ func (r *GestacaoRepository) ListPartosPrevistosByFazendaID(ctx context.Context,
 		}
 		list = append(list, item)
 	}
+	if list == nil {
+		list = []models.PartoPrevistoResumo{}
+	}
 	return list, rows.Err()
+}
+
+func (r *GestacaoRepository) ListConfirmadasSemSecagemByFazendaID(ctx context.Context, fazendaID int64, limiteDataConfirmacao time.Time) ([]AlertaAnimalIdentificacao, error) {
+	q := `
+		SELECT DISTINCT g.animal_id, a.identificacao
+		FROM gestacoes g
+		INNER JOIN animais a ON a.id = g.animal_id
+		WHERE g.fazenda_id = $1
+		  AND g.status = $2
+		  AND g.data_confirmacao::date <= $3::date
+		  AND NOT EXISTS (
+		    SELECT 1 FROM secagens s WHERE s.gestacao_id = g.id
+		  )
+		  AND ` + SQLNoRebanhoFor("a") + `
+		ORDER BY a.identificacao ASC
+	`
+	rows, err := r.db.Query(ctx, q, fazendaID, models.GestacaoStatusConfirmada, limiteDataConfirmacao)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []AlertaAnimalIdentificacao
+	for rows.Next() {
+		var item AlertaAnimalIdentificacao
+		if err := rows.Scan(&item.AnimalID, &item.Identificacao); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	if out == nil {
+		out = []AlertaAnimalIdentificacao{}
+	}
+	return out, rows.Err()
 }
 
 func (r *GestacaoRepository) GetAtivaConfirmadaByAnimalIDTx(ctx context.Context, tx pgx.Tx, animalID int64) (*models.Gestacao, error) {

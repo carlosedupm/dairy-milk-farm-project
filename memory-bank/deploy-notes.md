@@ -50,6 +50,13 @@ Fluxo `forgot-password` / `reset-password` **não implementado** até escolha do
 
 Em produção (`ENV=production`), o Gin confia em proxies (`SetTrustedProxies`) para obter o IP real do cliente via `X-Forwarded-For` (Render). Em desenvolvimento, proxies não são confiados — `ClientIP()` usa `RemoteAddr`.
 
+#### Opcionais (alertas automáticos)
+
+- `ALERTAS_CRON_ENABLED` - Ativa goroutine diária de geração de alertas (default: **true**).
+- `ALERTAS_CRON_HOUR` - Hora local do disparo, 0–23 (default: **6**; timezone abaixo).
+- `ALERTAS_TZ` - Timezone IANA do cron (default: **America/Sao_Paulo**).
+- Disparo manual (staging): `POST /api/v1/admin/alertas/gerar` com JWT ADMIN/DEVELOPER.
+
 #### Opcionais (integrações M2M)
 
 - `INTEGRATION_RATE_LIMIT_PER_HOUR` - Limite de requisições por cliente de integração (default: **300**). Aplica-se a rotas autenticadas em `/api/v1/integracoes/*` (não às rotas públicas de documentação).

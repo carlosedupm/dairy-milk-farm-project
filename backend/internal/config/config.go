@@ -28,6 +28,9 @@ type Config struct {
 	AuthLoginRateWindowMinutes       int    // janela do login em minutos (default: 15)
 	AuthRegisterRateLimit            int    // registos por IP por hora (default: 5)
 	AuthRefreshRateLimit             int    // refresh por IP por hora (default: 30)
+	AlertasCronEnabled               bool   // geração diária de alertas (default: true)
+	AlertasCronHour                  int    // hora local do disparo (default: 6)
+	AlertasTZ                        string // timezone do cron (default: America/Sao_Paulo)
 }
 
 func Load() *Config {
@@ -85,6 +88,9 @@ func Load() *Config {
 		AuthLoginRateWindowMinutes:  getEnvInt("AUTH_LOGIN_RATE_WINDOW_MINUTES", 15),
 		AuthRegisterRateLimit:       getEnvInt("AUTH_REGISTER_RATE_LIMIT", 5),
 		AuthRefreshRateLimit:        getEnvInt("AUTH_REFRESH_RATE_LIMIT", 30),
+		AlertasCronEnabled:          getEnvBool("ALERTAS_CRON_ENABLED", true),
+		AlertasCronHour:             getEnvInt("ALERTAS_CRON_HOUR", 6),
+		AlertasTZ:                   getEnv("ALERTAS_TZ", "America/Sao_Paulo"),
 	}
 }
 
@@ -96,6 +102,21 @@ func getEnvInt(key string, defaultValue int) int {
 		}
 	}
 	return defaultValue
+}
+
+func getEnvBool(key string, defaultValue bool) bool {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	switch value {
+	case "1", "true", "TRUE", "yes", "YES", "on", "ON":
+		return true
+	case "0", "false", "FALSE", "no", "NO", "off", "OFF":
+		return false
+	default:
+		return defaultValue
+	}
 }
 
 func getEnv(key, defaultValue string) string {

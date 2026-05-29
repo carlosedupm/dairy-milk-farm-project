@@ -53,6 +53,36 @@ func (r *RestricaoLeiteRepository) ListAtivasByFazendaID(ctx context.Context, fa
 	return out, rows.Err()
 }
 
+func (r *RestricaoLeiteRepository) ListAtivasAguardandoAntigasByFazendaID(ctx context.Context, fazendaID int64, limiteInicio time.Time) ([]AlertaAnimalIdentificacao, error) {
+	q := `
+		SELECT DISTINCT r.animal_id, a.identificacao
+		FROM restricoes_leite r
+		INNER JOIN animais a ON a.id = r.animal_id
+		WHERE r.fazenda_id = $1
+		  AND r.status = 'AGUARDANDO_LAB'
+		  AND r.inicio_em::date <= $2::date
+		  AND ` + SQLNoRebanhoFor("a") + `
+		ORDER BY a.identificacao ASC
+	`
+	rows, err := r.db.Query(ctx, q, fazendaID, limiteInicio)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []AlertaAnimalIdentificacao
+	for rows.Next() {
+		var item AlertaAnimalIdentificacao
+		if err := rows.Scan(&item.AnimalID, &item.Identificacao); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	if out == nil {
+		out = []AlertaAnimalIdentificacao{}
+	}
+	return out, rows.Err()
+}
+
 func (r *RestricaoLeiteRepository) GetAtivaByAnimalID(ctx context.Context, animalID int64) (*models.RestricaoLeite, error) {
 	const q = `
 		SELECT id, fazenda_id, animal_id, motivo, inicio_em, observacao, status, liberado_em, liberado_observacao, created_at, updated_at

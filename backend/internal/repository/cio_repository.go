@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/jackc/pgx/v5"
@@ -69,6 +70,35 @@ func (r *CioRepository) GetByFazendaID(ctx context.Context, fazendaID int64) ([]
 		list = append(list, &c)
 	}
 	return list, rows.Err()
+}
+
+func (r *CioRepository) ListDetectadosNaDataByFazendaID(ctx context.Context, fazendaID int64, data time.Time) ([]AlertaAnimalIdentificacao, error) {
+	q := `
+		SELECT DISTINCT c.animal_id, a.identificacao
+		FROM cios c
+		INNER JOIN animais a ON a.id = c.animal_id
+		WHERE c.fazenda_id = $1
+		  AND c.data_detectado::date = $2::date
+		  AND ` + SQLNoRebanhoFor("a") + `
+		ORDER BY a.identificacao ASC
+	`
+	rows, err := r.db.Query(ctx, q, fazendaID, data)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []AlertaAnimalIdentificacao
+	for rows.Next() {
+		var item AlertaAnimalIdentificacao
+		if err := rows.Scan(&item.AnimalID, &item.Identificacao); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	if out == nil {
+		out = []AlertaAnimalIdentificacao{}
+	}
+	return out, rows.Err()
 }
 
 func (r *CioRepository) Update(ctx context.Context, c *models.Cio) error {

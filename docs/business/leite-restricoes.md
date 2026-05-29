@@ -60,6 +60,14 @@ Operação em que o leite do animal **não deve ir para o tanque** (ordenha em b
 - **Implementação**: `RestricaoLeiteService` + `ciclo_integridade_temporal.go`; `RestricoesLeiteHomePanel` com `maxDate=hoje` no registro.
 - **Estado**: implementado.
 
+### BR-LEITE-007 — Alerta após 7 dias aguardando laboratório
+
+- **Enunciado**: Restrição com `status = AGUARDANDO_LAB` há mais de 7 dias (desde `inicio_em`) gera alerta automático `RESTRICAO_LEITE_ATIVA` (severidade MEDIA) para a equipe de gestão.
+- **Escopo**: Fazenda; animal no rebanho ativo.
+- **Efeito**: informativo proativo; resolvido automaticamente ao liberar a restrição (BR-ALERTA-010).
+- **Implementação**: `AlertaGeracaoService`, `RestricaoLeiteRepository.ListAtivasAguardandoAntigasByFazendaID`; [alertas.md](./alertas.md) BR-ALERTA-008/010.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-25 (BR-LEITE-006 — validação temporal)
+**Última atualização**: 2026-05-29
