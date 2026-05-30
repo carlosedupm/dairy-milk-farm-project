@@ -64,6 +64,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Onda 3.3 — Catálogo saúde + alertas completo**: `docs/business/saude-animal.md` (fluxo sync, cenários, refs ciclo/alertas); `alertas.md` (matrizes severidade/geração/INT-001–007, fluxo status); `README.md` (índice ciclo → saúde → alertas → auditoria); `ciclo-rebanho.md` (saúde/alertas no fluxo transversal, matriz actualizada).
 1. ✅ **Onda 3.2 — Testes unitários saúde + alertas**: interfaces de store nos serviços; fakes in-memory; 7 testes CRUD/sync `AnimalSaudeService`; 7 testes `AlertaService`; `TestTryCreateAlerta_NaoDuplica`; auto-resolve ao concluir tratamento (BR-ALERTA-010); `go test ./internal/service/...` verde.
 1. ✅ **Onda 2.5 — Web Push para alertas CRÍTICA/ALTA**: migration 33; `PushNotificationService` + VAPID; subscriptions e `fazenda_ativa_id` server-side; hooks em criação manual/automática; SW push/click; banner permissão; deep link `/alertas?tipo=`; catálogo BR-ALERTA-011–012.
 1. ✅ **Onda 2.2 — Geração automática de alertas**: migration 32; `AlertaGeracaoService` (6 regras); deduplicação; resolução automática (tratamento/secagem/restrição); cron diário + `POST /admin/alertas/gerar`; teste `TestGerarAlertasDiarios_NaoDuplica`; catálogo BR-ALERTA-008–010.

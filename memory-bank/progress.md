@@ -23,6 +23,13 @@
 
 ## ✅ O que foi concluído
 
+### **Onda 3.3 — Catálogo saúde + alertas (✅ 2026-05-29)**
+
+- [x] `docs/business/saude-animal.md`: fluxo sync, cenários, refs BR-CICLO/BR-ALERTA, backlog planejado (BR-SAUDE-001–005)
+- [x] `docs/business/alertas.md`: matrizes severidade/geração/INT-001–007, fluxograma status, refs cruzadas (BR-ALERTA-001–012)
+- [x] `docs/business/README.md`: índice reordenado (ciclo → saúde → alertas → auditoria)
+- [x] `docs/business/ciclo-rebanho.md`: secções saúde/alertas no fluxo, matriz e backlog actualizados
+
 ### **Onda 3.2 — Testes unitários saúde + alertas (✅ 2026-05-29)**
 
 - [x] Refactor: interfaces `animalSaudeStore`, `alertaStore`, `alertaGeracaoStore` nos serviços (duck typing com repos pgx)

@@ -12,6 +12,9 @@ Documento **mestre** do domínio pecuário: como o CeialMilk deve acompanhar a v
 | [baixa-rebanho.md](./baixa-rebanho.md) | Saída do rebanho (morte, venda, doação, descarte) |
 | [cios.md](./cios.md), [coberturas.md](./coberturas.md) | Detecção e inseminação/monta |
 | [leite-restricoes.md](./leite-restricoes.md) | Descarte / laboratório |
+| [saude-animal.md](./saude-animal.md) | Casos clínicos, sync `status_saude`, timeline |
+| [alertas.md](./alertas.md) | Alertas proativos, geração automática, Web Push |
+| [auditoria.md](./auditoria.md) | Conformidade INT-001–007, «Registado por» |
 | [acessos-perfil.md](./acessos-perfil.md) | Quem pode fazer o quê |
 
 **Implementação transversal (referência)**
@@ -28,9 +31,41 @@ Documento **mestre** do domínio pecuário: como o CeialMilk deve acompanhar a v
 Entrada/Nascimento → Recria → [Cio] → Cobertura → Toque → Gestação confirmada
     → [Secagem] → Parto → Lactação → Produção diária → Restrição leite (se aplicável)
     → Nova cobertura … → Saída do rebanho
+
+    ║  (paralelo, não bloqueia reprodução/produção)
+    ║  Registo casos saúde → sync status_saude → timeline ficha (BR-SAUDE-004/005)
+    ║  Cron diário + painel /alertas → acção humana ou auto-resolve (BR-ALERTA-008–010)
 ```
 
 Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO), ligadas ao parto/cria.
+
+### Saúde animal no ciclo
+
+Track **paralelo** ao ciclo reprodutivo — saúde **não bloqueia** lactação ([BR-CICLO-005](#br-ciclo-005--uma-lactação-ativa-por-animal-requisito-alvo)) nem produção ([BR-CICLO-007](#br-ciclo-007--produção-de-leite-alinhada-à-lactação)).
+
+| Ponto de integração | Regra | Efeito |
+|---------------------|-------|--------|
+| Ficha do animal | BR-CICLO-008 + [BR-SAUDE-005](./saude-animal.md) | Casos na timeline (`tipo=SAUDE`) |
+| Listagem de animais | BR-SAUDE-004 | Filtro por `status_saude` (`SAUDAVEL`, `DOENTE`, `EM_TRATAMENTO`) |
+| Alertas | [BR-ALERTA-008](./alertas.md) / [BR-ALERTA-010](./alertas.md) | Tratamento vencido (>14d) → alerta; conclusão → resolve |
+| Rebanho | [BR-SAUDE-003](./saude-animal.md) | CRUD só com animal no rebanho |
+
+Detalhe: [saude-animal.md](./saude-animal.md).
+
+### Alertas proativos no ciclo
+
+Alertas ligam marcos do ciclo a notificações acionáveis na home (`AlertasHomePanel`) e em `/alertas`.
+
+| Tipo alerta | Marco do ciclo | Regra |
+|-------------|----------------|-------|
+| `TRATAMENTO_VENCIDO` | Saúde — tratamento ATIVO sem fim | [saude-animal.md](./saude-animal.md), BR-ALERTA-008 |
+| `PARTO_PREVISTO` | Gestação confirmada (janela 14d) | BR-CICLO-009, BR-ALERTA-008 |
+| `GESTACAO_SEM_SECAGEM` | Gestação >250d sem secagem | BR-CICLO-006, BR-ALERTA-008/010 |
+| `RESTRICAO_LEITE_ATIVA` | Restrição `AGUARDANDO_LAB` ≥7d | [leite-restricoes.md](./leite-restricoes.md), BR-ALERTA-008/010 |
+| `CIO_DETECTADO` | Cio registado no dia | [cios.md](./cios.md), BR-ALERTA-008 |
+| `NAO_CONFORMIDADE` | Nova anomalia INT-001–007 | [auditoria.md](./auditoria.md), BR-ALERTA-008 |
+
+Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ---
 
@@ -171,7 +206,8 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 | Parto + lactação | Implementado | |
 | Produção | Implementado | Lactação ativa obrigatória (BR-CICLO-007); FUNCIONARIO POST |
 | Restrição leite | Implementado | [leite-restricoes.md](./leite-restricoes.md) |
-| Saúde (casos clínicos) | Implementado | CRUD + timeline (`BR-SAUDE-005`); vacinas/alertas Meta 3 |
+| Saúde (casos clínicos) | Implementado | CRUD, sync `status_saude`, timeline, RBAC — [saude-animal.md](./saude-animal.md); vacinas = backlog |
+| Alertas proativos | Implementado | Geração diária, dedup, auto-resolve, Web Push, UI `/alertas` — [alertas.md](./alertas.md) |
 | Dashboard pecuário | Implementado | KPIs acionáveis (`ResumoKpiTile`, BR-GESTACOES-004) |
 | Ficha animal (timeline) | Implementado | BR-CICLO-008 |
 | Saída do rebanho (baixa) | Implementado | [baixa-rebanho.md](./baixa-rebanho.md) BR-CICLO-011; rótulos Gestão BR-BAIXA-009 |
@@ -181,10 +217,11 @@ Crias vivas do parto entram no rebanho como animais (`origem_aquisicao` NASCIDO)
 
 ## Backlog de requisitos (próximos)
 
-1. Paginação da timeline na ficha do animal  
-3. Coluna `lactacao_id` em produção (relatórios por lactação) — opcional  
-4. Módulo saúde (Fase 3)  
+1. Paginação da timeline na ficha do animal
+2. Coluna `lactacao_id` em produção (relatórios por lactação) — opcional
+3. Vacinas / calendário preventivo (saúde — [saude-animal.md](./saude-animal.md) backlog)
+4. Validação temporal BR-CICLO-012 em datas de casos de saúde
 
 ---
 
-**Última atualização**: 2026-05-25 (validações temporais — BR-CICLO-012 a BR-CICLO-014)
+**Última atualização**: 2026-05-29 (Onda 3.3: saúde e alertas no fluxo transversal)

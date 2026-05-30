@@ -30,28 +30,40 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 
 ## Índice de módulos
 
+### Transversal e visibilidade
+
+| Módulo | Arquivo | Regras | Estado |
+|--------|---------|--------|--------|
+| **Ciclo do rebanho (mestre)** | [ciclo-rebanho.md](./ciclo-rebanho.md) | `BR-CICLO-*` | ✅ Referência mestre |
+| **Saúde animal** | [saude-animal.md](./saude-animal.md) | `BR-SAUDE-001`–`005` | ✅ |
+| **Alertas proativos** | [alertas.md](./alertas.md) | `BR-ALERTA-001`–`012` | ✅ |
+| **Auditoria e conformidade** | [auditoria.md](./auditoria.md) | `BR-AUDIT-*`, INT-001–007 | ✅ |
+
+### Ciclo reprodutivo e produção
+
 | Módulo | Arquivo | Estado do catálogo |
 |--------|---------|-------------------|
-| **Ciclo do rebanho (transversal)** | [ciclo-rebanho.md](./ciclo-rebanho.md) | ✅ Referência mestre |
-| Folgas (escala 5x1) | [folgas.md](./folgas.md) | ✅ |
-| Coberturas (reprodução) | [coberturas.md](./coberturas.md) | ✅ |
-| Cios (detecção) | [cios.md](./cios.md) | ✅ |
 | Animais (busca contextual) | [animais.md](./animais.md) | ✅ |
-| Baixa do rebanho | [baixa-rebanho.md](./baixa-rebanho.md) | ✅ |
-| Leite — descarte / laboratório | [leite-restricoes.md](./leite-restricoes.md) | ✅ |
-| Saúde animal | [saude-animal.md](./saude-animal.md) | ✅ |
-| **Alertas proativos** | [alertas.md](./alertas.md) | ✅ |
-| Acessos por perfil (RBAC) | [acessos-perfil.md](./acessos-perfil.md) | ✅ |
-| Partos e crias | [partos.md](./partos.md) | ✅ |
+| Cios (detecção) | [cios.md](./cios.md) | ✅ |
+| Coberturas (reprodução) | [coberturas.md](./coberturas.md) | ✅ |
 | Toques (diagnóstico gestação) | [toques.md](./toques.md) | ✅ |
 | Gestações | [gestacoes.md](./gestacoes.md) | ✅ |
 | Secagens | [secagens.md](./secagens.md) | ✅ |
+| Partos e crias | [partos.md](./partos.md) | ✅ |
 | Lactações | [lactacoes.md](./lactacoes.md) | ✅ |
 | Produção de leite | [producao-leite.md](./producao-leite.md) | ✅ |
-| Lotes | *a criar* `lotes.md` | 🚧 |
-| Auditoria e conformidade | [auditoria.md](./auditoria.md) | ✅ |
+| Leite — descarte / laboratório | [leite-restricoes.md](./leite-restricoes.md) | ✅ |
+| Baixa do rebanho | [baixa-rebanho.md](./baixa-rebanho.md) | ✅ |
+
+### Operação e plataforma
+
+| Módulo | Arquivo | Estado do catálogo |
+|--------|---------|-------------------|
+| Folgas (escala 5x1) | [folgas.md](./folgas.md) | ✅ |
+| Acessos por perfil (RBAC) | [acessos-perfil.md](./acessos-perfil.md) | ✅ |
 | Integrações externas (API M2M) | [integracoes.md](./integracoes.md) | ✅ |
+| Lotes | *a criar* `lotes.md` | 🚧 |
 
 ---
 
-**Última atualização**: 2026-05-29
+**Última atualização**: 2026-05-29 (Onda 3.3: índice ciclo → saúde → alertas → auditoria)
