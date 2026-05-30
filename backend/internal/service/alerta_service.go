@@ -24,9 +24,21 @@ var (
 	ErrAlertaSomenteManualCreate = errors.New("apenas alertas manuais podem ser criados via API")
 )
 
+type alertaStore interface {
+	ListByFazenda(ctx context.Context, fazendaID int64, f repository.AlertaListFilters) ([]models.AlertaWithNames, int64, error)
+	GetByID(ctx context.Context, fazendaID, alertaID int64) (*models.AlertaWithNames, error)
+	Create(ctx context.Context, row *models.Alerta) error
+	UpdateStatus(ctx context.Context, fazendaID, alertaID int64, status string, resolvidoPor *int64, resolvidoEm *time.Time) error
+	Delete(ctx context.Context, fazendaID, alertaID int64) error
+}
+
+type alertaAnimalStore interface {
+	GetByID(ctx context.Context, id int64) (*models.Animal, error)
+}
+
 type AlertaService struct {
-	repo       *repository.AlertaRepository
-	animalRepo *repository.AnimalRepository
+	repo       alertaStore
+	animalRepo alertaAnimalStore
 	pushSvc    *PushNotificationService
 }
 

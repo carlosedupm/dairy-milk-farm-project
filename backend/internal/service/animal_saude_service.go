@@ -17,10 +17,24 @@ var (
 	ErrAnimalSaudeDataFimInvalida  = errors.New("data_fim deve ser maior ou igual a data_inicio")
 )
 
+type animalSaudeStore interface {
+	ListByAnimalID(ctx context.Context, animalID int64) ([]*models.AnimalSaude, error)
+	ListAtivosByAnimalID(ctx context.Context, animalID int64) ([]*models.AnimalSaude, error)
+	GetByID(ctx context.Context, animalID, saudeID int64) (*models.AnimalSaude, error)
+	Create(ctx context.Context, row *models.AnimalSaude) error
+	Update(ctx context.Context, row *models.AnimalSaude) error
+	Delete(ctx context.Context, animalID, saudeID int64) error
+}
+
+type animalSaudeAnimalStore interface {
+	GetByID(ctx context.Context, id int64) (*models.Animal, error)
+	UpdateStatusSaude(ctx context.Context, animalID int64, status *string) error
+}
+
 type AnimalSaudeService struct {
-	repo            *repository.AnimalSaudeRepository
-	animalRepo      *repository.AnimalRepository
-	alertaResolver  AlertaAutoResolver
+	repo           animalSaudeStore
+	animalRepo     animalSaudeAnimalStore
+	alertaResolver AlertaAutoResolver
 }
 
 func NewAnimalSaudeService(repo *repository.AnimalSaudeRepository, animalRepo *repository.AnimalRepository) *AnimalSaudeService {

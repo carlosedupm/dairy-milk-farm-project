@@ -57,12 +57,14 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 - **Baixa do rebanho**: migrations 27–28; **BR-BAIXA-008** (não altera `status_reprodutivo` — arquivo «ao sair»); `AnimalBaixaService` (TX: saída, encerra lactação, gestação `CONFIRMADA`→`PERDA`, restrição `AGUARDANDO_LAB`→`CANCELADO`); `POST /api/v1/animais/:id/baixa` e `.../baixa/reverter`; listagens com `rebanho=ativos|baixa|todos` / `no_rebanho` (default ativos); guarda `EnsureAnimalNoRebanho` em ciclo/produção; **FUNCIONARIO** só motivo `MORTE`; contexto/timeline `fora_do_rebanho` + ação `REGISTRAR_BAIXA`; **INT-007** conformidade; UI `/animais/baixa`, ficha, lista, busca; M2M busca exclui baixados (**BR-INTEG-008**). **Gestão pós-baixa (BR-BAIXA-009/010)**: cache TanStack `operacional` vs `todos`; `useGestaoAnimaisByIdMap` com **GET por ID** (merge sobrescreve lista stale) + `useGestaoAnimaisCacheRefresh` no `GestaoListLayout`; `AnimalGestaoLabel` em todas as tabelas de Gestão/produção; `GestaoRegistroBaixadoAlert` com badge; formulários só rebanho ativo; **sem** Editar/Excluir nem `PUT`/`DELETE` de cio/cobertura/parto de fêmea baixada. Catálogo: `docs/business/baixa-rebanho.md` (BR-BAIXA-001–010); checklist `docs/tests/baixa-rebanho-checklist.md`.
 - **Alertas proativos (Onda 2.1 + 2.2)**: migration 31–32 — tabela `alertas`, `alertas_geracao_estado`, geração diária (`AlertaGeracaoService`, cron in-process), resolução automática em saúde/secagem/restrição. API: `GET|POST /api/v1/fazendas/:id/alertas`, `GET|PATCH .../status`, `DELETE` (só MANUAL, GERENTE+); admin `POST /api/v1/admin/alertas/gerar`. UI: `/alertas`, `AlertasHomePanel`. Catálogo: `docs/business/alertas.md` (BR-ALERTA-001–010).
 - **Web Push alertas (Onda 2.5)**: migration 33 — `push_subscriptions`, `usuarios.fazenda_ativa_id`; `PushNotificationService` (VAPID); API `/api/v1/me/push/*` e `PUT /me/fazenda-ativa`; SW com `push`/`notificationclick`; banner `PushPermissionBanner`. Catálogo: `docs/business/alertas.md` (BR-ALERTA-011–012).
+- **Testes unitários saúde + alertas (Onda 3.2)**: fakes in-memory na fronteira service→repository; interfaces `animalSaudeStore`, `alertaStore`, `alertaGeracaoStore`; CRUD/sync saúde, `AlertaService` (Create/UpdateStatus/Delete), dedup genérico `tryCreateAlerta`, auto-resolve `TRATAMENTO_VENCIDO` ao concluir tratamento. Comando: `cd backend && go test ./internal/service/... -count=1`.
 
 ### 🚧 Em andamento:
 - **Fase 3 — validação operacional**: checklist staging pós alertas automáticos e Web Push
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Onda 3.2 — Testes unitários saúde + alertas**: interfaces de store nos serviços; fakes in-memory; 7 testes CRUD/sync `AnimalSaudeService`; 7 testes `AlertaService`; `TestTryCreateAlerta_NaoDuplica`; auto-resolve ao concluir tratamento (BR-ALERTA-010); `go test ./internal/service/...` verde.
 1. ✅ **Onda 2.5 — Web Push para alertas CRÍTICA/ALTA**: migration 33; `PushNotificationService` + VAPID; subscriptions e `fazenda_ativa_id` server-side; hooks em criação manual/automática; SW push/click; banner permissão; deep link `/alertas?tipo=`; catálogo BR-ALERTA-011–012.
 1. ✅ **Onda 2.2 — Geração automática de alertas**: migration 32; `AlertaGeracaoService` (6 regras); deduplicação; resolução automática (tratamento/secagem/restrição); cron diário + `POST /admin/alertas/gerar`; teste `TestGerarAlertasDiarios_NaoDuplica`; catálogo BR-ALERTA-008–010.
 1. ✅ **Onda 2.1 — Sistema de Alertas**: migration 31 (`alertas`); CRUD backend + RBAC; página `/alertas`; `AlertasHomePanel` na home; menu Bell; catálogo `docs/business/alertas.md` (BR-ALERTA-001–007).
@@ -213,10 +215,10 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 - **Documentação**: 97% ✅ (catálogo `docs/business/`, OpenAPI integrações, checklist regressão Fase 2)
 - **Implementação**: 97% ✅ (ciclo integrado + auditoria UI + API M2M integrações; agricultura em consolidação)
 - **Fase 2 ciclo + auditoria**: 100% ✅ (código + UI; validação manual do checklist pendente em staging)
-- **Testes**: 75% ✅ (unitários + TestSprite + checklist manual documentado)
+- **Testes**: 78% ✅ (unitários service saúde/alertas + TestSprite + checklist manual documentado)
 - **Deploy**: 90% ✅ (Render + Vercel)
 
 ---
 
-**Última atualização**: 2026-05-29 (Onda 2.5 Web Push alertas)
+**Última atualização**: 2026-05-29 (Onda 3.2 testes unitários saúde + alertas)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Integrações M2M** | **Toques operacionais** (planilha do dia + lote JWT) | Listagens `*Table` com UX mobile (card + ⋮) | **Coberturas com filtros na listagem** | **Fase 3 saúde animal (CRUD + RBAC + UI + timeline)** | Recuperação senha aguarda SMTP | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)

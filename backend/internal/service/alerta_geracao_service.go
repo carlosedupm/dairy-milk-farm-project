@@ -28,8 +28,15 @@ type GerarAlertasResultado struct {
 	ErrosRegra          int `json:"erros_regra"`
 }
 
+type alertaGeracaoStore interface {
+	ExistsOpenByFazendaTipoAnimal(ctx context.Context, fazendaID int64, tipo string, animalID int64) (bool, error)
+	Create(ctx context.Context, row *models.Alerta) error
+	GetByID(ctx context.Context, fazendaID, alertaID int64) (*models.AlertaWithNames, error)
+	ResolveOpenByFazendaTipoAnimal(ctx context.Context, fazendaID int64, tipo string, animalID int64) error
+}
+
 type AlertaGeracaoService struct {
-	alertaRepo       *repository.AlertaRepository
+	alertaRepo       alertaGeracaoStore
 	fazendaRepo      *repository.FazendaRepository
 	animalSaudeRepo  *repository.AnimalSaudeRepository
 	gestacaoRepo     *repository.GestacaoRepository

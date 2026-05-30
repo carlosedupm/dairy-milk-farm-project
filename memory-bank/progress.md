@@ -8,7 +8,7 @@
 🏗️  Infraestrutura: 95% ✅
 📚  Documentação: 97% ✅ (memory bank + OpenAPI integrações M2M)
 💻  Implementação: 95% ✅ (CRUD Animais, Produção, Gestão Pecuária e Módulo Agrícola em consolidação)
-🧪  Testes: 75% ✅ (unitários backend + E2E frontend + scripts TestSprite TC001–TC009 API)
+🧪  Testes: 78% ✅ (unitários backend service saúde/alertas + E2E frontend + scripts TestSprite TC001–TC009 API)
 🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
 ```
 
@@ -22,6 +22,14 @@
 - **Progresso sprint**: Fase 2 fechada em desenvolvimento
 
 ## ✅ O que foi concluído
+
+### **Onda 3.2 — Testes unitários saúde + alertas (✅ 2026-05-29)**
+
+- [x] Refactor: interfaces `animalSaudeStore`, `alertaStore`, `alertaGeracaoStore` nos serviços (duck typing com repos pgx)
+- [x] `animal_saude_service_test.go`: Create/Update/Delete, sync `status_saude`, guardas rebanho, auto-resolve `TRATAMENTO_VENCIDO`
+- [x] `alerta_service_test.go`: Create manual, bloqueio automático/perfil, transições status, delete só MANUAL
+- [x] `alerta_geracao_service_test.go`: `TestTryCreateAlerta_NaoDuplica` (genérico)
+- [x] Validação: `go test ./internal/service/... -count=1`
 
 ### **Onda 2.1 — Sistema de Alertas (✅ 2026-05-29)**
 
@@ -769,6 +777,6 @@
 
 ---
 
-**Última atualização**: 2026-05-28 (Onda 1.5 listagem + timeline saúde)
+**Última atualização**: 2026-05-29 (Onda 3.2 testes unitários saúde + alertas)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | **Coberturas com filtros** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

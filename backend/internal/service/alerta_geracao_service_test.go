@@ -63,6 +63,41 @@ func (f *fakeGestacaoRepoPartos) ListPartosPrevistosNaJanelaByFazendaID(_ contex
 	return f.itens, nil
 }
 
+func (f *fakeAlertaRepoGeracao) GetByID(_ context.Context, fazendaID, alertaID int64) (*models.AlertaWithNames, error) {
+	return &models.AlertaWithNames{
+		Alerta: models.Alerta{ID: alertaID, FazendaID: fazendaID, Status: models.AlertaStatusAberto},
+	}, nil
+}
+
+func TestTryCreateAlerta_NaoDuplica(t *testing.T) {
+	ctx := context.Background()
+	fakeAlerta := newFakeAlertaRepoGeracao()
+	svc := &AlertaGeracaoService{
+		alertaRepo:    fakeAlerta,
+		sistemaUserID: 1,
+	}
+	animalID := int64(100)
+
+	c1, ig1, err := svc.tryCreateAlerta(ctx, 1, models.AlertaTipoTratamentoVencido, &animalID, "Tratamento vencido", nil, nil)
+	if err != nil {
+		t.Fatalf("primeira chamada: %v", err)
+	}
+	if c1 != 1 || ig1 != 0 {
+		t.Fatalf("primeira: criados=%d ignorados=%d", c1, ig1)
+	}
+
+	c2, ig2, err := svc.tryCreateAlerta(ctx, 1, models.AlertaTipoTratamentoVencido, &animalID, "Tratamento vencido 2", nil, nil)
+	if err != nil {
+		t.Fatalf("segunda chamada: %v", err)
+	}
+	if c2 != 0 || ig2 != 1 {
+		t.Fatalf("segunda: criados=%d ignorados=%d", c2, ig2)
+	}
+	if fakeAlerta.created != 1 {
+		t.Fatalf("total created=%d, want 1", fakeAlerta.created)
+	}
+}
+
 func TestGerarAlertasDiarios_NaoDuplica(t *testing.T) {
 	ctx := context.Background()
 	ref := time.Date(2026, 5, 29, 12, 0, 0, 0, time.UTC)
