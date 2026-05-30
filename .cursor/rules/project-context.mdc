@@ -3,89 +3,16 @@ description: Contexto do projeto CeialMilk - sempre consulte o memory-bank antes
 alwaysApply: true
 ---
 
-# Contexto do Projeto CeialMilk
+# Contexto CeialMilk (Cursor)
 
-## Consulta Obrigatória do Memory Bank
+Antes de decisões técnicas ou mudanças significativas, consulte **`memory-bank/activeContext.md`**, **`systemPatterns.md`**, **`progress.md`** e **`techContext.md`**.
 
-**ANTES de tomar qualquer decisão técnica ou fazer mudanças significativas, SEMPRE consulte:**
+Mapa completo, comandos e índice de docs: **[`AGENTS.md`](../../AGENTS.md)** na raiz.
 
-1. **`memory-bank/activeContext.md`**: Estado atual do projeto
-   - O que está funcionando
-   - O que está em andamento
-   - Próximos passos planejados
-   - Problemas conhecidos
-   - Decisões técnicas ativas
+## Obrigatório
 
-2. **`memory-bank/systemPatterns.md`**: Padrões arquiteturais estabelecidos
-   - Padrões de design implementados
-   - Estrutura de camadas
-   - Padrões de API
-   - Padrões de segurança
-   - Padrões de performance
-
-3. **`memory-bank/progress.md`**: Status e histórico
-   - Completude geral do projeto
-   - Tarefas concluídas
-   - Próximos marcos
-   - Métricas de progresso
-
-4. **`memory-bank/techContext.md`**: Stack e configurações técnicas
-   - Dependências e versões (Go, Next.js)
-   - Configurações de banco de dados e ambiente
-   - Configurações de segurança
-
-## Catálogo de negócio (`docs/business/`)
-
-**Quando a tarefa alterar regras de domínio, políticas de produto ou UX que materialize decisão de negócio**, consulte e atualize o catálogo:
-
-- Leia **`docs/business/README.md`** e o arquivo do módulo afetado (ex.: `docs/business/folgas.md`).
-- No mesmo trabalho (mesmo PR / mesma entrega), **atualize ou crie** as regras com IDs estáveis (`BR-<DOMINIO>-NNN`) e ponteiros ao código.
-- **`memory-bank/productContext.md`** resume visão de produto; o **detalhe das regras** fica em `docs/business/`.
-
-## Princípios Fundamentais
-
-### 1. Consistência Arquitetural
-- **SEMPRE** siga os padrões documentados em `memory-bank/systemPatterns.md`
-- **NUNCA** introduza padrões que contradigam os estabelecidos sem atualizar a documentação primeiro
-- **MANTENHA** a estrutura de camadas backend: **Handlers → Services → Repositories → PostgreSQL** (Go + Gin)
-
-### 2. Programação no backend
-- **Go**: handlers HTTP com Gin; lógica de negócio em services; persistência em repositories (pgx/sql).
-- **Erros**: retornar explicitamente; respostas HTTP padronizadas conforme `systemPatterns.md`.
-
-### 3. Atualização de Documentação
-Após mudanças significativas, atualize:
-- `activeContext.md`: Se o estado do projeto mudou
-- `progress.md`: Se completou tarefas ou atingiu marcos
-- `systemPatterns.md`: Se estabeleceu novos padrões
-- `techContext.md`: Se adicionou tecnologias ou dependências
-- **`docs/business/`**: Se mudou **comportamento de produto** ou **regra de domínio**
-
-## Stack Tecnológica (Referência Rápida)
-
-- **Backend**: Go 1.21+, Gin, PostgreSQL 15, pgx, JWT RS256
-- **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind, Shadcn/UI, TanStack Query
-
-**Para detalhes completos, consulte `memory-bank/techContext.md`**
-
-## Estado Atual (Resumo)
-
-Consulte sempre **`memory-bank/activeContext.md`** e **`memory-bank/progress.md`** para percentuais e foco atuais (os números mudam com o tempo).
-
-## Quando Consultar Documentação Específica
-
-- **Implementando nova funcionalidade**: `activeContext.md` + `systemPatterns.md` + `docs/business/` se houver regras de domínio; em **frontend**, aplicar também **zoom do navegador, escala de texto e reflow** conforme `systemPatterns.md` (secção **Padrões de UX e Acessibilidade** — subtítulo zoom/reflow)
-- **Adicionando nova dependência**: `techContext.md` + `systemPatterns.md`
-- **Criando novo endpoint**: `systemPatterns.md` + `docs/postman/`
-- **Resolvendo problema**: `activeContext.md` (problemas conhecidos)
-- **Atualizando deploy**: `deploy-notes.md` + `techContext.md`
-- **Mudança de comportamento de produto**: `docs/business/` (obrigatório manter alinhado ao código)
-
-## Referências Principais
-
-- **AGENTS.md**: Visão geral e guia principal
-- **docs/business/README.md**: Catálogo de negócio
-- **memory-bank/activeContext.md**: Estado atual e contexto ativo
-- **memory-bank/systemPatterns.md**: Padrões arquiteturais
-- **memory-bank/progress.md**: Progresso e métricas
-- **memory-bank/techContext.md**: Stack e configurações
+- Seguir camadas **Handlers → Services → Repositories** (Go + Gin + pgx)
+- Regras de domínio: [`docs/business/`](../../docs/business/) — atualizar no mesmo PR se mudar comportamento de produto
+- Manutenção de docs: regra **[`documentation-maintenance.mdc`](documentation-maintenance.mdc)**
+- Frontend: zoom/reflow em **`systemPatterns.md`** (secção UX e Acessibilidade)
+- Novo endpoint: `systemPatterns.md` + `docs/postman/`; integrações M2M: `docs/integracoes/README.md`

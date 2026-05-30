@@ -64,6 +64,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **AGENTS.md alinhado às recomendações Cursor**: raiz enxuta (~96 linhas, índice + comandos essenciais); `backend/AGENTS.md` e `frontend/AGENTS.md` (nested); `project-context.mdc` reduzido; removidas rules Java obsoletas; manutenção de docs permanece em `documentation-maintenance.mdc`.
 1. ✅ **Onda 3.3 — Catálogo saúde + alertas completo**: `docs/business/saude-animal.md` (fluxo sync, cenários, refs ciclo/alertas); `alertas.md` (matrizes severidade/geração/INT-001–007, fluxo status); `README.md` (índice ciclo → saúde → alertas → auditoria); `ciclo-rebanho.md` (saúde/alertas no fluxo transversal, matriz actualizada).
 1. ✅ **Onda 3.2 — Testes unitários saúde + alertas**: interfaces de store nos serviços; fakes in-memory; 7 testes CRUD/sync `AnimalSaudeService`; 7 testes `AlertaService`; `TestTryCreateAlerta_NaoDuplica`; auto-resolve ao concluir tratamento (BR-ALERTA-010); `go test ./internal/service/...` verde.
 1. ✅ **Onda 2.5 — Web Push para alertas CRÍTICA/ALTA**: migration 33; `PushNotificationService` + VAPID; subscriptions e `fazenda_ativa_id` server-side; hooks em criação manual/automática; SW push/click; banner permissão; deep link `/alertas?tipo=`; catálogo BR-ALERTA-011–012.
@@ -221,5 +222,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-05-29 (Onda 3.2 testes unitários saúde + alertas)
+**Última atualização**: 2026-05-29 (AGENTS.md Cursor + Onda 3.2 testes unitários saúde + alertas)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Integrações M2M** | **Toques operacionais** (planilha do dia + lote JWT) | Listagens `*Table` com UX mobile (card + ⋮) | **Coberturas com filtros na listagem** | **Fase 3 saúde animal (CRUD + RBAC + UI + timeline)** | Recuperação senha aguarda SMTP | Folgas 5x1 | Restrições de leite | Assistente (exceto FUNCIONARIO)
