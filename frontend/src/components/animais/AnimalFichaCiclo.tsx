@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { formatDatePtBr } from "@/lib/format";
 import type { AnimalContexto } from "@/services/animais";
 import {
@@ -8,7 +7,7 @@ import {
   formatProducaoHistoricoResumo,
   getStatusReprodutivoLabel,
 } from "@/components/animais/animalResumoUtils";
-import { Button } from "@/components/ui/button";
+import { AnimalProximasAcoesCta } from "@/components/animais/AnimalProximasAcoesCta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Milk } from "lucide-react";
 import {
@@ -102,19 +101,11 @@ export function AnimalFichaCiclo({ contexto }: Props) {
         </CardContent>
       </Card>
 
-      {contexto.proximas_acoes && contexto.proximas_acoes.length > 0 ? (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Próximas ações</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {contexto.proximas_acoes.map((a) => (
-              <Button key={a.codigo} variant="secondary" size="sm" asChild>
-                <Link href={a.href_path}>{a.label}</Link>
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
+      {contexto.proximas_acoes?.length ? (
+        <AnimalProximasAcoesCta
+          acoes={contexto.proximas_acoes}
+          foraDoRebanho={contexto.fora_do_rebanho}
+        />
       ) : null}
     </div>
   );

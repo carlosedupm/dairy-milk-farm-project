@@ -93,3 +93,19 @@ func (r *CoberturaRepository) Delete(ctx context.Context, id int64) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM coberturas WHERE id = $1`, id)
 	return err
 }
+
+// HasPendenteToqueByAnimalID indica cobertura há diasMinimos+ dias sem diagnóstico de gestação.
+func (r *CoberturaRepository) HasPendenteToqueByAnimalID(ctx context.Context, animalID, fazendaID int64, diasMinimos int) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM coberturas cb
+			WHERE cb.animal_id = $1 AND cb.fazenda_id = $2
+			AND cb.data <= CURRENT_TIMESTAMP - ($3 || ' days')::interval
+			AND NOT EXISTS (
+				SELECT 1 FROM diagnosticos_gestacao dg WHERE dg.cobertura_id = cb.id
+			)
+		)`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, animalID, fazendaID, diasMinimos).Scan(&exists)
+	return exists, err
+}

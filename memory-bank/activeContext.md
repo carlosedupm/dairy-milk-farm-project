@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Ficha animal — CTA «Próximas ações» (BR-ANIMAIS-007)**: `BuildProximasAcoes` com prioridade Parto > Secagem > Cobertura > Toque > Produção (máx. 2), toque ≥15 dias (`HasPendenteToqueByAnimalID`), sem baixa nas sugestões; `AnimalProximasAcoesCta` (primário, RBAC desabilitado, sticky mobile + safe-area); docs `animais.md` / `ciclo-rebanho.md`.
 1. ✅ **Header — menu contextual por perfil**: `useMenuItems` + `useHeaderVisibility`; nav só com áreas permitidas (`hasNav`); label «Gestão reprodutiva» para FUNCIONARIO; nav/busca exigem fazenda ativa (2+ vínculos); `Header.tsx` ~126 linhas; `HeaderMobileDrawer`, `HeaderAccountPopover`; `getNavAreaLabel` em `headerNav.ts`.
 2. ✅ **AnimalSelect — filtro por estado do ciclo (BR-CICLO-015)**: 4 endpoints `GET .../animais/para-cobertura|para-toque|para-parto|para-abertura-lactacao`; secagem reutiliza `em-lactacao`; `AnimalSelect` com `cicloContext`, mensagens orientativas de lista vazia e `preserveSelected` em edição de cobertura/parto.
 2. ✅ **Dashboard — 4 KPIs above the fold**: `DashboardKpiGrid` (partos 7d, lactação, alertas críticos, leite hoje) acima dos painéis; skeleton; «Nenhum» em zero; `HomeCollapsiblePanel` com estado inteligente; API `resumo-pecuario` com `partos_proximos_7d_total` e `lactacao_ativa_total`; drill-downs em gestações (`partos_dias=7`), animais (`em_lactacao=1`), alertas (URL status/severidade). BR-CICLO-009 e BR-GESTACOES-005.

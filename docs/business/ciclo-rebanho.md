@@ -198,6 +198,7 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 - **Efeito**: orientação na UI (mensagens de lista vazia); bloqueio na escrita mantido nos services existentes.
 - **Implementação**: `AnimalRepository.ListParaCoberturaByFazendaID`, `ListParaToqueByFazendaID` (≥15 dias), `ListParaPartoByFazendaID`, `ListParaAberturaLactacaoByFazendaID`; `GET /api/v1/fazendas/:id/animais/para-*`; frontend `AnimalSelect` com `cicloContext` + `useAnimaisCicloContext`.
 - **Estado**: **implementado**.
+- **Relacionado**: mesma regra de 15 dias em `proximas_acoes[]` da ficha — [animais.md](./animais.md) **BR-ANIMAIS-007**.
 
 ---
 
@@ -218,6 +219,7 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 | Alertas proativos | Implementado | Geração diária, dedup, auto-resolve, Web Push, UI `/alertas` — [alertas.md](./alertas.md) |
 | Dashboard pecuário | Implementado | `DashboardKpiGrid` + painéis colapsáveis (BR-CICLO-009, BR-GESTACOES-005) |
 | Ficha animal (timeline) | Implementado | BR-CICLO-008; paginação `GET .../timeline` |
+| Ficha animal (próximas ações CTA) | Implementado | BR-ANIMAIS-007; máx. 2; sticky mobile |
 | Saída do rebanho (baixa) | Implementado | [baixa-rebanho.md](./baixa-rebanho.md) BR-CICLO-011; rótulos Gestão BR-BAIXA-009 |
 | Validação temporal (escrita) | Implementado | BR-CICLO-012–014; TMP-001–006; ver [auditoria.md](./auditoria.md) BR-AUDIT-010 |
 
@@ -230,4 +232,4 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ---
 
-**Última atualização**: 2026-05-30 (BR-CICLO-015 — listagens elegíveis por contexto)
+**Última atualização**: 2026-05-30 (BR-ANIMAIS-007 — CTA próximas ações na ficha)

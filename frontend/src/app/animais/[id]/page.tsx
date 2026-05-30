@@ -23,7 +23,9 @@ import {
 } from "@/config/appAccess";
 import { getStatusReprodutivoLabel } from "@/components/animais/animalResumoUtils";
 import { AnimalFichaCiclo } from "@/components/animais/AnimalFichaCiclo";
+import { animalProximasAcoesPageSpacerClass } from "@/components/animais/AnimalProximasAcoesCta";
 import { AnimalTimelineSection } from "@/components/animais/AnimalTimelineSection";
+import { cn } from "@/lib/utils";
 import type { OrigemAquisicao } from "@/services/animais";
 import type { Sexo, StatusSaude } from "@/services/animais";
 import { get as getFazenda } from "@/services/fazendas";
@@ -173,7 +175,15 @@ function AnimalDetailContent() {
         <BackLink href="/animais">Voltar aos animais</BackLink>
       </div>
 
-      <div className="space-y-6">
+      <div
+        className={cn(
+          "space-y-6",
+          animalProximasAcoesPageSpacerClass(
+            contexto?.proximas_acoes,
+            foraDoRebanho
+          )
+        )}
+      >
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-center gap-2 space-y-0 pb-2">
             <Beef className="h-5 w-5 text-muted-foreground" />

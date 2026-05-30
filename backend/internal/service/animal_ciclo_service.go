@@ -296,72 +296,124 @@ func (s *AnimalCicloService) PrependBaixaTimeline(ctx context.Context, animal *m
 	return items, nil
 }
 
+const maxProximasAcoes = 2
+
+var proximaAcaoPriority = []string{
+	models.AcaoRegistrarParto,
+	models.AcaoRegistrarSecagem,
+	models.AcaoRegistrarCobertura,
+	models.AcaoRegistrarToque,
+	models.AcaoRegistrarProducao,
+}
+
+func prioritizeProximasAcoes(acoes []models.ProximaAcao, max int) []models.ProximaAcao {
+	if len(acoes) == 0 || max <= 0 {
+		return nil
+	}
+	rank := make(map[string]int, len(proximaAcaoPriority))
+	for i, codigo := range proximaAcaoPriority {
+		rank[codigo] = i
+	}
+	sorted := make([]models.ProximaAcao, len(acoes))
+	copy(sorted, acoes)
+	sort.Slice(sorted, func(i, j int) bool {
+		ri, okI := rank[sorted[i].Codigo]
+		rj, okJ := rank[sorted[j].Codigo]
+		if !okI {
+			ri = len(proximaAcaoPriority)
+		}
+		if !okJ {
+			rj = len(proximaAcaoPriority)
+		}
+		return ri < rj
+	})
+	if len(sorted) > max {
+		sorted = sorted[:max]
+	}
+	return sorted
+}
+
+func buildProximasAcoesCandidates(
+	animalID int64,
+	lact *models.Lactacao,
+	gest *models.Gestacao,
+	pendenteToque bool,
+	statusReprodutivo string,
+) []models.ProximaAcao {
+	var acoes []models.ProximaAcao
+	if lact != nil {
+		acoes = append(acoes, models.ProximaAcao{
+			Codigo:   models.AcaoRegistrarProducao,
+			Label:    "Registrar produção",
+			HrefPath: fmt.Sprintf("/producao/novo?animal_id=%d", animalID),
+		})
+	}
+	if gest != nil {
+		acoes = append(acoes, models.ProximaAcao{
+			Codigo:   models.AcaoRegistrarSecagem,
+			Label:    "Registrar secagem",
+			HrefPath: fmt.Sprintf("/gestao/secagens/novo?animal_id=%d", animalID),
+		})
+		acoes = append(acoes, models.ProximaAcao{
+			Codigo:   models.AcaoRegistrarParto,
+			Label:    "Registrar parto",
+			HrefPath: fmt.Sprintf("/gestao/partos/novo?animal_id=%d&gestacao_id=%d", animalID, gest.ID),
+		})
+	}
+	if pendenteToque && gest == nil {
+		acoes = append(acoes, models.ProximaAcao{
+			Codigo:   models.AcaoRegistrarToque,
+			Label:    "Registrar toque",
+			HrefPath: fmt.Sprintf("/gestao/toques/novo?animal_id=%d", animalID),
+		})
+	}
+	if statusReprodutivo == "" ||
+		statusReprodutivo == models.StatusReprodutivoVazia ||
+		statusReprodutivo == models.StatusReprodutivoParida {
+		if lact == nil && gest == nil {
+			acoes = append(acoes, models.ProximaAcao{
+				Codigo:   models.AcaoRegistrarCobertura,
+				Label:    "Registrar cobertura",
+				HrefPath: fmt.Sprintf("/gestao/coberturas/novo?animal_id=%d", animalID),
+			})
+		}
+	}
+	return prioritizeProximasAcoes(acoes, maxProximasAcoes)
+}
+
 func (s *AnimalCicloService) BuildProximasAcoes(ctx context.Context, animal *models.Animal) ([]models.ProximaAcao, error) {
 	if animal.IsForaDoRebanho() {
 		return nil, nil
 	}
 	if animal.Sexo != nil && *animal.Sexo != models.SexoFemea {
-		return []models.ProximaAcao{{
-			Codigo:   models.AcaoRegistrarBaixa,
-			Label:    "Registrar baixa",
-			HrefPath: fmt.Sprintf("/animais/baixa?animal_id=%d", animal.ID),
-		}}, nil
+		return nil, nil
 	}
 	aid := animal.ID
-	var acoes []models.ProximaAcao
 
 	lact, err := s.GetLactacaoAtiva(ctx, aid)
 	if err != nil {
 		return nil, err
-	}
-	if lact != nil {
-		acoes = append(acoes, models.ProximaAcao{
-			Codigo: models.AcaoRegistrarProducao, Label: "Registrar produção",
-			HrefPath: fmt.Sprintf("/producao/novo?animal_id=%d", aid),
-		})
 	}
 
 	gest, err := s.gestacaoRepo.GetAtivaConfirmadaByAnimalID(ctx, aid)
 	if err != nil {
 		return nil, err
 	}
-	if gest != nil {
-		acoes = append(acoes, models.ProximaAcao{
-			Codigo: models.AcaoRegistrarSecagem, Label: "Registrar secagem",
-			HrefPath: fmt.Sprintf("/gestao/secagens/novo?animal_id=%d", aid),
-		})
-		acoes = append(acoes, models.ProximaAcao{
-			Codigo: models.AcaoRegistrarParto, Label: "Registrar parto",
-			HrefPath: fmt.Sprintf("/gestao/partos/novo?animal_id=%d&gestacao_id=%d", aid, gest.ID),
-		})
+
+	pendenteToque := false
+	if gest == nil {
+		pendenteToque, err = s.coberturaRepo.HasPendenteToqueByAnimalID(ctx, aid, animal.FazendaID, DiasMinimosToque)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	st := ""
 	if animal.StatusReprodutivo != nil {
 		st = *animal.StatusReprodutivo
 	}
-	if st == models.StatusReprodutivoServida && gest == nil {
-		acoes = append(acoes, models.ProximaAcao{
-			Codigo: models.AcaoRegistrarToque, Label: "Registrar toque",
-			HrefPath: fmt.Sprintf("/gestao/toques/novo?animal_id=%d", aid),
-		})
-	}
-	if st == "" || st == models.StatusReprodutivoVazia || st == models.StatusReprodutivoParida {
-		if lact == nil && gest == nil {
-			acoes = append(acoes, models.ProximaAcao{
-				Codigo: models.AcaoRegistrarCobertura, Label: "Registrar cobertura",
-				HrefPath: fmt.Sprintf("/gestao/coberturas/novo?animal_id=%d", aid),
-			})
-		}
-	}
 
-	acoes = append(acoes, models.ProximaAcao{
-		Codigo:   models.AcaoRegistrarBaixa,
-		Label:    "Registrar baixa",
-		HrefPath: fmt.Sprintf("/animais/baixa?animal_id=%d", aid),
-	})
-
-	return acoes, nil
+	return buildProximasAcoesCandidates(aid, lact, gest, pendenteToque, st), nil
 }
 
 func formatClassificacaoOperacionalLabel(classificacao string) string {

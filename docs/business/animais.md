@@ -61,6 +61,16 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 - **Implementação**: `AnimalCicloService` em `backend/internal/service/animal_ciclo_service.go`; `AnimalHandler.GetContextoByID`.
 - **Estado**: implementado.
 
+### BR-ANIMAIS-007 — Próximas ações na ficha (CTA de ciclo)
+
+- **Enunciado**: `proximas_acoes[]` sugere até **duas** ações operacionais de ciclo, ordenadas por prioridade: **Parto > Secagem > Cobertura > Toque > Produção**. «Registrar baixa» **não** entra nas sugestões (fluxo dedicado na ficha). **Toque** só quando existir cobertura há ≥15 dias sem diagnóstico (alinhado a BR-CICLO-015). Animal fora do rebanho ou macho → array vazio.
+- **Escopo**: `GET /api/v1/animais/:id/contexto`; UI em `/animais/:id`.
+- **Perfis / permissões**: CTAs visíveis conforme `proximas_acoes[]`; botão **desabilitado** na UI se `href_path` não permitido para o perfil (`appAccess` / `perfil_access.go`).
+- **Efeito**: orientação no curral; bloqueio de escrita mantido na API ao submeter formulários.
+- **Implementação**: `AnimalCicloService.BuildProximasAcoes`, `CoberturaRepository.HasPendenteToqueByAnimalID`; `AnimalProximasAcoesCta.tsx`, `animalProximasAcoesUtils.ts`, `AnimalFichaCiclo.tsx`.
+- **UI**: botões primários (`variant="default"`, `size="touch"`); desktop = card «Próximas ações»; mobile = barra fixa inferior com `env(safe-area-inset-bottom)` e `pb-32` no conteúdo da página para não tapar a timeline.
+- **Estado**: implementado.
+
 ### BR-ANIMAIS-006 — Baixa do rebanho (fluxo dedicado)
 
 - **Enunciado**: A saída do animal da exploração **não** se regista pelo formulário genérico de edição; usa-se o fluxo **Registrar baixa** (`/animais/baixa` ou atalho na ficha). Regras completas em [baixa-rebanho.md](./baixa-rebanho.md).
@@ -79,4 +89,4 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 ---
 
-**Última atualização**: 2026-05-24
+**Última atualização**: 2026-05-30
