@@ -21,7 +21,7 @@ import { nowDatetimeLocalInputValue } from "@/lib/format";
 function emptyFormState(): CoberturaFormState {
   return {
     animalId: "",
-    tipo: "IA",
+    tipo: "MONTA_NATURAL",
     data: nowDatetimeLocalInputValue(),
     touroAnimalId: "",
     touroInfo: "",
