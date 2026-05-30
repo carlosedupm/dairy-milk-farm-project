@@ -221,8 +221,6 @@ export function AssistenteInput({
   const micOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Intenção de mic aberto no Live (evita loop com isListening no effect). */
   const micDesiredRef = useRef(false);
-  /** Espelho de TTS ativo para efeitos sem depender só de state assíncrono. */
-  const ttsActiveRef = isTtsPlayingRef;
   /** Último texto falado via TTS (dedup de rajadas WebSocket). */
   const lastSpokenTextRef = useRef<string | null>(null);
   const isVoiceListeningRef = useRef(false);
@@ -233,7 +231,6 @@ export function AssistenteInput({
   );
 
   const cancelSpeechAndClearTtsRef = useCallback(() => {
-    ttsActiveRef.current = false;
     isTtsPlayingRef.current = false;
     ttsEndedAtRef.current = Date.now();
     cancelSpeech();
@@ -303,7 +300,6 @@ export function AssistenteInput({
       // 1. Pausar microfone para evitar eco
       pauseMicForTts();
       // 2. Marcar TTS como ativo
-      ttsActiveRef.current = true;
       isTtsPlayingRef.current = true;
       ttsStartedAtRef.current = Date.now();
       setIsTtsPlaying(true);
@@ -311,7 +307,6 @@ export function AssistenteInput({
       speak(text, {
         cancelPrevious: opts?.cancelPrevious ?? true,
         onEnd: () => {
-          ttsActiveRef.current = false;
           isTtsPlayingRef.current = false;
           ttsEndedAtRef.current = Date.now();
           scheduleReopenMicAfterTts();
@@ -497,7 +492,7 @@ export function AssistenteInput({
     }
     if (!isVoiceSupported) return;
 
-    if (isTtsPlaying || ttsActiveRef.current) {
+    if (isTtsPlaying || isTtsPlayingRef.current) {
       micDesiredRef.current = false;
       if (micOpenTimerRef.current) {
         clearTimeout(micOpenTimerRef.current);
@@ -1090,7 +1085,7 @@ export function AssistenteInput({
         runInterpretar(sugestao);
       }
     },
-    [loading, liveMode, runInterpretar, sendLiveTextWithPriority, notifyInteraction]
+    [loading, liveMode, runInterpretar, sendLiveTextWithPriority]
   );
 
   return (
