@@ -143,15 +143,53 @@ func (s *AnimalService) GetByFazendaIDNoRebanho(ctx context.Context, fazendaID i
 	return s.repo.GetByFazendaID(ctx, fazendaID, true)
 }
 
-func (s *AnimalService) ListEmLactacaoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+// DiasMinimosToque é o intervalo mínimo entre cobertura e diagnóstico de gestação (dias).
+const DiasMinimosToque = 15
+
+func (s *AnimalService) validateFazendaExists(ctx context.Context, fazendaID int64) error {
 	_, err := s.fazendaRepo.GetByID(ctx, fazendaID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrFazendaNotFound
+			return ErrFazendaNotFound
 		}
+		return err
+	}
+	return nil
+}
+
+func (s *AnimalService) ListEmLactacaoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	if err := s.validateFazendaExists(ctx, fazendaID); err != nil {
 		return nil, err
 	}
 	return s.repo.ListEmLactacaoByFazendaID(ctx, fazendaID)
+}
+
+func (s *AnimalService) ListParaCoberturaByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	if err := s.validateFazendaExists(ctx, fazendaID); err != nil {
+		return nil, err
+	}
+	return s.repo.ListParaCoberturaByFazendaID(ctx, fazendaID)
+}
+
+func (s *AnimalService) ListParaToqueByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	if err := s.validateFazendaExists(ctx, fazendaID); err != nil {
+		return nil, err
+	}
+	return s.repo.ListParaToqueByFazendaID(ctx, fazendaID, DiasMinimosToque)
+}
+
+func (s *AnimalService) ListParaPartoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	if err := s.validateFazendaExists(ctx, fazendaID); err != nil {
+		return nil, err
+	}
+	return s.repo.ListParaPartoByFazendaID(ctx, fazendaID)
+}
+
+func (s *AnimalService) ListParaAberturaLactacaoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	if err := s.validateFazendaExists(ctx, fazendaID); err != nil {
+		return nil, err
+	}
+	return s.repo.ListParaAberturaLactacaoByFazendaID(ctx, fazendaID)
 }
 
 func (s *AnimalService) Update(ctx context.Context, animal *models.Animal) error {

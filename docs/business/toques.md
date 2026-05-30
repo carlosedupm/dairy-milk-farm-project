@@ -59,10 +59,17 @@ Registro de **toque** (diagnóstico de gestação) após cobertura, com resultad
 - **Implementação**: `DiagnosticoGestacaoService` + `ciclo_integridade_temporal.go`; `ToqueFormFields` e `/gestao/toques/lote` com `maxDate` agora.
 - **Estado**: implementado.
 
+### BR-TOQUES-008 — Lista elegível no formulário
+
+- **Enunciado**: `GET /api/v1/fazendas/:id/animais/para-toque` retorna fêmeas com cobertura há ≥15 dias sem diagnóstico de gestação; UI usa `AnimalSelect` com `cicloContext="toque"`.
+- **Efeito**: filtro na listagem; bloqueio na escrita mantido em `DiagnosticoGestacaoService`.
+- **Implementação**: `AnimalRepository.ListParaToqueByFazendaID`; `ToqueFormFields`.
+- **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
+
 ### Canal de integração externa
 
 - Registo via `POST /api/v1/integracoes/toques` ou lote `POST /api/v1/integracoes/toques/lote` (scope `toques:write`) — ver [integracoes.md](./integracoes.md) (`BR-INTEG-*`). Aceita `classificacao_operacional`, `dias_gestacao_estimados` e `metodo`.
 
 ---
 
-**Última atualização**: 2026-05-25 (BR-TOQUES-007 — validação temporal)
+**Última atualização**: 2026-05-30 (BR-TOQUES-008 — lista elegível)

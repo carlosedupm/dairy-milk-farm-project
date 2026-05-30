@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"strings"
@@ -395,6 +396,46 @@ func (h *AnimalHandler) GetEmLactacaoByFazendaID(c *gin.Context) {
 		return
 	}
 	response.SuccessOK(c, animais, "Animais em lactação listados com sucesso")
+}
+
+func (h *AnimalHandler) GetParaCoberturaByFazendaID(c *gin.Context) {
+	h.listAnimaisElegiveisByFazendaID(c, h.service.ListParaCoberturaByFazendaID, "Erro ao buscar animais elegíveis para cobertura", "Animais elegíveis para cobertura listados com sucesso")
+}
+
+func (h *AnimalHandler) GetParaToqueByFazendaID(c *gin.Context) {
+	h.listAnimaisElegiveisByFazendaID(c, h.service.ListParaToqueByFazendaID, "Erro ao buscar animais elegíveis para toque", "Animais elegíveis para toque listados com sucesso")
+}
+
+func (h *AnimalHandler) GetParaPartoByFazendaID(c *gin.Context) {
+	h.listAnimaisElegiveisByFazendaID(c, h.service.ListParaPartoByFazendaID, "Erro ao buscar animais elegíveis para parto", "Animais elegíveis para parto listados com sucesso")
+}
+
+func (h *AnimalHandler) GetParaAberturaLactacaoByFazendaID(c *gin.Context) {
+	h.listAnimaisElegiveisByFazendaID(c, h.service.ListParaAberturaLactacaoByFazendaID, "Erro ao buscar animais elegíveis para abertura de lactação", "Animais elegíveis para abertura de lactação listados com sucesso")
+}
+
+type listAnimaisByFazendaFunc func(ctx context.Context, fazendaID int64) ([]*models.Animal, error)
+
+func (h *AnimalHandler) listAnimaisElegiveisByFazendaID(c *gin.Context, listFn listAnimaisByFazendaFunc, errMsg, successMsg string) {
+	fazendaIDStr := c.Param("id")
+	fazendaID, err := strconv.ParseInt(fazendaIDStr, 10, 64)
+	if err != nil {
+		response.ErrorBadRequest(c, "ID da fazenda inválido", nil)
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, fazendaID) {
+		return
+	}
+	animais, err := listFn(c.Request.Context(), fazendaID)
+	if err != nil {
+		if errors.Is(err, service.ErrFazendaNotFound) {
+			response.ErrorNotFound(c, "Fazenda não encontrada")
+			return
+		}
+		response.ErrorInternal(c, errMsg, err.Error())
+		return
+	}
+	response.SuccessOK(c, animais, successMsg)
 }
 
 func (h *AnimalHandler) Update(c *gin.Context) {

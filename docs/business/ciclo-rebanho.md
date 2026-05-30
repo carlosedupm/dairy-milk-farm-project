@@ -191,6 +191,14 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 - **Implementação**: `ValidateCoberturaAposCio`, `ValidateToqueAposCobertura`, `ValidatePartoAposGestacao`, `ValidateSecagemAposInicioLactacao`, `ValidateProducaoDentroLactacao`; chamadas nos `*Service` Create/Update.
 - **Estado**: **implementado**.
 
+### BR-CICLO-015 — Listagens de animais elegíveis por contexto do ciclo
+
+- **Enunciado**: Formulários de marcos do ciclo listam apenas fêmeas (ou animais) elegíveis ao evento, via endpoints dedicados por fazenda; em edição o animal já selecionado permanece visível mesmo fora do filtro.
+- **Escopo**: Por fazenda; contextos cobertura, toque, parto, abertura de lactação, secagem (em lactação).
+- **Efeito**: orientação na UI (mensagens de lista vazia); bloqueio na escrita mantido nos services existentes.
+- **Implementação**: `AnimalRepository.ListParaCoberturaByFazendaID`, `ListParaToqueByFazendaID` (≥15 dias), `ListParaPartoByFazendaID`, `ListParaAberturaLactacaoByFazendaID`; `GET /api/v1/fazendas/:id/animais/para-*`; frontend `AnimalSelect` com `cicloContext` + `useAnimaisCicloContext`.
+- **Estado**: **implementado**.
+
 ---
 
 ## Matriz de aderência atual (resumo)
@@ -222,4 +230,4 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ---
 
-**Última atualização**: 2026-05-30 (BR-CICLO-007 — `lactacao_id` em produção)
+**Última atualização**: 2026-05-30 (BR-CICLO-015 — listagens elegíveis por contexto)

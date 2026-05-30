@@ -47,10 +47,17 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 - **Implementação**: `CoberturaService` + `ciclo_integridade_temporal.go`; `CoberturaFormFields` com `maxDate` agora.
 - **Estado**: implementado.
 
+### BR-COBERTURAS-006 — Lista elegível no formulário
+
+- **Enunciado**: `GET /api/v1/fazendas/:id/animais/para-cobertura` retorna fêmeas no rebanho com cio registrado sem cobertura vinculada (`cio_id`); UI usa `AnimalSelect` com `cicloContext="cobertura"`.
+- **Efeito**: filtro na listagem; bloqueio na escrita mantido em `CoberturaService`.
+- **Implementação**: `AnimalRepository.ListParaCoberturaByFazendaID`; `CoberturaFormFields`.
+- **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
+
 ### Canal de integração externa
 
 - Registo via `POST /api/v1/integracoes/coberturas` ou lote `POST /api/v1/integracoes/coberturas/lote` (scope `coberturas:write`) — ver [integracoes.md](./integracoes.md) (`BR-INTEG-*`). Listagem: `GET /api/v1/integracoes/coberturas?animal_id=` (scope `coberturas:read`).
 
 ---
 
-**Última atualização**: 2026-05-25 (BR-COBERTURAS-005 — validação temporal)
+**Última atualização**: 2026-05-30 (BR-COBERTURAS-006 — lista elegível)

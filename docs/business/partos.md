@@ -51,6 +51,13 @@ Registro de **parto** da matriz, opcionalmente com **crias** no mesmo POST, aber
 - **Implementação**: `PartoService` + `ciclo_integridade_temporal.go`; `PartoFormFields` com `maxDate` agora.
 - **Estado**: implementado.
 
+### BR-PARTOS-007 — Lista elegível no formulário
+
+- **Enunciado**: `GET /api/v1/fazendas/:id/animais/para-parto` retorna fêmeas com gestação `CONFIRMADA` sem parto registrado; UI usa `AnimalSelect` com `cicloContext="parto"`.
+- **Efeito**: filtro na listagem; em edição o animal selecionado permanece visível (`preserveSelected`).
+- **Implementação**: `AnimalRepository.ListParaPartoByFazendaID`; `PartoFormFields`.
+- **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
+
 ---
 
-**Última atualização**: 2026-05-25 (BR-PARTOS-006 — validação temporal)
+**Última atualização**: 2026-05-30 (BR-PARTOS-007 — lista elegível)

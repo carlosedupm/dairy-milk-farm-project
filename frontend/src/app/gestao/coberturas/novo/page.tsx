@@ -78,6 +78,7 @@ function NovoContent() {
       submitDisabled={coberturaFormSubmitDisabled(formState)}
     >
       <CoberturaFormFields
+        fazendaId={fazendaId}
         animais={animais}
         formState={formState}
         setFormState={setFormState}

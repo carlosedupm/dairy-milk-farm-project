@@ -166,6 +166,7 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 - `GET /api/v1/animais/:id/contexto` — estado atual, gestação, lactação, restrição, próximas ações (sem timeline)
 - `GET /api/v1/animais/:id/timeline?limit=&offset=&tipo=` — histórico paginado (`todos|ciclo|saude|alertas`); resposta `{ timeline, total }`
 - `GET /api/v1/fazendas/:id/animais/em-lactacao` (animais com lactação ativa; mesma autorização que listagem por fazenda)
+- `GET /api/v1/fazendas/:id/animais/para-cobertura` | `para-toque` | `para-parto` | `para-abertura-lactacao` — listagens de elegibilidade por marco do ciclo (BR-CICLO-015); `AnimalSelect` com `cicloContext` no frontend
 - `GET /api/v1/fazendas/:id/restricoes-leite/ativas` | `POST /api/v1/fazendas/:id/restricoes-leite` | `PATCH /api/v1/fazendas/:id/restricoes-leite/:restricaoId/liberar` (descarte até laboratório; ver `docs/business/leite-restricoes.md`)
 - `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`
 

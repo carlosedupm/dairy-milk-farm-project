@@ -397,9 +397,62 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "List Animals for Cobertura",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-cobertura",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "fazendas", "{{fazendaId}}", "animais", "para-cobertura"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Animals for Toque",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-toque",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "fazendas", "{{fazendaId}}", "animais", "para-toque"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Animals for Parto",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-parto",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "fazendas", "{{fazendaId}}", "animais", "para-parto"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Animals for Abertura Lactacao",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-abertura-lactacao",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "fazendas", "{{fazendaId}}", "animais", "para-abertura-lactacao"]
+            }
+          },
+          "response": []
         }
       ]
     }
+  ],
   "event": [
     {
       "listen": "prerequest",

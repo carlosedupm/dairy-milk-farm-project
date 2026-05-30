@@ -15,8 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Animal } from "@/services/animais";
 import type { Gestacao } from "@/services/gestacoes";
+import { useAnimaisCicloContext } from "@/components/animais/useAnimaisCicloContext";
 import {
   CRIA_CONDICAO_OPTIONS,
   CRIA_SEXO_OPTIONS,
@@ -46,24 +46,36 @@ export type PartoFormState = {
 };
 
 type Props = {
-  animais: Animal[];
+  fazendaId: number;
   gestacoes: Gestacao[];
   formState: PartoFormState;
   setFormState: Dispatch<SetStateAction<PartoFormState>>;
   /** Em "editar parto", crias são tratadas em painel separado. */
   includeCriasRepeater?: boolean;
+  preserveSelected?: boolean;
 };
 
 export function PartoFormFields({
-  animais,
+  fazendaId,
   gestacoes,
   formState,
   setFormState,
   includeCriasRepeater = true,
+  preserveSelected = false,
 }: Props) {
+  const preserveAnimalId =
+    preserveSelected && formState.animalId
+      ? Number(formState.animalId)
+      : undefined;
+
+  const { animais: cicloAnimais } = useAnimaisCicloContext(fazendaId, "parto", {
+    preserveAnimalId:
+      preserveAnimalId && preserveAnimalId > 0 ? preserveAnimalId : undefined,
+  });
+
   const animaisSafe = useMemo(
-    () => (Array.isArray(animais) ? animais : []),
-    [animais]
+    () => (Array.isArray(cicloAnimais) ? cicloAnimais : []),
+    [cicloAnimais],
   );
   const gestacoesSafe = useMemo(
     () => (Array.isArray(gestacoes) ? gestacoes : []),
@@ -88,7 +100,9 @@ export function PartoFormFields({
   return (
     <>
       <AnimalSelect
-        animais={animaisSafe}
+        fazendaId={fazendaId}
+        cicloContext="parto"
+        preserveSelected={preserveSelected}
         value={formState.animalId}
         onValueChange={(value) => setFormState((s) => ({ ...s, animalId: value }))}
         label="Animal (mãe)"

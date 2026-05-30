@@ -29,18 +29,28 @@ export type CoberturaFormState = {
 };
 
 type Props = {
+  fazendaId: number;
   animais: Animal[];
   formState: CoberturaFormState;
   setFormState: Dispatch<SetStateAction<CoberturaFormState>>;
+  preserveSelected?: boolean;
 };
 
-export function CoberturaFormFields({ animais, formState, setFormState }: Props) {
+export function CoberturaFormFields({
+  fazendaId,
+  animais,
+  formState,
+  setFormState,
+  preserveSelected = false,
+}: Props) {
   const isMontaNatural = formState.tipo === "MONTA_NATURAL";
 
   return (
     <>
       <AnimalSelect
-        animais={animais}
+        fazendaId={fazendaId}
+        cicloContext="cobertura"
+        preserveSelected={preserveSelected}
         value={formState.animalId}
         onValueChange={(value) => setFormState((s) => ({ ...s, animalId: value }))}
         label="Animal (fêmea)"

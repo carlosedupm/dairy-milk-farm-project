@@ -772,6 +772,11 @@
 - ✅ **Testes Unitários Backend**: Testes table-driven para models e services
 - ✅ **Testes E2E Frontend**: Configuração Playwright + testes de autenticação e navegação
 
+### **2026-05-30 — AnimalSelect filtro por ciclo (BR-CICLO-015)**
+
+- ✅ **Backend**: `GET .../animais/para-cobertura|para-toque|para-parto|para-abertura-lactacao`; RBAC FUNCIONARIO estendido.
+- ✅ **Frontend**: `AnimalSelect` + `useAnimaisCicloContext`; forms cobertura/toque/parto/lactação/secagem; merge em edição.
+
 ### **2026-05-19 — Fase 2 ciclo integrado + refinamentos**
 
 - ✅ **Entregas BR-CICLO-005 a 009**: secagem↔lactação, ficha/timeline (`AnimalFichaCiclo`), resumo pecuário na home, produção↔lactação, RBAC FUNCIONARIO toques/produção; catálogo `docs/business/` por módulo.
@@ -808,6 +813,6 @@
 
 ---
 
-**Última atualização**: 2026-05-30 (M2M saúde/alertas; Assistente Live; `lactacao_id`; timeline paginada)
+**Última atualização**: 2026-05-30 (AnimalSelect cicloContext; BR-CICLO-015)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` em código | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

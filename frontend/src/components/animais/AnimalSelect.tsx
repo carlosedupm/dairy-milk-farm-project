@@ -10,7 +10,8 @@ import {
   useState,
 } from "react";
 import { Check, ChevronDown, Search } from "lucide-react";
-import { coerceAnimaisList, type Animal } from "@/services/animais";
+import { coerceAnimaisList, CICLO_EMPTY_MESSAGES, type Animal, type CicloContext } from "@/services/animais";
+import { useAnimaisCicloContext } from "@/components/animais/useAnimaisCicloContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +31,7 @@ import {
 const SEARCH_DEBOUNCE_MS = 150;
 
 type Props = {
-  animais: Animal[];
+  animais?: Animal[];
   value: string;
   onValueChange: (value: string) => void;
   label?: string;
@@ -42,6 +43,11 @@ type Props = {
   reprodutoresOnly?: boolean;
   /** Excluir animais com baixa do rebanho */
   semDataSaida?: boolean;
+  /** Contexto do ciclo reprodutivo — busca animais elegíveis no servidor */
+  cicloContext?: CicloContext;
+  fazendaId?: number;
+  /** Modo edição: animal selecionado permanece visível fora do filtro */
+  preserveSelected?: boolean;
   id?: string;
 };
 
@@ -49,7 +55,7 @@ type Props = {
  * Seletor de animal com busca por identificação, raça, categoria e status reprodutivo.
  */
 export function AnimalSelect({
-  animais,
+  animais = [],
   value,
   onValueChange,
   label = "Animal",
@@ -58,6 +64,9 @@ export function AnimalSelect({
   femeasOnly = false,
   reprodutoresOnly = false,
   semDataSaida = false,
+  cicloContext,
+  fazendaId,
+  preserveSelected = false,
   id,
 }: Props) {
   const listboxId = useId();
@@ -70,7 +79,18 @@ export function AnimalSelect({
 
   const debouncedQuery = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
 
-  const animaisList = useMemo(() => coerceAnimaisList(animais), [animais]);
+  const preserveAnimalId =
+    preserveSelected && value ? Number(value) : undefined;
+
+  const { animais: cicloAnimais, isLoading: loadingCiclo } = useAnimaisCicloContext(
+    cicloContext ? fazendaId : undefined,
+    cicloContext ?? "cobertura",
+    { preserveAnimalId: preserveAnimalId && preserveAnimalId > 0 ? preserveAnimalId : undefined },
+  );
+
+  const sourceAnimais = cicloContext ? cicloAnimais : animais;
+
+  const animaisList = useMemo(() => coerceAnimaisList(sourceAnimais), [sourceAnimais]);
 
   const selectedAnimal = useMemo(
     () => animaisList.find((a) => a.id.toString() === value),
@@ -178,7 +198,15 @@ export function AnimalSelect({
 
   const emptyMessage = hasSearchQuery
     ? "Nenhum animal encontrado."
-    : "Nenhum animal disponível.";
+    : cicloContext
+      ? CICLO_EMPTY_MESSAGES[cicloContext]
+      : "Nenhum animal disponível.";
+
+  const triggerLabel = loadingCiclo
+    ? "Carregando animais…"
+    : selectedAnimal
+      ? formatAnimalOptionLabel(selectedAnimal)
+      : placeholder;
 
   return (
     <div className="space-y-2">
@@ -193,16 +221,14 @@ export function AnimalSelect({
             aria-expanded={open}
             aria-controls={listboxId}
             aria-haspopup="listbox"
-            disabled={disabled}
+            disabled={disabled || loadingCiclo}
             className={cn(
               "h-11 min-h-[44px] w-full justify-between px-3 font-normal",
               !selectedAnimal && "text-muted-foreground",
             )}
           >
             <span className="truncate text-left">
-              {selectedAnimal
-                ? formatAnimalOptionLabel(selectedAnimal)
-                : placeholder}
+              {triggerLabel}
             </span>
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>

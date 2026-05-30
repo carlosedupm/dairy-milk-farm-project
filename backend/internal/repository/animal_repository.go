@@ -197,6 +197,15 @@ func (r *AnimalRepository) CountEmLactacaoByFazendaID(ctx context.Context, fazen
 	return n, err
 }
 
+const sqlLactacaoAtivaExists = `
+		EXISTS (
+			SELECT 1 FROM lactacoes l
+			WHERE l.animal_id = a.id
+			AND l.fazenda_id = a.fazenda_id
+			AND l.data_fim IS NULL
+			AND (l.status IS NULL OR l.status = 'EM_ANDAMENTO')
+		)`
+
 // ListEmLactacaoByFazendaID retorna animais com lactação em andamento (data_fim nula e status EM_ANDAMENTO ou nulo).
 func (r *AnimalRepository) ListEmLactacaoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
 	query := fmt.Sprintf(`
@@ -204,16 +213,82 @@ func (r *AnimalRepository) ListEmLactacaoByFazendaID(ctx context.Context, fazend
 		FROM animais a
 		WHERE a.fazenda_id = $1
 		AND `+sqlNoRebanho+`
-		AND EXISTS (
-			SELECT 1 FROM lactacoes l
-			WHERE l.animal_id = a.id
-			AND l.fazenda_id = a.fazenda_id
-			AND l.data_fim IS NULL
-			AND (l.status IS NULL OR l.status = 'EM_ANDAMENTO')
-		)
+		AND `+sqlLactacaoAtivaExists+`
 		ORDER BY a.identificacao ASC
 	`, animalSelectWithPrefix("a"))
 	return r.queryList(ctx, query, fazendaID)
+}
+
+// ListParaCoberturaByFazendaID retorna fêmeas no rebanho com cio registrado sem cobertura vinculada.
+func (r *AnimalRepository) ListParaCoberturaByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM animais a
+		WHERE a.fazenda_id = $1
+		AND a.sexo = $2
+		AND `+sqlNoRebanho+`
+		AND EXISTS (
+			SELECT 1 FROM cios ci
+			WHERE ci.animal_id = a.id AND ci.fazenda_id = a.fazenda_id
+			AND NOT EXISTS (SELECT 1 FROM coberturas cb WHERE cb.cio_id = ci.id)
+		)
+		ORDER BY a.identificacao ASC
+	`, animalSelectWithPrefix("a"))
+	return r.queryList(ctx, query, fazendaID, models.SexoFemea)
+}
+
+// ListParaToqueByFazendaID retorna fêmeas com cobertura há diasMinimos+ dias sem diagnóstico de gestação.
+func (r *AnimalRepository) ListParaToqueByFazendaID(ctx context.Context, fazendaID int64, diasMinimos int) ([]*models.Animal, error) {
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM animais a
+		WHERE a.fazenda_id = $1
+		AND a.sexo = $2
+		AND `+sqlNoRebanho+`
+		AND EXISTS (
+			SELECT 1 FROM coberturas cb
+			WHERE cb.animal_id = a.id AND cb.fazenda_id = a.fazenda_id
+			AND cb.data <= CURRENT_TIMESTAMP - ($3 || ' days')::interval
+			AND NOT EXISTS (
+				SELECT 1 FROM diagnosticos_gestacao dg WHERE dg.cobertura_id = cb.id
+			)
+		)
+		ORDER BY a.identificacao ASC
+	`, animalSelectWithPrefix("a"))
+	return r.queryList(ctx, query, fazendaID, models.SexoFemea, diasMinimos)
+}
+
+// ListParaPartoByFazendaID retorna fêmeas com gestação confirmada sem parto registrado.
+func (r *AnimalRepository) ListParaPartoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM animais a
+		WHERE a.fazenda_id = $1
+		AND a.sexo = $2
+		AND `+sqlNoRebanho+`
+		AND EXISTS (
+			SELECT 1 FROM gestacoes g
+			WHERE g.animal_id = a.id AND g.fazenda_id = a.fazenda_id
+			AND g.status = $3
+			AND NOT EXISTS (SELECT 1 FROM partos p WHERE p.gestacao_id = g.id)
+		)
+		ORDER BY a.identificacao ASC
+	`, animalSelectWithPrefix("a"))
+	return r.queryList(ctx, query, fazendaID, models.SexoFemea, models.GestacaoStatusConfirmada)
+}
+
+// ListParaAberturaLactacaoByFazendaID retorna fêmeas no rebanho sem lactação ativa.
+func (r *AnimalRepository) ListParaAberturaLactacaoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM animais a
+		WHERE a.fazenda_id = $1
+		AND a.sexo = $2
+		AND `+sqlNoRebanho+`
+		AND NOT `+strings.TrimSpace(sqlLactacaoAtivaExists)+`
+		ORDER BY a.identificacao ASC
+	`, animalSelectWithPrefix("a"))
+	return r.queryList(ctx, query, fazendaID, models.SexoFemea)
 }
 
 func (r *AnimalRepository) GetByLoteID(ctx context.Context, loteID int64) ([]*models.Animal, error) {

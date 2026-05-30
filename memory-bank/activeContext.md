@@ -8,7 +8,8 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
-1. ✅ **Dashboard — 4 KPIs above the fold**: `DashboardKpiGrid` (partos 7d, lactação, alertas críticos, leite hoje) acima dos painéis; skeleton; «Nenhum» em zero; `HomeCollapsiblePanel` com estado inteligente; API `resumo-pecuario` com `partos_proximos_7d_total` e `lactacao_ativa_total`; drill-downs em gestações (`partos_dias=7`), animais (`em_lactacao=1`), alertas (URL status/severidade). BR-CICLO-009 e BR-GESTACOES-005.
+1. ✅ **AnimalSelect — filtro por estado do ciclo (BR-CICLO-015)**: 4 endpoints `GET .../animais/para-cobertura|para-toque|para-parto|para-abertura-lactacao`; secagem reutiliza `em-lactacao`; `AnimalSelect` com `cicloContext`, mensagens orientativas de lista vazia e `preserveSelected` em edição de cobertura/parto.
+2. ✅ **Dashboard — 4 KPIs above the fold**: `DashboardKpiGrid` (partos 7d, lactação, alertas críticos, leite hoje) acima dos painéis; skeleton; «Nenhum» em zero; `HomeCollapsiblePanel` com estado inteligente; API `resumo-pecuario` com `partos_proximos_7d_total` e `lactacao_ativa_total`; drill-downs em gestações (`partos_dias=7`), animais (`em_lactacao=1`), alertas (URL status/severidade). BR-CICLO-009 e BR-GESTACOES-005.
 2. ✅ **EmptyState padronizado nas listagens (Onda 3.1 UX — concluído)**: `components/ui/empty-state.tsx` (ícone 48px, fade-in, variantes default/error/success); helper `ListEmptyState` (`components/layout/ListEmptyState.tsx`); `QueryListContent` com `onRetry`; aplicado em `/animais`, `/producao`, `/alertas`, `/fazendas`, `/gestao/cios|coberturas|toques`; CTAs por perfil (`canRegistrarProducao`, FUNCIONARIO: registro, não cadastro animal/fazenda); alertas vazio = `success` sem CTA («Tudo em ordem!»); filtro com termo → título `Nenhum resultado para "{termo}"` + «Limpar filtros»; mobile CTA full-width.
 2. ✅ **M2M saúde e alertas (2026-05-30)**: scopes `saude:read`, `saude:write`, `alertas:read`; rotas `GET|POST /integracoes/saude`, `GET /integracoes/alertas`; idempotência em POST saúde; OpenAPI + admin UI + catálogo BR-INTEG-009–011.
 2. ✅ **Assistente Live — saúde e alertas (2026-05-30)**: function calling `consultar_saude`, `registrar_saude`, `listar_alertas`, `resolver_alerta` em `assistente_live_service.go`; injeção `AnimalSaudeService` + `AlertaService`; `ExecuteFunction` recebe `perfil` (RBAC alertas BR-ALERTA-007); testes em `assistente_live_saude_alertas_test.go`. Escopo GERENTE+ — **FUNCIONARIO permanece bloqueado** do assistente.
@@ -232,5 +233,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-05-30 (EmptyState listagens; M2M saúde/alertas; Assistente Live; `lactacao_id`; timeline paginada)
+**Última atualização**: 2026-05-30 (AnimalSelect cicloContext; BR-CICLO-015)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 (incl. saúde/alertas) | **Assistente Live** saúde/alertas (GERENTE+; FUNCIONARIO bloqueado) | Checklist staging pendente | Recuperação senha aguarda SMTP

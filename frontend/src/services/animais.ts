@@ -416,6 +416,59 @@ export async function listEmLactacaoByFazenda(fazendaId: number): Promise<Animal
   return coerceAnimaisList(data.data)
 }
 
+export type CicloContext = 'cobertura' | 'toque' | 'parto' | 'lactacao' | 'secagem'
+
+export async function listParaCoberturaByFazenda(fazendaId: number): Promise<Animal[]> {
+  const { data } = await api.get<ApiResponse<AnimaisListPayload>>(
+    `/api/v1/fazendas/${fazendaId}/animais/para-cobertura`,
+  )
+  return coerceAnimaisList(data.data)
+}
+
+export async function listParaToqueByFazenda(fazendaId: number): Promise<Animal[]> {
+  const { data } = await api.get<ApiResponse<AnimaisListPayload>>(
+    `/api/v1/fazendas/${fazendaId}/animais/para-toque`,
+  )
+  return coerceAnimaisList(data.data)
+}
+
+export async function listParaPartoByFazenda(fazendaId: number): Promise<Animal[]> {
+  const { data } = await api.get<ApiResponse<AnimaisListPayload>>(
+    `/api/v1/fazendas/${fazendaId}/animais/para-parto`,
+  )
+  return coerceAnimaisList(data.data)
+}
+
+export async function listParaAberturaLactacaoByFazenda(fazendaId: number): Promise<Animal[]> {
+  const { data } = await api.get<ApiResponse<AnimaisListPayload>>(
+    `/api/v1/fazendas/${fazendaId}/animais/para-abertura-lactacao`,
+  )
+  return coerceAnimaisList(data.data)
+}
+
+const CICLO_CONTEXT_FETCHERS: Record<CicloContext, (fazendaId: number) => Promise<Animal[]>> = {
+  cobertura: listParaCoberturaByFazenda,
+  toque: listParaToqueByFazenda,
+  parto: listParaPartoByFazenda,
+  lactacao: listParaAberturaLactacaoByFazenda,
+  secagem: listEmLactacaoByFazenda,
+}
+
+export function listAnimaisByCicloContext(
+  fazendaId: number,
+  context: CicloContext,
+): Promise<Animal[]> {
+  return CICLO_CONTEXT_FETCHERS[context](fazendaId)
+}
+
+export const CICLO_EMPTY_MESSAGES: Record<CicloContext, string> = {
+  cobertura: 'Nenhuma fêmea elegível — registre um cio primeiro',
+  toque: 'Nenhuma fêmea elegível — registre uma cobertura primeiro',
+  parto: 'Nenhuma fêmea elegível — confirme uma gestação primeiro',
+  lactacao: 'Nenhuma fêmea elegível — abra lactação após um parto',
+  secagem: 'Nenhum animal em lactação',
+}
+
 export async function create(payload: AnimalCreate): Promise<Animal> {
   const { data } = await api.post<ApiResponse<Animal>>('/api/v1/animais', payload)
   if (!data.data) throw new Error('Resposta inválida')

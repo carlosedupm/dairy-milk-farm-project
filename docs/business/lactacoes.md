@@ -40,6 +40,13 @@ Ciclo de **lactação** por animal, normalmente aberto automaticamente no parto.
 - **Implementação**: `LactacaoService` + `ciclo_integridade_temporal.go`; `/gestao/lactacoes/novo` com `maxDate=hoje`.
 - **Estado**: implementado.
 
+### BR-LACTACAO-006 — Lista elegível para abertura manual
+
+- **Enunciado**: `GET /api/v1/fazendas/:id/animais/para-abertura-lactacao` retorna fêmeas no rebanho **sem** lactação ativa; UI usa `AnimalSelect` com `cicloContext="lactacao"`.
+- **Efeito**: alinhado a BR-LACTACAO-002 na listagem do formulário `/gestao/lactacoes/novo`.
+- **Implementação**: `AnimalRepository.ListParaAberturaLactacaoByFazendaID`.
+- **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
+
 ---
 
-**Última atualização**: 2026-05-25 (BR-LACTACAO-005 — validação temporal)
+**Última atualização**: 2026-05-30 (BR-LACTACAO-006 — lista elegível)

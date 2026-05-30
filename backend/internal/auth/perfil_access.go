@@ -15,7 +15,7 @@ import (
 
 var funcionarioFolgasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/folgas/`)
 var funcionarioRestricoesLeitePath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/restricoes-leite(/ativas)?$`)
-var funcionarioFazendaAnimaisPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/animais(/count|/em-lactacao)?$`)
+var funcionarioFazendaAnimaisPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/animais(/count|/em-lactacao|/para-cobertura|/para-toque|/para-parto|/para-abertura-lactacao)?$`)
 var funcionarioGestaoPath = regexp.MustCompile(`^/api/v1/(cios|coberturas|partos|secagens|toques)(/.*)?$`)
 // Crias: sub-recurso operacional de partos (listar/complementar na edição de parto).
 var funcionarioCriasPath = regexp.MustCompile(`^/api/v1/crias(/.*)?$`)

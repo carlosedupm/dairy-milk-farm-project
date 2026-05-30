@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Animal } from "@/services/animais";
 import type { Cobertura } from "@/services/coberturas";
 import { formatDatePtBr } from "@/lib/format";
 import {
@@ -41,7 +40,7 @@ export type ToqueFormState = {
 };
 
 type Props = {
-  animais: Animal[];
+  fazendaId: number;
   coberturasDoAnimal: Cobertura[];
   coberturaSelectValue: string;
   formState: ToqueFormState;
@@ -63,7 +62,7 @@ function obsSugestoesFor(classificacao: ClassificacaoOperacional): readonly stri
 }
 
 export function ToqueFormFields({
-  animais,
+  fazendaId,
   coberturasDoAnimal,
   coberturaSelectValue,
   formState,
@@ -75,7 +74,8 @@ export function ToqueFormFields({
   return (
     <>
       <AnimalSelect
-        animais={animais}
+        fazendaId={fazendaId}
+        cicloContext="toque"
         value={formState.animalId}
         onValueChange={(value) =>
           setFormState((s) => ({ ...s, animalId: value, coberturaId: "" }))

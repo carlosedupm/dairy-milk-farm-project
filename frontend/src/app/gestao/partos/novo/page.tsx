@@ -7,7 +7,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { create as createParto, type PartoCriaInput } from "@/services/partos";
 import {
   animaisFazendaQueryKey,
-  useAnimaisOperacionalList,
 } from "@/components/gestao/useAnimaisMap";
 import { listByFazenda as listGestacoesByFazenda } from "@/services/gestacoes";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
@@ -42,8 +41,6 @@ function NovoContent() {
   const [formState, setFormState] = useState<PartoFormState>(() => emptyFormState());
 
   const fazendaId = fazendaAtiva?.id ?? 0;
-
-  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const { data: gestacoes = [] } = useQuery({
     queryKey: ["gestacoes", fazendaId],
@@ -133,7 +130,7 @@ function NovoContent() {
       submitDisabled={!formState.animalId || !formState.data}
     >
       <PartoFormFields
-        animais={animais}
+        fazendaId={fazendaId}
         gestacoes={gestacoes}
         formState={formState}
         setFormState={setFormState}

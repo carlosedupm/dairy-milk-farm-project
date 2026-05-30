@@ -76,9 +76,11 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
       submitDisabled={coberturaFormSubmitDisabled(formState)}
     >
       <CoberturaFormFields
+        fazendaId={fazendaId}
         animais={animais}
         formState={formState}
         setFormState={setFormState}
+        preserveSelected
       />
     </GestaoFormLayout>
   );

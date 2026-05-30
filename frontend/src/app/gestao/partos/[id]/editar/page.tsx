@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
-import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
+import { get as getAnimal } from "@/services/animais";
 import { get, update, type Parto } from "@/services/partos";
 import { listByFazenda as listGestacoesByFazenda } from "@/services/gestacoes";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
@@ -44,18 +44,21 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState(() => initialFormState(parto));
 
-  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
   const { data: gestacoes = [] } = useQuery({
     queryKey: ["gestacoes", fazendaId],
     queryFn: () => listGestacoesByFazenda(fazendaId),
     enabled: fazendaId > 0,
   });
 
-  const racaMae = useMemo(() => {
-    const id = Number(formState.animalId);
-    if (!id) return "";
-    return (animais.find((a) => a.id === id)?.raca ?? "").trim();
-  }, [animais, formState.animalId]);
+  const matrizId = Number(formState.animalId) || parto.animal_id;
+
+  const { data: animalMatriz } = useQuery({
+    queryKey: ["animais", matrizId],
+    queryFn: () => getAnimal(matrizId),
+    enabled: matrizId > 0,
+  });
+
+  const racaMae = (animalMatriz?.raca ?? "").trim();
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -89,11 +92,12 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
       submitDisabled={!formState.animalId || !formState.data}
     >
       <PartoFormFields
-        animais={animais}
+        fazendaId={fazendaId}
         gestacoes={gestacoes}
         formState={formState}
         setFormState={setFormState}
         includeCriasRepeater={false}
+        preserveSelected
       />
       <PartoEditCriasPanel
         partoId={parto.id}
