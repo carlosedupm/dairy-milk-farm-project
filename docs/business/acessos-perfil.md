@@ -17,9 +17,11 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Perfis / permissões**: `FUNCIONARIO`.
 - **Efeito**: bloqueio de rotas não permitidas na UI via redirecionamento para a landing.
 - **Implementação**:
-  - Matriz em `PERFIL_AREAS` com `animais`, `gestao` e `folgas`.
+  - Matriz em `PERFIL_AREAS` com `animais`, `alertas`, `gestao` e `folgas`.
+  - Menu do Header: `getNavAreasForPerfil` + `getHeaderNavGroups`; label «Gestão reprodutiva» para `FUNCIONARIO` (`getNavAreaLabel` em `headerNav.ts`).
   - Landing padrão do perfil em `/`.
   - Validação de caminho por `isPathAllowedForPerfil`.
+  - Nav operacional no header só com fazenda ativa quando o utilizador tem 2+ vínculos (`useHeaderVisibility`).
 - **Estado**: Implementado.
 
 ### BR-ACESSO-002 — Gestão parcial para FUNCIONARIO
@@ -184,4 +186,4 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ---
 
-**Última atualização**: 2026-05-28 (BR-ACESSO-017: saúde animal — FUNCIONARIO POST+GET)
+**Última atualização**: 2026-05-30 (Header: menu filtrado, label Gestão reprodutiva, fazenda ativa)

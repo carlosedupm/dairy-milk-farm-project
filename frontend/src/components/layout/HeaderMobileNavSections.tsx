@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 import { HeaderNavLink } from "@/components/layout/HeaderNavLink";
 import { AREA_ICON, SYSTEM_ICON } from "@/components/layout/headerNavIcons";
 import {
-  getHeaderNavGroups,
   getSystemItemPathPrefix,
+  type HeaderNavGroups,
 } from "@/config/headerNav";
-import { getAreaHref, AREA_LABEL } from "@/config/appAccess";
-import type { AppArea } from "@/config/appAccess";
+import { getAreaHref, type AppArea } from "@/config/appAccess";
 
 type HeaderMobileNavSectionsProps = {
-  perfil: string | undefined;
+  groups: HeaderNavGroups;
+  getAreaLabel: (area: AppArea) => string;
   onNavigate: () => void;
 };
 
@@ -35,10 +35,12 @@ function NavSection({
 
 function AreaLinks({
   areas,
+  getAreaLabel,
   isActive,
   onNavigate,
 }: {
   areas: AppArea[];
+  getAreaLabel: (area: AppArea) => string;
   isActive: (path: string) => boolean;
   onNavigate: () => void;
 }) {
@@ -50,7 +52,7 @@ function AreaLinks({
           <HeaderNavLink
             key={area}
             href={href}
-            label={AREA_LABEL[area]}
+            label={getAreaLabel(area)}
             icon={AREA_ICON[area]}
             active={isActive(href)}
             variant="drawer"
@@ -63,11 +65,11 @@ function AreaLinks({
 }
 
 export function HeaderMobileNavSections({
-  perfil,
+  groups,
+  getAreaLabel,
   onNavigate,
 }: HeaderMobileNavSectionsProps) {
   const pathname = usePathname();
-  const groups = getHeaderNavGroups(perfil);
 
   const isActive = (path: string) =>
     pathname === path || (pathname?.startsWith(path + "/") ?? false);
@@ -85,6 +87,7 @@ export function HeaderMobileNavSections({
         <NavSection title="Exploração">
           <AreaLinks
             areas={groups.principal}
+            getAreaLabel={getAreaLabel}
             isActive={isActive}
             onNavigate={onNavigate}
           />
@@ -94,6 +97,7 @@ export function HeaderMobileNavSections({
         <NavSection title="Registos">
           <AreaLinks
             areas={groups.mais}
+            getAreaLabel={getAreaLabel}
             isActive={isActive}
             onNavigate={onNavigate}
           />

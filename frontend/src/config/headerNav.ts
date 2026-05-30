@@ -74,8 +74,11 @@ function buildSistemaItems(perfil: string | undefined): HeaderNavSystemItem[] {
  * Divide as áreas permitidas ao perfil em grupos Principal / Mais e itens de Sistema.
  */
 export function getHeaderNavGroups(
-  perfil: string | undefined
+  perfil: string | undefined,
+  /** Reservado para itens dependentes da fazenda ativa (RF04). */
+  _fazendaAtivaId?: number
 ): HeaderNavGroups {
+  void _fazendaAtivaId;
   const navAreas = getNavAreasForPerfil(perfil);
   const principalSet = new Set(PRINCIPAL_AREA_ORDER);
   const principal = PRINCIPAL_AREA_ORDER.filter((a) => navAreas.includes(a));
@@ -85,6 +88,25 @@ export function getHeaderNavGroups(
     mais,
     sistema: buildSistemaItems(perfil),
   };
+}
+
+/** Label de área no menu; alinhado ao copy do Dashboard quando aplicável. */
+export function getNavAreaLabel(
+  area: AppArea,
+  perfil: string | undefined
+): string {
+  if (perfil === "FUNCIONARIO" && area === "gestao") {
+    return "Gestão reprodutiva";
+  }
+  return AREA_LABEL[area];
+}
+
+export function hasHeaderNav(groups: HeaderNavGroups): boolean {
+  return (
+    groups.principal.length > 0 ||
+    groups.mais.length > 0 ||
+    groups.sistema.length > 0
+  );
 }
 
 /** Prefixo de rota para item de sistema (ex.: Admin cobre /admin/*). */

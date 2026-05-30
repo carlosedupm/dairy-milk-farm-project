@@ -5,19 +5,21 @@ import { HeaderNavLink } from "@/components/layout/HeaderNavLink";
 import { HeaderNavPopover } from "@/components/layout/HeaderNavPopover";
 import { AREA_ICON, SYSTEM_ICON } from "@/components/layout/headerNavIcons";
 import {
-  getHeaderNavGroups,
   getSystemItemPathPrefix,
+  type HeaderNavGroups,
 } from "@/config/headerNav";
-import { getAreaHref, AREA_LABEL } from "@/config/appAccess";
-import type { AppArea } from "@/config/appAccess";
+import { getAreaHref, type AppArea } from "@/config/appAccess";
 
 type HeaderDesktopNavProps = {
-  perfil: string | undefined;
+  groups: HeaderNavGroups;
+  getAreaLabel: (area: AppArea) => string;
 };
 
-export function HeaderDesktopNav({ perfil }: HeaderDesktopNavProps) {
+export function HeaderDesktopNav({
+  groups,
+  getAreaLabel,
+}: HeaderDesktopNavProps) {
   const pathname = usePathname();
-  const groups = getHeaderNavGroups(perfil);
 
   const isActive = (path: string) =>
     pathname === path || (pathname?.startsWith(path + "/") ?? false);
@@ -27,7 +29,7 @@ export function HeaderDesktopNav({ perfil }: HeaderDesktopNavProps) {
       const href = getAreaHref(area);
       return {
         href,
-        label: AREA_LABEL[area],
+        label: getAreaLabel(area),
         icon: AREA_ICON[area],
         active: isActive(href),
       };
@@ -59,7 +61,7 @@ export function HeaderDesktopNav({ perfil }: HeaderDesktopNavProps) {
           <HeaderNavLink
             key={area}
             href={href}
-            label={AREA_LABEL[area]}
+            label={getAreaLabel(area)}
             icon={AREA_ICON[area]}
             active={isActive(href)}
             variant="desktop"
