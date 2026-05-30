@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import {
+  isMicPermissionDeniedMessage,
+  requestMicrophoneAccess,
+} from "@/lib/microphonePermission";
 
 /** Detecta mobile/Android para aplicar workarounds da Web Speech API (Chrome Android tem suporte limitado a continuous). */
 function isMobileOrAndroid(): boolean {
@@ -11,24 +15,6 @@ function isMobileOrAndroid(): boolean {
     /iphone|ipad|ipod/.test(ua) ||
     "ontouchstart" in window
   );
-}
-
-/** Pré-aquece o pipeline de áudio no Android via getUserMedia antes do SpeechRecognition (workaround para falhas de detecção). */
-async function prewarmMicrophoneOnMobile(): Promise<void> {
-  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia)
-    return;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
-    stream.getTracks().forEach((t) => t.stop());
-  } catch {
-    // ignora; reconhecimento será tentado mesmo assim
-  }
 }
 
 // Web Speech API - SpeechRecognition is not in TypeScript DOM lib
@@ -76,6 +62,8 @@ export interface UseVoiceRecognitionReturn {
   transcript: string;
   isFinal: boolean;
   error: string | null;
+  /** True após not-allowed até nova tentativa explícita do usuário. */
+  micPermissionDenied: boolean;
   startListening: () => void;
   /** Se skipReport for true, não chama onResult ao parar (evita duplicar ação). */
   stopListening: (skipReport?: boolean) => void;
@@ -93,12 +81,22 @@ export function useVoiceRecognition(options?: {
   /** Refs opcionais para mudar timeout e fireOnFinal em tempo de execução (ex.: modo confirmação). */
   silenceTimeoutMsRef?: { current?: number };
   fireOnFinalSegmentRef?: { current?: boolean };
+  /**
+   * Modo conversa contínua (Live): ao receber segmento final, envia onResult mas mantém o mic ativo.
+   * Sem isso, no desktop o reconhecimento para após a primeira frase.
+   */
+  keepListeningAfterFinal?: boolean;
+  /** Chamado quando a sessão do SpeechRecognition termina (ex.: para reabrir no modo Live). */
+  onSessionEnd?: () => void;
 }): UseVoiceRecognitionReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isFinal, setIsFinal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [micPermissionDenied, setMicPermissionDenied] = useState(false);
+  const micPermissionDeniedRef = useRef(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const startGenerationRef = useRef(0);
   const onResultRef = useRef(options?.onResult);
   const accumulatedTranscriptRef = useRef("");
   const userRequestedStopRef = useRef(false);
@@ -115,6 +113,11 @@ export function useVoiceRecognition(options?: {
   const defaultFireOnFinalSegment = options?.fireOnFinalSegment ?? false;
   const silenceTimeoutMsRef = options?.silenceTimeoutMsRef;
   const fireOnFinalSegmentRef = options?.fireOnFinalSegmentRef;
+  const keepListeningAfterFinal = options?.keepListeningAfterFinal ?? false;
+  const onSessionEndRef = useRef(options?.onSessionEnd);
+  useEffect(() => {
+    onSessionEndRef.current = options?.onSessionEnd;
+  }, [options?.onSessionEnd]);
 
   const isSupported = Boolean(SpeechRecognitionAPI);
 
@@ -138,7 +141,7 @@ export function useVoiceRecognition(options?: {
         return "";
       case "not-allowed":
       case "service-not-allowed":
-        return "Permissão de microfone negada.";
+        return "Permissão de microfone negada. Permita o microfone nas configurações do site e tente novamente.";
       case "no-speech":
         return "Nenhuma fala detectada. Tente novamente.";
       case "network":
@@ -166,6 +169,9 @@ export function useVoiceRecognition(options?: {
       }
       recognitionRef.current = null;
     }
+    const generation = ++startGenerationRef.current;
+    setMicPermissionDenied(false);
+    micPermissionDeniedRef.current = false;
     setError(null);
     setTranscript("");
     setIsFinal(false);
@@ -203,8 +209,15 @@ export function useVoiceRecognition(options?: {
         // acumulado, evitando cortar a frase (engine pode emitir primeiro final cedo).
         if (!isMobile && lastIsFinal && fullText.trim()) {
           clearSilenceTimer();
+          const phrase = fullText.trim();
+          onResultRef.current?.(phrase, true);
+          if (keepListeningAfterFinal) {
+            accumulatedTranscriptRef.current = "";
+            setTranscript("");
+            setIsFinal(false);
+            return;
+          }
           userRequestedStopRef.current = true;
-          onResultRef.current?.(fullText.trim(), true);
           try {
             recognitionRef.current?.stop();
           } catch {
@@ -238,6 +251,13 @@ export function useVoiceRecognition(options?: {
         if (event.error !== "aborted") {
           const msg = getErrorMessage(event.error);
           if (msg) setError(msg);
+          if (
+            event.error === "not-allowed" ||
+            event.error === "service-not-allowed"
+          ) {
+            micPermissionDeniedRef.current = true;
+            setMicPermissionDenied(true);
+          }
         }
         recognitionRef.current = null;
         setIsListening(false);
@@ -245,7 +265,8 @@ export function useVoiceRecognition(options?: {
 
       recognition.onend = () => {
         if (recognitionRef.current !== recognition) return;
-        if (userRequestedStopRef.current) {
+        const userStopped = userRequestedStopRef.current;
+        if (userStopped) {
           recognitionRef.current = null;
           setIsListening(false);
           return;
@@ -257,6 +278,9 @@ export function useVoiceRecognition(options?: {
         }
         recognitionRef.current = null;
         setIsListening(false);
+        if (!userStopped && !micPermissionDeniedRef.current) {
+          onSessionEndRef.current?.();
+        }
       };
 
       try {
@@ -273,17 +297,19 @@ export function useVoiceRecognition(options?: {
       }
     };
 
-    if (
-      isMobile &&
-      typeof navigator !== "undefined" &&
-      navigator.mediaDevices
-    ) {
-      prewarmMicrophoneOnMobile()
-        .then(doStart)
-        .catch(() => doStart());
-    } else {
+    void (async () => {
+      const permErr = await requestMicrophoneAccess();
+      if (generation !== startGenerationRef.current) return;
+      if (permErr) {
+        setError(permErr);
+        if (isMicPermissionDeniedMessage(permErr)) {
+          micPermissionDeniedRef.current = true;
+          setMicPermissionDenied(true);
+        }
+        return;
+      }
       doStart();
-    }
+    })();
   }, [
     language,
     defaultSilenceTimeoutMs,
@@ -291,6 +317,7 @@ export function useVoiceRecognition(options?: {
     clearSilenceTimer,
     finalizeWithTranscript,
     getErrorMessage,
+    keepListeningAfterFinal,
   ]);
 
   const stopListening = useCallback(
@@ -343,6 +370,7 @@ export function useVoiceRecognition(options?: {
     transcript,
     isFinal,
     error,
+    micPermissionDenied,
     startListening,
     stopListening,
     toggleListening,

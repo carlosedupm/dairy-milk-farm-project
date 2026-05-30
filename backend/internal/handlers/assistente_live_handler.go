@@ -183,10 +183,20 @@ func (h *AssistenteLiveHandler) processTextInteraction(ctx context.Context, sess
 		return
 	}
 
-	h.handleGeminiResponse(ctx, session, ws, resp, turnID)
+	var replyText strings.Builder
+	h.handleGeminiResponse(ctx, session, ws, resp, turnID, &replyText)
+	if !session.IsTurnActive(turnID) || ctx.Err() != nil {
+		return
+	}
+	combined := strings.TrimSpace(replyText.String())
+	if combined != "" {
+		_ = session.WriteWSJSONForTurn(ws, turnID, gin.H{"type": "text", "content": combined})
+	} else {
+		_ = session.WriteWSJSONForTurn(ws, turnID, gin.H{"type": "turn_done"})
+	}
 }
 
-func (h *AssistenteLiveHandler) handleGeminiResponse(ctx context.Context, session *service.Session, ws *websocket.Conn, resp *genai.GenerateContentResponse, turnID uint64) {
+func (h *AssistenteLiveHandler) handleGeminiResponse(ctx context.Context, session *service.Session, ws *websocket.Conn, resp *genai.GenerateContentResponse, turnID uint64, replyText *strings.Builder) {
 	if !session.IsTurnActive(turnID) || ctx.Err() != nil {
 		return
 	}
@@ -199,29 +209,24 @@ func (h *AssistenteLiveHandler) handleGeminiResponse(ctx context.Context, sessio
 
 			switch v := part.(type) {
 			case genai.Text:
-				// Enviar texto de volta para o frontend
-				_ = session.WriteWSJSONForTurn(ws, turnID, gin.H{"type": "text", "content": string(v)})
+				replyText.WriteString(string(v))
 
 			case genai.FunctionCall:
-				// Executar a função e enviar o resultado de volta para o Gemini
 				result, err := h.svc.ExecuteFunction(ctx, v, session.UserID, session.Perfil, session.FazendaAtiva)
 				if err != nil {
 					if isContextDoneError(err) || !session.IsTurnActive(turnID) {
 						return
 					}
 					slog.Error("Erro ao executar função", "function", v.Name, "error", err)
-					// Informar erro ao Gemini
-					h.processFunctionResponse(ctx, session, ws, v.Name, map[string]interface{}{"error": err.Error()}, turnID)
+					h.processFunctionResponse(ctx, session, ws, v.Name, map[string]interface{}{"erro": err.Error()}, turnID, replyText)
 					continue
 				}
 
-				// Guardar redirect_path da resposta (para usar ao fechar) e remover do resultado enviado ao Gemini
 				if m, ok := result.(map[string]any); ok {
 					if path, _ := m["redirect_path"].(string); path != "" {
 						session.RedirectPath = path
 						delete(m, "redirect_path")
 					}
-					// Se for finalizar a conversa, avisar o frontend antes de enviar para o Gemini
 					if m["status"] == "encerrar" {
 						closePayload := gin.H{"type": "close", "content": m["mensagem"]}
 						if session.RedirectPath != "" {
@@ -231,10 +236,9 @@ func (h *AssistenteLiveHandler) handleGeminiResponse(ctx context.Context, sessio
 					}
 				}
 
-				h.processFunctionResponse(ctx, session, ws, v.Name, result, turnID)
+				h.processFunctionResponse(ctx, session, ws, v.Name, result, turnID, replyText)
 
 			case genai.Blob:
-				// Se o Gemini responder com áudio (Multimodal Live)
 				if v.MIMEType == "audio/pcm" || v.MIMEType == "audio/wav" {
 					_ = session.WriteWSMessageForTurn(ws, turnID, websocket.BinaryMessage, v.Data)
 				}
@@ -243,7 +247,7 @@ func (h *AssistenteLiveHandler) handleGeminiResponse(ctx context.Context, sessio
 	}
 }
 
-func (h *AssistenteLiveHandler) processFunctionResponse(ctx context.Context, session *service.Session, ws *websocket.Conn, name string, result interface{}, turnID uint64) {
+func (h *AssistenteLiveHandler) processFunctionResponse(ctx context.Context, session *service.Session, ws *websocket.Conn, name string, result interface{}, turnID uint64, replyText *strings.Builder) {
 	if !session.IsTurnActive(turnID) || ctx.Err() != nil {
 		return
 	}
@@ -277,5 +281,5 @@ func (h *AssistenteLiveHandler) processFunctionResponse(ctx context.Context, ses
 		return
 	}
 
-	h.handleGeminiResponse(ctx, session, ws, resp, turnID)
+	h.handleGeminiResponse(ctx, session, ws, resp, turnID, replyText)
 }

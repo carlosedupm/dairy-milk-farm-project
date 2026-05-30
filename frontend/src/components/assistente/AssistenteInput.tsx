@@ -26,6 +26,7 @@ import {
   speak,
 } from "@/lib/speechSynthesis";
 import { interpretVoiceConfirm } from "@/lib/voiceConfirm";
+import { isMicPermissionDeniedMessage } from "@/lib/microphonePermission";
 import { Loader2, MessageCircle, Mic, MicOff } from "lucide-react";
 
 /** Delay em ms antes de reabrir o microfone após TTS (anti-eco em mobile/Samsung). */
@@ -117,9 +118,17 @@ const SUGESTOES_RAPIDAS = [
 export interface AssistenteInputProps {
   /** Chamado quando o assistente deve fechar (ex.: usuário se despediu / pediu para encerrar). */
   onRequestClose?: () => void;
+  /** Primeira interação (envio, sugestão ou microfone) — oculta texto introdutório do modal. */
+  onInteraction?: () => void;
 }
 
-export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
+export function AssistenteInput({
+  onRequestClose,
+  onInteraction,
+}: AssistenteInputProps = {}) {
+  const notifyInteraction = useCallback(() => {
+    onInteraction?.();
+  }, [onInteraction]);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { fazendaAtiva } = useFazendaAtiva();
@@ -209,7 +218,14 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
   const isLiveModeRef = useRef(false);
   const isVoiceSupportedRef = useRef(false);
   /** Timer para reabrir o microfone após o TTS terminar + grace period. */
-  const reopenMicAfterTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const micOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Intenção de mic aberto no Live (evita loop com isListening no effect). */
+  const micDesiredRef = useRef(false);
+  /** Espelho de TTS ativo para efeitos sem depender só de state assíncrono. */
+  const ttsActiveRef = isTtsPlayingRef;
+  /** Último texto falado via TTS (dedup de rajadas WebSocket). */
+  const lastSpokenTextRef = useRef<string | null>(null);
+  const isVoiceListeningRef = useRef(false);
 
   const getPostTtsGraceMs = useCallback(
     () => (isMobileOrAndroid() ? POST_TTS_GRACE_MS_MOBILE : POST_TTS_GRACE_MS_DESKTOP),
@@ -217,13 +233,14 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
   );
 
   const cancelSpeechAndClearTtsRef = useCallback(() => {
+    ttsActiveRef.current = false;
     isTtsPlayingRef.current = false;
     ttsEndedAtRef.current = Date.now();
     cancelSpeech();
     // Limpar timer de reabertura, pois o cancelamento manual faz o caller decidir quando religar.
-    if (reopenMicAfterTtsTimerRef.current) {
-      clearTimeout(reopenMicAfterTtsTimerRef.current);
-      reopenMicAfterTtsTimerRef.current = null;
+    if (micOpenTimerRef.current) {
+      clearTimeout(micOpenTimerRef.current);
+      micOpenTimerRef.current = null;
     }
   }, []);
 
@@ -233,24 +250,47 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
    * Isso elimina o problema de o microfone captar a voz do assistente.
    */
   const pauseMicForTts = useCallback(() => {
+    micDesiredRef.current = false;
     if (stopLiveVoiceRef.current) {
       stopLiveVoiceRef.current(true);
     }
-    // Cancelar qualquer timer pendente de reabertura
-    if (reopenMicAfterTtsTimerRef.current) {
-      clearTimeout(reopenMicAfterTtsTimerRef.current);
-      reopenMicAfterTtsTimerRef.current = null;
+    if (micOpenTimerRef.current) {
+      clearTimeout(micOpenTimerRef.current);
+      micOpenTimerRef.current = null;
     }
+  }, []);
+
+  /** Reabre escuta no Live quando o engine encerra a sessão ou após TTS. */
+  const liveMicPermissionDeniedRef = useRef(false);
+
+  const scheduleLiveVoiceRestart = useCallback((delayMs = 400) => {
+    if (micOpenTimerRef.current) return;
+    if (!isLiveModeRef.current || isTtsPlayingRef.current) return;
+    if (liveMicPermissionDeniedRef.current) return;
+    setTimeout(() => {
+      if (
+        !isLiveModeRef.current ||
+        isTtsPlayingRef.current ||
+        micOpenTimerRef.current ||
+        liveMicPermissionDeniedRef.current
+      ) {
+        return;
+      }
+      micDesiredRef.current = true;
+      startLiveVoiceRef.current?.();
+    }, delayMs);
   }, []);
 
   /** Reabre o mic após grace period pós-TTS. Só abre se ainda estiver em liveMode. */
   const scheduleReopenMicAfterTts = useCallback(() => {
-    if (reopenMicAfterTtsTimerRef.current) {
-      clearTimeout(reopenMicAfterTtsTimerRef.current);
+    if (micOpenTimerRef.current) {
+      clearTimeout(micOpenTimerRef.current);
     }
     const graceMs = getPostTtsGraceMs();
-    reopenMicAfterTtsTimerRef.current = setTimeout(() => {
-      reopenMicAfterTtsTimerRef.current = null;
+    micOpenTimerRef.current = setTimeout(() => {
+      micOpenTimerRef.current = null;
+      if (liveMicPermissionDeniedRef.current) return;
+      micDesiredRef.current = true;
       if (isLiveModeRef.current && isVoiceSupportedRef.current && startLiveVoiceRef.current) {
         startLiveVoiceRef.current();
       }
@@ -263,6 +303,7 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       // 1. Pausar microfone para evitar eco
       pauseMicForTts();
       // 2. Marcar TTS como ativo
+      ttsActiveRef.current = true;
       isTtsPlayingRef.current = true;
       ttsStartedAtRef.current = Date.now();
       setIsTtsPlaying(true);
@@ -270,12 +311,11 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       speak(text, {
         cancelPrevious: opts?.cancelPrevious ?? true,
         onEnd: () => {
+          ttsActiveRef.current = false;
           isTtsPlayingRef.current = false;
           ttsEndedAtRef.current = Date.now();
-          setIsTtsPlaying(false);
-          // 4. Agendar reabertura do mic após grace period
           scheduleReopenMicAfterTts();
-          // 5. Callback opcional do chamador
+          setIsTtsPlaying(false);
           opts?.onEnd?.();
         },
       });
@@ -287,11 +327,24 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
     fazendaId: fazendaAtiva?.id,
     onTextResponse: (text) => {
       setLiveThinking(false);
-      lastLiveTextRef.current = text;
-      setLiveText(text);
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      const norm = trimmed.toLowerCase();
+      const skipTts =
+        lastSpokenTextRef.current !== null &&
+        lastSpokenTextRef.current.trim().toLowerCase() === norm;
+
+      lastLiveTextRef.current = trimmed;
+      setLiveText(trimmed);
+      if (skipTts) return;
+
+      lastSpokenTextRef.current = trimmed;
       if (isSpeechSynthesisSupported()) {
-        speakWithMicPause(text);
+        speakWithMicPause(trimmed);
       }
+    },
+    onTurnDone: () => {
+      setLiveThinking(false);
     },
     onGreeting: (text) => {
       // Saudação: exibir como texto mas NÃO falar via TTS.
@@ -363,33 +416,51 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
+      notifyInteraction();
       // Cancelar TTS se estiver tocando (barge-in manual via texto/botão).
       if (isTtsPlayingRef.current) {
         cancelSpeechAndClearTtsRef();
         setIsTtsPlaying(false);
       }
-      // Sinaliza interrupção de turno para evitar resposta atrasada antes de enviar o novo pedido.
+      lastSpokenTextRef.current = null;
       geminiLive.interrupt();
-      geminiLive.sendText(trimmed);
       setLiveThinking(true);
+      const sent = geminiLive.sendText(trimmed);
+      if (!sent) {
+        setLiveThinking(false);
+        setError(
+          geminiLive.isConnecting
+            ? "Aguarde o assistente conectar e envie novamente."
+            : "Não foi possível enviar. Toque no microfone para reconectar."
+        );
+      }
     },
-    [geminiLive, cancelSpeechAndClearTtsRef]
+    [geminiLive, cancelSpeechAndClearTtsRef, notifyInteraction]
   );
 
+  const scheduleLiveVoiceRestartRef = useRef(scheduleLiveVoiceRestart);
+  scheduleLiveVoiceRestartRef.current = scheduleLiveVoiceRestart;
+
   // Hook de voz para o modo Live (transcreve e envia via WebSocket)
-  const { 
-    startListening: startLiveVoice, 
+  const {
+    startListening: startLiveVoice,
     stopListening: stopLiveVoice,
     isListening: isVoiceListening,
     transcript: liveTranscript,
+    error: liveVoiceError,
+    micPermissionDenied: liveMicPermissionDenied,
     isSupported: isVoiceSupported,
   } = useVoiceRecognition({
     onResult: (text, isFinal) => {
       if (!liveMode || !isFinal || !text.trim()) return;
       if (shouldIgnoreLiveTranscript(text)) return;
-      // Mic fica off durante TTS → tudo que chega aqui é fala real do usuário.
       sendLiveTextWithPriority(text);
     },
+    onSessionEnd: () => {
+      scheduleLiveVoiceRestartRef.current(500);
+    },
+    keepListeningAfterFinal: true,
+    silenceTimeoutMs: isMobileOrAndroid() ? 2500 : 0,
     language: "pt-BR",
   });
   const isSupported = isVoiceSupported;
@@ -397,37 +468,44 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
   startLiveVoiceRef.current = startLiveVoice;
   isLiveModeRef.current = liveMode;
   isVoiceSupportedRef.current = isVoiceSupported;
+  isVoiceListeningRef.current = isVoiceListening;
+  liveMicPermissionDeniedRef.current = liveMicPermissionDenied;
 
-  // Debug do estado de voz
-  useEffect(() => {
-    if (liveMode) {
-      console.log("Modo Live ativo, estado do microfone:", isVoiceListening);
-    }
-  }, [liveMode, isVoiceListening]);
+  const startLiveVoiceSafe = useCallback(() => {
+    if (!isVoiceSupportedRef.current) return;
+    startLiveVoiceRef.current?.();
+  }, []);
 
-  // Sincronizar o reconhecimento de voz com o modo Live (apenas se o navegador suportar)
-  useEffect(() => {
-    if (liveMode && isVoiceSupported) {
-      startLiveVoice();
-    } else {
-      stopLiveVoice(true);
-    }
-  }, [liveMode, isVoiceSupported, startLiveVoice, stopLiveVoice]);
+  const stopLiveVoiceSafe = useCallback((skipReport?: boolean) => {
+    stopLiveVoiceRef.current?.(skipReport);
+  }, []);
 
-  // Auto-religar o microfone no modo Live quando ficar fechado (ex.: após erro do SpeechRecognition).
-  // NÃO reabre se o TTS está tocando – o scheduleReopenMicAfterTts cuida da reabertura pós-TTS.
+  /**
+   * No Live: só para o mic quando sair do modo ou durante TTS.
+   * Abertura inicial = clique no microfone (gesto). Reabertura = timers/onSessionEnd.
+   */
   useEffect(() => {
-    if (liveMode && isVoiceSupported && !isVoiceListening && !isTtsPlayingRef.current) {
-      // Só tenta reabrir se não há timer de reabertura pós-TTS já agendado
-      if (reopenMicAfterTtsTimerRef.current) return;
-      const timer = setTimeout(() => {
-        if (isLiveModeRef.current && isVoiceSupportedRef.current) {
-          startLiveVoiceRef.current?.();
-        }
-      }, 500);
-      return () => clearTimeout(timer);
+    if (!liveMode) {
+      micDesiredRef.current = false;
+      lastSpokenTextRef.current = null;
+      if (micOpenTimerRef.current) {
+        clearTimeout(micOpenTimerRef.current);
+        micOpenTimerRef.current = null;
+      }
+      stopLiveVoiceSafe(true);
+      return;
     }
-  }, [liveMode, isVoiceSupported, isVoiceListening]);
+    if (!isVoiceSupported) return;
+
+    if (isTtsPlaying || ttsActiveRef.current) {
+      micDesiredRef.current = false;
+      if (micOpenTimerRef.current) {
+        clearTimeout(micOpenTimerRef.current);
+        micOpenTimerRef.current = null;
+      }
+      stopLiveVoiceSafe(true);
+    }
+  }, [liveMode, isVoiceSupported, isTtsPlaying, stopLiveVoiceSafe]);
 
   /** Delay em ms antes de lembrar o usuário de confirmar (dialog de confirmação). */
   const CONFIRMATION_REMINDER_MS = 10000;
@@ -513,9 +591,9 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       setMostrarLembreteConfirmacao(false);
       clearRetryReopenTimer();
       cancelSpeechAndClearTtsRef();
-      if (reopenMicAfterTtsTimerRef.current) {
-        clearTimeout(reopenMicAfterTtsTimerRef.current);
-        reopenMicAfterTtsTimerRef.current = null;
+      if (micOpenTimerRef.current) {
+        clearTimeout(micOpenTimerRef.current);
+        micOpenTimerRef.current = null;
       }
     };
   }, [clearRetryReopenTimer, cancelSpeechAndClearTtsRef]);
@@ -524,6 +602,7 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
     async (t: string) => {
       const trimmed = t.trim();
       if (!trimmed) return;
+      notifyInteraction();
       if (interpretarInFlightRef.current) return;
       interpretarInFlightRef.current = true;
       setError("");
@@ -620,7 +699,7 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
         if (isMountedRef.current) setLoading(false);
       }
     },
-    [scheduleRetryReopen, fazendaAtiva?.id]
+    [scheduleRetryReopen, fazendaAtiva?.id, notifyInteraction]
   );
 
   const voiceResultRef = useRef<((text: string) => void) | null>(null);
@@ -756,8 +835,12 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
         cancelSpeechAndClearTtsRef();
         setIsTtsPlaying(false);
         geminiLive.interrupt();
-        // Abrir microfone imediatamente para o usuário falar
-        startLiveVoice();
+        micDesiredRef.current = true;
+        if (micOpenTimerRef.current) {
+          clearTimeout(micOpenTimerRef.current);
+          micOpenTimerRef.current = null;
+        }
+        startLiveVoiceSafe();
         return;
       }
       // Se não está falando, clicar no mic = parar modo Live
@@ -768,10 +851,15 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
       return;
     }
 
-    // Se o usuário clicar no microfone, ativamos o modo Live por padrão para uma experiência mais natural
+    notifyInteraction();
+    stopMainVoiceRef.current?.(true);
     setLiveMode(true);
     geminiLive.start();
-    
+    if (isVoiceSupported) {
+      micDesiredRef.current = true;
+      startLiveVoice();
+    }
+
     unknownErrorCountRef.current = 0;
     askingMoreRef.current = false;
     setAguardandoMaisOperacao(false);
@@ -1002,7 +1090,7 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
         runInterpretar(sugestao);
       }
     },
-    [loading, liveMode, runInterpretar, sendLiveTextWithPriority]
+    [loading, liveMode, runInterpretar, sendLiveTextWithPriority, notifyInteraction]
   );
 
   return (
@@ -1188,7 +1276,9 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
             </span>
           </div>
         )}
-        {(aguardandoMaisOperacao || isListening || (liveMode && isVoiceListening)) && (
+        {(aguardandoMaisOperacao ||
+          isListening ||
+          (liveMode && isVoiceListening && !liveMicPermissionDenied)) && (
           <div
             className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm ${
               liveMode && justFinishedTts
@@ -1231,11 +1321,41 @@ export function AssistenteInput({ onRequestClose }: AssistenteInputProps = {}) {
               )}
           </p>
         )}
-        {(error || voiceError) && (
-          <p className="text-xs text-destructive" role="alert">
-            {error || voiceError || ""}
-          </p>
-        )}
+        {liveMode &&
+          (liveMicPermissionDenied ||
+            isMicPermissionDeniedMessage(liveVoiceError)) && (
+            <div
+              className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive break-words"
+              role="alert"
+            >
+              <p>
+                {liveVoiceError ||
+                  "Permissão de microfone negada. Permita o microfone nas configurações do site (ícone de cadeado na barra de endereço)."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2 min-h-[44px] touch-manipulation border-destructive/40"
+                onClick={() => {
+                  setError("");
+                  startLiveVoice();
+                }}
+              >
+                Tentar microfone novamente
+              </Button>
+            </div>
+          )}
+        {(error || voiceError || (liveMode && liveVoiceError)) &&
+          !liveMicPermissionDenied &&
+          !isMicPermissionDeniedMessage(liveVoiceError) && (
+            <p
+              className="text-xs text-destructive break-words"
+              role="alert"
+            >
+              {error || voiceError || liveVoiceError || ""}
+            </p>
+          )}
       </div>
 
       <Dialog

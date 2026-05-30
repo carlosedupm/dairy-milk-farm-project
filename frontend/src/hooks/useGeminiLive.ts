@@ -19,6 +19,8 @@ interface GeminiLiveOptions {
   onError?: (error: string) => void;
   onReconnecting?: (message: string) => void;
   onReconnected?: (message: string) => void;
+  /** Turno processado sem texto (ex.: só function call); limpa estado "pensando". */
+  onTurnDone?: () => void;
   fazendaId?: number;
 }
 
@@ -45,6 +47,7 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wantToBeConnectedRef = useRef(false);
   const tryConnectRef = useRef<(isReconnect: boolean) => void>(() => {});
+  const pendingTextRef = useRef<string | null>(null);
 
   useEffect(() => {
     optionsRef.current = options;
@@ -64,6 +67,7 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
 
   const stop = useCallback(() => {
     wantToBeConnectedRef.current = false;
+    pendingTextRef.current = null;
     setIsActive(false);
     setIsConnecting(false);
     setIsReconnecting(false);
@@ -91,6 +95,11 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
         setIsActive(true);
         reconnectAttemptsRef.current = 0;
         if (isReconnect) optionsRef.current.onReconnected?.("Reconectado.");
+        const pending = pendingTextRef.current;
+        if (pending) {
+          pendingTextRef.current = null;
+          socket.send(JSON.stringify({ text: pending }));
+        }
       };
 
       socket.onmessage = async (event) => {
@@ -107,6 +116,8 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
                 optionsRef.current.onTextResponse?.(data.content);
               }
             }
+            else if (data.type === "turn_done")
+              optionsRef.current.onTurnDone?.();
             else if (data.type === "error")
               optionsRef.current.onError?.(data.content ?? "Algo deu errado. Tente de novo.");
             else if (data.type === "close") {
@@ -201,10 +212,19 @@ export function useGeminiLive(options: GeminiLiveOptions = {}) {
     return () => stop();
   }, [stop]);
 
-  const sendText = useCallback((text: string) => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ text }));
+  const sendText = useCallback((text: string): boolean => {
+    const trimmed = text.trim();
+    if (!trimmed) return false;
+    const sock = socketRef.current;
+    if (sock?.readyState === WebSocket.OPEN) {
+      sock.send(JSON.stringify({ text: trimmed }));
+      return true;
     }
+    if (wantToBeConnectedRef.current && sock?.readyState === WebSocket.CONNECTING) {
+      pendingTextRef.current = trimmed;
+      return true;
+    }
+    return false;
   }, []);
 
   const interrupt = useCallback(() => {

@@ -580,6 +580,11 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 	}
 }
 
+// assistenteLiveDomainErr retorna erro de domínio para o Gemini sem (nil, err).
+func assistenteLiveDomainErr(msg string) (interface{}, error) {
+	return map[string]any{"erro": msg}, nil
+}
+
 // ExecuteFunction executa a lógica de negócio baseada na chamada de função do Gemini.
 func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.FunctionCall, userID int64, perfil string, fazendaAtivaID int64) (interface{}, error) {
 	slog.Info("Assistente Live: executando função", "name", call.Name, "args", call.Args, "user_id", userID)
@@ -810,7 +815,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		ident, _ := call.Args["identificacao"].(string)
 		animais, err := s.animalSvc.SearchByIdentificacao(ctx, ident)
 		if err != nil || len(animais) == 0 {
-			return nil, fmt.Errorf("animal não encontrado")
+			return assistenteLiveDomainErr("animal não encontrado")
 		}
 		animalID := animais[0].ID
 		fazendaID := animais[0].FazendaID
@@ -827,7 +832,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		ident, _ := call.Args["identificacao"].(string)
 		animais, err := s.animalSvc.SearchByIdentificacao(ctx, ident)
 		if err != nil || len(animais) == 0 {
-			return nil, fmt.Errorf("animal não encontrado")
+			return assistenteLiveDomainErr("animal não encontrado")
 		}
 		a := animais[0]
 
@@ -891,7 +896,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		}
 
 		if f == nil {
-			return nil, fmt.Errorf("fazenda não encontrada")
+			return assistenteLiveDomainErr("fazenda não encontrada")
 		}
 
 		if v, ok := call.Args["nome"].(string); ok && v != "" {
@@ -1391,7 +1396,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("função não implementada: %s", call.Name)
+		return assistenteLiveDomainErr(fmt.Sprintf("função não implementada: %s", call.Name))
 	}
 }
 

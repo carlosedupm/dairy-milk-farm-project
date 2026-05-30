@@ -416,9 +416,14 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 - **Deploy**: migração roda no startup do backend (golang-migrate); sem variáveis de ambiente adicionais.
 - **Rollback**: `.down.sql` remove a coluna (apenas se necessário em ambiente de teste).
 
+### Assistente Live — microfone no frontend (dev e Vercel)
+
+- O header `Permissions-Policy` em `frontend/next.config.js` deve incluir `microphone=(self)` para o assistente por voz. Com `microphone=()`, o Chrome pode mostrar permissão **ligada** no cadeado e mesmo assim bloquear `getUserMedia` / Speech Recognition.
+- Após alterar `next.config.js`, **reinicie** `npm run dev` (headers não atualizam só com hot reload).
+
 ---
 
-**Última atualização**: 2026-05-27 (rate limit auth, security headers, graceful shutdown)
+**Última atualização**: 2026-05-30 (Permissions-Policy microfone no frontend)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.
