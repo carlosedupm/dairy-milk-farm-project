@@ -26,7 +26,7 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 
 ### BR-INTEG-003 — Escopo por permissão
 
-- **Enunciado**: Cada operação exige scope declarado (`animais:read`, `toques:write`, `coberturas:read`, `coberturas:write`).
+- **Enunciado**: Cada operação exige scope declarado (`animais:read`, `toques:write`, `coberturas:read`, `coberturas:write`, `saude:read`, `saude:write`, `alertas:read`).
 - **Efeito**: bloqueio 403 sem scope.
 - **Estado**: implementado.
 
@@ -39,8 +39,8 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 ### BR-INTEG-005 — Idempotência
 
 - **Enunciado**: Header `Idempotency-Key` (ou campo `idempotency_key` no body do lote) com o mesmo hash de body devolve a resposta armazenada; hash diferente → 409.
-- **Efeito**: evita duplicar toques ou coberturas em reenvio do mesmo relatório/importação.
-- **Implementação**: `POST /api/v1/integracoes/toques`, `POST /toques/lote`, `POST /coberturas`, `POST /coberturas/lote`.
+- **Efeito**: evita duplicar toques, coberturas ou casos de saúde em reenvio do mesmo relatório/importação.
+- **Implementação**: `POST /api/v1/integracoes/toques`, `POST /toques/lote`, `POST /coberturas`, `POST /coberturas/lote`, `POST /saude`.
 - **Estado**: implementado.
 
 ### BR-INTEG-006 — Lote com sucesso parcial
@@ -63,6 +63,30 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 - **Implementação**: `NormalizeDiagnosticoGestacao`; OpenAPI `integracoes-v1.openapi.yaml`.
 - **Estado**: implementado.
 
+### BR-INTEG-009 — Listagem M2M de saúde por animal
+
+- **Enunciado**: `GET /api/v1/integracoes/saude` exige `fazenda_id` e `animal_id` na query; o animal deve pertencer à fazenda autorizada e estar **no rebanho** (BR-SAUDE-003).
+- **Escopo**: fazenda vinculada ao cliente M2M; scope `saude:read`.
+- **Efeito**: bloqueio 403 (fazenda/animal) ou 400 `ANIMAL_FORA_REBANHO` (animal baixado).
+- **Implementação**: `IntegracaoHandler.ListSaude` → `AnimalSaudeService.ListByAnimalID`; OpenAPI `integracoes-v1.openapi.yaml`.
+- **Estado**: implementado.
+
+### BR-INTEG-010 — Registo M2M de caso de saúde
+
+- **Enunciado**: laboratórios/veterinários registam casos via `POST /api/v1/integracoes/saude` (scope `saude:write`); `created_by` = actor da integração (BR-INTEG-001); domínio conforme [saude-animal.md](./saude-animal.md) (BR-SAUDE-002/003).
+- **Escopo**: `animal_id` + `fazenda_id` no body; animal no rebanho.
+- **Efeito**: bloqueio no servidor; idempotência via `Idempotency-Key` (BR-INTEG-005).
+- **Implementação**: `IntegracaoHandler.CreateSaude` → `AnimalSaudeService.Create`.
+- **Estado**: implementado.
+
+### BR-INTEG-011 — Listagem M2M de alertas da fazenda
+
+- **Enunciado**: `GET /api/v1/integracoes/alertas?fazenda_id=` lista alertas da fazenda; filtro opcional `status` (e `tipo`, `severidade`, paginação); scope `alertas:read`.
+- **Escopo**: fazenda vinculada ao cliente; regra de vínculo conforme [alertas.md](./alertas.md) (BR-ALERTA-001).
+- **Efeito**: bloqueio 403 sem scope ou fazenda não autorizada; leitura apenas (sem write M2M de alertas).
+- **Implementação**: `IntegracaoHandler.ListAlertas` → `AlertaService.ListByFazenda`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-24 (BR-INTEG-008 — busca M2M exclui baixados)
+**Última atualização**: 2026-05-30 (BR-INTEG-009–011 — scopes saude e alertas M2M)

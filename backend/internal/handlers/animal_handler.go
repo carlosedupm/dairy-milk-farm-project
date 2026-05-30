@@ -669,17 +669,6 @@ func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
 		if lact != nil {
 			payload["lactacao_ativa"] = lact
 		}
-		timeline, err := h.cicloSvc.BuildTimeline(c.Request.Context(), id)
-		if err != nil {
-			response.ErrorInternal(c, "Erro ao buscar histórico do animal", err.Error())
-			return
-		}
-		timeline, err = h.cicloSvc.PrependBaixaTimeline(c.Request.Context(), animal, timeline)
-		if err != nil {
-			response.ErrorInternal(c, "Erro ao montar histórico da baixa", err.Error())
-			return
-		}
-		payload["timeline"] = timeline
 		acoes, err := h.cicloSvc.BuildProximasAcoes(c.Request.Context(), animal)
 		if err != nil {
 			response.ErrorInternal(c, "Erro ao sugerir próximas ações", err.Error())
@@ -698,6 +687,61 @@ func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
 	}
 
 	response.SuccessOK(c, payload, "Contexto do animal carregado com sucesso")
+}
+
+// GetTimelineByID GET /api/v1/animais/:id/timeline
+func (h *AnimalHandler) GetTimelineByID(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.ErrorBadRequest(c, "ID inválido", nil)
+		return
+	}
+
+	animal, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrAnimalNotFound) {
+			response.ErrorNotFound(c, "Animal não encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar animal", err.Error())
+		return
+	}
+
+	if !ValidateFazendaAccess(c, h.fazendaSvc, animal.FazendaID) {
+		return
+	}
+
+	if h.cicloSvc == nil {
+		response.ErrorInternal(c, "Serviço de ciclo indisponível", nil)
+		return
+	}
+
+	limit := parseQueryIntPositiveDef(c.DefaultQuery("limit", "20"), 20)
+	offset := parseQueryIntNonNeg(c.DefaultQuery("offset", "0"), 0)
+	if limit > 100 {
+		limit = 100
+	}
+
+	tipoParam := c.DefaultQuery("tipo", string(repository.TimelineFilterTodos))
+	filter, ok := repository.ParseTimelineFilterTipo(tipoParam)
+	if !ok {
+		response.ErrorBadRequest(c, "Parâmetro tipo inválido", gin.H{
+			"tipo": "Use todos, ciclo, saude ou alertas",
+		})
+		return
+	}
+
+	timeline, total, err := h.cicloSvc.ListTimelinePaginated(c.Request.Context(), id, filter, limit, offset)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao buscar histórico do animal", err.Error())
+		return
+	}
+
+	response.SuccessOK(c, gin.H{
+		"timeline": timeline,
+		"total":    total,
+	}, "Timeline do animal carregada com sucesso")
 }
 
 func (h *AnimalHandler) GetByStatusSaude(c *gin.Context) {

@@ -102,11 +102,45 @@ export type AnimalContexto = {
   restricao_leite_ativa?: RestricaoLeite | null
   gestacao_resumo?: GestacaoResumoContexto | null
   lactacao_ativa?: LactacaoAtiva | null
-  timeline?: CicloTimelineItem[]
   proximas_acoes?: ProximaAcao[]
   registrado_por_cadastro?: string
   fora_do_rebanho?: boolean
   saida_resumo?: SaidaResumo | null
+}
+
+export type TimelineFilterTipo = 'todos' | 'ciclo' | 'saude' | 'alertas'
+
+export type AnimalTimelinePage = {
+  timeline: CicloTimelineItem[]
+  total: number
+}
+
+export const TIMELINE_PAGE_SIZE = 20
+
+export function animalTimelineQueryKey(animalId: number, tipo: TimelineFilterTipo = 'todos') {
+  return ['animais', animalId, 'timeline', tipo] as const
+}
+
+export function animalTimelineQueryPrefix(animalId: number) {
+  return ['animais', animalId, 'timeline'] as const
+}
+
+/** Invalida timeline paginada (todos os filtros) de um animal ou de todos. */
+export function invalidateAnimalTimeline(
+  queryClient: { invalidateQueries: (opts: {
+    queryKey?: readonly unknown[]
+    predicate?: (query: { queryKey: readonly unknown[] }) => boolean
+  }) => void },
+  animalId?: number,
+) {
+  if (animalId != null) {
+    queryClient.invalidateQueries({ queryKey: animalTimelineQueryPrefix(animalId) })
+    return
+  }
+  queryClient.invalidateQueries({
+    predicate: (query) =>
+      query.queryKey[0] === 'animais' && query.queryKey[2] === 'timeline',
+  })
 }
 
 export const MOTIVOS_SAIDA = ['MORTE', 'VENDA', 'DOACAO', 'DESCARTE'] as const
@@ -418,6 +452,20 @@ export async function searchByIdentificacao(identificacao: string): Promise<Anim
 export async function getContexto(id: number): Promise<AnimalContexto | null> {
   const { data } = await api.get<ApiResponse<AnimalContexto>>(`/api/v1/animais/${id}/contexto`)
   return data.data ?? null
+}
+
+export async function getTimeline(
+  id: number,
+  params: { limit?: number; offset?: number; tipo?: TimelineFilterTipo } = {},
+): Promise<AnimalTimelinePage> {
+  const { data } = await api.get<ApiResponse<AnimalTimelinePage>>(`/api/v1/animais/${id}/timeline`, {
+    params: {
+      limit: params.limit ?? TIMELINE_PAGE_SIZE,
+      offset: params.offset ?? 0,
+      tipo: params.tipo ?? 'todos',
+    },
+  })
+  return data.data ?? { timeline: [], total: 0 }
 }
 
 export async function listByLote(loteId: number): Promise<Animal[]> {

@@ -41,6 +41,32 @@ A spec OpenAPI declara o servidor como URL relativa `/` — o dropdown **Servers
 | `coberturas:read` | `GET /coberturas?animal_id=` |
 | `coberturas:write` | `POST /coberturas`, `POST /coberturas/lote` |
 | `toques:write` | `POST /toques`, `POST /toques/lote` |
+| `saude:read` | `GET /saude?fazenda_id=&animal_id=` |
+| `saude:write` | `POST /saude` |
+| `alertas:read` | `GET /alertas?fazenda_id=` (filtro opcional `status`) |
+
+## Fluxo recomendado — laboratório / saúde animal
+
+1. (Opcional) `GET /animais/search?fazenda_id=&identificacao=` para obter `animal_id`.
+2. Consultar histórico: `GET /saude?fazenda_id=1&animal_id=5` (scope `saude:read`).
+3. Registar resultado com idempotência:
+
+```bash
+curl -s -X POST "$BASE/api/v1/integracoes/saude" \
+  -H "Authorization: Bearer $CMK_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: lab-result-animal-5-2026-05-30" \
+  -d '{
+    "animal_id": 5,
+    "fazenda_id": 1,
+    "tipo_caso": "TRATAMENTO",
+    "data_inicio": "2026-05-30",
+    "status": "ATIVO",
+    "observacoes": "Resultado laboratorial — exame X"
+  }'
+```
+
+4. Monitorizar não-conformidades: `GET /alertas?fazenda_id=1&status=ABERTO` (scope `alertas:read`).
 
 ## Fluxo recomendado — importar coberturas (IA / monta)
 
@@ -203,4 +229,4 @@ Importe a spec OpenAPI (recomendado para integrações) ou `docs/postman/CeialMi
 
 ---
 
-**Última atualização**: 2026-05-23
+**Última atualização**: 2026-05-30

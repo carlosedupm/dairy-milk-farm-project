@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ProducaoLeite } from "@/services/producao";
+import type { Lactacao } from "@/services/lactacoes";
 import { remove } from "@/services/producao";
+import { invalidateAnimalTimeline } from "@/services/animais";
 import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
 import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
 import { formatDateTimePtBr } from "@/lib/format";
@@ -27,6 +29,7 @@ type Props = {
   items: ProducaoLeite[];
   fazendaId?: number;
   showAnimal?: boolean;
+  lactacoesById?: Map<number, Lactacao>;
 };
 
 function getQualidadeBadge(qualidade?: number | null) {
@@ -45,6 +48,7 @@ export function ProducaoTable({
   items,
   fazendaId,
   showAnimal = false,
+  lactacoesById,
 }: Props) {
   const queryClient = useQueryClient();
   const animalIds = useMemo(
@@ -73,6 +77,7 @@ export function ProducaoTable({
         queryClient.invalidateQueries({
           queryKey: ["animais", item.animal_id, "contexto"],
         });
+        invalidateAnimalTimeline(queryClient, item.animal_id);
       }
       setDeleteDialogOpenId(null);
     },
@@ -87,6 +92,15 @@ export function ProducaoTable({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
+
+  const formatLactacao = (lactacaoId?: number | null) => {
+    if (lactacaoId == null) return "—";
+    const lact = lactacoesById?.get(lactacaoId);
+    if (lact) return `#${lact.numero_lactacao}`;
+    return `#${lactacaoId}`;
+  };
+
+  const showLactacao = lactacoesById != null;
 
   if (items.length === 0) {
     return (
@@ -119,6 +133,11 @@ export function ProducaoTable({
                   <span className="font-mono">
                     {formatLitros(p.quantidade)} L
                   </span>
+                  {showLactacao ? (
+                    <span className="text-muted-foreground">
+                      Lactação {formatLactacao(p.lactacao_id)}
+                    </span>
+                  ) : null}
                   {getQualidadeBadge(p.qualidade) ?? (
                     <span className="text-muted-foreground">Qualidade: —</span>
                   )}
@@ -144,6 +163,7 @@ export function ProducaoTable({
               <TableHeader>
                 <TableRow>
                   {showAnimal ? <TableHead>Animal</TableHead> : null}
+                  {showLactacao ? <TableHead>Lactação</TableHead> : null}
                   <TableHead>Data/Hora</TableHead>
                   <TableHead className="text-right">Litros</TableHead>
                   <TableHead>Qualidade</TableHead>
@@ -165,6 +185,9 @@ export function ProducaoTable({
                           />
                         </Link>
                       </TableCell>
+                    ) : null}
+                    {showLactacao ? (
+                      <TableCell>{formatLactacao(p.lactacao_id)}</TableCell>
                     ) : null}
                     <TableCell className="font-medium">
                       {formatDateTimePtBr(p.data_hora)}

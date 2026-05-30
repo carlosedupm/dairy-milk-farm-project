@@ -9,6 +9,11 @@
       "key": "baseUrl",
       "value": "http://localhost:8080",
       "type": "string"
+    },
+    {
+      "key": "animalId",
+      "value": "1",
+      "type": "string"
     }
   ],
   "item": [
@@ -347,8 +352,54 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Animais",
+      "description": "Animal context and timeline",
+      "item": [
+        {
+          "name": "Get Animal Context",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/contexto",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "animais", "{{animalId}}", "contexto"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Animal Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/timeline?limit=20&offset=0&tipo=todos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "animais", "{{animalId}}", "timeline"],
+              "query": [
+                { "key": "limit", "value": "20" },
+                { "key": "offset", "value": "0" },
+                { "key": "tipo", "value": "todos", "description": "todos|ciclo|saude|alertas" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
-  ],
   "event": [
     {
       "listen": "prerequest",

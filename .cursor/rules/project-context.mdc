@@ -15,4 +15,5 @@ Mapa completo, comandos e índice de docs: **[`AGENTS.md`](../../AGENTS.md)** na
 - Regras de domínio: [`docs/business/`](../../docs/business/) — atualizar no mesmo PR se mudar comportamento de produto
 - Manutenção de docs: regra **[`documentation-maintenance.mdc`](documentation-maintenance.mdc)**
 - Frontend: zoom/reflow em **`systemPatterns.md`** (secção UX e Acessibilidade)
+- Frontend (páginas, componentes, hooks UI): regra **[`frontend-ui-patterns.mdc`](frontend-ui-patterns.mdc)** — DatePicker, AnimalSelect, FormValidationAlert, listagens responsivas, páginas finas
 - Novo endpoint: `systemPatterns.md` + `docs/postman/`; integrações M2M: `docs/integracoes/README.md`

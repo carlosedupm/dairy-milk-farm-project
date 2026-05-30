@@ -3,6 +3,7 @@ import api, { type ApiResponse } from './api'
 export type ProducaoLeite = {
   id: number
   animal_id: number
+  lactacao_id?: number | null
   quantidade: number
   data_hora: string
   qualidade?: number | null
@@ -43,11 +44,15 @@ export const QUALIDADE_LABELS: Record<Qualidade, string> = {
 
 export type ProducaoListParams = {
   fazenda_id: number
+  lactacao_id?: number
 }
 
 export async function list(params: ProducaoListParams): Promise<ProducaoLeite[]> {
   const { data } = await api.get<ApiResponse<ProducaoLeite[]>>('/api/v1/producao', {
-    params: { fazenda_id: params.fazenda_id },
+    params: {
+      fazenda_id: params.fazenda_id,
+      ...(params.lactacao_id ? { lactacao_id: params.lactacao_id } : {}),
+    },
   })
   return data.data ?? []
 }
@@ -66,9 +71,15 @@ export async function listByDateRange(
   startDate: string,
   endDate: string,
   fazendaId: number,
+  lactacaoId?: number,
 ): Promise<ProducaoLeite[]> {
   const { data } = await api.get<ApiResponse<ProducaoLeite[]>>('/api/v1/producao/filter/by-date', {
-    params: { start: startDate, end: endDate, fazenda_id: fazendaId },
+    params: {
+      start: startDate,
+      end: endDate,
+      fazenda_id: fazendaId,
+      ...(lactacaoId ? { lactacao_id: lactacaoId } : {}),
+    },
   })
   return data.data ?? []
 }

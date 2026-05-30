@@ -38,10 +38,10 @@ Registo formal de **saída do animal** da exploração (morte, venda, doação, 
 
 ### BR-BAIXA-004 — Histórico e consulta
 
-- **Enunciado**: Baixa não apaga o animal nem o histórico. Ficha `/animais/:id` consultável com badge de saída; `GET .../contexto` expõe `fora_do_rebanho` e `saida_resumo` (inclui **quem registou** a baixa quando disponível); timeline inclui evento **Baixa** com «Registado por» (BR-AUDIT-008).
+- **Enunciado**: Baixa não apaga o animal nem o histórico. Ficha `/animais/:id` consultável com badge de saída; `GET .../contexto` expõe `fora_do_rebanho` e `saida_resumo` (inclui **quem registou** a baixa quando disponível); `GET .../timeline` inclui evento **Baixa** (`tipo=BAIXA`) com «Registado por» (BR-AUDIT-008).
 - **Escopo**: UI + API contexto.
 - **Efeito**: informativo; sem novos registos operacionais na ficha baixada.
-- **Implementação**: `AnimalCicloService.PrependBaixaTimeline`, `AnimalHandler.GetContextoByID`.
+- **Implementação**: `TimelineRepository` (evento BAIXA), `AnimalHandler.GetTimelineByID`, `AnimalHandler.GetContextoByID`.
 - **Estado**: implementado.
 
 ### BR-BAIXA-005 — Reversão da baixa

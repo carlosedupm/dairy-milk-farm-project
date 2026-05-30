@@ -8,11 +8,17 @@ const (
 	ScopeToquesWrite     = "toques:write"
 	ScopeCoberturasRead  = "coberturas:read"
 	ScopeCoberturasWrite = "coberturas:write"
+	ScopeSaudeRead       = "saude:read"
+	ScopeSaudeWrite      = "saude:write"
+	ScopeAlertasRead     = "alertas:read"
 )
 
 // ValidIntegrationScopes lista scopes permitidos na criação admin.
 func ValidIntegrationScopes() []string {
-	return []string{ScopeAnimaisRead, ScopeToquesWrite, ScopeCoberturasRead, ScopeCoberturasWrite}
+	return []string{
+		ScopeAnimaisRead, ScopeToquesWrite, ScopeCoberturasRead, ScopeCoberturasWrite,
+		ScopeSaudeRead, ScopeSaudeWrite, ScopeAlertasRead,
+	}
 }
 
 func IsValidIntegrationScope(scope string) bool {

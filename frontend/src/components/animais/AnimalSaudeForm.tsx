@@ -22,6 +22,7 @@ import {
   update,
   type AnimalSaudeRegistro,
 } from "@/services/animalSaude";
+import { invalidateAnimalTimeline } from "@/services/animais";
 import { getApiErrorMessage } from "@/lib/errors";
 
 type Props = {
@@ -72,6 +73,7 @@ export function AnimalSaudeForm({ animalId, mode, initial, saudeId }: Props) {
       queryClient.invalidateQueries({
         queryKey: ["animais", animalId, "contexto"],
       });
+      invalidateAnimalTimeline(queryClient, animalId);
       if (saudeId) {
         queryClient.invalidateQueries({
           queryKey: ["animais", animalId, "saude", saudeId],

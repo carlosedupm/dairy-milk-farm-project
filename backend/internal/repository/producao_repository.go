@@ -19,10 +19,12 @@ func NewProducaoRepository(db *pgxpool.Pool) *ProducaoRepository {
 	return &ProducaoRepository{db: db}
 }
 
+const producaoSelectCols = `id, animal_id, lactacao_id, quantidade, data_hora, qualidade, created_at`
+
 func (r *ProducaoRepository) Create(ctx context.Context, producao *models.ProducaoLeite) error {
 	query := `
-		INSERT INTO producao_leite (animal_id, quantidade, data_hora, qualidade, created_by)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO producao_leite (animal_id, lactacao_id, quantidade, data_hora, qualidade, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at
 	`
 
@@ -30,6 +32,7 @@ func (r *ProducaoRepository) Create(ctx context.Context, producao *models.Produc
 		ctx,
 		query,
 		producao.AnimalID,
+		producao.LactacaoID,
 		producao.Quantidade,
 		producao.DataHora,
 		producao.Qualidade,
@@ -41,7 +44,7 @@ func (r *ProducaoRepository) Create(ctx context.Context, producao *models.Produc
 
 func (r *ProducaoRepository) GetByID(ctx context.Context, id int64) (*models.ProducaoLeite, error) {
 	query := `
-		SELECT id, animal_id, quantidade, data_hora, qualidade, created_at
+		SELECT ` + producaoSelectCols + `
 		FROM producao_leite
 		WHERE id = $1
 	`
@@ -50,6 +53,7 @@ func (r *ProducaoRepository) GetByID(ctx context.Context, id int64) (*models.Pro
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&producao.ID,
 		&producao.AnimalID,
+		&producao.LactacaoID,
 		&producao.Quantidade,
 		&producao.DataHora,
 		&producao.Qualidade,
@@ -65,7 +69,7 @@ func (r *ProducaoRepository) GetByID(ctx context.Context, id int64) (*models.Pro
 
 func (r *ProducaoRepository) GetAll(ctx context.Context) ([]*models.ProducaoLeite, error) {
 	query := `
-		SELECT id, animal_id, quantidade, data_hora, qualidade, created_at
+		SELECT ` + producaoSelectCols + `
 		FROM producao_leite
 		ORDER BY data_hora DESC
 	`
@@ -73,23 +77,28 @@ func (r *ProducaoRepository) GetAll(ctx context.Context) ([]*models.ProducaoLeit
 	return r.queryList(ctx, query)
 }
 
-func (r *ProducaoRepository) GetByFazendaIDs(ctx context.Context, fazendaIDs []int64) ([]*models.ProducaoLeite, error) {
+func (r *ProducaoRepository) GetByFazendaIDs(ctx context.Context, fazendaIDs []int64, lactacaoID *int64) ([]*models.ProducaoLeite, error) {
 	if len(fazendaIDs) == 0 {
 		return []*models.ProducaoLeite{}, nil
 	}
 	query := `
-		SELECT p.id, p.animal_id, p.quantidade, p.data_hora, p.qualidade, p.created_at
+		SELECT p.id, p.animal_id, p.lactacao_id, p.quantidade, p.data_hora, p.qualidade, p.created_at
 		FROM producao_leite p
 		INNER JOIN animais a ON a.id = p.animal_id
 		WHERE a.fazenda_id = ANY($1::bigint[])
-		ORDER BY p.data_hora DESC
 	`
-	return r.queryList(ctx, query, fazendaIDs)
+	args := []interface{}{fazendaIDs}
+	if lactacaoID != nil {
+		query += ` AND p.lactacao_id = $2`
+		args = append(args, *lactacaoID)
+	}
+	query += ` ORDER BY p.data_hora DESC`
+	return r.queryList(ctx, query, args...)
 }
 
 func (r *ProducaoRepository) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.ProducaoLeite, error) {
 	query := `
-		SELECT id, animal_id, quantidade, data_hora, qualidade, created_by, created_at
+		SELECT id, animal_id, lactacao_id, quantidade, data_hora, qualidade, created_by, created_at
 		FROM producao_leite
 		WHERE animal_id = $1
 		ORDER BY data_hora DESC
@@ -102,7 +111,7 @@ func (r *ProducaoRepository) GetByAnimalID(ctx context.Context, animalID int64) 
 	var list []*models.ProducaoLeite
 	for rows.Next() {
 		var p models.ProducaoLeite
-		if err := rows.Scan(&p.ID, &p.AnimalID, &p.Quantidade, &p.DataHora, &p.Qualidade, &p.CreatedBy, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.AnimalID, &p.LactacaoID, &p.Quantidade, &p.DataHora, &p.Qualidade, &p.CreatedBy, &p.CreatedAt); err != nil {
 			return nil, err
 		}
 		pCopy := p
@@ -113,7 +122,7 @@ func (r *ProducaoRepository) GetByAnimalID(ctx context.Context, animalID int64) 
 
 func (r *ProducaoRepository) GetByDateRange(ctx context.Context, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {
 	query := `
-		SELECT id, animal_id, quantidade, data_hora, qualidade, created_at
+		SELECT ` + producaoSelectCols + `
 		FROM producao_leite
 		WHERE data_hora BETWEEN $1 AND $2
 		ORDER BY data_hora DESC
@@ -122,23 +131,28 @@ func (r *ProducaoRepository) GetByDateRange(ctx context.Context, startDate, endD
 	return r.queryList(ctx, query, startDate, endDate)
 }
 
-func (r *ProducaoRepository) GetByFazendaIDsAndDateRange(ctx context.Context, fazendaIDs []int64, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {
+func (r *ProducaoRepository) GetByFazendaIDsAndDateRange(ctx context.Context, fazendaIDs []int64, startDate, endDate time.Time, lactacaoID *int64) ([]*models.ProducaoLeite, error) {
 	if len(fazendaIDs) == 0 {
 		return []*models.ProducaoLeite{}, nil
 	}
 	query := `
-		SELECT p.id, p.animal_id, p.quantidade, p.data_hora, p.qualidade, p.created_at
+		SELECT p.id, p.animal_id, p.lactacao_id, p.quantidade, p.data_hora, p.qualidade, p.created_at
 		FROM producao_leite p
 		INNER JOIN animais a ON a.id = p.animal_id
 		WHERE a.fazenda_id = ANY($1::bigint[]) AND p.data_hora BETWEEN $2 AND $3
-		ORDER BY p.data_hora DESC
 	`
-	return r.queryList(ctx, query, fazendaIDs, startDate, endDate)
+	args := []interface{}{fazendaIDs, startDate, endDate}
+	if lactacaoID != nil {
+		query += ` AND p.lactacao_id = $4`
+		args = append(args, *lactacaoID)
+	}
+	query += ` ORDER BY p.data_hora DESC`
+	return r.queryList(ctx, query, args...)
 }
 
 func (r *ProducaoRepository) GetByAnimalAndDateRange(ctx context.Context, animalID int64, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {
 	query := `
-		SELECT id, animal_id, quantidade, data_hora, qualidade, created_at
+		SELECT ` + producaoSelectCols + `
 		FROM producao_leite
 		WHERE animal_id = $1 AND data_hora BETWEEN $2 AND $3
 		ORDER BY data_hora DESC
@@ -153,14 +167,15 @@ func (r *ProducaoRepository) Update(ctx context.Context, producao *models.Produc
 	}
 	query := `
 		UPDATE producao_leite
-		SET animal_id = $1, quantidade = $2, data_hora = $3, qualidade = $4
-		WHERE id = $5
+		SET animal_id = $1, lactacao_id = $2, quantidade = $3, data_hora = $4, qualidade = $5
+		WHERE id = $6
 	`
 
 	cmd, err := r.db.Exec(
 		ctx,
 		query,
 		producao.AnimalID,
+		producao.LactacaoID,
 		producao.Quantidade,
 		producao.DataHora,
 		producao.Qualidade,
@@ -244,6 +259,7 @@ func (r *ProducaoRepository) queryList(ctx context.Context, query string, args .
 		err := rows.Scan(
 			&p.ID,
 			&p.AnimalID,
+			&p.LactacaoID,
 			&p.Quantidade,
 			&p.DataHora,
 			&p.Qualidade,

@@ -12,13 +12,24 @@ import (
 )
 
 type ProducaoHandler struct {
-	service    *service.ProducaoService
-	animalSvc  *service.AnimalService
-	fazendaSvc *service.FazendaService
+	service     *service.ProducaoService
+	animalSvc   *service.AnimalService
+	fazendaSvc  *service.FazendaService
+	lactacaoSvc *service.LactacaoService
 }
 
-func NewProducaoHandler(service *service.ProducaoService, animalSvc *service.AnimalService, fazendaSvc *service.FazendaService) *ProducaoHandler {
-	return &ProducaoHandler{service: service, animalSvc: animalSvc, fazendaSvc: fazendaSvc}
+func NewProducaoHandler(
+	service *service.ProducaoService,
+	animalSvc *service.AnimalService,
+	fazendaSvc *service.FazendaService,
+	lactacaoSvc *service.LactacaoService,
+) *ProducaoHandler {
+	return &ProducaoHandler{
+		service:     service,
+		animalSvc:   animalSvc,
+		fazendaSvc:  fazendaSvc,
+		lactacaoSvc: lactacaoSvc,
+	}
 }
 
 type CreateProducaoRequest struct {
@@ -135,13 +146,43 @@ func (h *ProducaoHandler) GetByID(c *gin.Context) {
 	response.SuccessOK(c, producao, "Produção encontrada")
 }
 
+func (h *ProducaoHandler) parseLactacaoIDFilter(c *gin.Context) (*int64, bool) {
+	raw := c.Query("lactacao_id")
+	if raw == "" {
+		return nil, true
+	}
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || id <= 0 {
+		response.ErrorBadRequest(c, "lactacao_id inválido", nil)
+		return nil, false
+	}
+	lact, err := h.lactacaoSvc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrLactacaoNotFound) {
+			response.ErrorNotFound(c, "Lactação não encontrada")
+			return nil, false
+		}
+		response.ErrorInternal(c, "Erro ao validar lactação", err.Error())
+		return nil, false
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, lact.FazendaID) {
+		return nil, false
+	}
+	return &id, true
+}
+
 func (h *ProducaoHandler) GetAll(c *gin.Context) {
 	fazendaIDs, ok := ResolveFazendaIDsForList(c, h.fazendaSvc)
 	if !ok {
 		return
 	}
 
-	producoes, err := h.service.GetByFazendaIDs(c.Request.Context(), fazendaIDs)
+	lactacaoID, ok := h.parseLactacaoIDFilter(c)
+	if !ok {
+		return
+	}
+
+	producoes, err := h.service.GetByFazendaIDs(c.Request.Context(), fazendaIDs, lactacaoID)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao buscar produções", err.Error())
 		return
@@ -214,7 +255,12 @@ func (h *ProducaoHandler) GetByDateRange(c *gin.Context) {
 		return
 	}
 
-	producoes, err := h.service.GetByFazendaIDsAndDateRange(c.Request.Context(), fazendaIDs, startDate, endDate)
+	lactacaoID, ok := h.parseLactacaoIDFilter(c)
+	if !ok {
+		return
+	}
+
+	producoes, err := h.service.GetByFazendaIDsAndDateRange(c.Request.Context(), fazendaIDs, startDate, endDate, lactacaoID)
 	if err != nil {
 		if err.Error() == "data inicial não pode ser posterior à data final" {
 			response.ErrorValidation(c, "Período inválido", err.Error())

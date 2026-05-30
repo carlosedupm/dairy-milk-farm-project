@@ -1,0 +1,35 @@
+---
+description: Padrões obrigatórios de UI frontend — formulários, listagens e composição
+globs: frontend/src/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+# Frontend UI — padrões CeialMilk
+
+Consulte [`memory-bank/systemPatterns.md`](../../memory-bank/systemPatterns.md) (DRY/composição, Gestão Pecuária, UX/a11y). Checklist completo: [`frontend/AGENTS.md`](../../frontend/AGENTS.md).
+
+## Proibido / obrigatório
+
+| Situação | ❌ Não | ✅ Sim |
+|---|---|---|
+| Campo só data | `Input type="date"` | `DatePicker` (`YYYY-MM-DD`) |
+| Data+hora (parto, cio, produção) | `.slice(0,16)` em ISO | `DateTimePickerPtBr` + `toDatetimeLocalInputValue` |
+| Animal da fazenda | `Input type="number"` (ID) | `AnimalSelect` + `useAnimaisOperacionalList` |
+| Erro de API em form/dialog | `<p className="text-destructive">` | `FormValidationAlert` + `getApiErrorMessage` |
+| Listagem com Ações | só tabela | `ResponsiveListContainer` + `MobileListCard` + `ListRowActionsMenu` + `DeleteRecordDialog` |
+| Paginação server-side | offset ad hoc | `ListPaginationBar` |
+| Loading/erro de lista | spinner custom | `QueryListContent` |
+| HTTP no componente | axios/fetch inline | `services/*` + TanStack Query |
+| Labels/maps duplicados | copiar entre ficheiros | `services/*` ou `components/<domínio>/*-utils.ts` |
+
+## Composição
+
+- `app/*/page.tsx` orquestra (~200 linhas); extrair `*Table`, `*ListToolbar`, `*Form`/`*Dialog` para `components/<domínio>/`.
+- Lógica pesada: `hooks/use*Page.ts` (ref.: `useFolgasPage.ts`).
+- Listagem topo: `PageContainer` + `ListCardLayout`. Gestão pecuária: `GestaoListLayout` + `BackLink`.
+- Fazenda: `useFazendaAtiva()` + aguardar `isReady` antes de «Selecione uma fazenda».
+
+## Referências antes de implementar
+
+- Listagem: `AnimaisListToolbar` + `AnimalTable`; gestão: `CoberturasListToolbar` + `CoberturaTable`; alertas: `AlertasListToolbar` + `AlertasTable` + `useAlertasPage`.
+- Dialog com animal/data: `RestricoesLeiteHomePanel`.

@@ -23,6 +23,13 @@
 
 ## ✅ O que foi concluído
 
+### **`lactacao_id` em produção (✅ 2026-05-30)**
+
+- [x] Migration `34_add_lactacao_id_producao_leite`: coluna nullable + FK + índice
+- [x] Backend: `FindLactacaoForProducaoDate`, auto-fill POST, recalc PUT condicional, filtro GET `lactacao_id`
+- [x] Frontend: filtro na listagem `/producao`, coluna lactação, `/animais/[id]/producao` agrupada, aviso no `ProducaoForm`
+- [x] Catálogo: BR-PRODUCAO-006, BR-CICLO-007 atualizado; testes `producao_lactacao_test.go`
+
 ### **Onda 3.3 — Catálogo saúde + alertas (✅ 2026-05-29)**
 
 - [x] `docs/business/saude-animal.md`: fluxo sync, cenários, refs BR-CICLO/BR-ALERTA, backlog planejado (BR-SAUDE-001–005)
@@ -96,11 +103,18 @@
 - [x] `AnimalSaudeTable` com ações condicionadas por perfil (Novo / Editar / Excluir).
 - [x] Atalho «Saúde» na ficha do animal (`/animais/:id`).
 
-### **Onda 1.5 saúde animal — listagem + timeline (✅ 2026-05-28)**
+### **Timeline paginada na ficha (✅ 2026-05-29)**
+
+- [x] `GET /api/v1/animais/:id/timeline` com `limit`/`offset`/`tipo` (`todos|ciclo|saude|alertas`); UNION SQL em `TimelineRepository`.
+- [x] Timeline removida de `/contexto`; `AnimalTimelineSection` (scroll infinito IO, chips mobile-first); `AnimalFichaCiclo` só estado + próximas ações.
+- [x] Alertas na timeline (`tipo=ALERTA`, BR-ALERTA-013); produção sem cap de 15 itens; invalidação `invalidateAnimalTimeline`.
+- [x] Catálogo BR-CICLO-008, BR-SAUDE-005; Postman; testes unitários repositório/service.
+
+### **Onda 1.5 saúde animal — listagem + timeline (✅ 2026-05-28; paginação 2026-05-29)**
 
 - [x] `AnimalSaudeList` (cards mobile, tabela desktop, coluna Observações, badges por status, paginação client 20).
 - [x] Página `/animais/:id/saude`: `PageBreadcrumb`, título, `QueryListContent`.
-- [x] Timeline: casos em `BuildTimeline` (`tipo=SAUDE`); `AnimalFichaCiclo` com ícone Pill e link para editar; BR-SAUDE-005.
+- [x] Timeline: endpoint paginado + `AnimalTimelineSection` (`tipo=SAUDE` no filtro saúde); BR-SAUDE-005 / BR-CICLO-008.
 
 ### **Validações temporais do ciclo (✅ 2026-05-25)**
 
@@ -197,6 +211,7 @@
 - [x] **Home logada (Dashboard)**: `Dashboard.tsx` + `RestricoesLeiteHomePanel.tsx` + `AnimalSearchHome.tsx` — hierarquia visual, progressive disclosure e atalhos sem CTA duplicado
 - [x] **`AnimalSelect` pesquisável**: combobox com filtro no cliente (`animalSelectUtils.ts`); gestão pecuária, produção e registro de restrições de leite; substitui Select com scroll longo
 - [x] **UX Input/Textarea — foco**: borda única `border-ring` no foco (sem ring sobreposto); corrige aparência do campo de busca por identificação no diálogo global
+- [x] **M2M saúde e alertas (2026-05-30)**: scopes `saude:read`, `saude:write`, `alertas:read`; `GET|POST /integracoes/saude`, `GET /integracoes/alertas`; idempotência POST saúde; OpenAPI + admin UI; BR-INTEG-009–011
 - [x] **API de integrações M2M (2026-05-21)**: migration 25; auth `cmk_live_*` + scopes; rotas `/api/v1/integracoes` (me, animais, coberturas, toques/lote); idempotência; admin API + UI `/admin/integracoes`; catálogo `docs/business/integracoes.md` (BR-INTEG-001–007); guia `docs/integracoes/README.md`
 - [x] **OpenAPI integrações M2M (2026-05-21)**: spec OpenAPI 3.0 embed + `docs/openapi/integracoes-v1.openapi.yaml`; rotas públicas `openapi.yaml`, Swagger UI `/docs`; teste `integracoes_docs_test.go`; Postman/README atualizados
 - [x] **Listagens responsivas mobile (2026-05-22)**: `components/layout/list/` (`MobileListCard`, `ListRowActionsMenu`, `ResponsiveListContainer`, `DeleteRecordDialog`); todas as `*Table` com Ações ou só leitura migradas; `md+` inalterado; fix hidratação (`div` em title/subtitle do card)
@@ -275,14 +290,16 @@
 - [x] Migration 25 + perfil `INTEGRACAO` + chaves `cmk_live_*`
 - [x] Rotas M2M v1 (animais, coberturas, toques unitário/lote) + idempotência + auditoria `integracao_chamadas`
 - [x] Admin CRUD clientes + UI `/admin/integracoes`
-- [x] Catálogo `docs/business/integracoes.md` (BR-INTEG-001–006)
+- [x] Catálogo `docs/business/integracoes.md` (BR-INTEG-001–011; saúde e alertas M2M 2026-05-30)
 - [x] OpenAPI 3.0 + Swagger UI públicos (`/api/v1/integracoes/docs`)
+- [x] M2M saúde e alertas: scopes `saude:read`, `saude:write`, `alertas:read`; rotas `/integracoes/saude`, `/integracoes/alertas`
 - [ ] Validação operacional em staging (cliente real, lote de toques pós-vet)
 - [ ] Escopos adicionais (produção, partos) — backlog
 
 ### **Meta 3: Saúde e inteligência** *(Fase 3 — `projectbrief.md`)*
 
-- [ ] Módulo saúde (vacinas/tratamentos)
+- [x] Módulo saúde animal (CRUD, RBAC, UI, timeline, sync `status_saude`; catálogo `saude-animal.md`)
+- [x] Assistente Live: tools saúde e alertas (2026-05-30)
 - [x] Alertas automáticos de ciclo/saúde/conformidade (Onda 2.2 — ver progress Onda 2.2)
 - [ ] Predições avançadas (reprodução, produção)
 - [ ] Assistente por capacidades; integração IoT (opcional)
@@ -714,6 +731,13 @@
 - ✅ **Popover desktop**: `max-h` + scroll na zona do formulário + `collisionPadding` para evitar conteúdo cortado.
 - ✅ **Mobile**: rótulo da busca **`max-sm:sr-only`** (acessível a leitores de ecrã), placeholder «Identificação ou brinco…» na vista.
 
+### **2026-05-30 - Assistente Live: function calling saúde e alertas**
+
+- ✅ **Tools Live**: `consultar_saude`, `registrar_saude` (`AnimalSaudeService` — BR-SAUDE-002); `listar_alertas`, `resolver_alerta` (`AlertaService` + `perfil` — BR-ALERTA-007).
+- ✅ **Wiring**: `NewAssistenteLiveService` recebe `animalSaudeSvc` e `alertaSvc`; `ExecuteFunction` com parâmetro `perfil`.
+- ✅ **Testes**: `assistente_live_saude_alertas_test.go` (validação domínio, listagem por severidade, RBAC resolver alerta).
+- ✅ **Escopo**: GERENTE+ no assistente; `FUNCIONARIO` permanece bloqueado (API + FAB).
+
 ### **2026-05-08 - Assistente: bloqueio de FUNCIONARIO + base para liberação por capacidades**
 
 - ✅ **Frontend RBAC do assistente**: `showAssistenteForPerfil` passa a bloquear explicitamente `FUNCIONARIO` (FAB/modal não renderizam); criada base `isAssistenteEnabledForPerfil` + `PERFIL_ASSISTENTE_CAPABILITIES` para liberar funcionalidades específicas futuramente.
@@ -784,6 +808,6 @@
 
 ---
 
-**Última atualização**: 2026-05-29 (Onda 3.2 testes unitários saúde + alertas)
-**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Integrações M2M** em código | Listagens mobile padronizadas | **Coberturas com filtros** | Fase 3 (saúde/alertas) | Agricultura em consolidação | Senha aguarda SMTP
+**Última atualização**: 2026-05-30 (M2M saúde/alertas; Assistente Live; `lactacao_id`; timeline paginada)
+**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` em código | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Agricultura em consolidação | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

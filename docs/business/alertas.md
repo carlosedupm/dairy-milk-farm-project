@@ -6,7 +6,8 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 
 - Banco: migrations `backend/migrations/31_add_alertas.up.sql`, `32_alertas_geracao_automatica.up.sql`, `33_push_subscriptions_fazenda_ativa.up.sql` — tabela `alertas`, `alertas_geracao_estado`, `push_subscriptions`, coluna `usuarios.fazenda_ativa_id`, índice único parcial `uq_alertas_aberto_tipo_animal`, utilizador técnico `sistema@interno.ceialmilk`.
 - Backend: `backend/internal/models/alerta.go`, `backend/internal/repository/alerta_repository.go`, `backend/internal/service/alerta_service.go`, `backend/internal/service/alerta_geracao_service.go`, `backend/internal/service/alerta_cron.go`, `backend/internal/service/push_notification_service.go`, `backend/internal/handlers/alerta_handler.go`, `backend/internal/handlers/alerta_admin_handler.go`, `backend/internal/handlers/push_handler.go`, rotas em `backend/cmd/api/main.go`.
-- Frontend: `frontend/src/services/alertas.ts`, `frontend/src/services/pushNotifications.ts`, `frontend/src/app/alertas/page.tsx`, `frontend/src/components/dashboard/AlertasHomePanel.tsx`, `frontend/src/components/layout/PushPermissionBanner.tsx`, `frontend/src/app/sw.js/route.ts`.
+- Frontend: `frontend/src/services/alertas.ts`, `frontend/src/services/pushNotifications.ts`, `frontend/src/hooks/useAlertasPage.ts`, `frontend/src/components/alertas/` (`AlertasListToolbar`, `AlertasTable`, `CriarAlertaDialog`, `alertas-utils.ts`), `frontend/src/app/alertas/page.tsx`, `frontend/src/components/dashboard/AlertasHomePanel.tsx`, `frontend/src/components/layout/PushPermissionBanner.tsx`, `frontend/src/app/sw.js/route.ts`.
+- **Assistente Live (GERENTE+)**: function calling `listar_alertas` e `resolver_alerta` em `backend/internal/service/assistente_live_service.go` (`ExecuteFunction` → `AlertaService.UpdateStatus` com `perfil` — BR-ALERTA-007); sem tool de exclusão.
 - RBAC API (FUNCIONARIO): `backend/internal/auth/perfil_access.go` — `GET` e `PATCH .../status`; `POST`/`DELETE` negados na whitelist (403).
 
 ---
@@ -68,7 +69,15 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 - **Enunciado**: **FUNCIONARIO** pode apenas `ABERTO` → `EM_ANDAMENTO`. **GERENTE+** (GERENTE, GESTAO, PROPRIETARIO, ADMIN, DEVELOPER) pode resolver ou ignorar (`→ RESOLVIDO` / `→ IGNORADO`). **USER** pending não opera alertas.
 - **Escopo**: UI `/alertas` e `PATCH .../status`.
 - **Efeito**: bloqueio 403 (`ErrAlertaForbidden`).
-- **Implementação**: `models.PodeMarcarAlertaEmAndamento`, `PodeResolverOuIgnorarAlerta`; `frontend/src/config/appAccess.ts` (`canMarcarAlertaEmAndamento`, `canResolverAlerta`).
+- **Implementação**: `models.PodeMarcarAlertaEmAndamento`, `PodeResolverOuIgnorarAlerta`; `frontend/src/config/appAccess.ts` (`canMarcarAlertaEmAndamento`, `canResolverAlerta`); assistente Live `resolver_alerta` (mesma matriz via `AlertaService.UpdateStatus` + `session.Perfil`).
+- **Estado**: implementado.
+
+### BR-ALERTA-013 — Alertas na timeline da ficha
+
+- **Enunciado**: alertas vinculados ao animal (`animal_id`) aparecem na timeline paginada da ficha com `tipo=ALERTA`, ordenados por `created_at` DESC; filtro dedicado `tipo=alertas` no endpoint.
+- **Escopo**: `GET /api/v1/animais/:id/timeline`; UI `AnimalTimelineSection` (ícone Bell, link para `/alertas`).
+- **Efeito**: informativo; não altera regras de edição de alertas (BR-ALERTA-005).
+- **Implementação**: `TimelineRepository` (UNION `alertas`), `AnimalTimelineSection.tsx`.
 - **Estado**: implementado.
 
 ---
@@ -217,4 +226,4 @@ Implementação: `models.IsTransicaoAlertaStatusValida`, `AlertaService.UpdateSt
 
 ---
 
-**Última atualização**: 2026-05-29 (Onda 3.3: matrizes, geração automática, INT, fluxo status)
+**Última atualização**: 2026-05-30 (Assistente Live: listar_alertas, resolver_alerta — GERENTE+)

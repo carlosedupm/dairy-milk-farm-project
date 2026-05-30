@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { create } from "@/services/producao";
 import type { ProducaoCreate } from "@/services/producao";
+import { invalidateAnimalTimeline } from "@/services/animais";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -36,6 +37,7 @@ function NovaProducaoContent() {
         await queryClient.invalidateQueries({
           queryKey: ["animais", variables.animal_id, "contexto"],
         });
+        invalidateAnimalTimeline(queryClient, variables.animal_id);
       }
       router.push("/producao");
     },

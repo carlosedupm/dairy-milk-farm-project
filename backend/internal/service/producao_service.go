@@ -29,6 +29,21 @@ func NewProducaoService(
 	return &ProducaoService{repo: repo, animalRepo: animalRepo, lactacaoRepo: lactacaoRepo}
 }
 
+func (s *ProducaoService) resolveLactacaoID(
+	ctx context.Context,
+	fazendaID, animalID int64,
+	dataHora time.Time,
+) (*int64, error) {
+	lact, err := FindLactacaoForProducaoDate(ctx, s.lactacaoRepo, fazendaID, animalID, dataHora)
+	if err != nil {
+		return nil, err
+	}
+	if lact == nil {
+		return nil, ErrProducaoSemLactacaoAtiva
+	}
+	return &lact.ID, nil
+}
+
 func (s *ProducaoService) Create(ctx context.Context, producao *models.ProducaoLeite) error {
 	// Validações básicas
 	if producao.AnimalID <= 0 {
@@ -63,6 +78,12 @@ func (s *ProducaoService) Create(ctx context.Context, producao *models.ProducaoL
 		return err
 	}
 
+	lactacaoID, err := s.resolveLactacaoID(ctx, animal.FazendaID, producao.AnimalID, producao.DataHora)
+	if err != nil {
+		return err
+	}
+	producao.LactacaoID = lactacaoID
+
 	// Validar qualidade se fornecida (1-10)
 	if producao.Qualidade != nil && (*producao.Qualidade < 1 || *producao.Qualidade > 10) {
 		return errors.New("qualidade deve estar entre 1 e 10")
@@ -86,8 +107,8 @@ func (s *ProducaoService) GetAll(ctx context.Context) ([]*models.ProducaoLeite, 
 	return s.repo.GetAll(ctx)
 }
 
-func (s *ProducaoService) GetByFazendaIDs(ctx context.Context, fazendaIDs []int64) ([]*models.ProducaoLeite, error) {
-	return s.repo.GetByFazendaIDs(ctx, fazendaIDs)
+func (s *ProducaoService) GetByFazendaIDs(ctx context.Context, fazendaIDs []int64, lactacaoID *int64) ([]*models.ProducaoLeite, error) {
+	return s.repo.GetByFazendaIDs(ctx, fazendaIDs, lactacaoID)
 }
 
 func (s *ProducaoService) GetByAnimalID(ctx context.Context, animalID int64) ([]*models.ProducaoLeite, error) {
@@ -110,11 +131,11 @@ func (s *ProducaoService) GetByDateRange(ctx context.Context, startDate, endDate
 	return s.repo.GetByDateRange(ctx, startDate, endDate)
 }
 
-func (s *ProducaoService) GetByFazendaIDsAndDateRange(ctx context.Context, fazendaIDs []int64, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {
+func (s *ProducaoService) GetByFazendaIDsAndDateRange(ctx context.Context, fazendaIDs []int64, startDate, endDate time.Time, lactacaoID *int64) ([]*models.ProducaoLeite, error) {
 	if startDate.After(endDate) {
 		return nil, errors.New("data inicial não pode ser posterior à data final")
 	}
-	return s.repo.GetByFazendaIDsAndDateRange(ctx, fazendaIDs, startDate, endDate)
+	return s.repo.GetByFazendaIDsAndDateRange(ctx, fazendaIDs, startDate, endDate, lactacaoID)
 }
 
 func (s *ProducaoService) GetByAnimalAndDateRange(ctx context.Context, animalID int64, startDate, endDate time.Time) ([]*models.ProducaoLeite, error) {
@@ -134,7 +155,7 @@ func (s *ProducaoService) Update(ctx context.Context, producao *models.ProducaoL
 	}
 
 	// Verificar se a produção existe
-	_, err := s.repo.GetByID(ctx, producao.ID)
+	existing, err := s.repo.GetByID(ctx, producao.ID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrProducaoNotFound
@@ -163,6 +184,17 @@ func (s *ProducaoService) Update(ctx context.Context, producao *models.ProducaoL
 	}
 	if err := ValidateProducaoDentroLactacao(ctx, s.lactacaoRepo, animal.FazendaID, producao.AnimalID, producao.DataHora); err != nil {
 		return err
+	}
+
+	animalChanged := producaoNeedsLactacaoRecalc(existing, producao)
+	if animalChanged {
+		lactacaoID, err := s.resolveLactacaoID(ctx, animal.FazendaID, producao.AnimalID, producao.DataHora)
+		if err != nil {
+			return err
+		}
+		producao.LactacaoID = lactacaoID
+	} else {
+		producao.LactacaoID = existing.LactacaoID
 	}
 
 	// Validar qualidade se fornecida (1-10)
@@ -209,4 +241,8 @@ func (s *ProducaoService) GetResumoByAnimal(ctx context.Context, animalID int64)
 	}
 
 	return s.repo.GetResumoByAnimal(ctx, animalID)
+}
+
+func producaoNeedsLactacaoRecalc(existing, updated *models.ProducaoLeite) bool {
+	return updated.AnimalID != existing.AnimalID || !updated.DataHora.Equal(existing.DataHora)
 }

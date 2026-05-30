@@ -9,7 +9,7 @@ import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { getApiErrorMessage, parsePrefixedConformidadeMessage } from "@/lib/errors";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { formatDatePtBr } from "@/lib/format";
-import { listEmLactacaoByFazenda } from "@/services/animais";
+import { listEmLactacaoByFazenda, invalidateAnimalTimeline } from "@/services/animais";
 import {
   createRestricao,
   liberarRestricao,
@@ -140,6 +140,7 @@ export function RestricoesLeiteHomePanel() {
       setFormErro(null);
       invalidate();
       queryClient.invalidateQueries({ queryKey: ["animais", "contexto"] });
+      invalidateAnimalTimeline(queryClient);
     },
     onError: (e: unknown) => {
       setFormErro(getApiErrorMessage(e, "Não foi possível registrar."));
@@ -168,6 +169,7 @@ export function RestricoesLeiteHomePanel() {
       setLiberarErro(null);
       invalidate();
       queryClient.invalidateQueries({ queryKey: ["animais", "contexto"] });
+      invalidateAnimalTimeline(queryClient);
     },
     onError: (e: unknown) => {
       setLiberarErro(getApiErrorMessage(e, "Não foi possível liberar."));

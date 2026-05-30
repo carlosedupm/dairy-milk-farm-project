@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -31,7 +32,11 @@ type AssistenteLiveService struct {
 	secagemSvc          *SecagemService
 	lactacaoSvc         *LactacaoService
 	movimentacaoLoteSvc *MovimentacaoLoteService
+	animalSaudeSvc      *AnimalSaudeService
+	alertaSvc           *AlertaService
 	client              *genai.Client
+	// fazendaAccessFn substitui userCanAccessFazenda quando definido (apenas testes).
+	fazendaAccessFn func(ctx context.Context, userID, fazendaID int64) bool
 }
 
 func NewAssistenteLiveService(
@@ -41,6 +46,7 @@ func NewAssistenteLiveService(
 	diagnosticoGestSvc *DiagnosticoGestacaoService, gestacaoSvc *GestacaoService,
 	partoSvc *PartoService, secagemSvc *SecagemService, lactacaoSvc *LactacaoService,
 	movimentacaoLoteSvc *MovimentacaoLoteService,
+	animalSaudeSvc *AnimalSaudeService, alertaSvc *AlertaService,
 ) (*AssistenteLiveService, error) {
 	if geminiModel == "" {
 		geminiModel = "gemini-2.0-flash" // Modelo que suporta Live API
@@ -67,6 +73,8 @@ func NewAssistenteLiveService(
 		secagemSvc:          secagemSvc,
 		lactacaoSvc:         lactacaoSvc,
 		movimentacaoLoteSvc: movimentacaoLoteSvc,
+		animalSaudeSvc:      animalSaudeSvc,
+		alertaSvc:           alertaSvc,
 		client:              client,
 	}, nil
 }
@@ -117,9 +125,11 @@ func (s *AssistenteLiveService) StartSession(ctx context.Context, userID int64, 
 		Parts: []genai.Part{
 			genai.Text(fmt.Sprintf(`Você é o assistente técnico do CeialMilk.
 DIRETRIZ CRÍTICA: Você não tem acesso direto ao banco de dados, exceto através das funções fornecidas.
-Sempre que o usuário perguntar sobre fazendas, animais ou produção, você DEVE OBRIGATORIAMENTE chamar a função correspondente antes de responder.
+Sempre que o usuário perguntar sobre fazendas, animais, produção, saúde ou alertas, você DEVE OBRIGATORIAMENTE chamar a função correspondente antes de responder.
 NUNCA diga que o usuário não tem dados sem antes tentar listar_fazendas().
 A função listar_animais retorna, para cada animal, identificação, raça e data de nascimento (Nascimento: YYYY-MM-DD ou "não informada"). Use esses dados para responder perguntas como "qual o animal mais novo", "qual o mais velho" ou "idade dos animais".
+Para saúde animal use consultar_saude e registrar_saude (casos clínicos com tipo_caso TRATAMENTO, PREVENTIVO, CIRURGIA ou OUTRO). Não altere status_saude via editar_animal quando o usuário quiser registrar um tratamento — use registrar_saude.
+Para alertas use listar_alertas (filtros severidade e status) e resolver_alerta. Status RESOLVIDO encerra o alerta (GERENTE+). Datas no formato YYYY-MM-DD; use duracao_dias para calcular data_fim a partir de data_inicio.
 
 Contexto do Usuário:
 - Nome: %s
@@ -516,11 +526,62 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 				Required: []string{"identificacao", "lote_destino_id"},
 			},
 		},
+		{
+			Name:        "consultar_saude",
+			Description: "Consulta casos de saúde e status de saúde de um animal. Use para 'qual o estado de saúde do animal X', 'histórico de tratamentos'.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
+				},
+				Required: []string{"identificacao"},
+			},
+		},
+		{
+			Name:        "registrar_saude",
+			Description: "Registra um caso clínico de saúde para um animal (tratamento, preventivo, cirurgia). Ex.: 'registrar tratamento antibiótico por 5 dias'.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
+					"tipo_caso":     {Type: genai.TypeString, Description: "TRATAMENTO, PREVENTIVO, CIRURGIA ou OUTRO"},
+					"observacoes":   {Type: genai.TypeString, Description: "Descrição do caso (ex.: antibiótico, vacina)"},
+					"data_inicio":   {Type: genai.TypeString, Description: "Data de início YYYY-MM-DD (default: hoje)"},
+					"data_fim":      {Type: genai.TypeString, Description: "Data de fim YYYY-MM-DD (opcional)"},
+					"duracao_dias":  {Type: genai.TypeInteger, Description: "Duração em dias a partir de data_inicio (alternativa a data_fim)"},
+				},
+				Required: []string{"identificacao", "tipo_caso"},
+			},
+		},
+		{
+			Name:        "listar_alertas",
+			Description: "Lista alertas da fazenda. Use para 'quais alertas críticos', 'alertas abertos'.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+					"severidade": {Type: genai.TypeString, Description: "CRITICA, ALTA, MEDIA ou BAIXA"},
+					"status":     {Type: genai.TypeString, Description: "ABERTO, EM_ANDAMENTO, RESOLVIDO ou IGNORADO"},
+				},
+			},
+		},
+		{
+			Name:        "resolver_alerta",
+			Description: "Altera o status de um alerta (ex.: marcar como RESOLVIDO).",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"alerta_id": {Type: genai.TypeInteger, Description: "ID do alerta"},
+					"status":    {Type: genai.TypeString, Description: "EM_ANDAMENTO, RESOLVIDO ou IGNORADO"},
+				},
+				Required: []string{"alerta_id", "status"},
+			},
+		},
 	}
 }
 
 // ExecuteFunction executa a lógica de negócio baseada na chamada de função do Gemini.
-func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.FunctionCall, userID int64, fazendaAtivaID int64) (interface{}, error) {
+func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.FunctionCall, userID int64, perfil string, fazendaAtivaID int64) (interface{}, error) {
 	slog.Info("Assistente Live: executando função", "name", call.Name, "args", call.Args, "user_id", userID)
 
 	switch call.Name {
@@ -1176,11 +1237,289 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		}
 		return map[string]any{"status": "sucesso", "mensagem": "Animal movimentado", "redirect_path": fmt.Sprintf("/animais/%d", animais[0].ID)}, nil
 
+	case "consultar_saude":
+		if s.animalSaudeSvc == nil {
+			return map[string]any{"erro": "Serviço de saúde animal não disponível"}, nil
+		}
+		ident, _ := call.Args["identificacao"].(string)
+		animal, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
+		}
+		if errMap != nil {
+			return errMap, nil
+		}
+		casos, err := s.animalSaudeSvc.ListByAnimalID(ctx, animal.ID)
+		if err != nil {
+			return s.mapAssistenteSaudeError(err), nil
+		}
+		var sb strings.Builder
+		sb.WriteString(fmt.Sprintf("Animal %s — status_saude: %s. ", animal.Identificacao, strOrEmpty(animal.StatusSaude)))
+		if len(casos) == 0 {
+			sb.WriteString("Nenhum caso de saúde registrado.")
+		} else {
+			sb.WriteString("Casos: ")
+			for i, c := range casos {
+				if i > 0 {
+					sb.WriteString("; ")
+				}
+				fim := "sem data fim"
+				if c.DataFim != nil {
+					fim = c.DataFim.Format("2006-01-02")
+				}
+				obs := ""
+				if c.Observacoes != nil && strings.TrimSpace(*c.Observacoes) != "" {
+					obs = ", obs: " + strings.TrimSpace(*c.Observacoes)
+				}
+				sb.WriteString(fmt.Sprintf("#%d %s %s (%s a %s)%s", c.ID, c.TipoCaso, c.Status, c.DataInicio.Format("2006-01-02"), fim, obs))
+			}
+		}
+		return map[string]any{
+			"status":        "sucesso",
+			"resumo":        sb.String(),
+			"redirect_path": fmt.Sprintf("/animais/%d/saude", animal.ID),
+		}, nil
+
+	case "registrar_saude":
+		if s.animalSaudeSvc == nil {
+			return map[string]any{"erro": "Serviço de saúde animal não disponível"}, nil
+		}
+		ident, _ := call.Args["identificacao"].(string)
+		animal, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
+		}
+		if errMap != nil {
+			return errMap, nil
+		}
+		in, errMap, err := buildSaveAnimalSaudeInputFromArgs(call.Args)
+		if err != nil {
+			return nil, err
+		}
+		if errMap != nil {
+			return errMap, nil
+		}
+		if userID > 0 {
+			in.CreatedBy = &userID
+		}
+		row, err := s.animalSaudeSvc.Create(ctx, animal.ID, in)
+		if err != nil {
+			return s.mapAssistenteSaudeError(err), nil
+		}
+		fimMsg := "sem data fim"
+		if row.DataFim != nil {
+			fimMsg = row.DataFim.Format("2006-01-02")
+		}
+		return map[string]any{
+			"status":        "sucesso",
+			"mensagem":      fmt.Sprintf("Caso de saúde #%d registrado (%s, %s a %s)", row.ID, row.TipoCaso, row.DataInicio.Format("2006-01-02"), fimMsg),
+			"redirect_path": fmt.Sprintf("/animais/%d/saude", animal.ID),
+		}, nil
+
+	case "listar_alertas":
+		if s.alertaSvc == nil {
+			return map[string]any{"erro": "Serviço de alertas não disponível"}, nil
+		}
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			return map[string]any{"erro": "informe a fazenda ou selecione uma fazenda ativa"}, nil
+		}
+		if !s.userCanAccessFazenda(ctx, userID, fID) {
+			return map[string]any{"erro": "sem acesso à fazenda informada"}, nil
+		}
+		severidade, _ := call.Args["severidade"].(string)
+		status, _ := call.Args["status"].(string)
+		list, total, err := s.alertaSvc.ListByFazenda(ctx, fID, AlertaListQuery{
+			Severidade: strings.TrimSpace(strings.ToUpper(severidade)),
+			Status:     strings.TrimSpace(strings.ToUpper(status)),
+			Limit:      25,
+		})
+		if err != nil {
+			return s.mapAssistenteAlertaError(err), nil
+		}
+		if len(list) == 0 {
+			return map[string]any{
+				"status":        "nenhum alerta encontrado",
+				"total":         total,
+				"redirect_path": "/alertas",
+			}, nil
+		}
+		var sb strings.Builder
+		sb.WriteString(fmt.Sprintf("Alertas (%d): ", total))
+		for i, a := range list {
+			if i > 0 {
+				sb.WriteString("; ")
+			}
+			sb.WriteString(fmt.Sprintf("#%d [%s/%s] %s", a.ID, a.Severidade, a.Status, a.Titulo))
+		}
+		return map[string]any{
+			"status":        "sucesso",
+			"lista_alertas": sb.String(),
+			"total":         total,
+			"redirect_path": "/alertas",
+		}, nil
+
+	case "resolver_alerta":
+		if s.alertaSvc == nil {
+			return map[string]any{"erro": "Serviço de alertas não disponível"}, nil
+		}
+		alertaID, ok := call.Args["alerta_id"].(float64)
+		if !ok || int64(alertaID) <= 0 {
+			return map[string]any{"erro": "alerta_id inválido"}, nil
+		}
+		status, _ := call.Args["status"].(string)
+		status = strings.TrimSpace(strings.ToUpper(status))
+		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if fID <= 0 {
+			return map[string]any{"erro": "informe a fazenda ou selecione uma fazenda ativa"}, nil
+		}
+		if !s.userCanAccessFazenda(ctx, userID, fID) {
+			return map[string]any{"erro": "sem acesso à fazenda informada"}, nil
+		}
+		updated, err := s.alertaSvc.UpdateStatus(ctx, fID, int64(alertaID), UpdateAlertaStatusInput{
+			Status:      status,
+			ActorUserID: userID,
+			Perfil:      perfil,
+		})
+		if err != nil {
+			return s.mapAssistenteAlertaError(err), nil
+		}
+		return map[string]any{
+			"status":        "sucesso",
+			"mensagem":      fmt.Sprintf("Alerta #%d atualizado para %s", updated.ID, updated.Status),
+			"redirect_path": "/alertas",
+		}, nil
+
 	default:
 		return nil, fmt.Errorf("função não implementada: %s", call.Name)
 	}
 }
 
+func (s *AssistenteLiveService) userCanAccessFazenda(ctx context.Context, userID, fazendaID int64) bool {
+	if s.fazendaAccessFn != nil {
+		return s.fazendaAccessFn(ctx, userID, fazendaID)
+	}
+	if s.fazendaSvc == nil {
+		return false
+	}
+	fazendas, err := s.fazendaSvc.GetByUsuarioID(ctx, userID)
+	if err != nil {
+		return false
+	}
+	for _, f := range fazendas {
+		if f.ID == fazendaID {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *AssistenteLiveService) resolveAnimalForAssistente(ctx context.Context, userID int64, identificacao string) (*models.Animal, map[string]any, error) {
+	if s.animalSvc == nil {
+		return nil, map[string]any{"erro": "Serviço de animais não disponível"}, nil
+	}
+	animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(identificacao))
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(animais) == 0 {
+		return nil, map[string]any{"erro": "animal não encontrado"}, nil
+	}
+	if len(animais) > 1 {
+		return nil, map[string]any{"erro": "vários animais encontrados com essa identificação; seja mais específico"}, nil
+	}
+	animal := animais[0]
+	if !s.userCanAccessFazenda(ctx, userID, animal.FazendaID) {
+		return nil, map[string]any{"erro": "sem acesso à fazenda deste animal"}, nil
+	}
+	return animal, nil, nil
+}
+
+func buildSaveAnimalSaudeInputFromArgs(args map[string]any) (SaveAnimalSaudeInput, map[string]any, error) {
+	tipoCaso, _ := args["tipo_caso"].(string)
+	tipoCaso = strings.TrimSpace(strings.ToUpper(tipoCaso))
+	if tipoCaso == "" {
+		return SaveAnimalSaudeInput{}, map[string]any{"erro": "tipo_caso é obrigatório"}, nil
+	}
+
+	var dataInicio time.Time
+	if v, ok := args["data_inicio"].(string); ok && strings.TrimSpace(v) != "" {
+		t, errParse := parseAssistenteDateOnly(strings.TrimSpace(v))
+		if errParse != nil {
+			return SaveAnimalSaudeInput{}, map[string]any{"erro": "data_inicio deve estar no formato YYYY-MM-DD"}, nil
+		}
+		dataInicio = t
+	} else {
+		now := time.Now().UTC()
+		dataInicio = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	}
+
+	var dataFim *time.Time
+	if v, ok := args["data_fim"].(string); ok && strings.TrimSpace(v) != "" {
+		t, errParse := parseAssistenteDateOnly(strings.TrimSpace(v))
+		if errParse != nil {
+			return SaveAnimalSaudeInput{}, map[string]any{"erro": "data_fim deve estar no formato YYYY-MM-DD"}, nil
+		}
+		dataFim = &t
+	} else if d, ok := args["duracao_dias"].(float64); ok && d > 0 {
+		fim := dataInicio.AddDate(0, 0, int(d))
+		dataFim = &fim
+	}
+
+	var observacoes *string
+	if v, ok := args["observacoes"].(string); ok {
+		s := strings.TrimSpace(v)
+		if s != "" {
+			observacoes = &s
+		}
+	}
+
+	return SaveAnimalSaudeInput{
+		TipoCaso:    tipoCaso,
+		DataInicio:  dataInicio,
+		DataFim:     dataFim,
+		Status:      models.AnimalSaudeStatusAtivo,
+		Observacoes: observacoes,
+	}, nil, nil
+}
+
+func parseAssistenteDateOnly(s string) (time.Time, error) {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+}
+
+func (s *AssistenteLiveService) mapAssistenteSaudeError(err error) map[string]any {
+	switch {
+	case errors.Is(err, ErrAnimalSaudeTipoCasoInvalido),
+		errors.Is(err, ErrAnimalSaudeStatusInvalido),
+		errors.Is(err, ErrAnimalSaudeDataFimInvalida):
+		return map[string]any{"erro": err.Error()}
+	case errors.Is(err, ErrAnimalNotFound):
+		return map[string]any{"erro": "animal não encontrado"}
+	case errors.Is(err, ErrAnimalForaDoRebanho):
+		return map[string]any{"erro": err.Error()}
+	default:
+		return map[string]any{"erro": "não foi possível registrar o caso de saúde"}
+	}
+}
+
+func (s *AssistenteLiveService) mapAssistenteAlertaError(err error) map[string]any {
+	switch {
+	case errors.Is(err, ErrAlertaForbidden):
+		return map[string]any{"erro": "perfil não autorizado para esta operação de alerta"}
+	case errors.Is(err, ErrAlertaNotFound):
+		return map[string]any{"erro": "alerta não encontrado"}
+	case errors.Is(err, ErrAlertaTransicaoInvalida),
+		errors.Is(err, ErrAlertaStatusInvalido),
+		errors.Is(err, ErrAlertaSeveridadeInvalida):
+		return map[string]any{"erro": err.Error()}
+	default:
+		return map[string]any{"erro": "não foi possível processar o alerta"}
+	}
+}
 
 // resolveFazendaID obtém fazenda_id dos args ou usa fazendaAtivaID. Retorna 0 se nenhum.
 func resolveFazendaID(args map[string]interface{}, fazendaAtivaID int64, fazendaSvc *FazendaService, ctx context.Context) int64 {

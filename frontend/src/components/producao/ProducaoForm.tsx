@@ -11,9 +11,11 @@ import { QUALIDADES, QUALIDADE_LABELS } from "@/services/producao";
 import { getMinhasFazendas, type Fazenda } from "@/services/fazendas";
 import {
   get as getAnimal,
+  getContexto,
   listEmLactacaoByFazenda,
   type Animal,
 } from "@/services/animais";
+import { formatDatePtBr } from "@/lib/format";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
@@ -96,6 +98,15 @@ export function ProducaoForm({
     queryKey: ["animais", initial?.animal_id],
     queryFn: () => getAnimal(initial!.animal_id),
     enabled: !!initial?.animal_id,
+  });
+
+  const contextoAnimalId =
+    animalId > 0 ? animalId : defaultAnimalId && defaultAnimalId > 0 ? defaultAnimalId : 0;
+
+  const { data: contextoAnimal } = useQuery({
+    queryKey: ["animais", contextoAnimalId, "contexto"],
+    queryFn: () => getContexto(contextoAnimalId),
+    enabled: contextoAnimalId > 0 && !initial,
   });
 
   /** Novo registro: só matrizes em lactação ativa; edição: inclui o animal do registo mesmo se a lactação já encerrou. */
@@ -242,6 +253,14 @@ export function ProducaoForm({
             >
               O animal indicado no link não está em lactação ativa. Escolha uma
               matriz na lista acima.
+            </p>
+          ) : null}
+
+          {contextoAnimal?.lactacao_ativa && !initial ? (
+            <p className="text-sm text-muted-foreground break-words">
+              Lactação ativa: #{contextoAnimal.lactacao_ativa.numero_lactacao}{" "}
+              desde {formatDatePtBr(contextoAnimal.lactacao_ativa.data_inicio)}.
+              O vínculo é preenchido automaticamente ao salvar.
             </p>
           ) : null}
 

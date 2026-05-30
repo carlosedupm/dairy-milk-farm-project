@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   registrarBaixa,
+  invalidateAnimalTimeline,
   type MotivoSaida,
   type RegistrarBaixaPayload,
 } from "@/services/animais";
@@ -91,6 +92,7 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
       }
       queryClient.invalidateQueries({ queryKey: ["animais", aid] });
       queryClient.invalidateQueries({ queryKey: ["animais", aid, "contexto"] });
+      invalidateAnimalTimeline(queryClient, aid);
       queryClient.invalidateQueries({ queryKey: ["conformidade"] });
       queryClient.invalidateQueries({ queryKey: ["resumo-pecuario"] });
       router.push(`/animais/${aid}`);

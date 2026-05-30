@@ -14,6 +14,10 @@ import (
 const maxTimelineItems = 50
 const maxProducaoTimeline = 15
 
+type timelineRepository interface {
+	ListByAnimal(ctx context.Context, animalID int64, filter repository.TimelineFilterTipo, limit, offset int) ([]repository.TimelineRow, int64, error)
+}
+
 type AnimalCicloService struct {
 	cioRepo         *repository.CioRepository
 	coberturaRepo   *repository.CoberturaRepository
@@ -24,6 +28,7 @@ type AnimalCicloService struct {
 	lactacaoRepo    *repository.LactacaoRepository
 	producaoRepo    *repository.ProducaoRepository
 	animalSaudeRepo *repository.AnimalSaudeRepository
+	timelineRepo    timelineRepository
 	usuarioRepo     *repository.UsuarioRepository
 }
 
@@ -37,6 +42,7 @@ func NewAnimalCicloService(
 	lactacaoRepo *repository.LactacaoRepository,
 	producaoRepo *repository.ProducaoRepository,
 	animalSaudeRepo *repository.AnimalSaudeRepository,
+	timelineRepo timelineRepository,
 	usuarioRepo *repository.UsuarioRepository,
 ) *AnimalCicloService {
 	return &AnimalCicloService{
@@ -49,8 +55,40 @@ func NewAnimalCicloService(
 		lactacaoRepo:    lactacaoRepo,
 		producaoRepo:    producaoRepo,
 		animalSaudeRepo: animalSaudeRepo,
+		timelineRepo:    timelineRepo,
 		usuarioRepo:     usuarioRepo,
 	}
+}
+
+// ListTimelinePaginated retorna eventos da ficha ordenados por data DESC (BR-CICLO-008).
+func (s *AnimalCicloService) ListTimelinePaginated(
+	ctx context.Context,
+	animalID int64,
+	filter repository.TimelineFilterTipo,
+	limit, offset int,
+) ([]models.CicloTimelineItem, int64, error) {
+	if s.timelineRepo == nil {
+		return nil, 0, fmt.Errorf("timeline repository indisponível")
+	}
+	rows, total, err := s.timelineRepo.ListByAnimal(ctx, animalID, filter, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	items := make([]models.CicloTimelineItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, models.CicloTimelineItem{
+			Tipo:      row.Tipo,
+			Data:      row.Data,
+			Titulo:    row.Titulo,
+			Detalhe:   row.Detalhe,
+			RefID:     row.RefID,
+			CreatedBy: row.CreatedBy,
+		})
+	}
+	if err := s.enrichRegistradoPor(ctx, items); err != nil {
+		return nil, 0, err
+	}
+	return items, total, nil
 }
 
 func (s *AnimalCicloService) GetLactacaoAtiva(ctx context.Context, animalID int64) (*models.Lactacao, error) {

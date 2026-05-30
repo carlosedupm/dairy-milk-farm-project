@@ -159,6 +159,7 @@ func main() {
 					animalSaudeSvc := service.NewAnimalSaudeService(animalSaudeRepo, animalRepo)
 					reclassificacaoCategoriaSvc := service.NewReclassificacaoCategoriaService(animalRepo)
 					producaoSvc := service.NewProducaoService(producaoRepo, animalRepo, lactacaoRepo)
+					lactacaoSvc := service.NewLactacaoService(lactacaoRepo, animalRepo, fazendaRepo)
 					restricaoLeiteRepo := repository.NewRestricaoLeiteRepository(pool)
 					restricaoLeiteSvc := service.NewRestricaoLeiteService(restricaoLeiteRepo, animalRepo, lactacaoRepo)
 					alertaRepo := repository.NewAlertaRepository(pool)
@@ -179,7 +180,7 @@ func main() {
 					resumoPecuarioHandler := handlers.NewResumoPecuarioHandler(resumoPecuarioSvc, fazendaSvc)
 					restricaoLeiteHandler := handlers.NewRestricaoLeiteHandler(restricaoLeiteSvc, fazendaSvc)
 					alertaHandler := handlers.NewAlertaHandler(alertaSvc, fazendaSvc)
-					producaoHandler := handlers.NewProducaoHandler(producaoSvc, animalSvc, fazendaSvc)
+					producaoHandler := handlers.NewProducaoHandler(producaoSvc, animalSvc, fazendaSvc, lactacaoSvc)
 					usuarioSvc := service.NewUsuarioService(userRepo)
 					adminHandler := handlers.NewAdminHandler(usuarioSvc, fazendaSvc)
 
@@ -193,7 +194,8 @@ func main() {
 					coberturaSvc := service.NewCoberturaService(coberturaRepo, animalRepo, fazendaRepo, gestacaoRepo, diagnosticoGestacaoRepo, cioRepo)
 					diagnosticoGestacaoSvc := service.NewDiagnosticoGestacaoService(diagnosticoGestacaoRepo, animalRepo, gestacaoRepo, coberturaRepo, fazendaRepo)
 					gestacaoSvc := service.NewGestacaoService(gestacaoRepo, animalRepo, fazendaRepo)
-					animalCicloSvc := service.NewAnimalCicloService(cioRepo, coberturaRepo, diagnosticoGestacaoRepo, gestacaoRepo, secagemRepo, partoRepo, lactacaoRepo, producaoRepo, animalSaudeRepo, userRepo)
+					timelineRepo := repository.NewTimelineRepository(pool)
+					animalCicloSvc := service.NewAnimalCicloService(cioRepo, coberturaRepo, diagnosticoGestacaoRepo, gestacaoRepo, secagemRepo, partoRepo, lactacaoRepo, producaoRepo, animalSaudeRepo, timelineRepo, userRepo)
 					conformidadeSvc := service.NewConformidadeService(pool)
 					conformidadeHandler := handlers.NewConformidadeHandler(conformidadeSvc, fazendaSvc)
 					alertasEstadoRepo := repository.NewAlertasGeracaoEstadoRepository(pool)
@@ -236,12 +238,11 @@ func main() {
 					if alertaGeracaoSvc != nil {
 						secagemSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
 					}
-					lactacaoSvc := service.NewLactacaoService(lactacaoRepo, animalRepo, fazendaRepo)
 					coberturaHandler := handlers.NewCoberturaHandler(coberturaSvc, fazendaSvc)
 					diagnosticoGestacaoHandler := handlers.NewDiagnosticoGestacaoHandler(diagnosticoGestacaoSvc, fazendaSvc, animalSvc)
 					integracaoRepo := repository.NewIntegracaoRepository(pool)
 					integracaoSvc := service.NewIntegracaoService(integracaoRepo, userRepo)
-					integracaoHandler := handlers.NewIntegracaoHandler(integracaoSvc, animalSvc, diagnosticoGestacaoSvc, coberturaSvc)
+					integracaoHandler := handlers.NewIntegracaoHandler(integracaoSvc, animalSvc, diagnosticoGestacaoSvc, coberturaSvc, animalSaudeSvc, alertaSvc)
 					integracaoAdminHandler := handlers.NewIntegracaoAdminHandler(integracaoSvc)
 					gestacaoHandler := handlers.NewGestacaoHandler(gestacaoSvc, fazendaSvc)
 					partoHandler := handlers.NewPartoHandler(partoSvc, fazendaSvc)
@@ -373,6 +374,7 @@ func main() {
 						animais.GET("/filter/by-status-reprodutivo", animalHandler.GetByStatusReprodutivo)
 						animais.POST("/reclassificar-categoria", animalHandler.RunReclassificacaoPorIdade)
 						animais.GET("/:id/contexto", animalHandler.GetContextoByID)
+						animais.GET("/:id/timeline", animalHandler.GetTimelineByID)
 						animais.GET("/:id/saude", animalSaudeHandler.List)
 						animais.GET("/:id/saude/:saudeId", animalSaudeHandler.GetByID)
 						animais.POST("/:id/saude", animalSaudeHandler.Create)
@@ -554,6 +556,9 @@ func main() {
 						integ.POST("/coberturas/lote", auth.RequireIntegrationScope(models.ScopeCoberturasWrite), integracaoHandler.CreateCoberturaLote)
 						integ.POST("/toques", auth.RequireIntegrationScope(models.ScopeToquesWrite), integracaoHandler.CreateToque)
 						integ.POST("/toques/lote", auth.RequireIntegrationScope(models.ScopeToquesWrite), integracaoHandler.CreateToqueLote)
+						integ.GET("/saude", auth.RequireIntegrationScope(models.ScopeSaudeRead), integracaoHandler.ListSaude)
+						integ.POST("/saude", auth.RequireIntegrationScope(models.ScopeSaudeWrite), integracaoHandler.CreateSaude)
+						integ.GET("/alertas", auth.RequireIntegrationScope(models.ScopeAlertasRead), integracaoHandler.ListAlertas)
 					}
 					slog.Info("Rotas de Integracoes M2M registradas")
 
@@ -636,6 +641,7 @@ func main() {
 							diagnosticoGestacaoSvc, gestacaoSvc,
 							partoSvc, secagemSvc, lactacaoSvc,
 							movimentacaoLoteSvc,
+							animalSaudeSvc, alertaSvc,
 						)
 						if err != nil {
 							slog.Warn("Falha ao inicializar Assistente Live", "error", err)

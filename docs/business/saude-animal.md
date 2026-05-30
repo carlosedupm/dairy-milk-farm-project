@@ -8,6 +8,7 @@ Módulo de registo de casos clínicos por animal (`animal_saude`) com CRUD no ba
 - Backend: `backend/internal/models/animal_saude.go`, `backend/internal/service/animal_saude_service.go`, `backend/internal/repository/animal_saude_repository.go`, `backend/internal/handlers/animal_saude_handler.go`.
 - Frontend: `frontend/src/services/animalSaude.ts`, `frontend/src/components/animais/AnimalSaudeForm.tsx`, `AnimalSaudeList.tsx`, rotas `/animais/:id/saude`, `/novo`, `/[saudeId]/editar`.
 - Timeline: `appendCasosSaudeToTimeline` em `backend/internal/service/animal_ciclo_service.go`; UI `AnimalFichaCiclo.tsx`.
+- **Assistente Live (GERENTE+)**: function calling `consultar_saude` e `registrar_saude` em `backend/internal/service/assistente_live_service.go` (`ExecuteFunction` → `AnimalSaudeService`); sem tool de exclusão/edição; `FUNCIONARIO` permanece bloqueado do assistente.
 
 ---
 
@@ -89,13 +90,13 @@ UpdateStatusSaude → animais.status_saude
 
 ### BR-SAUDE-005 — Casos de saúde na timeline da ficha
 
-- **Enunciado**: cada caso de saúde do animal aparece na timeline do `GET /api/v1/animais/:id/contexto`, intercalado por data com eventos de ciclo.
-- **Escopo**: ficha `/animais/:id`; um evento por caso na `data_inicio` (sem evento duplicado em `data_fim`).
-- **Perfis / permissões**: quem pode consultar o contexto do animal.
-- **Efeito**: informativo na timeline (`tipo=SAUDE`); link para edição na UI apenas para perfis com `canEditarRegistroSaude`.
+- **Enunciado**: cada caso de saúde do animal aparece na timeline paginada (`GET /api/v1/animais/:id/timeline`), intercalado por data com eventos de ciclo.
+- **Escopo**: ficha `/animais/:id`; um evento por caso na `data_inicio` (sem evento duplicado em `data_fim`); filtro `tipo=saude`.
+- **Perfis / permissões**: quem pode consultar o animal; link para edição na UI apenas para perfis com `canEditarRegistroSaude`.
+- **Efeito**: informativo na timeline (`tipo=SAUDE`).
 - **Implementação**:
-  - Backend: `appendCasosSaudeToTimeline` em `backend/internal/service/animal_ciclo_service.go` (`BuildTimeline`)
-  - Frontend: `frontend/src/components/animais/AnimalFichaCiclo.tsx` (ícone Pill, badge «Saúde»)
+  - Backend: `TimelineRepository` (UNION com `animal_saude`), `AnimalCicloService.ListTimelinePaginated`
+  - Frontend: `AnimalTimelineSection.tsx` (ícone Pill, badge «Saúde», chips de filtro, scroll infinito)
 - **Estado**: implementado.
 
 ---
@@ -138,4 +139,4 @@ UpdateStatusSaude → animais.status_saude
 
 ---
 
-**Última atualização**: 2026-05-29 (Onda 3.3: fluxo sync, cenários, refs ciclo/alertas)
+**Última atualização**: 2026-05-30 (Assistente Live: consultar_saude, registrar_saude — GERENTE+)

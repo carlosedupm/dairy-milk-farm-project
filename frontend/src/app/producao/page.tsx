@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { list, listByDateRange } from "@/services/producao";
+import { listByFazenda } from "@/services/lactacoes";
 import { getMinhasFazendas } from "@/services/fazendas";
+import { formatLactacaoFilterLabel } from "@/components/animais/producaoPorLactacaoUtils";
+import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ListCardLayout } from "@/components/layout/ListCardLayout";
@@ -15,6 +18,13 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { ListPaginationBar } from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 
@@ -22,12 +32,14 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 function ProducaoContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { fazendaAtiva, isReady: fazendaReady, setFazendaAtiva } =
     useFazendaAtiva();
   const fazendaId = fazendaAtiva?.id;
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [lactacaoId, setLactacaoId] = useState<number | undefined>(undefined);
   const [pageSize, setPageSize] = useState<number>(25);
   const [offset, setOffset] = useState(0);
 
@@ -44,6 +56,19 @@ function ProducaoContent() {
     const timer = window.setTimeout(() => {
       setStartDate(start);
       setEndDate(end);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const raw = searchParams.get("lactacao_id")?.trim();
+    if (!raw) {
+      const timer = window.setTimeout(() => setLactacaoId(undefined), 0);
+      return () => window.clearTimeout(timer);
+    }
+    const id = Number(raw);
+    const timer = window.setTimeout(() => {
+      setLactacaoId(Number.isNaN(id) || id <= 0 ? undefined : id);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [searchParams]);
@@ -80,6 +105,23 @@ function ProducaoContent() {
 
   const listEnabled = fazendaReady && fazendaId != null && fazendaId > 0;
 
+  const { data: lactacoes = [] } = useQuery({
+    queryKey: ["lactacoes", fazendaId],
+    queryFn: () => listByFazenda(fazendaId!),
+    enabled: listEnabled,
+  });
+
+  const lactacoesById = useMemo(
+    () => new Map(lactacoes.map((l) => [l.id, l])),
+    [lactacoes],
+  );
+
+  const animalIds = useMemo(
+    () => [...new Set(lactacoes.map((l) => l.animal_id))],
+    [lactacoes],
+  );
+  const { animaisById } = useGestaoAnimaisByIdMap(fazendaId, animalIds);
+
   const { data: items = [], isLoading, error } = useQuery({
     queryKey: [
       "producao",
@@ -87,15 +129,16 @@ function ProducaoContent() {
       fazendaId,
       dateFilterActive ? startDate : null,
       dateFilterActive ? endDate : null,
+      lactacaoId ?? null,
     ],
     queryFn: () =>
       dateFilterActive
-        ? listByDateRange(startDate, endDate, fazendaId!)
-        : list({ fazenda_id: fazendaId! }),
+        ? listByDateRange(startDate, endDate, fazendaId!, lactacaoId)
+        : list({ fazenda_id: fazendaId!, lactacao_id: lactacaoId }),
     enabled: listEnabled,
   });
 
-  const filterKey = `${startDate}|${endDate}|${pageSize}`;
+  const filterKey = `${startDate}|${endDate}|${pageSize}|${lactacaoId ?? ""}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
@@ -123,6 +166,20 @@ function ProducaoContent() {
   const clearDateFilter = () => {
     setStartDate("");
     setEndDate("");
+  };
+
+  const updateLactacaoFilter = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "all") {
+      params.delete("lactacao_id");
+      setLactacaoId(undefined);
+    } else {
+      params.set("lactacao_id", value);
+      setLactacaoId(Number(value));
+    }
+    setOffset(0);
+    const qs = params.toString();
+    router.replace(qs ? `/producao?${qs}` : "/producao");
   };
 
   return (
@@ -157,6 +214,30 @@ function ProducaoContent() {
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+              <div className="space-y-2">
+                <Label htmlFor="producao-filter-lactacao">Lactação</Label>
+                <Select
+                  value={lactacaoId ? String(lactacaoId) : "all"}
+                  onValueChange={updateLactacaoFilter}
+                >
+                  <SelectTrigger id="producao-filter-lactacao">
+                    <SelectValue placeholder="Todas as lactações" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as lactações</SelectItem>
+                    {lactacoes.map((l) => {
+                      const animal = animaisById.get(l.animal_id);
+                      const animalLabel =
+                        animal?.identificacao ?? `Animal #${l.animal_id}`;
+                      return (
+                        <SelectItem key={l.id} value={String(l.id)}>
+                          {formatLactacaoFilterLabel(l, animalLabel)}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="producao-filter-start">Data inicial</Label>
                 <DatePicker
@@ -198,6 +279,7 @@ function ProducaoContent() {
                 items={paginatedItems}
                 fazendaId={fazendaId}
                 showAnimal
+                lactacoesById={lactacoesById}
               />
             </QueryListContent>
 

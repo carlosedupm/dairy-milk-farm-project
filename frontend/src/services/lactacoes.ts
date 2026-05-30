@@ -1,6 +1,15 @@
 import api, { type ApiResponse } from "./api";
 
-export type Lactacao = { id: number; animal_id: number; numero_lactacao: number; data_inicio: string; fazenda_id: number; created_at: string; updated_at: string; };
+export type Lactacao = {
+  id: number
+  animal_id: number
+  numero_lactacao: number
+  data_inicio: string
+  data_fim?: string | null
+  fazenda_id: number
+  created_at: string
+  updated_at: string
+}
 
 export type LactacaoCreate = {
   animal_id: number;

@@ -12,6 +12,7 @@ import {
   type StatusCasoSaude,
   type TipoCasoSaude,
 } from "@/services/animalSaude";
+import { invalidateAnimalTimeline } from "@/services/animais";
 import {
   canEditarRegistroSaude,
   canExcluirRegistroSaude,
@@ -90,6 +91,7 @@ export function AnimalSaudeList({ animalId, items, perfil }: Props) {
       queryClient.invalidateQueries({
         queryKey: ["animais", animalId, "contexto"],
       });
+      invalidateAnimalTimeline(queryClient, animalId);
       setDeleteId(null);
     },
   });

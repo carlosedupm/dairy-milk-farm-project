@@ -51,6 +51,7 @@
   - `LOG_LEVEL`: Nível de log (DEBUG, INFO, WARN, ERROR) - padrão: INFO
   - `ENV`: Ambiente (development, production) - padrão: development
   - `INTEGRATION_RATE_LIMIT_PER_HOUR`: Rate limit por cliente M2M (default: 300) — rotas `/api/v1/integracoes/*`
+  - **Scopes M2M** (por cliente): `animais:read`, `toques:write`, `coberturas:read`, `coberturas:write`, `saude:read`, `saude:write`, `alertas:read` — ver `docs/business/integracoes.md` (BR-INTEG-009–011)
   - `AUTH_LOGIN_RATE_LIMIT` (default: 10), `AUTH_LOGIN_RATE_WINDOW_MINUTES` (default: 15): rate limit por IP em `POST /api/auth/login`
   - `AUTH_REGISTER_RATE_LIMIT` (default: 5): rate limit por IP/hora em `POST /api/auth/register`
   - `AUTH_REFRESH_RATE_LIMIT` (default: 30): rate limit por IP/hora em `POST /api/auth/refresh`
@@ -253,6 +254,15 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 - **Service dedicado**: `frontend/src/services/agricultura.ts`
 - **Navegação**: acesso via item "Agricultura" no Header (desktop e mobile).
 
+## Migrações recentes (pecuário / Fase 3)
+
+| # | Ficheiro | Conteúdo |
+|---|----------|----------|
+| 30 | `30_add_animal_saude` | Tabela `animal_saude` |
+| 31–32 | `31_add_alertas`, `32_alertas_geracao_automatica` | Alertas + geração diária |
+| 33 | `33_push_subscriptions_fazenda_ativa` | Web Push + `fazenda_ativa_id` |
+| 34 | `34_add_lactacao_id_producao_leite` | FK `lactacao_id` em `producao_leite` (nullable; legado preservado) |
+
 ## Vantagens da Nova Stack
 
 ### Performance
@@ -275,5 +285,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-27 (env AUTH_* rate limit; security headers)
-**Stack**: Go + Next.js 16 — Fase 2 concluída; Folgas 5x1; restrições de leite; Módulo Agrícola; Dev Studio; TestSprite (`testsprite_tests/`)
+**Última atualização**: 2026-05-30 (migration 34 `lactacao_id`; scopes M2M saúde/alertas)
+**Stack**: Go + Next.js 16 — Fase 2 concluída; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)

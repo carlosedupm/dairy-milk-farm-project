@@ -17,10 +17,12 @@ import (
 )
 
 type IntegracaoHandler struct {
-	integracaoSvc   *service.IntegracaoService
-	animalSvc       *service.AnimalService
-	toqueSvc        *service.DiagnosticoGestacaoService
-	coberturaSvc    *service.CoberturaService
+	integracaoSvc    *service.IntegracaoService
+	animalSvc        *service.AnimalService
+	toqueSvc         *service.DiagnosticoGestacaoService
+	coberturaSvc     *service.CoberturaService
+	animalSaudeSvc   *service.AnimalSaudeService
+	alertaSvc        *service.AlertaService
 }
 
 func NewIntegracaoHandler(
@@ -28,12 +30,16 @@ func NewIntegracaoHandler(
 	animalSvc *service.AnimalService,
 	toqueSvc *service.DiagnosticoGestacaoService,
 	coberturaSvc *service.CoberturaService,
+	animalSaudeSvc *service.AnimalSaudeService,
+	alertaSvc *service.AlertaService,
 ) *IntegracaoHandler {
 	return &IntegracaoHandler{
-		integracaoSvc: integracaoSvc,
-		animalSvc:     animalSvc,
-		toqueSvc:      toqueSvc,
-		coberturaSvc:  coberturaSvc,
+		integracaoSvc:  integracaoSvc,
+		animalSvc:      animalSvc,
+		toqueSvc:       toqueSvc,
+		coberturaSvc:   coberturaSvc,
+		animalSaudeSvc: animalSaudeSvc,
+		alertaSvc:      alertaSvc,
 	}
 }
 
@@ -349,6 +355,162 @@ func (h *IntegracaoHandler) CreateCoberturaLote(c *gin.Context) {
 	wrap := response.SuccessResponse{Data: result, Message: "Lote processado", Timestamp: time.Now().UTC().Format(time.RFC3339)}
 	_ = h.integracaoSvc.SaveIdempotency(c.Request.Context(), clientID, idemKey, reqHash, http.StatusOK, wrap)
 	response.SuccessOK(c, result, "Lote processado")
+}
+
+func (h *IntegracaoHandler) ListSaude(c *gin.Context) {
+	fazendaID, _ := strconv.ParseInt(c.Query("fazenda_id"), 10, 64)
+	animalID, _ := strconv.ParseInt(c.Query("animal_id"), 10, 64)
+	if fazendaID <= 0 || animalID <= 0 {
+		response.ErrorBadRequest(c, "fazenda_id e animal_id sao obrigatorios", nil)
+		return
+	}
+	if !ValidateFazendaIntegracao(c, fazendaID) {
+		return
+	}
+	animal, err := h.animalSvc.GetByID(c.Request.Context(), animalID)
+	if err != nil {
+		response.ErrorNotFound(c, "Animal nao encontrado")
+		return
+	}
+	if animal.FazendaID != fazendaID {
+		response.ErrorForbidden(c, "Animal nao pertence a esta fazenda")
+		return
+	}
+	list, err := h.animalSaudeSvc.ListByAnimalID(c.Request.Context(), animalID)
+	if err != nil {
+		mapSaudeError(c, err, "Erro ao listar casos de saude")
+		return
+	}
+	if list == nil {
+		list = []*models.AnimalSaude{}
+	}
+	response.SuccessOK(c, list, "OK")
+}
+
+func (h *IntegracaoHandler) CreateSaude(c *gin.Context) {
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		response.ErrorBadRequest(c, "body invalido", nil)
+		return
+	}
+	c.Request.Body = io.NopCloser(bytes.NewReader(body))
+
+	clientID, _ := auth.GetIntegrationClientID(c)
+	idemKey := c.GetHeader("Idempotency-Key")
+	reqHash := service.HashRequestBody(body)
+	if cached, status, conflict, err := h.integracaoSvc.CheckIdempotency(c.Request.Context(), clientID, idemKey, reqHash); err != nil {
+		response.ErrorInternal(c, "Erro de idempotencia", err.Error())
+		return
+	} else if conflict {
+		response.Error(c, http.StatusConflict, response.CodeConflict, "Idempotency-Key ja usada com payload diferente", nil)
+		return
+	} else if cached != nil {
+		var payload interface{}
+		_ = json.Unmarshal(cached, &payload)
+		response.Success(c, status, payload, "Resposta idempotente")
+		return
+	}
+
+	var req struct {
+		AnimalID    int64   `json:"animal_id" binding:"required"`
+		FazendaID   int64   `json:"fazenda_id" binding:"required"`
+		TipoCaso    string  `json:"tipo_caso" binding:"required"`
+		DataInicio  string  `json:"data_inicio" binding:"required"`
+		DataFim     *string `json:"data_fim"`
+		Status      string  `json:"status" binding:"required"`
+		Observacoes *string `json:"observacoes"`
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		response.ErrorValidation(c, "Dados invalidos", err.Error())
+		return
+	}
+	if !ValidateFazendaIntegracao(c, req.FazendaID) {
+		return
+	}
+	animal, err := h.animalSvc.GetByID(c.Request.Context(), req.AnimalID)
+	if err != nil {
+		response.ErrorNotFound(c, "Animal nao encontrado")
+		return
+	}
+	if animal.FazendaID != req.FazendaID {
+		response.ErrorForbidden(c, "Animal nao pertence a esta fazenda")
+		return
+	}
+	in, ok := parseSaveAnimalSaudeInput(c, saveAnimalSaudeRequest{
+		TipoCaso: req.TipoCaso, DataInicio: req.DataInicio, DataFim: req.DataFim,
+		Status: req.Status, Observacoes: req.Observacoes,
+	})
+	if !ok {
+		return
+	}
+	if actorID, exists := GetActorUserID(c); exists {
+		in.CreatedBy = &actorID
+	}
+	row, err := h.animalSaudeSvc.Create(c.Request.Context(), req.AnimalID, in)
+	if err != nil {
+		mapSaudeError(c, err, "Erro ao registrar caso de saude")
+		return
+	}
+	wrap := response.SuccessResponse{Data: row, Message: "Caso de saude registrado", Timestamp: time.Now().UTC().Format(time.RFC3339)}
+	_ = h.integracaoSvc.SaveIdempotency(c.Request.Context(), clientID, idemKey, reqHash, http.StatusCreated, wrap)
+	response.SuccessCreated(c, row, "Caso de saude registrado")
+}
+
+func (h *IntegracaoHandler) ListAlertas(c *gin.Context) {
+	fazendaID, _ := strconv.ParseInt(c.Query("fazenda_id"), 10, 64)
+	if fazendaID <= 0 {
+		response.ErrorBadRequest(c, "fazenda_id obrigatorio", nil)
+		return
+	}
+	if !ValidateFazendaIntegracao(c, fazendaID) {
+		return
+	}
+	limit := parseQueryIntPositiveDef(c.Query("limit"), 25)
+	offset := parseQueryIntNonNeg(c.DefaultQuery("offset", "0"), 0)
+	if limit > 100 {
+		limit = 100
+	}
+	list, total, err := h.alertaSvc.ListByFazenda(c.Request.Context(), fazendaID, service.AlertaListQuery{
+		Status:     c.Query("status"),
+		Tipo:       c.Query("tipo"),
+		Severidade: c.Query("severidade"),
+		Limit:      limit,
+		Offset:     offset,
+	})
+	if err != nil {
+		mapAlertaIntegracaoError(c, err)
+		return
+	}
+	response.SuccessOK(c, gin.H{"alertas": list, "total": total}, "OK")
+}
+
+func mapSaudeError(c *gin.Context, err error, internalMsg string) {
+	if RespondIfDomainWriteError(c, err) {
+		return
+	}
+	switch {
+	case errors.Is(err, service.ErrAnimalNotFound):
+		response.ErrorNotFound(c, "Animal nao encontrado")
+	case errors.Is(err, service.ErrAnimalSaudeNotFound):
+		response.ErrorNotFound(c, "Caso de saude nao encontrado")
+	case errors.Is(err, service.ErrAnimalSaudeTipoCasoInvalido),
+		errors.Is(err, service.ErrAnimalSaudeStatusInvalido),
+		errors.Is(err, service.ErrAnimalSaudeDataFimInvalida):
+		response.ErrorValidation(c, err.Error(), nil)
+	default:
+		response.ErrorInternal(c, internalMsg, err.Error())
+	}
+}
+
+func mapAlertaIntegracaoError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, service.ErrAlertaStatusInvalido),
+		errors.Is(err, service.ErrAlertaTipoInvalido),
+		errors.Is(err, service.ErrAlertaSeveridadeInvalida):
+		response.ErrorValidation(c, err.Error(), nil)
+	default:
+		response.ErrorInternal(c, "Erro ao listar alertas", err.Error())
+	}
 }
 
 func mapToqueError(c *gin.Context, err error) {

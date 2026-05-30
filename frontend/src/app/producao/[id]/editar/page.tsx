@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, update } from '@/services/producao'
 import type { ProducaoUpdate } from '@/services/producao'
+import { invalidateAnimalTimeline } from '@/services/animais'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { BackLink } from '@/components/layout/BackLink'
@@ -30,6 +31,7 @@ function EditarProducaoContent() {
         queryClient.invalidateQueries({
           queryKey: ['animais', variables.animal_id, 'contexto'],
         })
+        invalidateAnimalTimeline(queryClient, variables.animal_id)
       }
       router.push('/producao')
     },

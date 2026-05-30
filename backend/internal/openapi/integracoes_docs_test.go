@@ -29,6 +29,8 @@ func TestEmbeddedOpenAPISpec(t *testing.T) {
 		"/api/v1/integracoes/coberturas/lote",
 		"/api/v1/integracoes/toques",
 		"/api/v1/integracoes/toques/lote",
+		"/api/v1/integracoes/saude",
+		"/api/v1/integracoes/alertas",
 	}
 	for _, p := range required {
 		if _, ok := doc.Paths[p]; !ok {

@@ -204,7 +204,7 @@ func (h *AssistenteLiveHandler) handleGeminiResponse(ctx context.Context, sessio
 
 			case genai.FunctionCall:
 				// Executar a função e enviar o resultado de volta para o Gemini
-				result, err := h.svc.ExecuteFunction(ctx, v, session.UserID, session.FazendaAtiva)
+				result, err := h.svc.ExecuteFunction(ctx, v, session.UserID, session.Perfil, session.FazendaAtiva)
 				if err != nil {
 					if isContextDoneError(err) || !session.IsTurnActive(turnID) {
 						return

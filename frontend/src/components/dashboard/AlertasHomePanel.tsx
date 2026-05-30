@@ -4,14 +4,15 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import {
+  alertaSeveridadeLabel,
+  alertaStatusLabel,
+  alertaTipoLabel,
+  SEVERIDADE_BADGE_VARIANT,
+} from "@/components/alertas/alertas-utils";
+import {
   alertasListQueryKey,
   listAlertas,
-  SEVERIDADE_ALERTA_LABELS,
-  STATUS_ALERTA_LABELS,
-  TIPO_ALERTA_LABELS,
   type Alerta,
-  type SeveridadeAlerta,
-  type TipoAlerta,
 } from "@/services/alertas";
 import { getApiErrorMessage } from "@/lib/errors";
 import { formatDatePtBr } from "@/lib/format";
@@ -19,28 +20,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const SEVERIDADE_VARIANT: Record<
-  string,
-  "destructive" | "secondary" | "outline" | "default"
-> = {
-  CRITICA: "destructive",
-  ALTA: "destructive",
-  MEDIA: "secondary",
-  BAIXA: "outline",
-};
-
-function tipoLabel(t: string): string {
-  return TIPO_ALERTA_LABELS[t as TipoAlerta] ?? t;
-}
-
-function severidadeLabel(s: string): string {
-  return SEVERIDADE_ALERTA_LABELS[s as SeveridadeAlerta] ?? s;
-}
-
-function statusLabel(s: string): string {
-  return STATUS_ALERTA_LABELS[s as keyof typeof STATUS_ALERTA_LABELS] ?? s;
-}
 
 export function AlertasHomePanel() {
   const { fazendaAtiva } = useFazendaAtiva();
@@ -124,13 +103,17 @@ export function AlertasHomePanel() {
                   className="rounded-lg border bg-muted/30 px-3 py-2 min-w-0"
                 >
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
-                    <Badge variant={SEVERIDADE_VARIANT[a.severidade] ?? "outline"}>
-                      {severidadeLabel(a.severidade)}
+                    <Badge
+                      variant={
+                        SEVERIDADE_BADGE_VARIANT[a.severidade] ?? "outline"
+                      }
+                    >
+                      {alertaSeveridadeLabel(a.severidade)}
                     </Badge>
                     <span className="font-medium truncate">{a.titulo}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {tipoLabel(a.tipo)}
+                    {alertaTipoLabel(a.tipo)}
                     {a.animal_identificacao
                       ? ` · ${a.animal_identificacao}`
                       : null}
@@ -139,7 +122,7 @@ export function AlertasHomePanel() {
                       : null}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {statusLabel(a.status)}
+                    {alertaStatusLabel(a.status)}
                   </p>
                 </li>
               ))}

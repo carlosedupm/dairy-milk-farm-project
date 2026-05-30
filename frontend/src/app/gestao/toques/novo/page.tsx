@@ -17,6 +17,7 @@ import {
   type ToqueFormState,
 } from "@/components/gestao/ToqueFormFields";
 import { getApiErrorMessage } from "@/lib/errors";
+import { invalidateAnimalTimeline } from "@/services/animais";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 import {
   classificacaoRequiresCobertura,
@@ -111,6 +112,7 @@ function NovoContent() {
         queryClient.invalidateQueries({ queryKey: ["animais"] }),
         queryClient.invalidateQueries({ queryKey: ["animais", aid] }),
         queryClient.invalidateQueries({ queryKey: ["animais", "contexto"] }),
+        invalidateAnimalTimeline(queryClient, aid > 0 ? aid : undefined),
         queryClient.invalidateQueries({ queryKey: ["resumo-pecuario"] }),
         queryClient.invalidateQueries({ queryKey: ["gestacoes"] }),
         queryClient.invalidateQueries({ queryKey: ["coberturas", fazendaId] }),

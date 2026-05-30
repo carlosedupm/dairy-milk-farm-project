@@ -27,6 +27,10 @@ tags:
     description: Coberturas — leitura (coberturas:read) e registo (coberturas:write)
   - name: Toques
     description: Registo de diagnósticos de gestação (scope toques:write)
+  - name: Saude
+    description: Casos de saúde animal — leitura (saude:read) e registo (saude:write)
+  - name: Alertas
+    description: Consulta de alertas da fazenda (scope alertas:read)
 
 security:
   - IntegrationApiKey: []
@@ -267,6 +271,129 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
 
+  /api/v1/integracoes/saude:
+    get:
+      tags: [Saude]
+      summary: Listar casos de saúde do animal
+      description: |
+        Requer scope `saude:read`, fazenda vinculada ao cliente e animal no rebanho.
+        Parâmetros `fazenda_id` e `animal_id` obrigatórios na query string.
+      operationId: listSaude
+      parameters:
+        - $ref: "#/components/parameters/FazendaIdQuery"
+        - name: animal_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID do animal
+      responses:
+        "200":
+          description: Lista de casos de saúde
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAnimalSaudeList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+    post:
+      tags: [Saude]
+      summary: Registar caso de saúde
+      description: |
+        Regista resultado clínico/laboratorial para um animal. `created_by` é o actor da integração (BR-INTEG-001).
+        Header opcional `Idempotency-Key` para evitar duplicatas em reenvio.
+      operationId: createSaude
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegracaoCreateSaudeRequest"
+      responses:
+        "201":
+          description: Caso de saúde criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAnimalSaude"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /api/v1/integracoes/alertas:
+    get:
+      tags: [Alertas]
+      summary: Listar alertas da fazenda
+      description: |
+        Requer scope `alertas:read` e fazenda vinculada ao cliente.
+        Filtros opcionais por status, tipo e severidade.
+      operationId: listAlertas
+      parameters:
+        - $ref: "#/components/parameters/FazendaIdQuery"
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/StatusAlerta"
+        - name: tipo
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/TipoAlerta"
+        - name: severidade
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/SeveridadeAlerta"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 25
+            maximum: 100
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Lista paginada de alertas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAlertasList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
 components:
   securitySchemes:
     IntegrationApiKey:
@@ -391,7 +518,7 @@ components:
           type: array
           items:
             type: string
-            enum: [animais:read, toques:write, coberturas:read, coberturas:write]
+            enum: [animais:read, toques:write, coberturas:read, coberturas:write, saude:read, saude:write, alertas:read]
         fazenda_ids:
           type: array
           items:
@@ -888,3 +1015,185 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/ToqueLoteResult"
+
+    TipoCasoSaude:
+      type: string
+      enum: [TRATAMENTO, PREVENTIVO, CIRURGIA, OUTRO]
+
+    StatusCasoSaude:
+      type: string
+      enum: [ATIVO, CONCLUIDO, CANCELADO]
+
+    AnimalSaude:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        animal_id:
+          type: integer
+          format: int64
+        tipo_caso:
+          $ref: "#/components/schemas/TipoCasoSaude"
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: "#/components/schemas/StatusCasoSaude"
+        observacoes:
+          type: string
+          nullable: true
+        created_by:
+          type: integer
+          format: int64
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    IntegracaoCreateSaudeRequest:
+      type: object
+      required: [animal_id, fazenda_id, tipo_caso, data_inicio, status]
+      properties:
+        animal_id:
+          type: integer
+          format: int64
+        fazenda_id:
+          type: integer
+          format: int64
+        tipo_caso:
+          $ref: "#/components/schemas/TipoCasoSaude"
+        data_inicio:
+          type: string
+          format: date
+          description: Formato YYYY-MM-DD
+        data_fim:
+          type: string
+          format: date
+          nullable: true
+          description: Formato YYYY-MM-DD
+        status:
+          $ref: "#/components/schemas/StatusCasoSaude"
+        observacoes:
+          type: string
+          nullable: true
+
+    SuccessAnimalSaude:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/AnimalSaude"
+
+    SuccessAnimalSaudeList:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/AnimalSaude"
+
+    TipoAlerta:
+      type: string
+      enum:
+        - TRATAMENTO_VENCIDO
+        - PARTO_PREVISTO
+        - RESTRICAO_LEITE_ATIVA
+        - NAO_CONFORMIDADE
+        - GESTACAO_SEM_SECAGEM
+        - CIO_DETECTADO
+        - MANUAL
+
+    SeveridadeAlerta:
+      type: string
+      enum: [CRITICA, ALTA, MEDIA, BAJA]
+
+    StatusAlerta:
+      type: string
+      enum: [ABERTO, EM_ANDAMENTO, RESOLVIDO, IGNORADO]
+
+    Alerta:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fazenda_id:
+          type: integer
+          format: int64
+        animal_id:
+          type: integer
+          format: int64
+          nullable: true
+        tipo:
+          $ref: "#/components/schemas/TipoAlerta"
+        severidade:
+          $ref: "#/components/schemas/SeveridadeAlerta"
+        titulo:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        data_prevista:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: "#/components/schemas/StatusAlerta"
+        resolvido_por:
+          type: integer
+          format: int64
+          nullable: true
+        resolvido_em:
+          type: string
+          format: date-time
+          nullable: true
+        created_by:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        animal_identificacao:
+          type: string
+          nullable: true
+        created_by_nome:
+          type: string
+          nullable: true
+        resolvido_por_nome:
+          type: string
+          nullable: true
+
+    AlertasListData:
+      type: object
+      required: [alertas, total]
+      properties:
+        alertas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alerta"
+        total:
+          type: integer
+          format: int64
+
+    SuccessAlertasList:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/AlertasListData"

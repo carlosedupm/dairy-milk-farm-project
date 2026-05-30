@@ -7,6 +7,7 @@ import "time"
 type ProducaoLeite struct {
 	ID         int64     `json:"id" db:"id"`
 	AnimalID   int64     `json:"animal_id" db:"animal_id"`
+	LactacaoID *int64    `json:"lactacao_id,omitempty" db:"lactacao_id"`
 	Quantidade float64   `json:"quantidade" db:"quantidade"`
 	DataHora   time.Time `json:"data_hora" db:"data_hora"`
 	Qualidade  *int      `json:"qualidade,omitempty" db:"qualidade"`

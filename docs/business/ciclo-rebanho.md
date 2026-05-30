@@ -131,15 +131,15 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 - **Enunciado**: Registro de produção diária exige **lactação ativa na data do registo** (não apenas “existe lactação hoje” com início posterior à data da ordenha).
 - **Escopo**: `producao_leite` + `lactacoes`; Create e Update.
 - **Efeito**: bloqueio no servidor (400, INT-002); aviso na UI em `/producao/novo`.
-- **Implementação**: `ValidateLactacaoAtivaParaProducao`; [producao-leite.md](./producao-leite.md) BR-PRODUCAO-003; [auditoria.md](./auditoria.md) BR-AUDIT-010.
-- **Estado**: **implementado**.
+- **Implementação**: `ValidateLactacaoAtivaParaProducao`; `FindLactacaoForProducaoDate`; coluna `producao_leite.lactacao_id` (migration 34); [producao-leite.md](./producao-leite.md) BR-PRODUCAO-003/006; [auditoria.md](./auditoria.md) BR-AUDIT-010.
+- **Estado**: **implementado** (vínculo FK + UI por lactação).
 
 ### BR-CICLO-008 — Ficha do animal com histórico unificado
 
-- **Enunciado**: Na ficha `/animais/:id`, o utilizador vê **timeline** de eventos reprodutivos, lactação atual, gestação ativa, restrição de leite aberta, resumo de produção e atalhos para a próxima ação esperada.
-- **Escopo**: UI + `GET /api/v1/animais/:id/contexto` enriquecido.
-- **Efeito**: informativo e navegação.
-- **Implementação**: `AnimalCicloService`, `AnimalFichaCiclo`, [animais.md](./animais.md) BR-ANIMAIS-004.
+- **Enunciado**: Na ficha `/animais/:id`, o utilizador vê **estado atual** (gestação, lactação, restrição de leite, próximas ações) via contexto e **timeline paginada** de eventos (ciclo, saúde, alertas, baixa) com scroll infinito na UI.
+- **Escopo**: UI + `GET /api/v1/animais/:id/contexto` (sem timeline embutida) + `GET /api/v1/animais/:id/timeline?limit=&offset=&tipo=`.
+- **Efeito**: informativo e navegação; filtros `todos|ciclo|saude|alertas`.
+- **Implementação**: `TimelineRepository` (UNION SQL paginado), `AnimalCicloService.ListTimelinePaginated`, `AnimalTimelineSection`, `AnimalFichaCiclo`; [animais.md](./animais.md) BR-ANIMAIS-004; [saude-animal.md](./saude-animal.md) BR-SAUDE-005; [alertas.md](./alertas.md) BR-ALERTA-013.
 - **Estado**: **implementado**.
 
 ### BR-CICLO-009 — Visibilidade gerencial na home
@@ -204,12 +204,12 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 | Gestação (lista) | Implementado | Partos previstos na home (BR-CICLO-009) |
 | Secagem | Implementado | Encerra lactação ativa na mesma transação |
 | Parto + lactação | Implementado | |
-| Produção | Implementado | Lactação ativa obrigatória (BR-CICLO-007); FUNCIONARIO POST |
+| Produção | Implementado | Lactação ativa obrigatória (BR-CICLO-007); `lactacao_id` automático (BR-PRODUCAO-006); FUNCIONARIO POST |
 | Restrição leite | Implementado | [leite-restricoes.md](./leite-restricoes.md) |
 | Saúde (casos clínicos) | Implementado | CRUD, sync `status_saude`, timeline, RBAC — [saude-animal.md](./saude-animal.md); vacinas = backlog |
 | Alertas proativos | Implementado | Geração diária, dedup, auto-resolve, Web Push, UI `/alertas` — [alertas.md](./alertas.md) |
 | Dashboard pecuário | Implementado | KPIs acionáveis (`ResumoKpiTile`, BR-GESTACOES-004) |
-| Ficha animal (timeline) | Implementado | BR-CICLO-008 |
+| Ficha animal (timeline) | Implementado | BR-CICLO-008; paginação `GET .../timeline` |
 | Saída do rebanho (baixa) | Implementado | [baixa-rebanho.md](./baixa-rebanho.md) BR-CICLO-011; rótulos Gestão BR-BAIXA-009 |
 | Validação temporal (escrita) | Implementado | BR-CICLO-012–014; TMP-001–006; ver [auditoria.md](./auditoria.md) BR-AUDIT-010 |
 
@@ -217,11 +217,9 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ## Backlog de requisitos (próximos)
 
-1. Paginação da timeline na ficha do animal
-2. Coluna `lactacao_id` em produção (relatórios por lactação) — opcional
-3. Vacinas / calendário preventivo (saúde — [saude-animal.md](./saude-animal.md) backlog)
-4. Validação temporal BR-CICLO-012 em datas de casos de saúde
+1. Vacinas / calendário preventivo (saúde — [saude-animal.md](./saude-animal.md) backlog)
+2. Validação temporal BR-CICLO-012 em datas de casos de saúde
 
 ---
 
-**Última atualização**: 2026-05-29 (Onda 3.3: saúde e alertas no fluxo transversal)
+**Última atualização**: 2026-05-30 (BR-CICLO-007 — `lactacao_id` em produção)

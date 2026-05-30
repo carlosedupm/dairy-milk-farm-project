@@ -8,6 +8,7 @@ import {
   getContexto,
   remove,
   reverterBaixa,
+  invalidateAnimalTimeline,
   SEXO_LABELS,
   STATUS_SAUDE_LABELS,
   getCategoriaLabel,
@@ -22,6 +23,7 @@ import {
 } from "@/config/appAccess";
 import { getStatusReprodutivoLabel } from "@/components/animais/animalResumoUtils";
 import { AnimalFichaCiclo } from "@/components/animais/AnimalFichaCiclo";
+import { AnimalTimelineSection } from "@/components/animais/AnimalTimelineSection";
 import type { OrigemAquisicao } from "@/services/animais";
 import type { Sexo, StatusSaude } from "@/services/animais";
 import { get as getFazenda } from "@/services/fazendas";
@@ -112,6 +114,7 @@ function AnimalDetailContent() {
       }
       queryClient.invalidateQueries({ queryKey: ["animais", id] });
       queryClient.invalidateQueries({ queryKey: ["animais", id, "contexto"] });
+      invalidateAnimalTimeline(queryClient, id);
       queryClient.invalidateQueries({ queryKey: ["conformidade"] });
       queryClient.invalidateQueries({ queryKey: ["resumo-pecuario"] });
     },
@@ -428,7 +431,7 @@ function AnimalDetailContent() {
               </Button>
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             {contexto?.resumo_producao &&
             contexto.resumo_producao.total_registros > 0 ? (
               <dl className="grid gap-2 sm:grid-cols-3">
@@ -462,6 +465,11 @@ function AnimalDetailContent() {
                 Nenhum registro de produção ainda.
               </p>
             )}
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/animais/${id}/producao`}>
+                Ver produção por lactação
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
@@ -469,6 +477,7 @@ function AnimalDetailContent() {
           <p className="text-sm text-muted-foreground">Carregando ciclo…</p>
         )}
         {contexto ? <AnimalFichaCiclo contexto={contexto} /> : null}
+        <AnimalTimelineSection animalId={id} />
       </div>
     </PageContainer>
   );

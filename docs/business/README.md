@@ -36,7 +36,7 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 |--------|---------|--------|--------|
 | **Ciclo do rebanho (mestre)** | [ciclo-rebanho.md](./ciclo-rebanho.md) | `BR-CICLO-*` | ✅ Referência mestre |
 | **Saúde animal** | [saude-animal.md](./saude-animal.md) | `BR-SAUDE-001`–`005` | ✅ |
-| **Alertas proativos** | [alertas.md](./alertas.md) | `BR-ALERTA-001`–`012` | ✅ |
+| **Alertas proativos** | [alertas.md](./alertas.md) | `BR-ALERTA-001`–`013` | ✅ |
 | **Auditoria e conformidade** | [auditoria.md](./auditoria.md) | `BR-AUDIT-*`, INT-001–007 | ✅ |
 
 ### Ciclo reprodutivo e produção

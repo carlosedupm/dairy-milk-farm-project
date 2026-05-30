@@ -164,17 +164,8 @@ func ValidateSecagemAposInicioLactacao(ctx context.Context, lactacaoRepo *reposi
 	return nil
 }
 
-// ValidateProducaoDentroLactacao complementa INT-002: produção não após data_fim da lactação que cobre o dia (TMP-006).
-func ValidateProducaoDentroLactacao(
-	ctx context.Context,
-	lactacaoRepo *repository.LactacaoRepository,
-	fazendaID, animalID int64,
-	dataHora time.Time,
-) error {
-	list, err := lactacaoRepo.GetByAnimalID(ctx, animalID)
-	if err != nil {
-		return err
-	}
+// lactacaoCoveringProducaoDate encontra a lactação da fazenda cujo intervalo cobre o dia da produção.
+func lactacaoCoveringProducaoDate(list []*models.Lactacao, fazendaID int64, dataHora time.Time) (*models.Lactacao, error) {
 	prodDay := TruncateToCivilDate(dataHora)
 	var hadLactacaoIniciada bool
 	for _, l := range list {
@@ -187,18 +178,45 @@ func ValidateProducaoDentroLactacao(
 		}
 		hadLactacaoIniciada = true
 		if l.DataFim == nil {
-			return nil
+			return l, nil
 		}
 		fim := TruncateToCivilDate(*l.DataFim)
 		if !prodDay.After(fim) {
-			return nil
+			return l, nil
 		}
 	}
 	if hadLactacaoIniciada {
-		return newIntegridade("TMP-006",
+		return nil, newIntegridade("TMP-006",
 			"A data da produção é posterior ao fim da lactação que cobria esse período (BR-CICLO-007).")
 	}
-	return nil
+	return nil, nil
+}
+
+// FindLactacaoForProducaoDate retorna a lactação da fazenda cujo intervalo cobre o dia da produção.
+// Se existir lactação iniciada mas nenhuma cobrir o dia, retorna erro TMP-006.
+// Se nenhuma lactação tiver iniciado antes do dia, retorna (nil, nil) — INT-002 trata lactação ativa.
+func FindLactacaoForProducaoDate(
+	ctx context.Context,
+	lactacaoRepo *repository.LactacaoRepository,
+	fazendaID, animalID int64,
+	dataHora time.Time,
+) (*models.Lactacao, error) {
+	list, err := lactacaoRepo.GetByAnimalID(ctx, animalID)
+	if err != nil {
+		return nil, err
+	}
+	return lactacaoCoveringProducaoDate(list, fazendaID, dataHora)
+}
+
+// ValidateProducaoDentroLactacao complementa INT-002: produção não após data_fim da lactação que cobre o dia (TMP-006).
+func ValidateProducaoDentroLactacao(
+	ctx context.Context,
+	lactacaoRepo *repository.LactacaoRepository,
+	fazendaID, animalID int64,
+	dataHora time.Time,
+) error {
+	_, err := FindLactacaoForProducaoDate(ctx, lactacaoRepo, fazendaID, animalID, dataHora)
+	return err
 }
 
 // ValidateEventoCioTemporal validações temporais completas para cio.
