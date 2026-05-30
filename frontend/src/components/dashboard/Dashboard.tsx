@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { RestricoesLeiteHomePanel } from "@/components/leite/RestricoesLeiteHomePanel";
 import { AlertasHomePanel } from "@/components/dashboard/AlertasHomePanel";
+import { DashboardKpiGrid } from "@/components/dashboard/DashboardKpiGrid";
 import { PecuarioResumoHomePanel } from "@/components/dashboard/PecuarioResumoHomePanel";
 import { ConformidadeHomePanel } from "@/components/dashboard/ConformidadeHomePanel";
 import { showConformidadePanelForPerfil } from "@/config/appAccess";
@@ -173,15 +174,20 @@ export function Dashboard() {
       variant="default"
       className="pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]"
     >
-      <header className="mb-8">
+      <header className="mb-4">
         <h1 className="text-xl font-semibold text-foreground">Início</h1>
         <p className="text-muted-foreground mt-1">
           O que você precisa fazer hoje?
         </p>
       </header>
 
-      <div className="space-y-8">
-        <section aria-labelledby="prioridades-heading">
+      {!restrictedMode ? <DashboardKpiGrid /> : null}
+
+      <div className="space-y-4">
+        <section
+          aria-labelledby="prioridades-heading"
+          className="space-y-4"
+        >
           <h2 id="prioridades-heading" className="sr-only">
             Prioridades e alertas
           </h2>
@@ -191,7 +197,7 @@ export function Dashboard() {
           {showConformidade ? <ConformidadeHomePanel /> : null}
         </section>
 
-        <section className="space-y-3" aria-labelledby="acesso-rapido-heading">
+        <section className="space-y-3 mt-8" aria-labelledby="acesso-rapido-heading">
           <h2
             id="acesso-rapido-heading"
             className="text-sm font-medium text-muted-foreground"

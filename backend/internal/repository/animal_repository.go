@@ -178,6 +178,25 @@ func (r *AnimalRepository) GetByFazendaID(ctx context.Context, fazendaID int64, 
 	return r.queryList(ctx, query, fazendaID)
 }
 
+// CountEmLactacaoByFazendaID conta animais com lactação ativa na fazenda.
+func (r *AnimalRepository) CountEmLactacaoByFazendaID(ctx context.Context, fazendaID int64) (int, error) {
+	var n int
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM animais a
+		WHERE a.fazenda_id = $1
+		AND `+sqlNoRebanho+`
+		AND EXISTS (
+			SELECT 1 FROM lactacoes l
+			WHERE l.animal_id = a.id
+			AND l.fazenda_id = a.fazenda_id
+			AND l.data_fim IS NULL
+			AND (l.status IS NULL OR l.status = 'EM_ANDAMENTO')
+		)
+	`, fazendaID).Scan(&n)
+	return n, err
+}
+
 // ListEmLactacaoByFazendaID retorna animais com lactação em andamento (data_fim nula e status EM_ANDAMENTO ou nulo).
 func (r *AnimalRepository) ListEmLactacaoByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
 	query := fmt.Sprintf(`

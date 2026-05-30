@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { listPaginated } from "@/services/animais";
+import { listEmLactacaoByFazenda, listPaginated } from "@/services/animais";
 import { getMinhasFazendas } from "@/services/fazendas";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -18,7 +18,8 @@ import {
 } from "@/components/animais/AnimaisListToolbar";
 import { ListPaginationBar } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, X } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
@@ -36,6 +37,7 @@ function AnimaisContent() {
     emptyAnimaisFilterForm()
   );
 
+  const emLactacaoMode = searchParams.get("em_lactacao") === "1";
   const queryString = searchParams.toString();
 
   useEffect(() => {
@@ -105,7 +107,8 @@ function AnimaisContent() {
     ]
   );
 
-  const listEnabled = fazendaReady && fazendaId != null && fazendaId > 0;
+  const listEnabled =
+    fazendaReady && fazendaId != null && fazendaId > 0 && !emLactacaoMode;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["animais", "list", queryParams],
@@ -113,8 +116,35 @@ function AnimaisContent() {
     enabled: listEnabled,
   });
 
-  const items = data?.animais ?? [];
-  const total = data?.total ?? 0;
+  const lactacaoQuery = useQuery({
+    queryKey: ["animais", "fazenda", fazendaId, "em-lactacao"],
+    queryFn: () => listEmLactacaoByFazenda(fazendaId!),
+    enabled:
+      fazendaReady && fazendaId != null && fazendaId > 0 && emLactacaoMode,
+  });
+
+  const lactacaoFiltered = useMemo(() => {
+    const all = lactacaoQuery.data ?? [];
+    if (!debouncedIdent) return all;
+    const term = debouncedIdent.toLowerCase();
+    return all.filter((a) =>
+      a.identificacao.toLowerCase().includes(term),
+    );
+  }, [lactacaoQuery.data, debouncedIdent]);
+
+  const items = emLactacaoMode
+    ? lactacaoFiltered
+    : (data?.animais ?? []);
+  const total = emLactacaoMode
+    ? lactacaoFiltered.length
+    : (data?.total ?? 0);
+  const listLoading = emLactacaoMode
+    ? !fazendaReady || lactacaoQuery.isLoading
+    : !fazendaReady || isLoading;
+  const listError = emLactacaoMode ? lactacaoQuery.error : error;
+  const listRefetch = emLactacaoMode
+    ? () => void lactacaoQuery.refetch()
+    : () => void refetch();
 
   const filterKey = `${debouncedIdent}|${fazendaId ?? ""}|${filters.categoria}|${filters.sexo}|${filters.status_saude}|${filters.status_reprodutivo}|${filters.lote_id}|${filters.rebanho}|${pageSize}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
@@ -124,14 +154,19 @@ function AnimaisContent() {
   }
 
   const titleBase = fazendaAtiva
-    ? `Animais — ${fazendaAtiva.nome}`
-    : "Animais";
+    ? emLactacaoMode
+      ? `Animais em lactação — ${fazendaAtiva.nome}`
+      : `Animais — ${fazendaAtiva.nome}`
+    : emLactacaoMode
+      ? "Animais em lactação"
+      : "Animais";
   const title =
     total > 0 ? `${titleBase} (${total})` : titleBase;
 
   const showSelectFazendaMsg = fazendaReady && !fazendaAtiva;
 
   const hasActiveFilters =
+    emLactacaoMode ||
     Boolean(debouncedIdent) ||
     Boolean(filters.categoria) ||
     Boolean(filters.sexo) ||
@@ -183,18 +218,39 @@ function AnimaisContent() {
           )
         ) : (
           <div className="space-y-6">
+            {emLactacaoMode ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  Em lactação
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    asChild
+                    aria-label="Remover filtro em lactação"
+                  >
+                    <Link href="/animais">
+                      <X className="h-3.5 w-3.5" aria-hidden />
+                    </Link>
+                  </Button>
+                </Badge>
+                <Button variant="link" className="h-auto min-h-[44px] px-0" asChild>
+                  <Link href="/animais">Ver todos os animais</Link>
+                </Button>
+              </div>
+            ) : null}
             <AnimaisListToolbar
               values={filters}
               onChange={setFilters}
               resultCount={total}
-              listLoading={!fazendaReady || isLoading}
+              listLoading={listLoading}
               onClear={handleClearFilters}
             />
             <QueryListContent
-              isLoading={!fazendaReady || isLoading}
-              error={error}
+              isLoading={listLoading}
+              error={listError}
               errorFallback="Erro ao carregar animais. Tente novamente."
-              onRetry={() => void refetch()}
+              onRetry={listRefetch}
             >
               <div className="space-y-4">
                 <AnimalTable
@@ -202,24 +258,30 @@ function AnimaisContent() {
                   canManage={canManageAnimais}
                   hasActiveFilters={hasActiveFilters}
                   filterTerm={debouncedIdent || undefined}
-                  onClearFilters={handleClearFilters}
+                  onClearFilters={
+                    emLactacaoMode
+                      ? () => router.replace("/animais")
+                      : handleClearFilters
+                  }
                   novoAnimalHref={
                     fazendaAtiva
                       ? `/animais/novo?fazenda_id=${fazendaAtiva.id}`
                       : undefined
                   }
                 />
-                <ListPaginationBar
-                  total={total}
-                  pageSize={pageSize}
-                  offset={offset}
-                  onOffsetChange={setOffset}
-                  pageSizeOptions={[10, 25, 50, 100]}
-                  onPageSizeChange={(n) => {
-                    setPageSize(n);
-                    setOffset(0);
-                  }}
-                />
+                {!emLactacaoMode ? (
+                  <ListPaginationBar
+                    total={total}
+                    pageSize={pageSize}
+                    offset={offset}
+                    onOffsetChange={setOffset}
+                    pageSizeOptions={[10, 25, 50, 100]}
+                    onPageSizeChange={(n) => {
+                      setPageSize(n);
+                      setOffset(0);
+                    }}
+                  />
+                ) : null}
               </div>
             </QueryListContent>
           </div>

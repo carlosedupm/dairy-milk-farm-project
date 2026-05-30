@@ -16,7 +16,7 @@ import {
 } from "@/services/alertas";
 import { getApiErrorMessage } from "@/lib/errors";
 import { formatDatePtBr } from "@/lib/format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HomeCollapsiblePanel } from "@/components/dashboard/HomeCollapsiblePanel";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,19 +48,22 @@ export function AlertasHomePanel() {
   const total = data?.total ?? 0;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2 min-w-0">
-          <Bell className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="truncate">Alertas críticos</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 min-w-0">
+    <HomeCollapsiblePanel
+      title="Alertas críticos"
+      icon={Bell}
+      badgeCount={total}
+      defaultOpen={total > 0}
+    >
+      <div className="space-y-3 min-w-0">
         <p className="text-xs text-muted-foreground">
           Até 3 alertas abertos com severidade crítica na fazenda ativa.
         </p>
         {isLoading && (
-          <p className="text-sm text-muted-foreground">A carregar alertas…</p>
+          <div className="space-y-2" aria-hidden>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
+            ))}
+          </div>
         )}
         {error && (
           <p className="text-sm text-destructive">
@@ -85,7 +88,7 @@ export function AlertasHomePanel() {
                   : `${total} alertas críticos abertos`}
                 {" — "}
                 <Link
-                  href="/alertas"
+                  href="/alertas?status=ABERTO&severidade=CRITICA"
                   className="font-medium text-primary underline-offset-4 hover:underline"
                 >
                   Ver todos
@@ -94,7 +97,7 @@ export function AlertasHomePanel() {
             )}
             <ul
               className={cn(
-                "space-y-2 text-sm max-h-[min(20rem,45dvh)] overflow-y-auto min-w-0 pr-1"
+                "space-y-2 text-sm max-h-[min(20rem,45dvh)] overflow-y-auto min-w-0 pr-1",
               )}
             >
               {alertas.map((a: Alerta) => (
@@ -129,7 +132,7 @@ export function AlertasHomePanel() {
             </ul>
             {total <= alertas.length && total > 0 && (
               <Link
-                href="/alertas"
+                href="/alertas?status=ABERTO&severidade=CRITICA"
                 className="text-sm font-medium text-primary underline-offset-4 hover:underline inline-block"
               >
                 Ver todos os alertas
@@ -137,7 +140,7 @@ export function AlertasHomePanel() {
             )}
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </HomeCollapsiblePanel>
   );
 }

@@ -15,6 +15,7 @@ import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import {
   ALERTAS_FILTER_ALL,
   ALERTAS_PAGE_SIZE,
+  alertasFiltersFromSearchParams,
   emptyAlertasFilterState,
   hasActiveAlertasFilters,
   isValidAlertaTipoFilter,
@@ -41,7 +42,9 @@ export function useAlertasPage() {
   const tipoFromUrl =
     tipoParam && isValidAlertaTipoFilter(tipoParam) ? tipoParam : null;
 
-  const [filters, setFilters] = useState(emptyAlertasFilterState);
+  const [filters, setFilters] = useState(() =>
+    alertasFiltersFromSearchParams(searchParams),
+  );
   const activeTipoFilter = tipoFromUrl ?? filters.tipo;
   const [offset, setOffset] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
@@ -103,7 +106,7 @@ export function useAlertasPage() {
 
   const handleClearFilters = () => {
     setFilters(emptyAlertasFilterState());
-    if (tipoFromUrl) {
+    if (tipoFromUrl || searchParams.get("status") || searchParams.get("severidade")) {
       router.replace("/alertas", { scroll: false });
     }
   };

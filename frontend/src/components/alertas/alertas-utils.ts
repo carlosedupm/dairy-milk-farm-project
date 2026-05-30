@@ -1,5 +1,7 @@
 import {
   SEVERIDADE_ALERTA_LABELS,
+  SEVERIDADES_ALERTA,
+  STATUS_ALERTA,
   STATUS_ALERTA_LABELS,
   TIPOS_ALERTA,
   TIPO_ALERTA_LABELS,
@@ -33,6 +35,28 @@ export function emptyAlertasFilterState(): AlertasFilterState {
     tipo: ALERTAS_FILTER_ALL,
     severidade: ALERTAS_FILTER_ALL,
   };
+}
+
+/** Hidrata filtros a partir de query string (ex.: drill-down da home). */
+export function alertasFiltersFromSearchParams(
+  searchParams: Pick<URLSearchParams, "get">,
+): AlertasFilterState {
+  const base = emptyAlertasFilterState();
+  const status = searchParams.get("status")?.trim() ?? "";
+  const severidade = searchParams.get("severidade")?.trim() ?? "";
+  if (
+    status &&
+    (STATUS_ALERTA as readonly string[]).includes(status)
+  ) {
+    base.status = status;
+  }
+  if (
+    severidade &&
+    (SEVERIDADES_ALERTA as readonly string[]).includes(severidade)
+  ) {
+    base.severidade = severidade;
+  }
+  return base;
 }
 
 export function hasActiveAlertasFilters(

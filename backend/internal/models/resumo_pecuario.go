@@ -10,9 +10,11 @@ type PartoPrevistoResumo struct {
 }
 
 type ResumoPecuario struct {
-	PrenhesTotal           int                   `json:"prenhes_total"`
-	RestricoesAtivasTotal int                   `json:"restricoes_ativas_total"`
-	ProducaoHojeLitros    float64               `json:"producao_hoje_litros"`
-	ProducaoSemanaLitros  float64               `json:"producao_semana_litros"`
-	PartosPrevistos       []PartoPrevistoResumo `json:"partos_previstos"`
+	PrenhesTotal            int                   `json:"prenhes_total"`
+	RestricoesAtivasTotal   int                   `json:"restricoes_ativas_total"`
+	ProducaoHojeLitros      float64               `json:"producao_hoje_litros"`
+	ProducaoSemanaLitros    float64               `json:"producao_semana_litros"`
+	PartosProximos7dTotal   int                   `json:"partos_proximos_7d_total"`
+	LactacaoAtivaTotal      int                   `json:"lactacao_ativa_total"`
+	PartosPrevistos         []PartoPrevistoResumo `json:"partos_previstos"`
 }

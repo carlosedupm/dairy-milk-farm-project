@@ -29,3 +29,15 @@ export function buildProducaoListHref(start: string, end: string): string {
   const params = new URLSearchParams({ start, end });
   return `/producao?${params.toString()}`;
 }
+
+export function buildGestacoesPartos7dHref(): string {
+  return "/gestao/gestacoes?status=CONFIRMADA&partos_dias=7";
+}
+
+export function buildAnimaisEmLactacaoHref(): string {
+  return "/animais?em_lactacao=1";
+}
+
+export function buildAlertasCriticosHref(): string {
+  return "/alertas?status=ABERTO&severidade=CRITICA";
+}

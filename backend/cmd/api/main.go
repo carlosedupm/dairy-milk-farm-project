@@ -176,7 +176,7 @@ func main() {
 					}
 					authHandler := handlers.NewAuthHandler(userRepo, jwtSvc, refreshTokenSvc, cookieSameSite)
 					fazendaHandler := handlers.NewFazendaHandler(fazendaSvc)
-					resumoPecuarioSvc := service.NewResumoPecuarioService(gestacaoRepo, restricaoLeiteRepo, producaoRepo)
+					resumoPecuarioSvc := service.NewResumoPecuarioService(gestacaoRepo, restricaoLeiteRepo, producaoRepo, animalRepo)
 					resumoPecuarioHandler := handlers.NewResumoPecuarioHandler(resumoPecuarioSvc, fazendaSvc)
 					restricaoLeiteHandler := handlers.NewRestricaoLeiteHandler(restricaoLeiteSvc, fazendaSvc)
 					alertaHandler := handlers.NewAlertaHandler(alertaSvc, fazendaSvc)

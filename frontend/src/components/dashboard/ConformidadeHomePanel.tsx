@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { getConformidadeFazenda } from "@/services/auditoria";
 import { getApiErrorMessage } from "@/lib/errors";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HomeCollapsiblePanel } from "@/components/dashboard/HomeCollapsiblePanel";
 import { Badge } from "@/components/ui/badge";
 import { ShieldAlert, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,21 +30,24 @@ export function ConformidadeHomePanel() {
   const total = data?.total ?? 0;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2 min-w-0">
-          <ShieldAlert className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="truncate">Conformidade dos dados</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 min-w-0">
+    <HomeCollapsiblePanel
+      title="Conformidade dos dados"
+      icon={ShieldAlert}
+      badgeCount={total}
+      defaultOpen={total > 0}
+    >
+      <div className="space-y-3 min-w-0">
         <p className="text-xs text-muted-foreground">
           Auditoria do <span className="font-medium">rebanho ativo</span> (INT-001 a
           INT-006) e pós-baixa (INT-007). Novos registos são validados na hora; este
           painel destaca dados legados ou exceções a corrigir.
         </p>
         {isLoading && (
-          <p className="text-sm text-muted-foreground">A verificar integridade…</p>
+          <div className="space-y-2" aria-hidden>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-14 rounded-md bg-muted animate-pulse" />
+            ))}
+          </div>
         )}
         {error && (
           <p className="text-sm text-destructive">
@@ -72,7 +75,7 @@ export function ConformidadeHomePanel() {
             </p>
             <ul
               className={cn(
-                "space-y-2 text-sm max-h-[min(20rem,45dvh)] overflow-y-auto min-w-0 pr-1"
+                "space-y-2 text-sm max-h-[min(20rem,45dvh)] overflow-y-auto min-w-0 pr-1",
               )}
             >
               {data.anomalias.map((a, idx) => (
@@ -103,7 +106,7 @@ export function ConformidadeHomePanel() {
             </ul>
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </HomeCollapsiblePanel>
   );
 }

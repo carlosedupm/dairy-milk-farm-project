@@ -12,6 +12,8 @@ export type ResumoPecuario = {
   restricoes_ativas_total: number;
   producao_hoje_litros: number;
   producao_semana_litros: number;
+  partos_proximos_7d_total: number;
+  lactacao_ativa_total: number;
   partos_previstos: PartoPrevistoResumo[];
 };
 

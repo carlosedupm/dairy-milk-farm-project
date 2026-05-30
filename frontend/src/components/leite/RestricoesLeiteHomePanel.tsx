@@ -24,11 +24,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { HomeCollapsiblePanel } from "@/components/dashboard/HomeCollapsiblePanel";
 import {
   Dialog,
   DialogContent,
@@ -202,24 +202,25 @@ export function RestricoesLeiteHomePanel() {
 
   return (
     <>
-      <Card
+      <HomeCollapsiblePanel
         id="restricoes-leite"
+        title="Leite para descarte (aguardando laboratório)"
+        icon={AlertTriangle}
+        badgeCount={lista.length}
+        defaultOpen={temItens}
         className="border-amber-500/30 scroll-mt-20"
       >
-        <CardHeader className="space-y-3 pb-2">
+        <div className="space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-            <div className="min-w-0 space-y-1">
-              <CardTitle className="text-lg">
-                Leite para descarte (aguardando laboratório)
-              </CardTitle>
-              {listaCarregada ? (
-                <p className="text-sm text-muted-foreground">
-                  {temItens
-                    ? `${lista.length} animal(is) aguardando resultado do laboratório.`
-                    : "Nenhum animal nesta situação no momento."}
-                </p>
-              ) : null}
-            </div>
+            {listaCarregada ? (
+              <p className="text-sm text-muted-foreground min-w-0">
+                {temItens
+                  ? `${lista.length} animal(is) aguardando resultado do laboratório.`
+                  : "Nenhum animal nesta situação no momento."}
+              </p>
+            ) : (
+              <span className="sr-only">Carregando restrições</span>
+            )}
             <Button
               type="button"
               variant="secondary"
@@ -244,8 +245,7 @@ export function RestricoesLeiteHomePanel() {
               ordenha — registre aqui para todos verem na ordenha.
             </p>
           </details>
-        </CardHeader>
-        <CardContent className={listaCarregada && !temItens ? "hidden" : ""}>
+        <div className={listaCarregada && !temItens ? "hidden" : ""}>
           <QueryListContent
             isLoading={isLoading}
             error={error}
@@ -371,8 +371,9 @@ export function RestricoesLeiteHomePanel() {
               </div>
             ) : null}
           </QueryListContent>
-        </CardContent>
-      </Card>
+        </div>
+        </div>
+      </HomeCollapsiblePanel>
 
       <Dialog open={dialogNova} onOpenChange={setDialogNova}>
         <DialogContent className="max-w-md">
