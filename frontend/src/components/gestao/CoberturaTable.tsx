@@ -22,11 +22,15 @@ import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveList
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
 import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Plus } from "lucide-react";
 
 type Props = {
   items: Cobertura[];
   fazendaId: number | undefined;
   hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
+  novoHref?: string;
 };
 
 function reprodutorText(
@@ -45,6 +49,8 @@ export function CoberturaTable({
   items,
   fazendaId,
   hasActiveFilters = false,
+  onClearFilters,
+  novoHref,
 }: Props) {
   const queryClient = useQueryClient();
   const animalIds = useMemo(
@@ -74,11 +80,28 @@ export function CoberturaTable({
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">
-        {hasActiveFilters
-          ? "Nenhuma cobertura encontrada com os filtros selecionados."
-          : "Nenhum registro."}
-      </p>
+      <EmptyState
+        title={
+          hasActiveFilters
+            ? "Nenhum resultado encontrado"
+            : "Nenhuma cobertura registrada"
+        }
+        description={
+          hasActiveFilters
+            ? "Nenhuma cobertura corresponde aos filtros selecionados."
+            : "Registre a primeira cobertura desta fazenda."
+        }
+        primaryAction={
+          !hasActiveFilters && novoHref
+            ? { label: "Nova cobertura", href: novoHref, icon: Plus }
+            : undefined
+        }
+        secondaryAction={
+          hasActiveFilters && onClearFilters
+            ? { label: "Limpar filtros", onClick: onClearFilters }
+            : undefined
+        }
+      />
     );
   }
 

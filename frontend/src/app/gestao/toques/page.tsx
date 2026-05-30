@@ -7,18 +7,19 @@ import { listByFazenda } from "@/services/toques";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
+import { QueryListContent } from "@/components/layout/QueryListContent";
 import { GestaoListLayout } from "@/components/gestao/GestaoListLayout";
 import { ToqueTable } from "@/components/gestao/ToqueTable";
 import { ToquesListToolbar } from "@/components/gestao/ToquesListToolbar";
-import { getApiErrorMessage } from "@/lib/errors";
 import { todayDateInputValue } from "@/lib/toquesUtils";
 
 function Content() {
   const { fazendaAtiva } = useFazendaAtiva();
   const fazendaId = fazendaAtiva?.id ?? 0;
-  const [dataFiltro, setDataFiltro] = useState(todayDateInputValue());
+  const today = todayDateInputValue();
+  const [dataFiltro, setDataFiltro] = useState(today);
 
-  const { data: items = [], isLoading, error } = useQuery({
+  const { data: items = [], isLoading, error, refetch } = useQuery({
     queryKey: ["toques", fazendaId, dataFiltro],
     queryFn: () =>
       listByFazenda({
@@ -28,6 +29,8 @@ function Content() {
       }),
     enabled: fazendaId > 0,
   });
+
+  const hasActiveFilters = dataFiltro !== today;
 
   if (!fazendaAtiva) {
     return (
@@ -51,15 +54,20 @@ function Content() {
         dataFiltro={dataFiltro}
         onDataFiltroChange={setDataFiltro}
       />
-      {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-      {error && (
-        <p className="text-destructive">
-          {getApiErrorMessage(error, "Erro ao carregar.")}
-        </p>
-      )}
-      {!isLoading && !error && (
-        <ToqueTable items={items} fazendaId={fazendaId} />
-      )}
+      <QueryListContent
+        isLoading={isLoading}
+        error={error}
+        errorFallback="Erro ao carregar toques. Tente novamente."
+        onRetry={() => void refetch()}
+      >
+        <ToqueTable
+          items={items}
+          fazendaId={fazendaId}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={() => setDataFiltro(todayDateInputValue())}
+          novoHref="/gestao/toques/novo"
+        />
+      </QueryListContent>
     </GestaoListLayout>
   );
 }

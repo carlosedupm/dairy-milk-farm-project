@@ -16,7 +16,7 @@ import {
   emptyCoberturasFilterState,
   hasActiveCoberturaFilterState,
 } from "@/components/gestao/CoberturasListToolbar";
-import { getApiErrorMessage } from "@/lib/errors";
+import { QueryListContent } from "@/components/layout/QueryListContent";
 import {
   filterCoberturas,
   hasActiveCoberturaFilters,
@@ -27,7 +27,7 @@ function Content() {
   const fazendaId = fazendaAtiva?.id ?? 0;
   const [filterState, setFilterState] = useState(emptyCoberturasFilterState);
 
-  const { data: items = [], isLoading, error } = useQuery({
+  const { data: items = [], isLoading, error, refetch } = useQuery({
     queryKey: ["coberturas", fazendaId],
     queryFn: () => listByFazenda(fazendaId),
     enabled: fazendaId > 0,
@@ -79,19 +79,20 @@ function Content() {
           onClear={() => setFilterState(emptyCoberturasFilterState())}
           hasActiveFilters={filtersActive}
         />
-        {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-        {error && (
-          <p className="text-destructive">
-            {getApiErrorMessage(error, "Erro ao carregar.")}
-          </p>
-        )}
-        {!isLoading && !error && (
+        <QueryListContent
+          isLoading={isLoading}
+          error={error}
+          errorFallback="Erro ao carregar coberturas. Tente novamente."
+          onRetry={() => void refetch()}
+        >
           <CoberturaTable
             items={filteredItems}
             fazendaId={fazendaId}
             hasActiveFilters={filtersAffectResults}
+            onClearFilters={() => setFilterState(emptyCoberturasFilterState())}
+            novoHref="/gestao/coberturas/novo"
           />
-        )}
+        </QueryListContent>
       </div>
     </GestaoListLayout>
   );

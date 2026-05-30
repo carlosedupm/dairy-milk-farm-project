@@ -8,7 +8,8 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
-1. ✅ **M2M saúde e alertas (2026-05-30)**: scopes `saude:read`, `saude:write`, `alertas:read`; rotas `GET|POST /integracoes/saude`, `GET /integracoes/alertas`; idempotência em POST saúde; OpenAPI + admin UI + catálogo BR-INTEG-009–011.
+1. ✅ **EmptyState unificado nas listagens (Onda 3.1 UX)**: `components/ui/empty-state.tsx` (variantes default/error/success); `QueryListContent` com `onRetry`; aplicado em `/animais`, `/producao`, `/alertas`, `/fazendas`, `/gestao/cios|coberturas|toques`; CTAs por perfil (FUNCIONARIO: registro, não cadastro animal/fazenda); filtro sem resultado + «Limpar filtros»; mobile CTA full-width.
+2. ✅ **M2M saúde e alertas (2026-05-30)**: scopes `saude:read`, `saude:write`, `alertas:read`; rotas `GET|POST /integracoes/saude`, `GET /integracoes/alertas`; idempotência em POST saúde; OpenAPI + admin UI + catálogo BR-INTEG-009–011.
 2. ✅ **Assistente Live — saúde e alertas (2026-05-30)**: function calling `consultar_saude`, `registrar_saude`, `listar_alertas`, `resolver_alerta` em `assistente_live_service.go`; injeção `AnimalSaudeService` + `AlertaService`; `ExecuteFunction` recebe `perfil` (RBAC alertas BR-ALERTA-007); testes em `assistente_live_saude_alertas_test.go`. Escopo GERENTE+ — **FUNCIONARIO permanece bloqueado** do assistente.
 3. ✅ **`lactacao_id` em produção de leite (BR-PRODUCAO-006)**: migration 34; `FindLactacaoForProducaoDate`; POST preenche FK automaticamente; PUT recalcula só se `animal_id`/`data_hora` mudarem; GET `/producao?lactacao_id=`; UI `/producao` com filtro; ficha `/animais/:id/producao` agrupada por lactação; legado NULL preservado.
 4. ✅ **Timeline paginada na ficha (mobile-first)**: `GET /api/v1/animais/:id/timeline` (`limit`/`offset`/`tipo`); `TimelineRepository` (UNION SQL); timeline removida de `/contexto`; `AnimalTimelineSection` com scroll infinito; alertas (`tipo=ALERTA`, BR-ALERTA-013); docs + Postman.
@@ -230,5 +231,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-05-30 (M2M saúde/alertas; Assistente Live saúde/alertas; `lactacao_id`; timeline paginada)
+**Última atualização**: 2026-05-30 (EmptyState listagens; M2M saúde/alertas; Assistente Live; `lactacao_id`; timeline paginada)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 (incl. saúde/alertas) | **Assistente Live** saúde/alertas (GERENTE+; FUNCIONARIO bloqueado) | Checklist staging pendente | Recuperação senha aguarda SMTP

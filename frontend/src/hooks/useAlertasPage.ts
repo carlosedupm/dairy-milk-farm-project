@@ -69,7 +69,7 @@ export function useAlertasPage() {
     setOffset(0);
   }
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: alertasListQueryKey(fazendaId, listParams),
     queryFn: () => listAlertas(fazendaId, listParams),
     enabled: fazendaId > 0,
@@ -119,6 +119,7 @@ export function useAlertasPage() {
     total: data?.total ?? 0,
     isLoading,
     error,
+    refetch,
     offset,
     setOffset,
     pageSize: ALERTAS_PAGE_SIZE,

@@ -34,11 +34,17 @@ import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Plus } from "lucide-react";
 
 type Props = {
   items: Animal[];
   showFazenda?: boolean;
   canManage?: boolean;
+  hasActiveFilters?: boolean;
+  filterTerm?: string;
+  onClearFilters?: () => void;
+  novoAnimalHref?: string;
 };
 
 const STATUS_VARIANT: Record<
@@ -63,6 +69,10 @@ export function AnimalTable({
   items,
   showFazenda = false,
   canManage = true,
+  hasActiveFilters = false,
+  filterTerm,
+  onClearFilters,
+  novoAnimalHref,
 }: Props) {
   const { user } = useAuth();
   const showBaixa = canRegistrarBaixa(user?.perfil);
@@ -84,14 +94,36 @@ export function AnimalTable({
     deleteMutation.mutate(id);
   };
 
-  const emptyMessage = (
-    <p className="py-8 text-center text-muted-foreground">
-      Nenhum animal cadastrado.
-    </p>
-  );
-
   if (items.length === 0) {
-    return emptyMessage;
+    return (
+      <EmptyState
+        title={
+          hasActiveFilters
+            ? "Nenhum resultado encontrado"
+            : "Nenhum animal cadastrado"
+        }
+        filterTerm={hasActiveFilters ? filterTerm : undefined}
+        description={
+          hasActiveFilters && !filterTerm
+            ? "Nenhum animal corresponde aos filtros selecionados."
+            : undefined
+        }
+        primaryAction={
+          !hasActiveFilters && canManage && novoAnimalHref
+            ? {
+                label: "Novo Animal",
+                href: novoAnimalHref,
+                icon: Plus,
+              }
+            : undefined
+        }
+        secondaryAction={
+          hasActiveFilters && onClearFilters
+            ? { label: "Limpar filtros", onClick: onClearFilters }
+            : undefined
+        }
+      />
+    );
   }
 
   return (

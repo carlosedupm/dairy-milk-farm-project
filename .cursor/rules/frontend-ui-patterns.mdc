@@ -18,7 +18,7 @@ Consulte [`memory-bank/systemPatterns.md`](../../memory-bank/systemPatterns.md) 
 | Erro de API em form/dialog | `<p className="text-destructive">` | `FormValidationAlert` + `getApiErrorMessage` |
 | Listagem com Ações | só tabela | `ResponsiveListContainer` + `MobileListCard` + `ListRowActionsMenu` + `DeleteRecordDialog` |
 | Paginação server-side | offset ad hoc | `ListPaginationBar` |
-| Loading/erro de lista | spinner custom | `QueryListContent` |
+| Loading/erro/empty de lista | spinner custom / `<p>` solto | `QueryListContent` + `EmptyState` (`components/ui/empty-state.tsx`) |
 | HTTP no componente | axios/fetch inline | `services/*` + TanStack Query |
 | Labels/maps duplicados | copiar entre ficheiros | `services/*` ou `components/<domínio>/*-utils.ts` |
 

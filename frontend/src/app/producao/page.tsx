@@ -122,7 +122,7 @@ function ProducaoContent() {
   );
   const { animaisById } = useGestaoAnimaisByIdMap(fazendaId, animalIds);
 
-  const { data: items = [], isLoading, error } = useQuery({
+  const { data: items = [], isLoading, error, refetch } = useQuery({
     queryKey: [
       "producao",
       "list",
@@ -166,6 +166,14 @@ function ProducaoContent() {
   const clearDateFilter = () => {
     setStartDate("");
     setEndDate("");
+  };
+
+  const hasActiveFilters = dateFilterActive || lactacaoId != null;
+
+  const clearAllFilters = () => {
+    clearDateFilter();
+    updateLactacaoFilter("all");
+    setOffset(0);
   };
 
   const updateLactacaoFilter = (value: string) => {
@@ -274,12 +282,20 @@ function ProducaoContent() {
               isLoading={!fazendaReady || isLoading}
               error={error}
               errorFallback="Erro ao carregar registros de produção. Tente novamente."
+              onRetry={() => void refetch()}
             >
               <ProducaoTable
                 items={paginatedItems}
                 fazendaId={fazendaId}
                 showAnimal
                 lactacoesById={lactacoesById}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={clearAllFilters}
+                novoProducaoHref={
+                  fazendaAtiva
+                    ? `/producao/novo?fazenda_id=${fazendaAtiva.id}`
+                    : undefined
+                }
               />
             </QueryListContent>
 

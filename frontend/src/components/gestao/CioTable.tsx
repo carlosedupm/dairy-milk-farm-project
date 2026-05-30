@@ -21,13 +21,16 @@ import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveList
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
 import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Plus } from "lucide-react";
 
 type Props = {
   items: Cio[];
   fazendaId: number | undefined;
+  novoHref?: string;
 };
 
-export function CioTable({ items, fazendaId }: Props) {
+export function CioTable({ items, fazendaId, novoHref }: Props) {
   const queryClient = useQueryClient();
   const animalIds = useMemo(() => items.map((i) => i.animal_id), [items]);
   const { animaisById, isResolved: animaisResolved } = useGestaoAnimaisByIdMap(
@@ -52,7 +55,15 @@ export function CioTable({ items, fazendaId }: Props) {
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>
+      <EmptyState
+        title="Nenhum registro de cio"
+        description="Registre o primeiro cio desta fazenda."
+        primaryAction={
+          novoHref
+            ? { label: "Novo cio", href: novoHref, icon: Plus }
+            : undefined
+        }
+      />
     );
   }
 

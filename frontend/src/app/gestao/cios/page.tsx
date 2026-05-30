@@ -6,15 +6,15 @@ import { listByFazenda } from "@/services/cios";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
+import { QueryListContent } from "@/components/layout/QueryListContent";
 import { GestaoListLayout } from "@/components/gestao/GestaoListLayout";
 import { CioTable } from "@/components/gestao/CioTable";
-import { getApiErrorMessage } from "@/lib/errors";
 
 function Content() {
   const { fazendaAtiva } = useFazendaAtiva();
   const fazendaId = fazendaAtiva?.id ?? 0;
 
-  const { data: items = [], isLoading, error } = useQuery({
+  const { data: items = [], isLoading, error, refetch } = useQuery({
     queryKey: ["cios", fazendaId],
     queryFn: () => listByFazenda(fazendaId),
     enabled: fazendaId > 0,
@@ -36,15 +36,18 @@ function Content() {
       fazendaId={fazendaId}
       newHref="/gestao/cios/novo"
     >
-      {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-      {error && (
-        <p className="text-destructive">
-          {getApiErrorMessage(error, "Erro ao carregar.")}
-        </p>
-      )}
-      {!isLoading && !error && (
-        <CioTable items={items} fazendaId={fazendaId} />
-      )}
+      <QueryListContent
+        isLoading={isLoading}
+        error={error}
+        errorFallback="Erro ao carregar cios. Tente novamente."
+        onRetry={() => void refetch()}
+      >
+        <CioTable
+          items={items}
+          fazendaId={fazendaId}
+          novoHref="/gestao/cios/novo"
+        />
+      </QueryListContent>
     </GestaoListLayout>
   );
 }

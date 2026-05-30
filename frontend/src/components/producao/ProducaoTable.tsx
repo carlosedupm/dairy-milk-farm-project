@@ -24,12 +24,17 @@ import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Plus } from "lucide-react";
 
 type Props = {
   items: ProducaoLeite[];
   fazendaId?: number;
   showAnimal?: boolean;
   lactacoesById?: Map<number, Lactacao>;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
+  novoProducaoHref?: string;
 };
 
 function getQualidadeBadge(qualidade?: number | null) {
@@ -49,6 +54,9 @@ export function ProducaoTable({
   fazendaId,
   showAnimal = false,
   lactacoesById,
+  hasActiveFilters = false,
+  onClearFilters,
+  novoProducaoHref,
 }: Props) {
   const queryClient = useQueryClient();
   const animalIds = useMemo(
@@ -104,9 +112,32 @@ export function ProducaoTable({
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">
-        Nenhum registro de produção.
-      </p>
+      <EmptyState
+        title={
+          hasActiveFilters
+            ? "Nenhum resultado encontrado"
+            : "Nenhum registro de produção"
+        }
+        description={
+          hasActiveFilters
+            ? "Nenhum registro corresponde aos filtros selecionados."
+            : "Registre a primeira produção de leite desta fazenda."
+        }
+        primaryAction={
+          !hasActiveFilters && novoProducaoHref
+            ? {
+                label: "Registrar Produção",
+                href: novoProducaoHref,
+                icon: Plus,
+              }
+            : undefined
+        }
+        secondaryAction={
+          hasActiveFilters && onClearFilters
+            ? { label: "Limpar filtros", onClick: onClearFilters }
+            : undefined
+        }
+      />
     );
   }
 

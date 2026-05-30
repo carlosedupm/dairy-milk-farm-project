@@ -22,10 +22,15 @@ import {
 import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Plus } from "lucide-react";
 
 type Props = {
   items: DiagnosticoGestacao[];
   fazendaId: number | undefined;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
+  novoHref?: string;
 };
 
 function getDiagnosticoLabel(item: DiagnosticoGestacao): string {
@@ -46,7 +51,13 @@ function obsRowClass(obs: string): string {
   return "";
 }
 
-export function ToqueTable({ items, fazendaId }: Props) {
+export function ToqueTable({
+  items,
+  fazendaId,
+  hasActiveFilters = false,
+  onClearFilters,
+  novoHref,
+}: Props) {
   const animalIds = useMemo(
     () => items.map((i) => i.animal_id),
     [items],
@@ -55,7 +66,28 @@ export function ToqueTable({ items, fazendaId }: Props) {
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>
+      <EmptyState
+        title={
+          hasActiveFilters
+            ? "Nenhum resultado encontrado"
+            : "Nenhum toque registrado"
+        }
+        description={
+          hasActiveFilters
+            ? "Nenhum toque corresponde ao dia selecionado."
+            : "Registre o primeiro toque (diagnóstico) desta fazenda."
+        }
+        primaryAction={
+          !hasActiveFilters && novoHref
+            ? { label: "Registrar toque", href: novoHref, icon: Plus }
+            : undefined
+        }
+        secondaryAction={
+          hasActiveFilters && onClearFilters
+            ? { label: "Limpar filtros", onClick: onClearFilters }
+            : undefined
+        }
+      />
     );
   }
 

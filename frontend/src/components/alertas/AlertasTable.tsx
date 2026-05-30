@@ -33,11 +33,16 @@ import {
   alertaTipoLabel,
   SEVERIDADE_BADGE_VARIANT,
 } from "./alertas-utils";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Plus } from "lucide-react";
 
 type Props = {
   items: Alerta[];
   fazendaId: number;
   hasActiveFilters?: boolean;
+  canCreate?: boolean;
+  onClearFilters?: () => void;
+  onCreateClick?: () => void;
   canEmAndamento: boolean;
   canResolve: boolean;
   canDelete: boolean;
@@ -96,6 +101,9 @@ export function AlertasTable({
   items,
   fazendaId,
   hasActiveFilters = false,
+  canCreate = false,
+  onClearFilters,
+  onCreateClick,
   canEmAndamento,
   canResolve,
   canDelete,
@@ -140,11 +148,28 @@ export function AlertasTable({
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">
-        {hasActiveFilters
-          ? "Nenhum alerta encontrado para os filtros selecionados."
-          : "Nenhum alerta registado."}
-      </p>
+      <EmptyState
+        title={
+          hasActiveFilters
+            ? "Nenhum resultado encontrado"
+            : "Nenhum alerta registado"
+        }
+        description={
+          hasActiveFilters
+            ? "Nenhum alerta corresponde aos filtros selecionados."
+            : "Os alertas automáticos e manuais aparecerão aqui."
+        }
+        primaryAction={
+          !hasActiveFilters && canCreate && onCreateClick
+            ? { label: "Novo alerta", onClick: onCreateClick, icon: Plus }
+            : undefined
+        }
+        secondaryAction={
+          hasActiveFilters && onClearFilters
+            ? { label: "Limpar filtros", onClick: onClearFilters }
+            : undefined
+        }
+      />
     );
   }
 

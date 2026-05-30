@@ -107,7 +107,7 @@ function AnimaisContent() {
 
   const listEnabled = fazendaReady && fazendaId != null && fazendaId > 0;
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["animais", "list", queryParams],
     queryFn: () => listPaginated(queryParams),
     enabled: listEnabled,
@@ -130,6 +130,20 @@ function AnimaisContent() {
     total > 0 ? `${titleBase} (${total})` : titleBase;
 
   const showSelectFazendaMsg = fazendaReady && !fazendaAtiva;
+
+  const hasActiveFilters =
+    Boolean(debouncedIdent) ||
+    Boolean(filters.categoria) ||
+    Boolean(filters.sexo) ||
+    Boolean(filters.status_saude) ||
+    Boolean(filters.status_reprodutivo) ||
+    Boolean(filters.lote_id) ||
+    filters.rebanho !== "ativos";
+
+  const handleClearFilters = () => {
+    setFilters(emptyAnimaisFilterForm());
+    setOffset(0);
+  };
 
   const { data: fazendasSemAtiva = undefined, isLoading: loadingFazendasCheck } =
     useQuery({
@@ -174,18 +188,27 @@ function AnimaisContent() {
               onChange={setFilters}
               resultCount={total}
               listLoading={!fazendaReady || isLoading}
-              onClear={() => {
-                setFilters(emptyAnimaisFilterForm());
-                setOffset(0);
-              }}
+              onClear={handleClearFilters}
             />
             <QueryListContent
               isLoading={!fazendaReady || isLoading}
               error={error}
               errorFallback="Erro ao carregar animais. Tente novamente."
+              onRetry={() => void refetch()}
             >
               <div className="space-y-4">
-                <AnimalTable items={items} canManage={canManageAnimais} />
+                <AnimalTable
+                  items={items}
+                  canManage={canManageAnimais}
+                  hasActiveFilters={hasActiveFilters}
+                  filterTerm={debouncedIdent || undefined}
+                  onClearFilters={handleClearFilters}
+                  novoAnimalHref={
+                    fazendaAtiva
+                      ? `/animais/novo?fazenda_id=${fazendaAtiva.id}`
+                      : undefined
+                  }
+                />
                 <ListPaginationBar
                   total={total}
                   pageSize={pageSize}

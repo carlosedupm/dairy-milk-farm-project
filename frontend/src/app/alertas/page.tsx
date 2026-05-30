@@ -28,6 +28,7 @@ function AlertasContent() {
     total,
     isLoading,
     error,
+    refetch,
     offset,
     setOffset,
     pageSize,
@@ -99,12 +100,16 @@ function AlertasContent() {
           isLoading={isLoading}
           error={error}
           errorFallback="Erro ao carregar alertas."
+          onRetry={() => void refetch()}
         >
           <div className="space-y-4">
             <AlertasTable
               items={alertas}
               fazendaId={fazendaId}
               hasActiveFilters={hasActiveFilters}
+              canCreate={canCreate}
+              onClearFilters={onClearFilters}
+              onCreateClick={() => setCreateOpen(true)}
               canEmAndamento={canEmAndamento}
               canResolve={canResolve}
               canDelete={canDelete}

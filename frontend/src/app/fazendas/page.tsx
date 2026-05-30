@@ -11,6 +11,7 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { FazendaTable } from '@/components/fazendas/FazendaTable'
 import { EmptyFazendasState } from '@/components/fazendas/EmptyFazendasState'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -24,7 +25,7 @@ function FazendasContent() {
   const hasRedirected = useRef(false)
 
   // USER vê apenas fazendas vinculadas, ADMIN vê todas
-  const { data: items = [], isLoading, error } = useQuery({
+  const { data: items = [], isLoading, error, refetch } = useQuery({
     queryKey: isAdmin ? ['fazendas'] : ['me', 'fazendas'],
     queryFn: isAdmin ? list : getMinhasFazendas,
   })
@@ -97,12 +98,18 @@ function FazendasContent() {
       <PageContainer variant="default">
         <Card>
           <CardContent className="py-8">
-            <p className="text-destructive text-center">
-              {getApiErrorMessage(
+            <EmptyState
+              variant="error"
+              title="Não foi possível carregar os dados"
+              description={getApiErrorMessage(
                 error,
-                'Erro ao carregar fazendas. Tente novamente.'
+                'Erro ao carregar fazendas. Tente novamente.',
               )}
-            </p>
+              primaryAction={{
+                label: 'Tentar novamente',
+                onClick: () => void refetch(),
+              }}
+            />
           </CardContent>
         </Card>
       </PageContainer>
