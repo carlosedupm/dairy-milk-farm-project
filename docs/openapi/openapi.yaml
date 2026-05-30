@@ -1,0 +1,1047 @@
+# CeialMilk — API JWT (saúde, alertas, push)
+# Manter alinhado a animal_saude_handler.go, alerta_handler.go, push_handler.go
+openapi: 3.0.3
+info:
+  title: CeialMilk API (JWT)
+  description: |
+    Contrato parcial da API JWT para utilizadores autenticados (UI e integrações internas).
+    Autenticação via cookie `ceialmilk_token` **ou** header `Authorization: Bearer <jwt>`.
+
+    Regras de domínio: BR-SAUDE-001 (CRUD saúde por animal), BR-ALERTA-001 (alertas por fazenda).
+    Distinto da API M2M (`/api/v1/integracoes/*`, BR-INTEG-001) que usa chave `cmk_live_*`.
+  version: 1.0.0
+  contact:
+    name: CeialMilk
+
+servers:
+  - url: /
+    description: Servidor atual
+
+tags:
+  - name: SaudeAnimal
+    description: Casos clínicos por animal (BR-SAUDE-001)
+  - name: Alertas
+    description: Alertas proativos por fazenda (BR-ALERTA-001)
+  - name: Push
+    description: Web Push e fazenda ativa do utilizador
+
+security:
+  - BearerJWT: []
+
+paths:
+  /api/v1/animais/{animalId}/saude:
+    get:
+      tags: [SaudeAnimal]
+      summary: Listar casos de saúde do animal
+      description: |
+        Retorna todos os casos de saúde do animal. Requer acesso à fazenda do animal.
+        **RBAC**: FUNCIONARIO pode listar; GERENTE+ idem.
+      operationId: listAnimalSaude
+      parameters:
+        - $ref: "#/components/parameters/AnimalIdPath"
+      responses:
+        "200":
+          description: Lista de casos (pode ser vazia)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAnimalSaudeList"
+              examples:
+                listagem:
+                  summary: Dois casos — tratamento ativo e preventivo concluído
+                  value:
+                    data:
+                      - id: 101
+                        animal_id: 42
+                        tipo_caso: TRATAMENTO
+                        data_inicio: "2026-05-01"
+                        data_fim: null
+                        status: ATIVO
+                        observacoes: Mastite leve
+                        created_by: 3
+                        created_at: "2026-05-01T10:00:00Z"
+                        updated_at: "2026-05-01T10:00:00Z"
+                      - id: 98
+                        animal_id: 42
+                        tipo_caso: PREVENTIVO
+                        data_inicio: "2026-04-10"
+                        data_fim: "2026-04-10"
+                        status: CONCLUIDO
+                        observacoes: Vacinação
+                        created_by: 3
+                        created_at: "2026-04-10T08:00:00Z"
+                        updated_at: "2026-04-10T18:00:00Z"
+                    message: Casos de saúde listados com sucesso
+                    timestamp: "2026-05-29T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [SaudeAnimal]
+      summary: Criar caso de saúde
+      description: |
+        Regista novo caso clínico. Animal deve estar no rebanho ativo (BR-SAUDE-003).
+        Após criação, `animais.status_saude` é recalculado (BR-SAUDE-004).
+        **RBAC**: FUNCIONARIO e GERENTE+ podem criar.
+      operationId: createAnimalSaude
+      parameters:
+        - $ref: "#/components/parameters/AnimalIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveAnimalSaudeInput"
+            examples:
+              preventivo:
+                summary: Caso preventivo ativo
+                value:
+                  tipo_caso: PREVENTIVO
+                  data_inicio: "2026-05-29"
+                  status: ATIVO
+                  observacoes: Vermifugação programada
+      responses:
+        "201":
+          description: Caso criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAnimalSaude"
+              examples:
+                criado:
+                  summary: Caso preventivo registado
+                  value:
+                    data:
+                      id: 102
+                      animal_id: 42
+                      tipo_caso: PREVENTIVO
+                      data_inicio: "2026-05-29"
+                      data_fim: null
+                      status: ATIVO
+                      observacoes: Vermifugação programada
+                      created_by: 3
+                      created_at: "2026-05-29T14:00:00Z"
+                      updated_at: "2026-05-29T14:00:00Z"
+                    message: Caso de saúde registrado com sucesso
+                    timestamp: "2026-05-29T14:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/animais/{animalId}/saude/{saudeId}:
+    get:
+      tags: [SaudeAnimal]
+      summary: Detalhe do caso de saúde
+      description: |
+        **RBAC**: FUNCIONARIO e GERENTE+ podem consultar.
+      operationId: getAnimalSaude
+      parameters:
+        - $ref: "#/components/parameters/AnimalIdPath"
+        - $ref: "#/components/parameters/SaudeIdPath"
+      responses:
+        "200":
+          description: Caso encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAnimalSaude"
+              examples:
+                detalhe:
+                  summary: Tratamento ativo
+                  value:
+                    data:
+                      id: 101
+                      animal_id: 42
+                      tipo_caso: TRATAMENTO
+                      data_inicio: "2026-05-01"
+                      data_fim: null
+                      status: ATIVO
+                      observacoes: Mastite leve — antibiótico 5 dias
+                      created_by: 3
+                      created_at: "2026-05-01T10:00:00Z"
+                      updated_at: "2026-05-01T10:00:00Z"
+                    message: Caso de saúde carregado com sucesso
+                    timestamp: "2026-05-29T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [SaudeAnimal]
+      summary: Editar caso de saúde
+      description: |
+        **RBAC**: FUNCIONARIO recebe 403; GERENTE+ pode editar.
+      operationId: updateAnimalSaude
+      parameters:
+        - $ref: "#/components/parameters/AnimalIdPath"
+        - $ref: "#/components/parameters/SaudeIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveAnimalSaudeInput"
+      responses:
+        "200":
+          description: Caso atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAnimalSaude"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [SaudeAnimal]
+      summary: Excluir caso de saúde
+      description: |
+        Exclusão física do registo. Recalcula `animais.status_saude` (BR-SAUDE-004).
+        **RBAC**: FUNCIONARIO recebe 403; GERENTE+ pode excluir.
+      operationId: deleteAnimalSaude
+      parameters:
+        - $ref: "#/components/parameters/AnimalIdPath"
+        - $ref: "#/components/parameters/SaudeIdPath"
+      responses:
+        "200":
+          description: Caso excluído
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        nullable: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/fazendas/{fazendaId}/alertas:
+    get:
+      tags: [Alertas]
+      summary: Listar alertas da fazenda
+      description: |
+        Listagem paginada com filtros opcionais. Ordenação padrão: status aberto/em andamento,
+        severidade (CRITICA → BAIXA), created_at desc (BR-ALERTA-006).
+        **RBAC**: FUNCIONARIO e GERENTE+ podem listar.
+      operationId: listAlertas
+      parameters:
+        - $ref: "#/components/parameters/FazendaIdPath"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/StatusAlerta"
+        - name: tipo
+          in: query
+          schema:
+            $ref: "#/components/schemas/TipoAlerta"
+        - name: severidade
+          in: query
+          schema:
+            $ref: "#/components/schemas/SeveridadeAlerta"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 25
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        "200":
+          description: Alertas listados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAlertasList"
+              examples:
+                listagem:
+                  summary: Alertas abertos filtrados por severidade ALTA
+                  value:
+                    data:
+                      alertas:
+                        - id: 501
+                          fazenda_id: 1
+                          animal_id: 42
+                          tipo: MANUAL
+                          severidade: ALTA
+                          titulo: Revisão de cocho
+                          descricao: Verificar consumo da vaca 42
+                          data_prevista: "2026-05-30"
+                          status: ABERTO
+                          resolvido_por: null
+                          resolvido_em: null
+                          created_by: 2
+                          created_at: "2026-05-28T09:00:00Z"
+                          updated_at: "2026-05-28T09:00:00Z"
+                          animal_identificacao: "BR-042"
+                          created_by_nome: "João Gerente"
+                          resolvido_por_nome: null
+                      total: 1
+                    message: Alertas listados
+                    timestamp: "2026-05-29T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Alertas]
+      summary: Criar alerta manual
+      description: |
+        Cria alerta com `tipo: MANUAL` (BR-ALERTA-001). Apenas GERENTE+ (BR-ALERTA-007).
+        `animal_id` opcional; se informado, deve pertencer à fazenda e estar no rebanho.
+      operationId: createAlerta
+      parameters:
+        - $ref: "#/components/parameters/FazendaIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAlertaInput"
+            examples:
+              manual:
+                summary: Alerta manual com severidade ALTA
+                value:
+                  tipo: MANUAL
+                  titulo: Inspecionar curral B
+                  descricao: Verificar bebedouros
+                  severidade: ALTA
+                  animal_id: 42
+                  data_prevista: "2026-05-30"
+      responses:
+        "201":
+          description: Alerta criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAlerta"
+              examples:
+                criado:
+                  summary: Alerta manual criado
+                  value:
+                    data:
+                      id: 502
+                      fazenda_id: 1
+                      animal_id: 42
+                      tipo: MANUAL
+                      severidade: ALTA
+                      titulo: Inspecionar curral B
+                      descricao: Verificar bebedouros
+                      data_prevista: "2026-05-30"
+                      status: ABERTO
+                      resolvido_por: null
+                      resolvido_em: null
+                      created_by: 2
+                      created_at: "2026-05-29T14:00:00Z"
+                      updated_at: "2026-05-29T14:00:00Z"
+                      animal_identificacao: "BR-042"
+                      created_by_nome: "João Gerente"
+                      resolvido_por_nome: null
+                    message: Alerta criado
+                    timestamp: "2026-05-29T14:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/fazendas/{fazendaId}/alertas/{alertaId}:
+    get:
+      tags: [Alertas]
+      summary: Detalhe do alerta
+      description: |
+        **RBAC**: FUNCIONARIO e GERENTE+ podem consultar.
+      operationId: getAlerta
+      parameters:
+        - $ref: "#/components/parameters/FazendaIdPath"
+        - $ref: "#/components/parameters/AlertaIdPath"
+      responses:
+        "200":
+          description: Alerta encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAlerta"
+              examples:
+                detalhe:
+                  summary: Alerta manual aberto
+                  value:
+                    data:
+                      id: 501
+                      fazenda_id: 1
+                      animal_id: 42
+                      tipo: MANUAL
+                      severidade: ALTA
+                      titulo: Revisão de cocho
+                      descricao: Verificar consumo da vaca 42
+                      data_prevista: "2026-05-30"
+                      status: ABERTO
+                      resolvido_por: null
+                      resolvido_em: null
+                      created_by: 2
+                      created_at: "2026-05-28T09:00:00Z"
+                      updated_at: "2026-05-28T09:00:00Z"
+                      animal_identificacao: "BR-042"
+                      created_by_nome: "João Gerente"
+                      resolvido_por_nome: null
+                    message: Alerta encontrado
+                    timestamp: "2026-05-29T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Alertas]
+      summary: Excluir alerta manual
+      description: |
+        Exclusão permitida apenas para `tipo = MANUAL` (BR-ALERTA-004).
+        **RBAC**: FUNCIONARIO recebe 403; GERENTE+ pode excluir.
+      operationId: deleteAlerta
+      parameters:
+        - $ref: "#/components/parameters/FazendaIdPath"
+        - $ref: "#/components/parameters/AlertaIdPath"
+      responses:
+        "200":
+          description: Alerta excluído
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        nullable: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/fazendas/{fazendaId}/alertas/{alertaId}/status:
+    patch:
+      tags: [Alertas]
+      summary: Atualizar status do alerta
+      description: |
+        Transições válidas (BR-ALERTA-003): ABERTO → EM_ANDAMENTO | RESOLVIDO | IGNORADO;
+        EM_ANDAMENTO → RESOLVIDO | IGNORADO. Estados terminais não mudam.
+        **RBAC**: FUNCIONARIO só ABERTO → EM_ANDAMENTO; GERENTE+ pode resolver/ignorar.
+      operationId: updateAlertaStatus
+      parameters:
+        - $ref: "#/components/parameters/FazendaIdPath"
+        - $ref: "#/components/parameters/AlertaIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAlertaStatusInput"
+            examples:
+              emAndamento:
+                summary: Marcar em andamento
+                value:
+                  status: EM_ANDAMENTO
+      responses:
+        "200":
+          description: Status atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessAlerta"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/me/push/vapid-public-key:
+    get:
+      tags: [Push]
+      summary: Obter chave VAPID pública
+      description: |
+        Chave pública para subscrição Web Push no browser.
+        Retorna 503 se VAPID não estiver configurado no servidor.
+      operationId: getVapidPublicKey
+      responses:
+        "200":
+          description: Chave VAPID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessVapidPublicKey"
+              examples:
+                chave:
+                  summary: Chave pública VAPID
+                  value:
+                    data:
+                      public_key: "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U"
+                    message: ""
+                    timestamp: "2026-05-29T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/me/push-subscription:
+    put:
+      tags: [Push]
+      summary: Registrar subscription Web Push
+      description: |
+        Upsert da subscription do utilizador autenticado. Header `User-Agent` opcional é persistido.
+      operationId: upsertPushSubscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushSubscriptionInput"
+            examples:
+              registo:
+                summary: Subscription do browser
+                value:
+                  endpoint: "https://fcm.googleapis.com/fcm/send/dGhpcyBpcyBhIGZha2UgZW5kcG9pbnQ"
+                  keys:
+                    p256dh: "BNcRdreALRFXTk0O4mIlVi8jDDH0HEQo2z3i2l8"
+                    auth: "tBHItJI5svbpez7KI4CCXg"
+      responses:
+        "200":
+          description: Subscription registada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessPushRegistered"
+              examples:
+                registada:
+                  summary: Confirmação de registo
+                  value:
+                    data:
+                      registered: true
+                    message: Subscription registrada
+                    timestamp: "2026-05-29T12:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags: [Push]
+      summary: Remover subscription Web Push
+      description: |
+        **Requer body JSON** com `endpoint` (não é DELETE sem corpo).
+      operationId: deletePushSubscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeletePushSubscriptionInput"
+            examples:
+              remover:
+                summary: Endpoint a remover
+                value:
+                  endpoint: "https://fcm.googleapis.com/fcm/send/dGhpcyBpcyBhIGZha2UgZW5kcG9pbnQ"
+      responses:
+        "200":
+          description: Subscription removida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessPushDeleted"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/me/fazenda-ativa:
+    put:
+      tags: [Push]
+      summary: Atualizar fazenda ativa do utilizador
+      description: |
+        Sincroniza `usuarios.fazenda_ativa_id` para filtrar push de alertas (BR-ALERTA-001).
+        Fazenda deve estar vinculada ao utilizador.
+      operationId: updateFazendaAtiva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FazendaAtivaInput"
+            examples:
+              selecionar:
+                summary: Selecionar fazenda 1
+                value:
+                  fazenda_id: 1
+      responses:
+        "200":
+          description: Fazenda ativa atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessFazendaAtiva"
+              examples:
+                atualizada:
+                  summary: Confirmação
+                  value:
+                    data:
+                      fazenda_id: 1
+                    message: Fazenda ativa atualizada
+                    timestamp: "2026-05-29T12:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+components:
+  securitySchemes:
+    BearerJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT obtido em `POST /api/auth/login`.
+        Alternativa: cookie HttpOnly `ceialmilk_token` (browser).
+
+  parameters:
+    AnimalIdPath:
+      name: animalId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID do animal
+    SaudeIdPath:
+      name: saudeId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID do caso de saúde
+    FazendaIdPath:
+      name: fazendaId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID da fazenda
+    AlertaIdPath:
+      name: alertaId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID do alerta
+
+  responses:
+    BadRequest:
+      description: Pedido inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Perfil ou fazenda não autorizada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceUnavailable:
+      description: Serviço indisponível
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    SuccessResponse:
+      type: object
+      required: [data, message, timestamp]
+      properties:
+        data:
+          description: Payload da operação
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required: [error, timestamp]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+            details:
+              nullable: true
+        timestamp:
+          type: string
+          format: date-time
+
+    TipoCasoSaude:
+      type: string
+      enum: [TRATAMENTO, PREVENTIVO, CIRURGIA, OUTRO]
+
+    StatusCasoSaude:
+      type: string
+      enum: [ATIVO, CONCLUIDO, CANCELADO]
+
+    TipoAlerta:
+      type: string
+      enum:
+        - TRATAMENTO_VENCIDO
+        - PARTO_PREVISTO
+        - RESTRICAO_LEITE_ATIVA
+        - NAO_CONFORMIDADE
+        - GESTACAO_SEM_SECAGEM
+        - CIO_DETECTADO
+        - MANUAL
+
+    SeveridadeAlerta:
+      type: string
+      enum: [CRITICA, ALTA, MEDIA, BAIXA]
+
+    StatusAlerta:
+      type: string
+      enum: [ABERTO, EM_ANDAMENTO, RESOLVIDO, IGNORADO]
+
+    AnimalSaude:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        animal_id:
+          type: integer
+          format: int64
+        tipo_caso:
+          $ref: "#/components/schemas/TipoCasoSaude"
+        data_inicio:
+          type: string
+          format: date
+        data_fim:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: "#/components/schemas/StatusCasoSaude"
+        observacoes:
+          type: string
+          nullable: true
+        created_by:
+          type: integer
+          format: int64
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    SaveAnimalSaudeInput:
+      type: object
+      required: [tipo_caso, data_inicio, status]
+      properties:
+        tipo_caso:
+          $ref: "#/components/schemas/TipoCasoSaude"
+        data_inicio:
+          type: string
+          format: date
+          description: Formato YYYY-MM-DD
+        data_fim:
+          type: string
+          format: date
+          nullable: true
+          description: Formato YYYY-MM-DD; não pode ser anterior a data_inicio
+        status:
+          $ref: "#/components/schemas/StatusCasoSaude"
+        observacoes:
+          type: string
+          nullable: true
+
+    SuccessAnimalSaude:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/AnimalSaude"
+
+    SuccessAnimalSaudeList:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/AnimalSaude"
+
+    Alerta:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fazenda_id:
+          type: integer
+          format: int64
+        animal_id:
+          type: integer
+          format: int64
+          nullable: true
+        tipo:
+          $ref: "#/components/schemas/TipoAlerta"
+        severidade:
+          $ref: "#/components/schemas/SeveridadeAlerta"
+        titulo:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        data_prevista:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: "#/components/schemas/StatusAlerta"
+        resolvido_por:
+          type: integer
+          format: int64
+          nullable: true
+        resolvido_em:
+          type: string
+          format: date-time
+          nullable: true
+        created_by:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        animal_identificacao:
+          type: string
+          nullable: true
+          description: Preenchido em listagem e detalhe quando animal_id informado
+        created_by_nome:
+          type: string
+          nullable: true
+        resolvido_por_nome:
+          type: string
+          nullable: true
+
+    CreateAlertaInput:
+      type: object
+      required: [tipo, titulo, severidade]
+      properties:
+        tipo:
+          type: string
+          enum: [MANUAL]
+          description: Apenas alertas manuais podem ser criados via API
+        titulo:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        animal_id:
+          type: integer
+          format: int64
+          nullable: true
+        data_prevista:
+          type: string
+          format: date
+          nullable: true
+          description: Formato YYYY-MM-DD
+        severidade:
+          $ref: "#/components/schemas/SeveridadeAlerta"
+
+    UpdateAlertaStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/StatusAlerta"
+
+    AlertasListData:
+      type: object
+      required: [alertas, total]
+      properties:
+        alertas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alerta"
+        total:
+          type: integer
+          format: int64
+
+    SuccessAlerta:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Alerta"
+
+    SuccessAlertasList:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/AlertasListData"
+
+    PushSubscriptionKeys:
+      type: object
+      required: [p256dh, auth]
+      properties:
+        p256dh:
+          type: string
+        auth:
+          type: string
+
+    PushSubscriptionInput:
+      type: object
+      required: [endpoint, keys]
+      properties:
+        endpoint:
+          type: string
+          format: uri
+        keys:
+          $ref: "#/components/schemas/PushSubscriptionKeys"
+
+    DeletePushSubscriptionInput:
+      type: object
+      required: [endpoint]
+      properties:
+        endpoint:
+          type: string
+          format: uri
+
+    FazendaAtivaInput:
+      type: object
+      required: [fazenda_id]
+      properties:
+        fazenda_id:
+          type: integer
+          format: int64
+
+    VapidPublicKeyData:
+      type: object
+      required: [public_key]
+      properties:
+        public_key:
+          type: string
+
+    PushRegisteredData:
+      type: object
+      required: [registered]
+      properties:
+        registered:
+          type: boolean
+
+    PushDeletedData:
+      type: object
+      required: [deleted]
+      properties:
+        deleted:
+          type: boolean
+
+    FazendaAtivaData:
+      type: object
+      required: [fazenda_id]
+      properties:
+        fazenda_id:
+          type: integer
+          format: int64
+
+    SuccessVapidPublicKey:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/VapidPublicKeyData"
+
+    SuccessPushRegistered:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/PushRegisteredData"
+
+    SuccessPushDeleted:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/PushDeletedData"
+
+    SuccessFazendaAtiva:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/FazendaAtivaData"
