@@ -163,6 +163,10 @@ export function showAssistenteForPerfil(perfil: string | undefined): boolean {
   return isAssistenteEnabledForPerfil(perfil);
 }
 
+export function canRegistrarProducao(perfil: string | undefined): boolean {
+  return isPathAllowedForPerfil(perfil, "/producao/novo");
+}
+
 export function canRegistrarBaixa(perfil: string | undefined): boolean {
   if (!perfil) return false;
   if (perfil === "USER") return false;

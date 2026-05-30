@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { canRegistrarProducao } from "@/config/appAccess";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
@@ -35,6 +37,8 @@ function ProducaoContent() {
   const router = useRouter();
   const { fazendaAtiva, isReady: fazendaReady, setFazendaAtiva } =
     useFazendaAtiva();
+  const { user } = useAuth();
+  const canRegister = canRegistrarProducao(user?.perfil);
   const fazendaId = fazendaAtiva?.id;
 
   const [startDate, setStartDate] = useState("");
@@ -195,11 +199,11 @@ function ProducaoContent() {
       <ListCardLayout
         title={title}
         action={
-          fazendaAtiva ? (
+          fazendaAtiva && canRegister ? (
             <Button asChild>
               <Link href={`/producao/novo?fazenda_id=${fazendaAtiva.id}`}>
                 <Plus className="mr-2 h-4 w-4" />
-                Registrar Produção
+                Registrar produção
               </Link>
             </Button>
           ) : null
@@ -296,6 +300,7 @@ function ProducaoContent() {
                     ? `/producao/novo?fazenda_id=${fazendaAtiva.id}`
                     : undefined
                 }
+                canRegister={canRegister}
               />
             </QueryListContent>
 

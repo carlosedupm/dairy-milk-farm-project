@@ -107,9 +107,7 @@ function AlertasContent() {
               items={alertas}
               fazendaId={fazendaId}
               hasActiveFilters={hasActiveFilters}
-              canCreate={canCreate}
               onClearFilters={onClearFilters}
-              onCreateClick={() => setCreateOpen(true)}
               canEmAndamento={canEmAndamento}
               canResolve={canResolve}
               canDelete={canDelete}

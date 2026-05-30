@@ -34,8 +34,8 @@ import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Plus } from "lucide-react";
+import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { Beef } from "lucide-react";
 
 type Props = {
   items: Animal[];
@@ -96,32 +96,21 @@ export function AnimalTable({
 
   if (items.length === 0) {
     return (
-      <EmptyState
-        title={
-          hasActiveFilters
-            ? "Nenhum resultado encontrado"
-            : "Nenhum animal cadastrado"
-        }
-        filterTerm={hasActiveFilters ? filterTerm : undefined}
-        description={
+      <ListEmptyState
+        icon={Beef}
+        emptyTitle="Nenhum animal cadastrado"
+        emptyDescription="Comece cadastrando seu primeiro animal."
+        registerLabel="Cadastrar animal"
+        registerHref={novoAnimalHref}
+        canRegister={!!canManage}
+        hasActiveFilters={hasActiveFilters}
+        filterTerm={filterTerm}
+        filteredDescription={
           hasActiveFilters && !filterTerm
             ? "Nenhum animal corresponde aos filtros selecionados."
             : undefined
         }
-        primaryAction={
-          !hasActiveFilters && canManage && novoAnimalHref
-            ? {
-                label: "Novo Animal",
-                href: novoAnimalHref,
-                icon: Plus,
-              }
-            : undefined
-        }
-        secondaryAction={
-          hasActiveFilters && onClearFilters
-            ? { label: "Limpar filtros", onClick: onClearFilters }
-            : undefined
-        }
+        onClearFilters={onClearFilters}
       />
     );
   }

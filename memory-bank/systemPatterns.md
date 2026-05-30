@@ -139,7 +139,7 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 
 - Composição + DRY de layout: `GestaoListLayout`, `GestaoFormLayout`, `PageContainer`, `ListCardLayout` (`components/layout/ListCardLayout.tsx` — card com título + ação opcional).
 - Listagens com TanStack Query: `QueryListContent` (`components/layout/QueryListContent.tsx` — carregando / erro com `EmptyState` variant `error` + `onRetry` / children).
-- Estado vazio de listagem: `EmptyState` (`components/ui/empty-state.tsx` — variantes `default`|`error`|`success`; CTAs `w-full sm:w-auto`; filtro sem resultado com «Limpar filtros»; permissões espelham checks da página/`appAccess`).
+- Estado vazio de listagem: `EmptyState` (`components/ui/empty-state.tsx` — ícone Lucide 48px em círculo; `animate-in fade-in`; variantes `default`|`error`|`success`; `filterTerm` → título `Nenhum resultado para "{termo}"` + descrição «Tente ajustar os filtros»; CTAs `w-full sm:w-auto`, `min-h-[44px]`); composição DRY via `ListEmptyState` (`components/layout/ListEmptyState.tsx` — empty vs filtrado, CTA registro condicional, «Limpar filtros»); alertas sem dados = `success` sem CTA; permissões via `appAccess` (`canRegistrarProducao`, `canManageAnimais`, etc.).
 - DRY de erro: `getApiErrorMessage`.
 - Abstração de domínio: `useAnimaisMap`, utilitários em `components/folgas/*-utils.ts`.
 - Filtros em listagem: `AnimaisListToolbar` (`components/animais/AnimaisListToolbar.tsx`) — busca + Popover/Dialog (`useMediaQuery`); `resultCount`/`listLoading` só para resumo no Dialog mobile.

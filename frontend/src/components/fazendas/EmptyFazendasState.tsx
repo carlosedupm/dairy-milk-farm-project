@@ -20,7 +20,7 @@ export function EmptyFazendasState({ isAdmin }: EmptyFazendasStateProps) {
         title="Nenhuma fazenda cadastrada"
         description="Comece criando sua primeira fazenda para gerenciar animais e produção de leite."
         primaryAction={{
-          label: 'Criar primeira fazenda',
+          label: 'Criar fazenda',
           href: '/fazendas/nova',
           icon: Building2,
         }}

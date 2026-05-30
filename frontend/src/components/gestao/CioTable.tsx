@@ -21,8 +21,8 @@ import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveList
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
 import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Plus } from "lucide-react";
+import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { HeartPulse } from "lucide-react";
 
 type Props = {
   items: Cio[];
@@ -55,14 +55,12 @@ export function CioTable({ items, fazendaId, novoHref }: Props) {
 
   if (items.length === 0) {
     return (
-      <EmptyState
-        title="Nenhum registro de cio"
-        description="Registre o primeiro cio desta fazenda."
-        primaryAction={
-          novoHref
-            ? { label: "Novo cio", href: novoHref, icon: Plus }
-            : undefined
-        }
+      <ListEmptyState
+        icon={HeartPulse}
+        emptyTitle="Nenhum cio registrado"
+        emptyDescription="Registre o primeiro cio desta fazenda."
+        registerLabel="Registrar cio"
+        registerHref={novoHref}
       />
     );
   }

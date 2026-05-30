@@ -22,8 +22,8 @@ import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveList
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
 import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Plus } from "lucide-react";
+import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { Baby } from "lucide-react";
 
 type Props = {
   items: Cobertura[];
@@ -80,27 +80,15 @@ export function CoberturaTable({
 
   if (items.length === 0) {
     return (
-      <EmptyState
-        title={
-          hasActiveFilters
-            ? "Nenhum resultado encontrado"
-            : "Nenhuma cobertura registrada"
-        }
-        description={
-          hasActiveFilters
-            ? "Nenhuma cobertura corresponde aos filtros selecionados."
-            : "Registre a primeira cobertura desta fazenda."
-        }
-        primaryAction={
-          !hasActiveFilters && novoHref
-            ? { label: "Nova cobertura", href: novoHref, icon: Plus }
-            : undefined
-        }
-        secondaryAction={
-          hasActiveFilters && onClearFilters
-            ? { label: "Limpar filtros", onClick: onClearFilters }
-            : undefined
-        }
+      <ListEmptyState
+        icon={Baby}
+        emptyTitle="Nenhuma cobertura registrada"
+        emptyDescription="Registre a primeira cobertura desta fazenda."
+        registerLabel="Registrar cobertura"
+        registerHref={novoHref}
+        hasActiveFilters={hasActiveFilters}
+        filteredDescription="Nenhuma cobertura corresponde aos filtros selecionados."
+        onClearFilters={onClearFilters}
       />
     );
   }

@@ -24,8 +24,8 @@ import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Plus } from "lucide-react";
+import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { Milk } from "lucide-react";
 
 type Props = {
   items: ProducaoLeite[];
@@ -35,6 +35,7 @@ type Props = {
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
   novoProducaoHref?: string;
+  canRegister?: boolean;
 };
 
 function getQualidadeBadge(qualidade?: number | null) {
@@ -57,6 +58,7 @@ export function ProducaoTable({
   hasActiveFilters = false,
   onClearFilters,
   novoProducaoHref,
+  canRegister = true,
 }: Props) {
   const queryClient = useQueryClient();
   const animalIds = useMemo(
@@ -112,31 +114,16 @@ export function ProducaoTable({
 
   if (items.length === 0) {
     return (
-      <EmptyState
-        title={
-          hasActiveFilters
-            ? "Nenhum resultado encontrado"
-            : "Nenhum registro de produção"
-        }
-        description={
-          hasActiveFilters
-            ? "Nenhum registro corresponde aos filtros selecionados."
-            : "Registre a primeira produção de leite desta fazenda."
-        }
-        primaryAction={
-          !hasActiveFilters && novoProducaoHref
-            ? {
-                label: "Registrar Produção",
-                href: novoProducaoHref,
-                icon: Plus,
-              }
-            : undefined
-        }
-        secondaryAction={
-          hasActiveFilters && onClearFilters
-            ? { label: "Limpar filtros", onClick: onClearFilters }
-            : undefined
-        }
+      <ListEmptyState
+        icon={Milk}
+        emptyTitle="Nenhum registro de produção"
+        emptyDescription="Registre a primeira produção de leite desta fazenda."
+        registerLabel="Registrar produção"
+        registerHref={novoProducaoHref}
+        canRegister={canRegister ?? true}
+        hasActiveFilters={hasActiveFilters}
+        filteredDescription="Nenhum registro corresponde aos filtros selecionados."
+        onClearFilters={onClearFilters}
       />
     );
   }

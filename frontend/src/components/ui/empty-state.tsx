@@ -106,31 +106,33 @@ export function EmptyState({
   const defaults = VARIANT_DEFAULTS[variant];
   const Icon = icon ?? defaults.icon;
 
+  const resolvedTitle = filterTerm
+    ? `Nenhum resultado para "${filterTerm}"`
+    : title;
+
   const resolvedDescription =
     description ??
-    (filterTerm
-      ? `Não encontramos registros para "${filterTerm}".`
-      : undefined);
+    (filterTerm ? "Tente ajustar os filtros." : undefined);
 
   const hasActions = primaryAction || secondaryAction;
 
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center py-12 px-4 text-center",
+        "flex flex-col items-center justify-center py-12 px-4 text-center animate-in fade-in duration-300",
         className,
       )}
       role={defaults.role}
     >
       <div
         className={cn(
-          "mb-4 flex h-16 w-16 items-center justify-center rounded-full",
+          "mb-4 flex h-20 w-20 items-center justify-center rounded-full",
           defaults.iconWrap,
         )}
       >
-        <Icon className={cn("h-8 w-8", defaults.iconColor)} aria-hidden />
+        <Icon className={cn("h-12 w-12", defaults.iconColor)} aria-hidden />
       </div>
-      <h3 className="text-lg font-semibold">{title}</h3>
+      <h3 className="text-lg font-semibold">{resolvedTitle}</h3>
       {resolvedDescription ? (
         <p className="mt-2 max-w-md text-muted-foreground">{resolvedDescription}</p>
       ) : null}

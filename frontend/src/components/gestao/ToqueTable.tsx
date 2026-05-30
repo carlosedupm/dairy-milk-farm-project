@@ -22,8 +22,8 @@ import {
 import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { cn } from "@/lib/utils";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Plus } from "lucide-react";
+import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { Stethoscope } from "lucide-react";
 
 type Props = {
   items: DiagnosticoGestacao[];
@@ -66,27 +66,15 @@ export function ToqueTable({
 
   if (items.length === 0) {
     return (
-      <EmptyState
-        title={
-          hasActiveFilters
-            ? "Nenhum resultado encontrado"
-            : "Nenhum toque registrado"
-        }
-        description={
-          hasActiveFilters
-            ? "Nenhum toque corresponde ao dia selecionado."
-            : "Registre o primeiro toque (diagnóstico) desta fazenda."
-        }
-        primaryAction={
-          !hasActiveFilters && novoHref
-            ? { label: "Registrar toque", href: novoHref, icon: Plus }
-            : undefined
-        }
-        secondaryAction={
-          hasActiveFilters && onClearFilters
-            ? { label: "Limpar filtros", onClick: onClearFilters }
-            : undefined
-        }
+      <ListEmptyState
+        icon={Stethoscope}
+        emptyTitle="Nenhum toque registrado"
+        emptyDescription="Registre o primeiro toque (diagnóstico) desta fazenda."
+        registerLabel="Registrar toque"
+        registerHref={novoHref}
+        hasActiveFilters={hasActiveFilters}
+        filteredDescription="Nenhum toque corresponde ao dia selecionado."
+        onClearFilters={onClearFilters}
       />
     );
   }
