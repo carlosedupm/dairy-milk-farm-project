@@ -5,7 +5,8 @@ import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { GestaoOrientacaoPanel } from "@/components/gestao/GestaoOrientacaoPanel";
 import { Layers, Heart, Stethoscope, Baby, Droplet, Milk } from "lucide-react";
 
 const links = [
@@ -47,6 +48,9 @@ function GestaoContent() {
   return (
     <PageContainer variant="default">
       <h1 className="text-2xl font-bold mb-6">Gestão Pecuária – {fazendaAtiva.nome}</h1>
+      <GestaoOrientacaoPanel
+        links={allowedLinks.map(({ href, label }) => ({ href, label }))}
+      />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {allowedLinks.map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href}>

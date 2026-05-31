@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 type AnimalSearchHeaderFieldProps = {
@@ -40,7 +41,9 @@ export function AnimalSearchHeaderField({
   compact = false,
 }: AnimalSearchHeaderFieldProps) {
   const searchCtx = useAnimalSearchDialog();
+  const pathname = usePathname();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const isHome = pathname === "/";
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -114,7 +117,11 @@ export function AnimalSearchHeaderField({
   );
 
   const inputField = (
-    <form onSubmit={handleSubmitRapido} className={cn("relative min-w-0", compact && "flex-1")}>
+    <form
+      onSubmit={handleSubmitRapido}
+      className={cn("relative min-w-0", compact && "flex-1")}
+      {...(isHome && isDesktop ? { id: "tour-step-busca" } : {})}
+    >
       <Search
         className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         aria-hidden

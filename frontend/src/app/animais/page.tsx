@@ -19,7 +19,8 @@ import {
 import { ListPaginationBar } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Building2, Beef } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
@@ -206,15 +207,21 @@ function AnimaisContent() {
           loadingFazendasCheck ? (
             <p className="text-muted-foreground">Carregando…</p>
           ) : fazendasSemAtiva?.length === 0 ? (
-            <p className="text-muted-foreground">
-              Nenhuma fazenda vinculada ao seu usuário. Solicite ao administrador
-              o acesso ou utilize a página de onboarding.
-            </p>
+            <EmptyState
+              icon={Beef}
+              title="Cadastre seu primeiro animal"
+              description="Antes disso, precisa de uma fazenda vinculada à sua conta. Solicite ao administrador ou siga as orientações de onboarding."
+              primaryAction={{
+                label: "Ver orientações",
+                href: "/onboarding",
+              }}
+            />
           ) : (
-            <p className="text-muted-foreground">
-              Selecione uma fazenda no topo da página para ver os animais
-              vinculados a ela.
-            </p>
+            <EmptyState
+              icon={Building2}
+              title="Selecione uma fazenda"
+              description="Use o seletor no topo da página para ver e cadastrar animais do rebanho dessa exploração."
+            />
           )
         ) : (
           <div className="space-y-6">

@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Building2, Milk } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { canRegistrarProducao } from "@/config/appAccess";
@@ -213,15 +214,21 @@ function ProducaoContent() {
           loadingFazendasCheck ? (
             <p className="text-muted-foreground">Carregando…</p>
           ) : fazendasSemAtiva?.length === 0 ? (
-            <p className="text-muted-foreground">
-              Nenhuma fazenda vinculada ao seu usuário. Solicite ao administrador
-              o acesso ou utilize a página de onboarding.
-            </p>
+            <EmptyState
+              icon={Milk}
+              title="Registre sua primeira produção"
+              description="Antes disso, precisa de uma fazenda vinculada. Solicite ao administrador ou siga as orientações de onboarding."
+              primaryAction={{
+                label: "Ver orientações",
+                href: "/onboarding",
+              }}
+            />
           ) : (
-            <p className="text-muted-foreground">
-              Selecione uma fazenda no topo da página para ver os registros de
-              produção vinculados a ela.
-            </p>
+            <EmptyState
+              icon={Building2}
+              title="Selecione uma fazenda"
+              description="Use o seletor no topo da página para ver e registar produção de leite dessa exploração."
+            />
           )
         ) : (
           <div className="space-y-6">

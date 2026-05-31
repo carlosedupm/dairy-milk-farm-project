@@ -130,8 +130,8 @@ export function ProducaoTable({
     return (
       <ListEmptyState
         icon={Milk}
-        emptyTitle="Nenhum registro de produção"
-        emptyDescription="Registre a primeira produção de leite desta fazenda."
+        emptyTitle="Registre sua primeira produção"
+        emptyDescription="Registe a ordenha para acompanhar o volume de leite da fazenda ao longo do tempo."
         registerLabel="Registrar produção"
         registerHref={novoProducaoHref}
         canRegister={canRegister ?? true}

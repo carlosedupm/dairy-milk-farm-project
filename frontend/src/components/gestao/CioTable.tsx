@@ -71,8 +71,8 @@ export function CioTable({ items, fazendaId, novoHref }: Props) {
     return (
       <ListEmptyState
         icon={HeartPulse}
-        emptyTitle="Nenhum cio registrado"
-        emptyDescription="Registre o primeiro cio desta fazenda."
+        emptyTitle="Registre o primeiro evento"
+        emptyDescription="Comece pelo registo de cio para acompanhar o ciclo reprodutivo."
         registerLabel="Registrar cio"
         registerHref={novoHref}
       />

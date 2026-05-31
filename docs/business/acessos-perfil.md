@@ -177,6 +177,15 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**: `perfil_access.go` (`funcionarioAnimaisBaixaPath`); `AnimalBaixaService.RegistrarBaixa`; `appAccess.ts` (`canRegistrarBaixa`, `motivosBaixaParaPerfil`).
 - **Estado**: Implementado.
 
+### BR-ACESSO-018 — Onboarding frio (USER sem fazenda) e tour do Dashboard
+
+- **Enunciado**: Utilizador com perfil **USER** e **sem** fazendas vinculadas vê um wizard de três passos em `/onboarding` (boas-vindas → contactar administrador → resumo das áreas futuras). Após concluir, a página resume o estado de provisão sem repetir o wizard. **USER** com fazenda(s) mas perfil ainda **USER** mantém a página estática de “perfil pendente” (sem wizard). Perfis operacionais (**FUNCIONARIO**, **GERENTE**, **GESTAO**, **PROPRIETARIO**, **ADMIN**) não passam pelo wizard; no **Dashboard** (`/`), na primeira visita, um tour opcional destaca busca de animal, indicadores (KPIs) e acesso rápido; o utilizador pode pular; o estado persiste em `localStorage` por `userId`; pode reiniciar o tour pelo menu da conta («Ver tour do início novamente»).
+- **Escopo**: UI `/onboarding`, `/`, listagens iniciais em animais, produção e hub de gestão.
+- **Perfis / permissões**: wizard só **USER** sem fazenda; tour em perfis com Dashboard operacional (não modo `pending`).
+- **Efeito**: orientação na UI; sem alteração de permissões na API.
+- **Implementação**: `frontend/src/components/wizard/*`, `frontend/src/components/onboarding/*`, `frontend/src/lib/onboardingStorage.ts`, `frontend/src/components/dashboard/DashboardTour.tsx`, `frontend/src/app/onboarding/page.tsx`, `frontend/src/components/layout/HeaderAccountPopover.tsx`.
+- **Estado**: Implementado.
+
 ### BR-ACESSO-013 — Folgas e rotas “OrGestão”: atalho sem vínculo só plataforma
 
 - **Enunciado**: Em rotas que usam `ValidateFazendaAccessOrGestao` e na validação de acesso a folgas no serviço, apenas **ADMIN**, **DEVELOPER** e **GESTAO** podem aceder a uma fazenda **sem** linha em `usuarios_fazendas`. **GERENTE** e **PROPRIETARIO** exigem vínculo, garantindo isolamento de dados entre explorações.
@@ -186,4 +195,4 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ---
 
-**Última atualização**: 2026-05-30 (Header: menu filtrado, label Gestão reprodutiva, fazenda ativa)
+**Última atualização**: 2026-05-31 (BR-ACESSO-018: wizard USER sem fazenda, tour Dashboard)

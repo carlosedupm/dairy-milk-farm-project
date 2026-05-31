@@ -96,8 +96,8 @@ export function CoberturaTable({
     return (
       <ListEmptyState
         icon={Baby}
-        emptyTitle="Nenhuma cobertura registrada"
-        emptyDescription="Registre a primeira cobertura desta fazenda."
+        emptyTitle="Registre o primeiro evento"
+        emptyDescription="Registe a primeira cobertura para ligar ao ciclo reprodutivo."
         registerLabel="Registrar cobertura"
         registerHref={novoHref}
         hasActiveFilters={hasActiveFilters}

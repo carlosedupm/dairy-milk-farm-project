@@ -21,6 +21,7 @@ import {
 } from "@/lib/resumoPecuarioLinks";
 import { ResumoKpiTile } from "@/components/dashboard/ResumoKpiTile";
 import { DashboardKpiSkeleton } from "@/components/dashboard/DashboardKpiSkeleton";
+import { TOUR_STEP_KPIS } from "@/components/ui/tour";
 
 export function DashboardKpiGrid() {
   const { fazendaAtiva } = useFazendaAtiva();
@@ -62,7 +63,11 @@ export function DashboardKpiGrid() {
   const hojeRange = getResumoProducaoHojeRange();
 
   return (
-    <section aria-labelledby="dashboard-kpis-heading" className="mb-6">
+    <section
+      id={TOUR_STEP_KPIS}
+      aria-labelledby="dashboard-kpis-heading"
+      className="mb-6"
+    >
       <h2 id="dashboard-kpis-heading" className="sr-only">
         Indicadores do dia
       </h2>

@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getAreasMode } from "@/config/appAccess";
+import { resetDashboardTour } from "@/lib/onboardingStorage";
 import {
   Popover,
   PopoverContent,
@@ -33,6 +36,10 @@ export function HeaderAccountPopover({
   isProprietario,
   onLogout,
 }: HeaderAccountPopoverProps) {
+  const router = useRouter();
+  const showTourReset =
+    user.id != null && getAreasMode(user.perfil) !== "pending";
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -89,6 +96,20 @@ export function HeaderAccountPopover({
                 </Button>
               ) : null}
             </>
+          ) : null}
+          {showTourReset ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-10 w-full justify-center text-muted-foreground"
+              onClick={() => {
+                resetDashboardTour(user.id);
+                router.push("/");
+              }}
+            >
+              Ver tour do início novamente
+            </Button>
           ) : null}
           <Button
             variant="outline"

@@ -21,6 +21,7 @@ import {
   ClipboardList,
   Search,
   Plus,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { RestricoesLeiteHomePanel } from "@/components/leite/RestricoesLeiteHomePanel";
@@ -31,6 +32,14 @@ import { ConformidadeHomePanel } from "@/components/dashboard/ConformidadeHomePa
 import { showConformidadePanelForPerfil } from "@/config/appAccess";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
 import { cn } from "@/lib/utils";
+import {
+  DashboardTourHost,
+  TOUR_STEP_ACESSO_RAPIDO,
+  TOUR_STEP_BUSCA,
+  TOUR_STEP_KPIS,
+  type TourStepDef,
+} from "@/components/ui/tour";
+import { isDashboardTourDone } from "@/lib/onboardingStorage";
 
 type Atalho = {
   href: string;
@@ -55,6 +64,33 @@ export function Dashboard() {
     !!user && showConformidadePanelForPerfil(user.perfil);
 
   const isProprietario = user?.perfil === "PROPRIETARIO";
+  const isAdmin = user?.perfil === "ADMIN" || user?.perfil === "DEVELOPER";
+
+  const showDashboardTour =
+    !!user?.id &&
+    !isUserPending &&
+    !isDashboardTourDone(user.id);
+
+  const dashboardTourSteps: TourStepDef[] = [
+    {
+      targetId: TOUR_STEP_BUSCA,
+      title: "Buscar animal",
+      description:
+        "Pesquise por brinco ou nome para ver o resumo e abrir a ficha. No computador, use o campo no topo da página.",
+    },
+    {
+      targetId: TOUR_STEP_KPIS,
+      title: "Indicadores do rebanho",
+      description:
+        "Partos previstos, lactação, alertas críticos e leite de hoje — toque num indicador para ver detalhes.",
+    },
+    {
+      targetId: TOUR_STEP_ACESSO_RAPIDO,
+      title: "Acesso rápido",
+      description:
+        "Atalhos para as tarefas mais frequentes: animais, produção, folgas e gestão reprodutiva.",
+    },
+  ];
 
   /* Mobile-first: perfil restrito prioriza Folgas (curral) antes de animais/gestão */
   const baseAtalhos: Atalho[] = restrictedMode
@@ -174,6 +210,9 @@ export function Dashboard() {
       variant="default"
       className="pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]"
     >
+      {showDashboardTour ? (
+        <DashboardTourHost steps={dashboardTourSteps} />
+      ) : null}
       <header className="mb-4">
         <h1 className="text-xl font-semibold text-foreground">Início</h1>
         <p className="text-muted-foreground mt-1">
@@ -197,7 +236,11 @@ export function Dashboard() {
           {showConformidade ? <ConformidadeHomePanel /> : null}
         </section>
 
-        <section className="space-y-3 mt-8" aria-labelledby="acesso-rapido-heading">
+        <section
+          id={TOUR_STEP_ACESSO_RAPIDO}
+          className="space-y-3 mt-8"
+          aria-labelledby="acesso-rapido-heading"
+        >
           <h2
             id="acesso-rapido-heading"
             className="text-sm font-medium text-muted-foreground"
@@ -210,6 +253,7 @@ export function Dashboard() {
               <li>
                 <button
                   type="button"
+                  id={TOUR_STEP_BUSCA}
                   className="flex min-h-[52px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50 active:bg-accent/70"
                   onClick={() => animalSearch.openSearch()}
                 >
@@ -231,10 +275,15 @@ export function Dashboard() {
                 </button>
               </li>
             ) : null}
-            {atalhos.map(({ href, title, description, icon: Icon }) => (
+            {atalhos.map(({ href, title, description, icon: Icon }, index) => (
               <li key={href}>
                 <Link
                   href={href}
+                  id={
+                    !showBuscaRapida && index === 0
+                      ? TOUR_STEP_BUSCA
+                      : undefined
+                  }
                   className="flex min-h-[52px] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50 active:bg-accent/70"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -282,6 +331,23 @@ export function Dashboard() {
             ))}
           </div>
         </section>
+
+        {isAdmin ? (
+          <section className="mt-6" aria-labelledby="admin-atalho-heading">
+            <h2
+              id="admin-atalho-heading"
+              className="text-sm font-medium text-muted-foreground mb-3"
+            >
+              Administração
+            </h2>
+            <Button asChild variant="outline" className="min-h-[44px] w-full sm:w-auto">
+              <Link href="/admin/usuarios">
+                <Users className="mr-2 h-4 w-4" />
+                Gerir utilizadores e provisão
+              </Link>
+            </Button>
+          </section>
+        ) : null}
       </div>
     </PageContainer>
   );

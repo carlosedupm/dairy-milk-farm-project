@@ -112,8 +112,8 @@ export function AnimalTable({
     return (
       <ListEmptyState
         icon={Beef}
-        emptyTitle="Nenhum animal cadastrado"
-        emptyDescription="Comece cadastrando seu primeiro animal."
+        emptyTitle="Cadastre seu primeiro animal"
+        emptyDescription="Adicione animais ao rebanho para acompanhar lactação, produção e o ciclo reprodutivo."
         registerLabel="Cadastrar animal"
         registerHref={novoAnimalHref}
         canRegister={!!canManage}
