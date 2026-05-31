@@ -23,6 +23,7 @@ frontend/src/
 - Componentes funcionais com TypeScript strict
 - Estado servidor: TanStack Query; chamadas API via `services/`
 - Estilo: Tailwind + Shadcn; `tailwind.config.ts` deve incluir pastas com `className` (ex.: `contexts/`)
+- **Design tokens**: [`docs/design-system/tokens.md`](../docs/design-system/tokens.md) — cores semânticas, tipografia, espaçamento; runtime em `src/app/globals.css`; JSON em `design-tokens/tokens.json`
 - **A11y**: assumir zoom do navegador e fonte ampliada — reflow sem cortar informação essencial (`systemPatterns.md`)
 - **Regra Cursor**: [`.cursor/rules/frontend-ui-patterns.mdc`](../.cursor/rules/frontend-ui-patterns.mdc) — ativa ao editar ficheiros em `frontend/src/`
 

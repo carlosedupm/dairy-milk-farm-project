@@ -638,10 +638,11 @@ Migrations: `23` (ciclo/leite), `24` (`animais.created_by`), `25` (`integracao_*
 
 Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é navegação confortável e eficiente com identidade visual ligada ao meio rural.
 
-- **Paleta rural** (`frontend/src/app/globals.css`):
+- **Paleta rural** — fonte canónica: [`docs/design-system/tokens.md`](../docs/design-system/tokens.md); runtime em `frontend/src/app/globals.css`; dicionário W3C em `frontend/design-tokens/tokens.json`:
   - **Modo claro**: Primária verde (pastagem) `152 42% 36%`; fundo off-white quente `40 18% 97%`; acento âmbar para hover; texto escuro contraste ≥ 4,5:1 (WCAG AA).
   - **Modo escuro**: Mesma identidade em tons escuros; fundo `152 18% 11%`; primária mais clara `152 48% 48%` para contraste.
-  - Variáveis: `--primary`, `--secondary`, `--accent`, `--background`, `--foreground`, `--muted`, `--destructive`, `--border`, `--input`, `--ring`, `--radius` (0.625rem).
+  - **Camadas**: primitivos Shadcn (`--primary`, `--background`, …) + semânticos (`--color-surface-*`, `--color-feedback-*`, …) mapeados em `tailwind.config.ts`.
+  - **Novos componentes**: preferir tokens semânticos (`bg-surface-primary`, `text-feedback-warning`) em vez de cores literais (`text-amber-600`).
 - **Modo claro e modo escuro**:
   - Toggle no Header e no menu mobile; ícone Sun/Moon; `aria-label` "Usar modo claro" / "Usar modo escuro".
   - Persistência em `localStorage` com chave `ceialmilk_theme` (valores `light` | `dark`). Script inline no layout aplica tema antes da hidratação para evitar flash.
@@ -707,4 +708,4 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 **Versão dos Padrões**: 2.28 (Go + Next.js) — RBAC saúde animal (FUNCIONARIO GET+POST; PUT/DELETE restritos).
 
-**Última atualização**: 2026-05-30 (EmptyState listagens; Assistente Live: tools saúde e alertas)
+**Última atualização**: 2026-05-30 (Design system tokens semânticos; EmptyState listagens; Assistente Live)

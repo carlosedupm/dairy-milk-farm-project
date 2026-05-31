@@ -4,7 +4,10 @@ import './globals.css'
 import { Providers } from '@/components/layout/Providers'
 import { ConditionalHeader } from '@/components/layout/ConditionalHeader'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   title: 'CeialMilk - Gestão de Fazendas Leiteiras',
@@ -47,7 +50,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} suppressHydrationWarning />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${inter.className}`}>
         <Providers>
           <div className="min-h-screen bg-background">
             <ConditionalHeader />
