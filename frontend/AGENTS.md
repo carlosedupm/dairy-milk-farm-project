@@ -23,7 +23,7 @@ frontend/src/
 - Componentes funcionais com TypeScript strict
 - Estado servidor: TanStack Query; chamadas API via `services/`
 - Estilo: Tailwind + Shadcn; `tailwind.config.ts` deve incluir pastas com `className` (ex.: `contexts/`)
-- **Design tokens**: [`docs/design-system/tokens.md`](../docs/design-system/tokens.md) — cores semânticas, tipografia, espaçamento; runtime em `src/app/globals.css`; JSON em `design-tokens/tokens.json`
+- **Design tokens**: [`docs/design-system/tokens.md`](../docs/design-system/tokens.md) — cores semânticas (`feedback-*`, `surface-*`); runtime em `src/app/globals.css`; JSON em `design-tokens/tokens.json`; regra Cursor [`.cursor/rules/design-tokens.mdc`](../.cursor/rules/design-tokens.mdc); validar com `npm run validate:tokens`
 - **A11y**: assumir zoom do navegador e fonte ampliada — reflow sem cortar informação essencial (`systemPatterns.md`)
 - **Regra Cursor**: [`.cursor/rules/frontend-ui-patterns.mdc`](../.cursor/rules/frontend-ui-patterns.mdc) — ativa ao editar ficheiros em `frontend/src/`
 
@@ -46,6 +46,7 @@ Referências: `/animais` (`AnimalTable`, `AnimaisListToolbar`); `/gestao/cobertu
 ```bash
 npm run dev                   # :3000
 npm run lint
+npm run validate:tokens       # paridade CSS↔JSON + cores literais proibidas
 npx tsc --noEmit
 npm run test:e2e              # Playwright
 ```

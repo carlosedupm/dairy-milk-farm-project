@@ -273,7 +273,7 @@ export function ProducaoForm({
 
           {linkAnimalIndisponivel ? (
             <p
-              className="text-sm text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg p-3 break-words"
+              className="text-sm text-feedback-warning border border-feedback-warning/30 rounded-lg p-3 break-words"
               role="alert"
             >
               O animal indicado no link não está em lactação ativa. Escolha uma

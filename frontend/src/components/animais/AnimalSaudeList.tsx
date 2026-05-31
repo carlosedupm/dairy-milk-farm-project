@@ -57,7 +57,7 @@ function statusLabel(s: string): string {
 
 function statusBadgeClassName(s: string): string | undefined {
   if (s === "CONCLUIDO") {
-    return "border-green-600/40 bg-green-500/10 text-green-700 dark:text-green-400";
+    return "border-feedback-success/40 bg-feedback-success/10 text-feedback-success";
   }
   if (s === "CANCELADO") {
     return "border-muted-foreground/30 bg-muted text-muted-foreground";

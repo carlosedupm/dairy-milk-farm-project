@@ -249,7 +249,7 @@ export function AnimalSearchPanel({
           ) : null}
           {contexto.restricao_leite_ativa ? (
             <div
-              className="rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100"
+              className="rounded-md border border-feedback-warning/50 bg-feedback-warning/10 px-3 py-2 text-sm text-feedback-warning-foreground"
               role="status"
             >
               <p className="font-medium break-words">

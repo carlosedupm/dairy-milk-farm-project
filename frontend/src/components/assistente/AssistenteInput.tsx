@@ -1244,7 +1244,7 @@ export function AssistenteInput({
           </div>
         )}
         {geminiLive.isOffline && (
-          <p className="text-xs text-amber-600 dark:text-amber-500" role="alert">
+          <p className="text-xs text-feedback-warning" role="alert">
             O assistente precisa de internet. Verifique sua conexão e tente novamente.
           </p>
         )}
@@ -1373,7 +1373,7 @@ export function AssistenteInput({
           )}
           {mostrarLembreteConfirmacao && (
             <p
-              className="mt-2 rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-1.5 text-sm text-foreground"
+              className="mt-2 rounded-md border border-feedback-warning/50 bg-feedback-warning/10 px-2 py-1.5 text-sm text-foreground"
               role="status"
               aria-live="polite"
             >

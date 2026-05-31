@@ -138,7 +138,7 @@ function SafraCulturaDetailContent() {
             <CardTitle className="text-sm font-medium">Resultado</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-xl font-semibold ${resultado >= 0 ? "text-green-600" : "text-destructive"}`}>
+            <p className={`text-xl font-semibold ${resultado >= 0 ? "text-feedback-success" : "text-destructive"}`}>
               {formatCurrency(resultado)}
             </p>
             <Button asChild variant="outline" size="sm" className="mt-2">

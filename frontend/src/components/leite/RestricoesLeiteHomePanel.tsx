@@ -182,10 +182,10 @@ export function RestricoesLeiteHomePanel() {
 
   if (!fazendaId) {
     return (
-      <Card className="border-amber-500/40">
+      <Card className="border-feedback-warning/40">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-600" aria-hidden />
+            <AlertTriangle className="h-5 w-5 text-feedback-warning" aria-hidden />
             Leite para descarte
           </CardTitle>
           <CardDescription>
@@ -208,7 +208,7 @@ export function RestricoesLeiteHomePanel() {
         icon={AlertTriangle}
         badgeCount={lista.length}
         defaultOpen={temItens}
-        className="border-amber-500/30 scroll-mt-20"
+        className="border-feedback-warning/30 scroll-mt-20"
       >
         <div className="space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -258,7 +258,7 @@ export function RestricoesLeiteHomePanel() {
                   {lista.map((row) => (
                     <li
                       key={row.id}
-                      className="rounded-lg border border-amber-500/25 bg-card p-4 shadow-sm"
+                      className="rounded-lg border border-feedback-warning/25 bg-card p-4 shadow-sm"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2 gap-y-3">
                         <Link
@@ -269,7 +269,7 @@ export function RestricoesLeiteHomePanel() {
                         </Link>
                         <Badge
                           variant="secondary"
-                          className="shrink-0 border-amber-500/40 bg-amber-500/15 text-amber-950 dark:text-amber-100"
+                          className="shrink-0 border-feedback-warning/40 bg-feedback-warning/15 text-feedback-warning-foreground"
                         >
                           Aguardando laboratório
                         </Badge>

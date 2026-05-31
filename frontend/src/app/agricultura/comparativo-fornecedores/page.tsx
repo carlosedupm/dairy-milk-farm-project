@@ -93,7 +93,7 @@ function ComparativoContent() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Receitas (vendas/entregas)</p>
-                      <p className="text-lg font-semibold text-green-600">{formatCurrency(f.total_receitas)}</p>
+                      <p className="text-lg font-semibold text-feedback-success">{formatCurrency(f.total_receitas)}</p>
                     </div>
                   </CardContent>
                 </Card>

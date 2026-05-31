@@ -1,0 +1,60 @@
+---
+description: Design tokens semânticos — cores, tipografia e feedback no frontend CeialMilk
+globs:
+  - frontend/src/**/*.{tsx,ts,jsx,js}
+  - frontend/src/app/globals.css
+  - frontend/tailwind.config.ts
+  - frontend/design-tokens/**
+---
+
+# Design Tokens
+
+Fonte canónica: [`docs/design-system/tokens.md`](../../docs/design-system/tokens.md).
+
+## Onde editar
+
+| Alteração | Arquivo(s) |
+|-----------|------------|
+| Valores runtime (cores, tipografia, sombras) | `frontend/src/app/globals.css` |
+| Classes Tailwind | `frontend/tailwind.config.ts` (só ao adicionar chave nova) |
+| Export JSON W3C | `frontend/design-tokens/tokens.json` |
+| Documentação | `docs/design-system/tokens.md` |
+
+Após mudar cores: rodar `npm run validate:tokens` no frontend.
+
+## Cores — usar semânticos, não literais
+
+**Proibido** em componentes operacionais (fora de `components/landing/` e `components/dev-studio/`):
+
+- `text-amber-*`, `bg-green-*`, `border-blue-*`, `text-red-*`, etc.
+
+**Preferir:**
+
+| Uso | Classe |
+|-----|--------|
+| Aviso / atenção | `text-feedback-warning`, `border-feedback-warning/40`, `bg-feedback-warning/10`, `text-feedback-warning-foreground` |
+| Sucesso | `text-feedback-success`, `bg-feedback-success/10` |
+| Erro | `text-feedback-error`, `bg-feedback-error/10`, `text-destructive` (legado Shadcn OK) |
+| Info | `text-feedback-info` |
+| Superfície | `bg-surface-primary`, `bg-surface-elevated` |
+| Texto | `text-content-primary`, `text-content-secondary` |
+| Marca | `bg-brand-primary`, `text-primary` (legado OK) |
+
+## Tipografia
+
+- Body e labels: mínimo `text-base` (16px)
+- Small: mínimo `text-sm` (14px)
+- Não usar `text-xs` para conteúdo principal
+
+## Espaçamento
+
+Grid 4px — escala Tailwind padrão (`p-4`, `gap-2`, `space-y-5`).
+
+## Sombras
+
+Preferir `shadow-elevation1`–`shadow-elevation4` em componentes novos; `shadow-sm`/`md`/`lg` legado ainda válido.
+
+## Exceções intencionais
+
+- `components/landing/LandingPage.tsx` — marketing
+- `components/dev-studio/**` — ferramenta de desenvolvimento

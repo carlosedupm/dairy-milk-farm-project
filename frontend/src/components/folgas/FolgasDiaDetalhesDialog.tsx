@@ -87,7 +87,7 @@ export function FolgasDiaDetalhesDialog({
           </div>
 
           {podeVerExcecao && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+            <div className="rounded-md border border-feedback-warning/40 bg-feedback-warning/10 p-3">
               <p className="font-medium">Exceção do dia</p>
               <p className="text-muted-foreground">{excecaoMotivoDia}</p>
             </div>

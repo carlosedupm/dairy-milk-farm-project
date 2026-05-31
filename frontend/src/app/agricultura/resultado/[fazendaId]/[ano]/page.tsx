@@ -66,7 +66,7 @@ function ResultadoContent() {
                 </div>
                 <div className="rounded-lg border p-4">
                   <p className="text-sm text-muted-foreground">Resultado</p>
-                  <p className={`text-xl font-semibold ${data.resultado >= 0 ? "text-green-600" : "text-destructive"}`}>
+                  <p className={`text-xl font-semibold ${data.resultado >= 0 ? "text-feedback-success" : "text-destructive"}`}>
                     {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.resultado)}
                   </p>
                 </div>
@@ -78,7 +78,7 @@ function ResultadoContent() {
                     {data.por_area.map((r) => (
                       <li key={r.area_id} className="flex justify-between border-b pb-2 text-sm">
                         <span>Área ID {r.area_id}</span>
-                        <span className={r.resultado >= 0 ? "text-green-600" : "text-destructive"}>
+                        <span className={r.resultado >= 0 ? "text-feedback-success" : "text-destructive"}>
                           {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(r.resultado)}
                         </span>
                       </li>

@@ -15,7 +15,8 @@ Dicionário exportável de tokens do design system.
 1. Alterar valores em `globals.css` (primitivos ou semânticos).
 2. Atualizar `tokens.json` com os mesmos valores.
 3. Atualizar [`docs/design-system/tokens.md`](../../docs/design-system/tokens.md) se houver mudança de mapeamento ou uso.
-4. Verificar contraste WCAG AA após mudanças de cor.
+4. Rodar `npm run validate:tokens` no frontend.
+5. Verificar contraste WCAG AA após mudanças de cor.
 
 Documentação completa: [`docs/design-system/tokens.md`](../../docs/design-system/tokens.md).
 

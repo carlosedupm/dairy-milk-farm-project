@@ -30,7 +30,7 @@ export function PendentesProvisaoPanel() {
 
   if (isLoading) {
     return (
-      <Card className="border-amber-500/40 bg-amber-500/5">
+      <Card className="border-feedback-warning/40 bg-feedback-warning/5">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium">
             Contas aguardando provisão
@@ -65,12 +65,12 @@ export function PendentesProvisaoPanel() {
   }
 
   return (
-    <Card className="border-amber-500/40 bg-amber-500/5">
+    <Card className="border-feedback-warning/40 bg-feedback-warning/5">
       <CardHeader className="pb-2">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-2">
             <Users
-              className="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-400"
+              className="mt-0.5 h-5 w-5 shrink-0 text-feedback-warning"
               aria-hidden
             />
             <div>

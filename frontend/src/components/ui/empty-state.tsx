@@ -48,8 +48,8 @@ const VARIANT_DEFAULTS: Record<
   },
   success: {
     icon: CheckCircle2,
-    iconWrap: "bg-emerald-500/10",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
+    iconWrap: "bg-feedback-success/10",
+    iconColor: "text-feedback-success",
     role: "status",
   },
 };

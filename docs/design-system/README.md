@@ -15,5 +15,6 @@ Documentação do design system do frontend CeialMilk.
 | [`frontend/src/app/globals.css`](../../frontend/src/app/globals.css) | CSS custom properties (runtime) |
 | [`frontend/tailwind.config.ts`](../../frontend/tailwind.config.ts) | Classes Tailwind |
 | [`frontend/design-tokens/tokens.json`](../../frontend/design-tokens/tokens.json) | Dicionário W3C DTCG exportável |
+| [`frontend/scripts/validate-design-tokens.mjs`](../../frontend/scripts/validate-design-tokens.mjs) | Validação CI: paridade CSS↔JSON + cores literais |
 
 **Última atualização**: 2026-05-30

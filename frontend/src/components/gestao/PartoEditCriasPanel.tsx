@@ -201,7 +201,7 @@ export function PartoEditCriasPanel({
             "rounded-md border px-3 py-2 text-sm",
             maisQueInformado
               ? "border-destructive/40 bg-destructive/10 text-destructive"
-              : "border-amber-500/50 bg-amber-500/10 text-amber-950 dark:text-amber-100"
+              : "border-feedback-warning/50 bg-feedback-warning/10 text-feedback-warning-foreground"
           )}
           role="status"
         >

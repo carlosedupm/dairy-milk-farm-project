@@ -43,10 +43,10 @@ function getDiagnosticoLabel(item: DiagnosticoGestacao): string {
 function obsRowClass(obs: string): string {
   const highlight = getObsHighlight(obs);
   if (highlight === "protocolo") {
-    return "bg-amber-50 dark:bg-amber-950/30";
+    return "bg-feedback-warning/10";
   }
   if (highlight === "medicamento") {
-    return "bg-red-50 dark:bg-red-950/30";
+    return "bg-feedback-error/10";
   }
   return "";
 }

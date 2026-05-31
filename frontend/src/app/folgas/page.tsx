@@ -201,11 +201,11 @@ function FolgasContent() {
 
           {canManage && config && resumoEquidade.length > 0 && (
             <Card
-              className={`mt-6 hidden md:block ${equidadeDestaqueForte ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-border"}`}
+              className={`mt-6 hidden md:block ${equidadeDestaqueForte ? "border-feedback-warning/50 bg-feedback-warning/[0.06]" : "border-border"}`}
             >
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Info className="h-5 w-5 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden />
+                  <Info className="h-5 w-5 shrink-0 text-feedback-warning" aria-hidden />
                   Equidade no mês (informativo)
                 </CardTitle>
               </CardHeader>
@@ -215,7 +215,7 @@ function FolgasContent() {
                   rodízio 5x1 <strong>prevê</strong> folga para cada slot. Não bloqueia alterações.
                 </p>
                 {equidadeComDesvio && (
-                  <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-amber-950 dark:text-amber-50">
+                  <p className="rounded-md border border-feedback-warning/40 bg-feedback-warning/10 px-3 py-2 text-feedback-warning-foreground">
                     Pode haver desequilíbrio em relação ao rodízio teórico neste período; confira as
                     trocas manuais e gere de novo o automático se fizer sentido.
                   </p>
@@ -226,7 +226,7 @@ function FolgasContent() {
                       key={r.usuario_id}
                       className={
                         r.delta !== 0
-                          ? "font-medium text-amber-900 dark:text-amber-100"
+                          ? "font-medium text-feedback-warning"
                           : ""
                       }
                     >
@@ -243,7 +243,7 @@ function FolgasContent() {
 
           {canManage && config && resumoEquidade.length > 0 && (
             <details
-              className={`mt-6 rounded-md border px-3 py-2 md:hidden ${equidadeDestaqueForte ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-border"}`}
+              className={`mt-6 rounded-md border px-3 py-2 md:hidden ${equidadeDestaqueForte ? "border-feedback-warning/50 bg-feedback-warning/[0.06]" : "border-border"}`}
             >
               <summary className="cursor-pointer list-none text-base font-medium">
                 Equidade no mês (informativo)
@@ -436,7 +436,7 @@ function FolgasContent() {
 
               {canManage && config && equidadeComDesvio && (
                 <p
-                  className="rounded-md border border-amber-500/35 bg-amber-500/[0.08] px-3 py-2 text-base text-amber-950 dark:text-amber-50"
+                  className="rounded-md border border-feedback-warning/35 bg-feedback-warning/[0.08] px-3 py-2 text-base text-feedback-warning-foreground"
                   role="status"
                 >
                   Aviso: no mês há diferença entre folgas registradas e o previsto pelo rodízio

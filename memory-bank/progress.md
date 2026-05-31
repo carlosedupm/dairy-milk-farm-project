@@ -23,6 +23,18 @@
 
 ## ✅ O que foi concluído
 
+### **Design System — tokens semânticos (✅ 2026-05-30)**
+
+- [x] **RF01**: [`docs/design-system/tokens.md`](../docs/design-system/tokens.md) — tabelas completas (cores, tipografia, espaçamento, radius, sombras, breakpoints)
+- [x] **RF02**: Tokens de cor semânticos (`surface`, `text`, `border`, `brand`, `accent`, `feedback`) em `globals.css` + `tailwind.config.ts`
+- [x] **RF03**: Tipografia — 6 tamanhos, 4 pesos, line-heights, letter-spacing
+- [x] **RF04**: Espaçamento grid 4px (escala Tailwind 1–24)
+- [x] **RF05**: Border radius ×6, sombras elevation ×4
+- [x] **RF06**: JSON export W3C DTCG em `frontend/design-tokens/tokens.json`
+- [x] Migração de cores literais (`amber-*`, `green-*`, etc.) para classes `feedback-*` nos componentes operacionais (exc. `landing/`, `dev-studio/`)
+- [x] Script CI `validate-design-tokens` — paridade CSS ↔ JSON + lint de cores literais
+- [x] Regra Cursor + ESLint documentada para novos componentes
+
 ### **Exclusão em listagens — erro visível + toast (✅ 2026-05-30)**
 
 - [x] `DeleteRecordDialog`: props `error` e `conformidadeCode` (badge INT/TMP em alertas)

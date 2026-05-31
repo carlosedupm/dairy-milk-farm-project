@@ -139,7 +139,7 @@ export function ToqueFormFields({
         <div className="space-y-2">
           <Label htmlFor="cobertura">Cobertura vinculada *</Label>
           {coberturasDoAnimal.length === 0 ? (
-            <p className="text-sm text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg p-3 break-words">
+            <p className="text-sm text-feedback-warning border border-feedback-warning/30 rounded-lg p-3 break-words">
               Não há cobertura registrada para este animal. Registre uma
               cobertura antes do toque positivo — é ela que abre a gestação
               confirmada e atualiza o status para prenhe.

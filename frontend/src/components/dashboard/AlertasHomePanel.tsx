@@ -73,7 +73,7 @@ export function AlertasHomePanel() {
         {!isLoading && !error && total === 0 && (
           <div className="flex items-start gap-2 text-sm text-muted-foreground">
             <CheckCircle2
-              className="h-4 w-4 shrink-0 text-green-600 dark:text-green-500"
+              className="h-4 w-4 shrink-0 text-feedback-success"
               aria-hidden
             />
             <p>Nenhum alerta crítico aberto nesta fazenda.</p>

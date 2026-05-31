@@ -87,7 +87,7 @@ export function UsuarioTable({ items }: { items: Usuario[] }) {
               <span
                 className={
                   u.enabled
-                    ? 'text-green-600 dark:text-green-400'
+                    ? 'text-feedback-success'
                     : 'text-muted-foreground'
                 }
               >
@@ -129,7 +129,7 @@ export function UsuarioTable({ items }: { items: Usuario[] }) {
                       <span
                         className={
                           u.enabled
-                            ? 'text-green-600 dark:text-green-400'
+                            ? 'text-feedback-success'
                             : 'text-muted-foreground'
                         }
                       >

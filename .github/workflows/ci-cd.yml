@@ -66,6 +66,10 @@ jobs:
         ESLINT_USE_FLAT_CONFIG: 'true'
       run: npm run lint:ci
 
+    - name: Validate design tokens
+      working-directory: frontend
+      run: npm run validate:tokens
+
   frontend-build:
     name: Frontend - Build
     runs-on: ubuntu-latest

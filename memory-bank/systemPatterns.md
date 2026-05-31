@@ -644,7 +644,7 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
   - **Modo claro**: Primária verde (pastagem) `152 42% 36%`; fundo off-white quente `40 18% 97%`; acento âmbar para hover; texto escuro contraste ≥ 4,5:1 (WCAG AA).
   - **Modo escuro**: Mesma identidade em tons escuros; fundo `152 18% 11%`; primária mais clara `152 48% 48%` para contraste.
   - **Camadas**: primitivos Shadcn (`--primary`, `--background`, …) + semânticos (`--color-surface-*`, `--color-feedback-*`, …) mapeados em `tailwind.config.ts`.
-  - **Novos componentes**: preferir tokens semânticos (`bg-surface-primary`, `text-feedback-warning`) em vez de cores literais (`text-amber-600`).
+  - **Novos componentes**: preferir tokens semânticos (`bg-surface-primary`, `text-feedback-warning`) em vez de cores literais (`text-amber-600`). CI valida com `npm run validate:tokens` (paridade CSS↔JSON + ausência de literais fora de `landing/` e `dev-studio/`).
 - **Modo claro e modo escuro**:
   - Toggle no Header e no menu mobile; ícone Sun/Moon; `aria-label` "Usar modo claro" / "Usar modo escuro".
   - Persistência em `localStorage` com chave `ceialmilk_theme` (valores `light` | `dark`). Script inline no layout aplica tema antes da hidratação para evitar flash.

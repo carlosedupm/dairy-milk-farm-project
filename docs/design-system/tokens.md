@@ -18,7 +18,7 @@ JSON W3C (frontend/design-tokens/tokens.json)
 - **Classes**: [`frontend/tailwind.config.ts`](../../frontend/tailwind.config.ts)
 - **Dicionário exportável**: [`frontend/design-tokens/tokens.json`](../../frontend/design-tokens/tokens.json)
 
-Componentes existentes **não foram refatorados** nesta entrega; classes legadas (`bg-background`, `text-amber-600`) continuam válidas. Novos componentes devem preferir tokens semânticos.
+Componentes existentes foram **migrados para tokens semânticos** (2026-05-30), exceto `LandingPage` e módulo `dev-studio` (cores literais intencionais). Novos componentes devem preferir tokens semânticos; o CI executa `npm run validate:tokens` para garantir paridade CSS↔JSON e ausência de cores literais proibidas.
 
 ---
 
@@ -216,6 +216,7 @@ Prefixos responsivos: `sm:`, `md:`, `lg:`, `xl:`, `2xl:`.
 2. Atualizar `color.primitive.primary` e `color.brand.primary` em [`tokens.json`](../../frontend/design-tokens/tokens.json).
 3. Verificar contraste WCAG AA (texto sobre `--primary-foreground`, links, botões).
 4. Testar toggle light/dark no Header.
+5. Rodar `npm run validate:tokens` no frontend (paridade CSS ↔ JSON + lint de cores literais).
 
 Paleta rural de referência (modo claro): primária verde pastagem `152 42% 36%`; fundo off-white `40 18% 97%`.
 

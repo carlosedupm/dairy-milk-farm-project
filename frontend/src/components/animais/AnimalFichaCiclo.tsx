@@ -57,9 +57,9 @@ export function AnimalFichaCiclo({ contexto }: Props) {
             </p>
           ) : null}
           {contexto.restricao_leite_ativa ? (
-            <div className="flex gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 min-w-0">
+            <div className="flex gap-2 rounded-md border border-feedback-warning/40 bg-feedback-warning/10 p-3 min-w-0">
               <AlertTriangle
-                className="h-4 w-4 shrink-0 text-amber-600"
+                className="h-4 w-4 shrink-0 text-feedback-warning"
                 aria-hidden
               />
               <p className="break-words">

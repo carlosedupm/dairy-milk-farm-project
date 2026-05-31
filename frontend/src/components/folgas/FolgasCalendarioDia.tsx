@@ -133,14 +133,14 @@ export function FolgasCalendarioDia({
         {foraDoRodizio && (
           <Badge
             variant="outline"
-            className="mt-0.5 hidden border-amber-500/70 text-amber-900 dark:text-amber-100 md:inline-flex"
+            className="mt-0.5 hidden border-feedback-warning/70 text-feedback-warning-foreground md:inline-flex"
           >
             Fora do rodízio
           </Badge>
         )}
         {foraDoRodizio && (
           <span
-            className="mt-0.5 inline-block h-2 w-2 rounded-full bg-amber-500 md:hidden"
+            className="mt-0.5 inline-block h-2 w-2 rounded-full bg-feedback-warning md:hidden"
             aria-label="Fora do rodízio"
             title="Fora do rodízio"
           />
