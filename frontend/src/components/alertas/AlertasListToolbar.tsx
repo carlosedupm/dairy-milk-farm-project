@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -17,15 +18,23 @@ import {
   TIPOS_ALERTA,
   TIPO_ALERTA_LABELS,
 } from "@/services/alertas";
+import { cn } from "@/lib/utils";
+import { RefreshCw } from "lucide-react";
 import { ALERTAS_FILTER_ALL } from "./alertas-utils";
 
 type Props = {
   statusFilter: string;
   activeTipoFilter: string;
   severidadeFilter: string;
+  startDate: string;
+  endDate: string;
   onStatusChange: (value: string) => void;
   onTipoChange: (value: string) => void;
   onSeveridadeChange: (value: string) => void;
+  onStartDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
+  onRefresh: () => void;
+  isRefreshing: boolean;
   onClear: () => void;
   hasActiveFilters: boolean;
 };
@@ -34,19 +43,25 @@ export function AlertasListToolbar({
   statusFilter,
   activeTipoFilter,
   severidadeFilter,
+  startDate,
+  endDate,
   onStatusChange,
   onTipoChange,
   onSeveridadeChange,
+  onStartDateChange,
+  onEndDateChange,
+  onRefresh,
+  isRefreshing,
   onClear,
   hasActiveFilters,
 }: Props) {
   return (
-    <div className="mb-4 space-y-3">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="space-y-1">
+    <div className="mb-4 space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 items-end">
+        <div className="space-y-2 min-w-0">
           <Label htmlFor="filtro-status">Status</Label>
           <Select value={statusFilter} onValueChange={onStatusChange}>
-            <SelectTrigger id="filtro-status">
+            <SelectTrigger id="filtro-status" className="w-full">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
@@ -59,10 +74,10 @@ export function AlertasListToolbar({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2 min-w-0">
           <Label htmlFor="filtro-tipo">Tipo</Label>
           <Select value={activeTipoFilter} onValueChange={onTipoChange}>
-            <SelectTrigger id="filtro-tipo">
+            <SelectTrigger id="filtro-tipo" className="w-full">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
@@ -75,10 +90,10 @@ export function AlertasListToolbar({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2 min-w-0 sm:col-span-2 lg:col-span-1">
           <Label htmlFor="filtro-severidade">Severidade</Label>
           <Select value={severidadeFilter} onValueChange={onSeveridadeChange}>
-            <SelectTrigger id="filtro-severidade">
+            <SelectTrigger id="filtro-severidade" className="w-full">
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
             <SelectContent>
@@ -92,11 +107,58 @@ export function AlertasListToolbar({
           </Select>
         </div>
       </div>
-      {hasActiveFilters ? (
-        <Button type="button" variant="outline" size="sm" onClick={onClear}>
-          Limpar filtros
-        </Button>
-      ) : null}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end">
+        <div className="space-y-2 min-w-0">
+          <Label htmlFor="filtro-start">Data inicial</Label>
+          <DatePicker
+            id="filtro-start"
+            value={startDate}
+            onChange={onStartDateChange}
+            placeholder="Selecione a data inicial"
+            className="w-full"
+          />
+        </div>
+        <div className="space-y-2 min-w-0">
+          <Label htmlFor="filtro-end">Data final</Label>
+          <DatePicker
+            id="filtro-end"
+            value={endDate}
+            onChange={onEndDateChange}
+            placeholder="Selecione a data final"
+            className="w-full"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-[44px]"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            aria-busy={isRefreshing}
+            aria-label="Atualizar lista de alertas"
+          >
+            <RefreshCw
+              className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")}
+              aria-hidden
+            />
+            Atualizar
+          </Button>
+          {hasActiveFilters ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-[44px]"
+              onClick={onClear}
+            >
+              Limpar filtros
+            </Button>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

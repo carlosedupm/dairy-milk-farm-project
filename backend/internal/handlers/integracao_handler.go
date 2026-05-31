@@ -470,12 +470,20 @@ func (h *IntegracaoHandler) ListAlertas(c *gin.Context) {
 	if limit > 100 {
 		limit = 100
 	}
+	periodStart, periodEnd, err := parseAlertaListPeriod(c.Query("start"), c.Query("end"))
+	if err != nil {
+		response.ErrorValidation(c, err.Error(), nil)
+		return
+	}
+
 	list, total, err := h.alertaSvc.ListByFazenda(c.Request.Context(), fazendaID, service.AlertaListQuery{
-		Status:     c.Query("status"),
-		Tipo:       c.Query("tipo"),
-		Severidade: c.Query("severidade"),
-		Limit:      limit,
-		Offset:     offset,
+		Status:      c.Query("status"),
+		Tipo:        c.Query("tipo"),
+		Severidade:  c.Query("severidade"),
+		PeriodStart: periodStart,
+		PeriodEnd:   periodEnd,
+		Limit:       limit,
+		Offset:      offset,
 	})
 	if err != nil {
 		mapAlertaIntegracaoError(c, err)

@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  alertasAbertosBadgeAriaLabel,
+  formatAlertasNavBadgeCount,
+} from "@/hooks/useAlertasAbertosCount";
 import type { LucideIcon } from "lucide-react";
 
 type HeaderNavLinkProps = {
@@ -10,6 +15,7 @@ type HeaderNavLinkProps = {
   icon: LucideIcon;
   active: boolean;
   variant: "desktop" | "drawer";
+  badgeCount?: number;
   onNavigate?: () => void;
 };
 
@@ -19,9 +25,11 @@ export function HeaderNavLink({
   icon: Icon,
   active,
   variant,
+  badgeCount,
   onNavigate,
 }: HeaderNavLinkProps) {
   const isDrawer = variant === "drawer";
+  const showBadge = badgeCount != null && badgeCount > 0;
 
   return (
     <Link
@@ -41,14 +49,24 @@ export function HeaderNavLink({
       )}
       onClick={onNavigate}
     >
-      <Icon
-        className={cn(
-          "shrink-0",
-          isDrawer ? "h-5 w-5" : "h-4 w-4",
-          !active && isDrawer && "text-muted-foreground"
-        )}
-        aria-hidden
-      />
+      <span className="relative shrink-0">
+        <Icon
+          className={cn(
+            isDrawer ? "h-5 w-5" : "h-4 w-4",
+            !active && isDrawer && "text-muted-foreground"
+          )}
+          aria-hidden
+        />
+        {showBadge ? (
+          <Badge
+            variant="destructive"
+            className="absolute -top-1.5 -right-2 h-4 min-w-4 px-1 text-[10px] tabular-nums pointer-events-none"
+            aria-label={alertasAbertosBadgeAriaLabel(badgeCount)}
+          >
+            {formatAlertasNavBadgeCount(badgeCount)}
+          </Badge>
+        ) : null}
+      </span>
       {label}
     </Link>
   );

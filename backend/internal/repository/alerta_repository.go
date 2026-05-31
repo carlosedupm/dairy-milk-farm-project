@@ -13,11 +13,13 @@ import (
 )
 
 type AlertaListFilters struct {
-	Status     string
-	Tipo       string
-	Severidade string
-	Limit      int
-	Offset     int
+	Status      string
+	Tipo        string
+	Severidade  string
+	PeriodStart *time.Time
+	PeriodEnd   *time.Time
+	Limit       int
+	Offset      int
 }
 
 type AlertaRepository struct {
@@ -90,6 +92,15 @@ func buildAlertaListWhere(fazendaID int64, f AlertaListFilters) (string, []inter
 		conds = append(conds, fmt.Sprintf("a.severidade = $%d", idx))
 		args = append(args, f.Severidade)
 		idx++
+	}
+	if f.PeriodStart != nil && f.PeriodEnd != nil {
+		periodCond := fmt.Sprintf(`(
+			a.created_at::date BETWEEN $%d AND $%d
+			OR (a.data_prevista IS NOT NULL AND a.data_prevista BETWEEN $%d AND $%d)
+		)`, idx, idx+1, idx, idx+1)
+		conds = append(conds, periodCond)
+		args = append(args, *f.PeriodStart, *f.PeriodEnd)
+		idx += 2
 	}
 
 	return strings.Join(conds, " AND "), args

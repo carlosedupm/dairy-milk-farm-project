@@ -16,6 +16,7 @@ import {
   ALERTAS_FILTER_ALL,
   ALERTAS_PAGE_SIZE,
   alertasFiltersFromSearchParams,
+  alertasPeriodToApiParams,
   emptyAlertasFilterState,
   hasActiveAlertasFilters,
   isValidAlertaTipoFilter,
@@ -49,8 +50,12 @@ export function useAlertasPage() {
   const [offset, setOffset] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const listParams = useMemo(
-    () => ({
+  const listParams = useMemo(() => {
+    const period = alertasPeriodToApiParams(
+      filters.startDate,
+      filters.endDate,
+    );
+    return {
       status:
         filters.status === ALERTAS_FILTER_ALL ? undefined : filters.status,
       tipo:
@@ -59,20 +64,27 @@ export function useAlertasPage() {
         filters.severidade === ALERTAS_FILTER_ALL
           ? undefined
           : filters.severidade,
+      ...period,
       limit: ALERTAS_PAGE_SIZE,
       offset,
-    }),
-    [filters.status, activeTipoFilter, filters.severidade, offset]
-  );
+    };
+  }, [
+    filters.status,
+    filters.severidade,
+    filters.startDate,
+    filters.endDate,
+    activeTipoFilter,
+    offset,
+  ]);
 
-  const filterKey = `${filters.status}|${activeTipoFilter}|${filters.severidade}`;
+  const filterKey = `${filters.status}|${activeTipoFilter}|${filters.severidade}|${filters.startDate}|${filters.endDate}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
     setOffset(0);
   }
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: alertasListQueryKey(fazendaId, listParams),
     queryFn: () => listAlertas(fazendaId, listParams),
     enabled: fazendaId > 0,
@@ -121,6 +133,7 @@ export function useAlertasPage() {
     alertas: data?.alertas ?? [],
     total: data?.total ?? 0,
     isLoading,
+    isFetching,
     error,
     refetch,
     offset,
@@ -133,6 +146,10 @@ export function useAlertasPage() {
       setFilters((f) => ({ ...f, status })),
     setSeveridadeFilter: (severidade: string) =>
       setFilters((f) => ({ ...f, severidade })),
+    setStartDate: (startDate: string) =>
+      setFilters((f) => ({ ...f, startDate })),
+    setEndDate: (endDate: string) =>
+      setFilters((f) => ({ ...f, endDate })),
     onTipoChange: handleTipoChange,
     onClearFilters: handleClearFilters,
     canCreate: canCriarAlertaManual(perfil),

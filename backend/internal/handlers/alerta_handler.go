@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ceialmilk/api/internal/response"
@@ -62,7 +63,8 @@ func (h *AlertaHandler) mapAlertaError(c *gin.Context, err error, internalMsg st
 		errors.Is(err, service.ErrAlertaTipoInvalido),
 		errors.Is(err, service.ErrAlertaSeveridadeInvalida),
 		errors.Is(err, service.ErrAlertaStatusInvalido),
-		errors.Is(err, service.ErrAlertaTituloObrigatorio):
+		errors.Is(err, service.ErrAlertaTituloObrigatorio),
+		errors.Is(err, service.ErrAlertaPeriodoInvalido):
 		response.ErrorValidation(c, err.Error(), nil)
 	case errors.Is(err, service.ErrAlertaAnimalFazenda):
 		response.ErrorForbidden(c, "Animal não pertence a esta fazenda.")
@@ -72,6 +74,29 @@ func (h *AlertaHandler) mapAlertaError(c *gin.Context, err error, internalMsg st
 		response.ErrorInternal(c, internalMsg, err.Error())
 	}
 	return true
+}
+
+func parseAlertaListPeriod(startStr, endStr string) (*time.Time, *time.Time, error) {
+	startStr = strings.TrimSpace(startStr)
+	endStr = strings.TrimSpace(endStr)
+	if startStr == "" && endStr == "" {
+		return nil, nil, nil
+	}
+	if startStr == "" || endStr == "" {
+		return nil, nil, service.ErrAlertaPeriodoInvalido
+	}
+	start, err := time.Parse("2006-01-02", startStr)
+	if err != nil {
+		return nil, nil, service.ErrAlertaPeriodoInvalido
+	}
+	end, err := time.Parse("2006-01-02", endStr)
+	if err != nil {
+		return nil, nil, service.ErrAlertaPeriodoInvalido
+	}
+	if start.After(end) {
+		return nil, nil, service.ErrAlertaPeriodoInvalido
+	}
+	return &start, &end, nil
 }
 
 // List GET /api/v1/fazendas/:id/alertas
@@ -90,12 +115,20 @@ func (h *AlertaHandler) List(c *gin.Context) {
 		limit = 100
 	}
 
+	periodStart, periodEnd, err := parseAlertaListPeriod(c.Query("start"), c.Query("end"))
+	if err != nil {
+		response.ErrorValidation(c, err.Error(), nil)
+		return
+	}
+
 	list, total, err := h.svc.ListByFazenda(c.Request.Context(), fazendaID, service.AlertaListQuery{
-		Status:     c.Query("status"),
-		Tipo:       c.Query("tipo"),
-		Severidade: c.Query("severidade"),
-		Limit:      limit,
-		Offset:     offset,
+		Status:      c.Query("status"),
+		Tipo:        c.Query("tipo"),
+		Severidade:  c.Query("severidade"),
+		PeriodStart: periodStart,
+		PeriodEnd:   periodEnd,
+		Limit:       limit,
+		Offset:      offset,
 	})
 	if h.mapAlertaError(c, err, "Erro ao listar alertas") {
 		return

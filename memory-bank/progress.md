@@ -71,6 +71,13 @@
 - [x] `alerta_geracao_service_test.go`: `TestTryCreateAlerta_NaoDuplica` (genérico)
 - [x] Validação: `go test ./internal/service/... -count=1`
 
+### **Alertas — DoD listagem (✅ 2026-05-31)**
+
+- [x] Filtro de período (`start`/`end`, OR `created_at`/`data_prevista`) — backend + `AlertasListToolbar`
+- [x] Botão **Atualizar** na página `/alertas` (refetch manual)
+- [x] Badge Bell no Header (`useAlertasAbertosCount`, alertas ABERTOS)
+- [x] Catálogo: BR-ALERTA-014, BR-ALERTA-015
+
 ### **Onda 2.1 — Sistema de Alertas (✅ 2026-05-29)**
 
 - [x] Migration `31_add_alertas`: tabela `alertas`, constraints, índices, RLS
@@ -846,6 +853,6 @@
 
 ---
 
-**Última atualização**: 2026-05-30 (Exclusão listagens erro+toast; form validation; lactacao_id)
+**Última atualização**: 2026-05-31 (Alertas DoD: filtro período, atualizar, badge Header)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

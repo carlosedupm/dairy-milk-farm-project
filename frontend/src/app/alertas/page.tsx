@@ -27,6 +27,7 @@ function AlertasContent() {
     alertas,
     total,
     isLoading,
+    isFetching,
     error,
     refetch,
     offset,
@@ -37,6 +38,8 @@ function AlertasContent() {
     hasActiveFilters,
     setStatusFilter,
     setSeveridadeFilter,
+    setStartDate,
+    setEndDate,
     onTipoChange,
     onClearFilters,
     canCreate,
@@ -89,9 +92,15 @@ function AlertasContent() {
           statusFilter={filters.status}
           activeTipoFilter={activeTipoFilter}
           severidadeFilter={filters.severidade}
+          startDate={filters.startDate}
+          endDate={filters.endDate}
           onStatusChange={setStatusFilter}
           onTipoChange={onTipoChange}
           onSeveridadeChange={setSeveridadeFilter}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          onRefresh={() => void refetch()}
+          isRefreshing={isFetching}
           onClear={onClearFilters}
           hasActiveFilters={hasActiveFilters}
         />

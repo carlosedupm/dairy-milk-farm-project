@@ -27,6 +27,8 @@ export type AlertasFilterState = {
   status: string;
   tipo: string;
   severidade: string;
+  startDate: string;
+  endDate: string;
 };
 
 export function emptyAlertasFilterState(): AlertasFilterState {
@@ -34,7 +36,22 @@ export function emptyAlertasFilterState(): AlertasFilterState {
     status: ALERTAS_FILTER_ALL,
     tipo: ALERTAS_FILTER_ALL,
     severidade: ALERTAS_FILTER_ALL,
+    startDate: "",
+    endDate: "",
   };
+}
+
+/** Envia start/end à API apenas quando ambas as datas estão preenchidas. */
+export function alertasPeriodToApiParams(
+  startDate: string,
+  endDate: string,
+): { start?: string; end?: string } {
+  const start = startDate.trim();
+  const end = endDate.trim();
+  if (!start || !end) {
+    return {};
+  }
+  return { start, end };
 }
 
 /** Hidrata filtros a partir de query string (ex.: drill-down da home). */
@@ -67,7 +84,9 @@ export function hasActiveAlertasFilters(
   return (
     filters.status !== ALERTAS_FILTER_ALL ||
     filters.tipo !== ALERTAS_FILTER_ALL ||
-    filters.severidade !== ALERTAS_FILTER_ALL
+    filters.severidade !== ALERTAS_FILTER_ALL ||
+    filters.startDate !== "" ||
+    filters.endDate !== ""
   );
 }
 

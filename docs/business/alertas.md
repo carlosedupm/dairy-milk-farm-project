@@ -6,7 +6,7 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 
 - Banco: migrations `backend/migrations/31_add_alertas.up.sql`, `32_alertas_geracao_automatica.up.sql`, `33_push_subscriptions_fazenda_ativa.up.sql` — tabela `alertas`, `alertas_geracao_estado`, `push_subscriptions`, coluna `usuarios.fazenda_ativa_id`, índice único parcial `uq_alertas_aberto_tipo_animal`, utilizador técnico `sistema@interno.ceialmilk`.
 - Backend: `backend/internal/models/alerta.go`, `backend/internal/repository/alerta_repository.go`, `backend/internal/service/alerta_service.go`, `backend/internal/service/alerta_geracao_service.go`, `backend/internal/service/alerta_cron.go`, `backend/internal/service/push_notification_service.go`, `backend/internal/handlers/alerta_handler.go`, `backend/internal/handlers/alerta_admin_handler.go`, `backend/internal/handlers/push_handler.go`, rotas em `backend/cmd/api/main.go`.
-- Frontend: `frontend/src/services/alertas.ts`, `frontend/src/services/pushNotifications.ts`, `frontend/src/hooks/useAlertasPage.ts`, `frontend/src/components/alertas/` (`AlertasListToolbar`, `AlertasTable`, `CriarAlertaDialog`, `alertas-utils.ts`), `frontend/src/app/alertas/page.tsx`, `frontend/src/components/dashboard/AlertasHomePanel.tsx`, `frontend/src/components/layout/PushPermissionBanner.tsx`, `frontend/src/app/sw.js/route.ts`.
+- Frontend: `frontend/src/services/alertas.ts`, `frontend/src/services/pushNotifications.ts`, `frontend/src/hooks/useAlertasPage.ts`, `frontend/src/hooks/useAlertasAbertosCount.ts`, `frontend/src/components/alertas/` (`AlertasListToolbar`, `AlertasTable`, `CriarAlertaDialog`, `alertas-utils.ts`), `frontend/src/app/alertas/page.tsx`, `frontend/src/components/dashboard/AlertasHomePanel.tsx`, `frontend/src/components/layout/HeaderNavLink.tsx` (badge Bell), `frontend/src/components/layout/PushPermissionBanner.tsx`, `frontend/src/app/sw.js/route.ts`.
 - **Assistente Live (GERENTE+)**: function calling `listar_alertas` e `resolver_alerta` em `backend/internal/service/assistente_live_service.go` (`ExecuteFunction` → `AlertaService.UpdateStatus` com `perfil` — BR-ALERTA-007); sem tool de exclusão.
 - RBAC API (FUNCIONARIO): `backend/internal/auth/perfil_access.go` — `GET` e `PATCH .../status`; `POST`/`DELETE` negados na whitelist (403).
 
@@ -78,6 +78,23 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 - **Escopo**: `GET /api/v1/animais/:id/timeline`; UI `AnimalTimelineSection` (ícone Bell, link para `/alertas`).
 - **Efeito**: informativo; não altera regras de edição de alertas (BR-ALERTA-005).
 - **Implementação**: `TimelineRepository` (UNION `alertas`), `AnimalTimelineSection.tsx`.
+- **Estado**: implementado.
+
+### BR-ALERTA-014 — Filtro de período na listagem
+
+- **Enunciado**: `GET /api/v1/fazendas/:id/alertas` aceita query params opcionais `start` e `end` (YYYY-MM-DD). Ambos devem ser informados juntos; `start` ≤ `end`. Um alerta entra no resultado se **`created_at::date`** **ou** **`data_prevista`** (quando não nula) cair no intervalo inclusivo.
+- **Escopo**: Listagem JWT e M2M (`GET /integracoes/alertas`).
+- **Perfis / permissões**: mesma matriz de leitura de alertas.
+- **Efeito**: filtro server-side; combina com status/tipo/severidade.
+- **Implementação**: `AlertaHandler.List`, `AlertaRepository.buildAlertaListWhere`, `AlertasListToolbar` (dois `DatePicker`), `useAlertasPage`, `alertas-utils.ts`.
+- **Estado**: implementado.
+
+### BR-ALERTA-015 — Badge de alertas abertos no Header
+
+- **Enunciado**: O link **Alertas** no Header (desktop e drawer mobile) exibe badge numérico quando existem alertas com `status = ABERTO` na fazenda ativa (todas severidades). Contagem via `listAlertas` com `limit=1` (`total`). Badge oculto se zero; exibe até `99+`; `aria-label` no badge (ex.: «5 alertas pendentes»). Clique com badge leva a `/alertas?status=ABERTO`.
+- **Escopo**: Navegação global autenticada com fazenda ativa.
+- **Efeito**: informativo; atualiza via invalidação TanStack Query (`["alertas", fazendaId]`) após mutações e `refetchOnWindowFocus`.
+- **Implementação**: `useAlertasAbertosCount`, `HeaderNavLink`, `HeaderDesktopNav`, `HeaderMobileNavSections`.
 - **Estado**: implementado.
 
 ---
@@ -226,4 +243,4 @@ Implementação: `models.IsTransicaoAlertaStatusValida`, `AlertaService.UpdateSt
 
 ---
 
-**Última atualização**: 2026-05-30 (Assistente Live: listar_alertas, resolver_alerta — GERENTE+)
+**Última atualização**: 2026-05-31 (BR-ALERTA-014 filtro período; BR-ALERTA-015 badge Header)

@@ -245,6 +245,36 @@ func TestAlertaService_Delete_SoManual(t *testing.T) {
 	}
 }
 
+func TestAlertaService_ListByFazenda_PeriodoParcial(t *testing.T) {
+	ctx := context.Background()
+	svc := newAlertaServiceForTest(newFakeAlertaRepo(), &fakeAlertaAnimalRepo{})
+
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	_, _, err := svc.ListByFazenda(ctx, 1, AlertaListQuery{
+		PeriodStart: &start,
+		Limit:       25,
+	})
+	if !errors.Is(err, ErrAlertaPeriodoInvalido) {
+		t.Fatalf("expected ErrAlertaPeriodoInvalido, got %v", err)
+	}
+}
+
+func TestAlertaService_ListByFazenda_PeriodoInvertido(t *testing.T) {
+	ctx := context.Background()
+	svc := newAlertaServiceForTest(newFakeAlertaRepo(), &fakeAlertaAnimalRepo{})
+
+	start := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	_, _, err := svc.ListByFazenda(ctx, 1, AlertaListQuery{
+		PeriodStart: &start,
+		PeriodEnd:   &end,
+		Limit:       25,
+	})
+	if !errors.Is(err, ErrAlertaPeriodoInvalido) {
+		t.Fatalf("expected ErrAlertaPeriodoInvalido, got %v", err)
+	}
+}
+
 func TestAlertaService_Delete_Manual(t *testing.T) {
 	ctx := context.Background()
 	alertaFake := newFakeAlertaRepo()

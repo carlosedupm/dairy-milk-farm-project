@@ -22,6 +22,7 @@ var (
 	ErrAlertaForbidden          = errors.New("perfil não autorizado para esta operação")
 	ErrAlertaTituloObrigatorio  = errors.New("título é obrigatório")
 	ErrAlertaSomenteManualCreate = errors.New("apenas alertas manuais podem ser criados via API")
+	ErrAlertaPeriodoInvalido       = errors.New("período inválido: informe start e end no formato YYYY-MM-DD, com start <= end")
 )
 
 type alertaStore interface {
@@ -51,11 +52,13 @@ func (s *AlertaService) SetPushNotificationService(pushSvc *PushNotificationServ
 }
 
 type AlertaListQuery struct {
-	Status     string
-	Tipo       string
-	Severidade string
-	Limit      int
-	Offset     int
+	Status      string
+	Tipo        string
+	Severidade  string
+	PeriodStart *time.Time
+	PeriodEnd   *time.Time
+	Limit       int
+	Offset      int
 }
 
 func (s *AlertaService) ListByFazenda(ctx context.Context, fazendaID int64, q AlertaListQuery) ([]models.AlertaWithNames, int64, error) {
@@ -67,6 +70,12 @@ func (s *AlertaService) ListByFazenda(ctx context.Context, fazendaID int64, q Al
 	}
 	if q.Severidade != "" && !models.IsValidAlertaSeveridade(q.Severidade) {
 		return nil, 0, ErrAlertaSeveridadeInvalida
+	}
+	if (q.PeriodStart == nil) != (q.PeriodEnd == nil) {
+		return nil, 0, ErrAlertaPeriodoInvalido
+	}
+	if q.PeriodStart != nil && q.PeriodEnd != nil && q.PeriodStart.After(*q.PeriodEnd) {
+		return nil, 0, ErrAlertaPeriodoInvalido
 	}
 
 	limit := q.Limit
@@ -82,11 +91,13 @@ func (s *AlertaService) ListByFazenda(ctx context.Context, fazendaID int64, q Al
 	}
 
 	return s.repo.ListByFazenda(ctx, fazendaID, repository.AlertaListFilters{
-		Status:     q.Status,
-		Tipo:       q.Tipo,
-		Severidade: q.Severidade,
-		Limit:      limit,
-		Offset:     offset,
+		Status:      q.Status,
+		Tipo:        q.Tipo,
+		Severidade:  q.Severidade,
+		PeriodStart: q.PeriodStart,
+		PeriodEnd:   q.PeriodEnd,
+		Limit:       limit,
+		Offset:      offset,
 	})
 }
 

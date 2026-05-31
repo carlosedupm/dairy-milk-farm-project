@@ -78,6 +78,8 @@ export type AlertasListParams = {
   status?: string;
   tipo?: string;
   severidade?: string;
+  start?: string;
+  end?: string;
   limit?: number;
   offset?: number;
 };

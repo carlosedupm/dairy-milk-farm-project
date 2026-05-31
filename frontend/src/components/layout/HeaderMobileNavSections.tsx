@@ -9,6 +9,7 @@ import {
   type HeaderNavGroups,
 } from "@/config/headerNav";
 import { getAreaHref, type AppArea } from "@/config/appAccess";
+import { useAlertasAbertosCount } from "@/hooks/useAlertasAbertosCount";
 
 type HeaderMobileNavSectionsProps = {
   groups: HeaderNavGroups;
@@ -38,24 +39,30 @@ function AreaLinks({
   getAreaLabel,
   isActive,
   onNavigate,
+  alertasAbertosCount,
 }: {
   areas: AppArea[];
   getAreaLabel: (area: AppArea) => string;
   isActive: (path: string) => boolean;
   onNavigate: () => void;
+  alertasAbertosCount: number;
 }) {
   return (
     <>
       {areas.map((area) => {
-        const href = getAreaHref(area);
+        const href =
+          area === "alertas" && alertasAbertosCount > 0
+            ? "/alertas?status=ABERTO"
+            : getAreaHref(area);
         return (
           <HeaderNavLink
             key={area}
             href={href}
             label={getAreaLabel(area)}
             icon={AREA_ICON[area]}
-            active={isActive(href)}
+            active={isActive(getAreaHref(area))}
             variant="drawer"
+            badgeCount={area === "alertas" ? alertasAbertosCount : undefined}
             onNavigate={onNavigate}
           />
         );
@@ -70,6 +77,7 @@ export function HeaderMobileNavSections({
   onNavigate,
 }: HeaderMobileNavSectionsProps) {
   const pathname = usePathname();
+  const alertasAbertosCount = useAlertasAbertosCount();
 
   const isActive = (path: string) =>
     pathname === path || (pathname?.startsWith(path + "/") ?? false);
@@ -90,6 +98,7 @@ export function HeaderMobileNavSections({
             getAreaLabel={getAreaLabel}
             isActive={isActive}
             onNavigate={onNavigate}
+            alertasAbertosCount={alertasAbertosCount}
           />
         </NavSection>
       ) : null}
@@ -100,6 +109,7 @@ export function HeaderMobileNavSections({
             getAreaLabel={getAreaLabel}
             isActive={isActive}
             onNavigate={onNavigate}
+            alertasAbertosCount={0}
           />
         </NavSection>
       ) : null}

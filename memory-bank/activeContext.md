@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Alertas — DoD listagem (t_ds_008)**: filtro de período (`start`/`end`, OR `created_at`/`data_prevista`) na toolbar com `DatePicker`; botão **Atualizar** (refetch manual); badge Bell no Header com contagem de alertas **ABERTOS** (`useAlertasAbertosCount`, BR-ALERTA-014/015).
 1. ✅ **Design System — tokens semânticos (RF01–RF06)**: documentação em `docs/design-system/tokens.md`; runtime em `globals.css`; JSON W3C em `frontend/design-tokens/tokens.json`; migração de cores literais para `feedback-*` nos componentes operacionais; script `npm run validate:tokens` no CI; regra Cursor `design-tokens.mdc`.
 1. ✅ **Exclusão em listagens — erro no diálogo + toast**: `DeleteRecordDialog` com props `error` e `conformidadeCode` (alertas INT/TMP); padrão em todas as tabelas com exclusão — `deleteError` em estado, `onError` com `getApiErrorMessage` + `toast.error` (diálogo permanece aberto), `toast.success` no `onSuccess`, limpar erro ao fechar/confirmar; aplicado em `CoberturaTable`, `CioTable`, `PartoTable`, `AnimalTable`, `ProducaoTable`, `FazendaTable`, `AnimalSaudeList`, `AlertasTable`. Cobertura: mensagem 409 quando gestação/toque vinculado (BR-COBERTURAS-004). **Pendente alinhar**: exclusão inline na ficha `/animais/[id]`.
 1. ✅ **Form Validation — padronização completa (RF01–RF05)**: `docs/design-system/form-patterns.md`; `useToast()` hook + `toast` imperativo; `FormValidationAlert`/`FormFieldError`; validadores em `lib/form-validation.ts` (incl. login, registro, agricultura, alertas); migrados núcleo operacional + login/registro/folgas/agricultura/`CriarAlertaDialog`; toast de sucesso nas mutations; contrato a11y Sonner em `components/ui/toast.tsx`.
@@ -238,5 +239,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-05-30 (Exclusão listagens: DeleteRecordDialog + toast; form validation)
+**Última atualização**: 2026-05-31 (Alertas DoD: filtro período, atualizar, badge Header — BR-ALERTA-014/015)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP

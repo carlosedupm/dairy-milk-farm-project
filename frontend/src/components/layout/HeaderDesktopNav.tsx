@@ -9,6 +9,7 @@ import {
   type HeaderNavGroups,
 } from "@/config/headerNav";
 import { getAreaHref, type AppArea } from "@/config/appAccess";
+import { useAlertasAbertosCount } from "@/hooks/useAlertasAbertosCount";
 
 type HeaderDesktopNavProps = {
   groups: HeaderNavGroups;
@@ -20,6 +21,7 @@ export function HeaderDesktopNav({
   getAreaLabel,
 }: HeaderDesktopNavProps) {
   const pathname = usePathname();
+  const alertasAbertosCount = useAlertasAbertosCount();
 
   const isActive = (path: string) =>
     pathname === path || (pathname?.startsWith(path + "/") ?? false);
@@ -56,15 +58,19 @@ export function HeaderDesktopNav({
       aria-label="Navegação principal"
     >
       {groups.principal.map((area) => {
-        const href = getAreaHref(area);
+        const href =
+          area === "alertas" && alertasAbertosCount > 0
+            ? "/alertas?status=ABERTO"
+            : getAreaHref(area);
         return (
           <HeaderNavLink
             key={area}
             href={href}
             label={getAreaLabel(area)}
             icon={AREA_ICON[area]}
-            active={isActive(href)}
+            active={isActive(getAreaHref(area))}
             variant="desktop"
+            badgeCount={area === "alertas" ? alertasAbertosCount : undefined}
           />
         );
       })}
