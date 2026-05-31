@@ -21,6 +21,7 @@ import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/ui/form-field";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -30,13 +31,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getApiErrorMessage, parsePrefixedConformidadeMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+  parsePrefixedConformidadeMessage,
+} from "@/lib/errors";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { todayISODate } from "@/lib/date-limits";
 import {
   nowDatetimeLocalInputValue,
   toDatetimeLocalInputValue,
 } from "@/lib/format";
+import { validateProducaoForm, type FieldErrors } from "@/lib/form-validation";
 
 type Props = {
   initial?: ProducaoLeite | null;
@@ -45,7 +51,6 @@ type Props = {
   submitLabel?: string;
   defaultFazendaId?: number;
   defaultAnimalId?: number;
-  /** Quando definido, usa esta fazenda e não exibe o seletor de fazenda (usuário com uma única fazenda). */
   fazendaUnicaId?: number;
 };
 
@@ -60,7 +65,6 @@ export function ProducaoForm({
 }: Props) {
   const { fazendaAtiva } = useFazendaAtiva();
 
-  // Usar fazenda ativa como fallback se não tiver defaultFazendaId
   const initialFazendaId =
     fazendaUnicaId ?? defaultFazendaId ?? fazendaAtiva?.id ?? 0;
 
@@ -80,8 +84,10 @@ export function ProducaoForm({
     (initial?.qualidade as Qualidade) ?? undefined
   );
   const [error, setError] = useState("");
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  // Usar fazendas vinculadas ao usuário (não todas)
   const { data: fazendas = [] } = useQuery<Fazenda[]>({
     queryKey: ["me", "fazendas"],
     queryFn: getMinhasFazendas,
@@ -109,7 +115,6 @@ export function ProducaoForm({
     enabled: contextoAnimalId > 0 && !initial,
   });
 
-  /** Novo registro: só matrizes em lactação ativa; edição: inclui o animal do registo mesmo se a lactação já encerrou. */
   const animaisParaSelect = useMemo(() => {
     if (!initial) return animaisEmLactacao;
     if (!animalEdicao) return animaisEmLactacao;
@@ -149,18 +154,23 @@ export function ProducaoForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setConformidadeCode(undefined);
+    setFieldErrors({});
+    setIsValidationError(false);
 
     const idEnvio = initial ? animalId : Number(animalSelectValue);
-    if (!idEnvio || idEnvio <= 0) {
-      setError("Selecione um animal em lactação.");
-      return;
-    }
-    const qtd = parseFloat(quantidade);
-    if (isNaN(qtd) || qtd <= 0) {
-      setError("Quantidade deve ser maior que zero.");
+    const validation = validateProducaoForm({
+      animalId: idEnvio,
+      quantidade,
+    });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
       return;
     }
 
+    const qtd = parseFloat(quantidade);
     const payload: ProducaoCreate = {
       animal_id: idEnvio,
       quantidade: qtd,
@@ -172,8 +182,14 @@ export function ProducaoForm({
       await onSubmit(payload);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Erro ao salvar. Tente novamente."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     }
   };
+
+  const parsed = error ? parsePrefixedConformidadeMessage(error) : null;
+  const displayMessage = parsed?.message ?? error;
+  const displayCode = conformidadeCode ?? parsed?.conformidadeCode;
 
   return (
     <Card>
@@ -184,6 +200,14 @@ export function ProducaoForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
+          {error?.trim() ? (
+            <FormValidationAlert
+              message={displayMessage}
+              conformidadeCode={displayCode}
+              isValidation={isValidationError}
+            />
+          ) : null}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {fazendaUnicaId != null ? (
               <div className="space-y-2">
@@ -236,6 +260,7 @@ export function ProducaoForm({
                 (!initial && animaisParaSelect.length === 0)
               }
               femeasOnly
+              error={fieldErrors.animalId}
             />
           </div>
 
@@ -275,19 +300,21 @@ export function ProducaoForm({
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="quantidade">Quantidade (litros) *</Label>
+            <FormField
+              label="Quantidade (litros)"
+              htmlFor="quantidade"
+              required
+              error={fieldErrors.quantidade}
+            >
               <Input
-                id="quantidade"
                 type="number"
                 step="0.01"
                 min={0}
                 value={quantidade}
                 onChange={(e) => setQuantidade(e.target.value)}
                 placeholder="Ex.: 25.5"
-                required
               />
-            </div>
+            </FormField>
 
             <div className="space-y-2">
               <Label htmlFor="qualidade">Qualidade (1-10)</Label>
@@ -310,12 +337,6 @@ export function ProducaoForm({
               </Select>
             </div>
           </div>
-
-          {error ? (
-            <FormValidationAlert
-              {...parsePrefixedConformidadeMessage(error)}
-            />
-          ) : null}
 
           <Button type="submit" size="lg" disabled={isPending} className="min-h-[44px]">
             {isPending ? "Salvando…" : submitLabel}

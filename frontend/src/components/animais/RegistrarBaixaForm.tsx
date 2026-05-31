@@ -24,6 +24,7 @@ import { MOTIVO_SAIDA_LABELS } from "@/services/animais";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { DatePicker } from "@/components/ui/date-picker";
+import { FormFieldError } from "@/components/ui/form-field-error";
 import { todayISODate } from "@/lib/date-limits";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,7 +44,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+} from "@/lib/errors";
+import { validateRegistrarBaixa, type FieldErrors } from "@/lib/form-validation";
+import { toast } from "@/hooks/use-toast";
 
 type Props = {
   defaultAnimalId?: string;
@@ -70,7 +76,10 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
   );
   const [observacao, setObservacao] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const { data: animais = [] } = useAnimaisOperacionalList(fazendaAtiva?.id);
 
@@ -95,10 +104,13 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
       invalidateAnimalTimeline(queryClient, aid);
       queryClient.invalidateQueries({ queryKey: ["conformidade"] });
       queryClient.invalidateQueries({ queryKey: ["resumo-pecuario"] });
+      toast.success("Baixa do rebanho registada");
       router.push(`/animais/${aid}`);
     },
     onError: (err: unknown) => {
-      setError(getApiErrorMessage(err, "Erro ao registrar baixa."));
+      setFormError(getApiErrorMessage(err, "Erro ao registrar baixa."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
       setConfirmOpen(false);
     },
   });
@@ -112,20 +124,26 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
   }
 
   const handleConfirm = () => {
-    setError("");
-    if (!animalId) {
-      setError("Selecione um animal.");
-      return;
-    }
-    if (!dataSaida.trim()) {
-      setError("Informe a data da baixa.");
-      return;
-    }
     mutation.mutate({
       data_saida: dataSaida.trim(),
       motivo_saida: motivo,
       observacao_saida: observacao.trim() || null,
     });
+  };
+
+  const tryOpenConfirm = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    const validation = validateRegistrarBaixa({ animalId, dataSaida });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+    setFieldErrors({});
+    setIsValidationError(false);
+    setConfirmOpen(true);
   };
 
   return (
@@ -135,19 +153,11 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
         backHref={animalId ? `/animais/${animalId}` : "/animais"}
         submitLabel="Continuar"
         isPending={false}
-        error={error}
-        onSubmit={() => {
-          setError("");
-          if (!animalId) {
-            setError("Selecione um animal.");
-            return;
-          }
-          if (!dataSaida.trim()) {
-            setError("Informe a data da baixa.");
-            return;
-          }
-          setConfirmOpen(true);
-        }}
+        error={formError}
+        errorConformidadeCode={conformidadeCode}
+        isValidationError={isValidationError}
+        fieldErrors={fieldErrors}
+        onSubmit={tryOpenConfirm}
       >
         <p className="text-muted-foreground text-sm">
           Registo formal de saída (morte, venda, doação ou descarte). Encerra
@@ -159,6 +169,7 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
           onValueChange={setAnimalId}
           label="Animal *"
           semDataSaida
+          error={fieldErrors.animalId}
         />
         <div className="space-y-2">
           <Label>Data da baixa *</Label>
@@ -168,6 +179,7 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
             maxDate={todayISODate()}
             placeholder="Selecione a data"
           />
+          <FormFieldError message={fieldErrors.dataSaida} />
           <p className="text-xs text-muted-foreground">
             A data da baixa não pode ser futura.
           </p>

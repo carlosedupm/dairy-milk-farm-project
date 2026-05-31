@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getApiErrorMessage } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
 
 function AdminUsuarioEditarContent({ id }: { id: number }) {
@@ -54,6 +55,7 @@ function AdminUsuarioEditarContent({ id }: { id: number }) {
   const updateMutation = useMutation({
     mutationFn: (payload: UsuarioUpdate) => updateUsuario(id, payload),
     onSuccess: () => {
+      toast.success("Utilizador atualizado");
       queryClient.invalidateQueries({ queryKey: ["admin", "usuarios"] });
       queryClient.invalidateQueries({
         queryKey: ["admin", "usuarios", "pendentes-provisao"],
@@ -74,6 +76,7 @@ function AdminUsuarioEditarContent({ id }: { id: number }) {
       });
       setFazendasError("");
       setDirty(false);
+      toast.success("Fazendas vinculadas guardadas");
     },
     onError: (err: unknown) => {
       setFazendasError(getApiErrorMessage(err, "Erro ao salvar vínculos."));

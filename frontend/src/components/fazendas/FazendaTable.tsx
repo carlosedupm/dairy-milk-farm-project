@@ -23,6 +23,8 @@ import { MobileListCard } from '@/components/layout/list/MobileListCard'
 import { ListRowActionsMenu } from '@/components/layout/list/ListRowActionsMenu'
 import { ResponsiveListContainer } from '@/components/layout/list/ResponsiveListContainer'
 import { DeleteRecordDialog } from '@/components/layout/list/DeleteRecordDialog'
+import { getApiErrorMessage } from '@/lib/errors'
+import { toast } from '@/hooks/use-toast'
 
 export function FazendaTable({ items }: { items: Fazenda[] }) {
   const { user } = useAuth()
@@ -33,6 +35,7 @@ export function FazendaTable({ items }: { items: Fazenda[] }) {
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   )
+  const [deleteError, setDeleteError] = useState('')
   const deleteTarget = items.find((f) => f.id === deleteDialogOpenId)
 
   const deleteMutation = useMutation({
@@ -40,11 +43,22 @@ export function FazendaTable({ items }: { items: Fazenda[] }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fazendas'] })
       queryClient.invalidateQueries({ queryKey: ['me', 'fazendas'] })
+      setDeleteError('')
       setDeleteDialogOpenId(null)
+      toast.success('Fazenda excluída')
+    },
+    onError: (err: unknown) => {
+      const message = getApiErrorMessage(
+        err,
+        'Não foi possível excluir esta fazenda.'
+      )
+      setDeleteError(message)
+      toast.error(message)
     },
   })
 
   const handleDelete = (id: number) => {
+    setDeleteError('')
     deleteMutation.mutate(id)
   }
 
@@ -194,7 +208,10 @@ export function FazendaTable({ items }: { items: Fazenda[] }) {
         <DeleteRecordDialog
           open={deleteDialogOpenId != null}
           onOpenChange={(open) => {
-            if (!open) setDeleteDialogOpenId(null)
+            if (!open) {
+              setDeleteDialogOpenId(null)
+              setDeleteError('')
+            }
           }}
           title="Excluir fazenda"
           description={
@@ -205,6 +222,7 @@ export function FazendaTable({ items }: { items: Fazenda[] }) {
           }
           onConfirm={() => handleDelete(deleteTarget.id)}
           isPending={deleteMutation.isPending}
+          error={deleteError}
         />
       ) : null}
     </>

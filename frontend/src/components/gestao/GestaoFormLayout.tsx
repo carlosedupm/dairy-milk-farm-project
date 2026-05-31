@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
+import { FormFieldErrorsProvider } from "@/contexts/FormFieldErrorsContext";
 import { parsePrefixedConformidadeMessage } from "@/lib/errors";
+import type { FieldErrors } from "@/lib/form-validation";
 
 type Props = {
   title: string;
@@ -17,6 +18,9 @@ type Props = {
   isPending?: boolean;
   error?: string;
   errorConformidadeCode?: string;
+  /** Erros de validação client-side (exibem título «Verifique os campos»). */
+  isValidationError?: boolean;
+  fieldErrors?: FieldErrors;
   submitDisabled?: boolean;
 };
 
@@ -29,23 +33,14 @@ export function GestaoFormLayout({
   isPending = false,
   error,
   errorConformidadeCode,
+  isValidationError = false,
+  fieldErrors,
   submitDisabled = false,
 }: Props) {
-  const alertRef = useRef<HTMLDivElement>(null);
-  const prevErrorRef = useRef<string | undefined>(undefined);
-
   const parsed = error ? parsePrefixedConformidadeMessage(error) : null;
   const displayMessage = parsed?.message ?? error ?? "";
   const displayCode = errorConformidadeCode ?? parsed?.conformidadeCode;
-
-  useEffect(() => {
-    const hadError = Boolean(prevErrorRef.current?.trim());
-    const hasError = Boolean(error?.trim());
-    prevErrorRef.current = error;
-    if (!hadError && hasError) {
-      alertRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  }, [error]);
+  const showAlert = Boolean(error?.trim());
 
   return (
     <PageContainer variant="narrow">
@@ -55,15 +50,16 @@ export function GestaoFormLayout({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          {children}
-          {error?.trim() ? (
-            <div ref={alertRef}>
-              <FormValidationAlert
-                message={displayMessage}
-                conformidadeCode={displayCode}
-              />
-            </div>
+          {showAlert ? (
+            <FormValidationAlert
+              message={displayMessage}
+              conformidadeCode={displayCode}
+              isValidation={isValidationError}
+            />
           ) : null}
+          <FormFieldErrorsProvider fieldErrors={fieldErrors}>
+            {children}
+          </FormFieldErrorsProvider>
           <Button
             size="lg"
             onClick={onSubmit}

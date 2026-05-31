@@ -25,6 +25,8 @@ import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu"
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { getApiErrorMessage } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import { Milk } from "lucide-react";
 
 type Props = {
@@ -75,6 +77,7 @@ export function ProducaoTable({
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
+  const [deleteError, setDeleteError] = useState("");
   const deleteTarget = items.find((p) => p.id === deleteDialogOpenId);
 
   const deleteMutation = useMutation({
@@ -89,11 +92,22 @@ export function ProducaoTable({
         });
         invalidateAnimalTimeline(queryClient, item.animal_id);
       }
+      setDeleteError("");
       setDeleteDialogOpenId(null);
+      toast.success("Registro de produção excluído");
+    },
+    onError: (err: unknown) => {
+      const message = getApiErrorMessage(
+        err,
+        "Não foi possível excluir este registro."
+      );
+      setDeleteError(message);
+      toast.error(message);
     },
   });
 
   const handleDelete = (id: number) => {
+    setDeleteError("");
     deleteMutation.mutate(id);
   };
 
@@ -241,7 +255,10 @@ export function ProducaoTable({
         <DeleteRecordDialog
           open={deleteDialogOpenId != null}
           onOpenChange={(open) => {
-            if (!open) setDeleteDialogOpenId(null);
+            if (!open) {
+              setDeleteDialogOpenId(null);
+              setDeleteError("");
+            }
           }}
           title="Excluir registro"
           description={
@@ -253,6 +270,7 @@ export function ProducaoTable({
           }
           onConfirm={() => handleDelete(deleteTarget.id)}
           isPending={deleteMutation.isPending}
+          error={deleteError}
         />
       ) : null}
     </>

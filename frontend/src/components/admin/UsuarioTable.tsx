@@ -14,6 +14,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { getApiErrorMessage } from '@/lib/errors'
+import { toast } from '@/hooks/use-toast'
+import { FormValidationAlert } from '@/components/ui/form-validation-alert'
 import { useState } from 'react'
 import { MobileListCard } from '@/components/layout/list/MobileListCard'
 import { ListRowActionsMenu } from '@/components/layout/list/ListRowActionsMenu'
@@ -50,9 +52,11 @@ export function UsuarioTable({ items }: { items: Usuario[] }) {
         queryKey: ['admin', 'usuarios', 'pendentes-provisao'],
       })
       setError('')
+      toast.success('Status do utilizador atualizado')
     },
     onError: (err) => {
       setError(getApiErrorMessage(err, 'Erro ao alterar status.'))
+      toast.error(getApiErrorMessage(err, 'Erro ao alterar status.'))
     },
   })
 
@@ -71,7 +75,7 @@ export function UsuarioTable({ items }: { items: Usuario[] }) {
 
   return (
     <div className="space-y-2">
-      {error && <p className="text-base text-destructive">{error}</p>}
+      {error ? <FormValidationAlert message={error} /> : null}
       <ResponsiveListContainer
         mobile={items.map((u) => (
           <MobileListCard

@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { RouteAccessGuard } from '@/components/layout/RouteAccessGuard'
 import { ServiceWorkerRegistration } from './ServiceWorkerRegistration'
 import { AnimalSearchDialogProvider } from '@/contexts/AnimalSearchDialogContext'
+import { Toaster } from '@/components/ui/sonner'
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -28,7 +29,10 @@ export function Providers({ children }: { children: ReactNode }) {
           <RouteAccessGuard>
             <AssistenteProvider>
               <FazendaProvider>
-                <AnimalSearchDialogProvider>{children}</AnimalSearchDialogProvider>
+                <AnimalSearchDialogProvider>
+                  {children}
+                  <Toaster />
+                </AnimalSearchDialogProvider>
               </FazendaProvider>
             </AssistenteProvider>
           </RouteAccessGuard>

@@ -23,6 +23,8 @@ import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog"
 import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
 import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
 import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { getApiErrorMessage } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import { Baby } from "lucide-react";
 
 type Props = {
@@ -64,17 +66,29 @@ export function CoberturaTable({
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
+  const [deleteError, setDeleteError] = useState("");
 
   const deleteMutation = useMutation({
     mutationFn: remove,
     onSuccess: (_data, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ["coberturas", fazendaId] });
       queryClient.invalidateQueries({ queryKey: ["cobertura", deletedId] });
+      setDeleteError("");
       setDeleteDialogOpenId(null);
+      toast.success("Cobertura excluída");
+    },
+    onError: (err: unknown) => {
+      const message = getApiErrorMessage(
+        err,
+        "Não foi possível excluir esta cobertura."
+      );
+      setDeleteError(message);
+      toast.error(message);
     },
   });
 
   const handleDelete = (id: number) => {
+    setDeleteError("");
     deleteMutation.mutate(id);
   };
 
@@ -200,7 +214,10 @@ export function CoberturaTable({
       <DeleteRecordDialog
         open={deleteDialogOpenId != null}
         onOpenChange={(open) => {
-          if (!open) setDeleteDialogOpenId(null);
+          if (!open) {
+            setDeleteDialogOpenId(null);
+            setDeleteError("");
+          }
         }}
         title="Excluir registro de cobertura"
         description="Tem certeza que deseja excluir este registro? Não será possível excluir se existir gestação ou diagnóstico (toque) vinculado a esta cobertura."
@@ -208,6 +225,7 @@ export function CoberturaTable({
           if (deleteDialogOpenId != null) handleDelete(deleteDialogOpenId);
         }}
         isPending={deleteMutation.isPending}
+        error={deleteError}
       />
     </>
   );

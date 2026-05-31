@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef, useEffect, useRef } from "react";
 import { AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -7,21 +8,63 @@ import { cn } from "@/lib/utils";
 export type FormValidationAlertProps = {
   message: string;
   conformidadeCode?: string;
+  /** Título do alerta (erros de API usam o default). */
   title?: string;
+  /** Título quando o erro é de validação client-side. */
+  validationTitle?: string;
+  /** Quando true, usa validationTitle em vez de title. */
+  isValidation?: boolean;
   className?: string;
 };
 
-export function FormValidationAlert({
-  message,
-  conformidadeCode,
-  title = "Não foi possível guardar",
-  className,
-}: FormValidationAlertProps) {
+export const FormValidationAlert = forwardRef<
+  HTMLDivElement,
+  FormValidationAlertProps
+>(function FormValidationAlert(
+  {
+    message,
+    conformidadeCode,
+    title = "Não foi possível guardar",
+    validationTitle = "Verifique os campos",
+    isValidation = false,
+    className,
+  },
+  forwardedRef
+) {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const prevMessageRef = useRef("");
+
   const text = message.trim();
+  const displayTitle = isValidation ? validationTitle : title;
+
+  useEffect(() => {
+    const hadError = Boolean(prevMessageRef.current.trim());
+    const hasError = Boolean(text);
+    prevMessageRef.current = text;
+    if (!hadError && hasError) {
+      const el =
+        (forwardedRef &&
+          typeof forwardedRef !== "function" &&
+          forwardedRef.current) ||
+        innerRef.current;
+      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [text, forwardedRef]);
+
   if (!text) return null;
+
+  const setRef = (node: HTMLDivElement | null) => {
+    innerRef.current = node;
+    if (typeof forwardedRef === "function") {
+      forwardedRef(node);
+    } else if (forwardedRef) {
+      forwardedRef.current = node;
+    }
+  };
 
   return (
     <div
+      ref={setRef}
       role="alert"
       aria-live="polite"
       className={cn(
@@ -35,7 +78,7 @@ export function FormValidationAlert({
           aria-hidden
         />
         <p className="text-base font-medium text-foreground flex-1 min-w-0 break-words">
-          {title}
+          {displayTitle}
         </p>
         {conformidadeCode ? (
           <Badge variant="destructive" className="shrink-0">
@@ -48,4 +91,4 @@ export function FormValidationAlert({
       </p>
     </div>
   );
-}
+});

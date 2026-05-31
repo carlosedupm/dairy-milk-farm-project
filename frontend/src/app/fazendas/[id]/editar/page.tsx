@@ -8,6 +8,7 @@ import { RequireAdminRoute } from '@/components/layout/RequireAdminRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { BackLink } from '@/components/layout/BackLink'
 import { FazendaForm } from '@/components/fazendas/FazendaForm'
+import { toast } from '@/hooks/use-toast'
 
 function EditarFazendaContent() {
   const params = useParams()
@@ -24,6 +25,7 @@ function EditarFazendaContent() {
   const mutation = useMutation({
     mutationFn: (p: FazendaUpdate) => update(id, p),
     onSuccess: () => {
+      toast.success('Fazenda atualizada')
       queryClient.invalidateQueries({ queryKey: ['fazendas'] })
       queryClient.invalidateQueries({ queryKey: ['me', 'fazendas'] })
       router.push('/fazendas')

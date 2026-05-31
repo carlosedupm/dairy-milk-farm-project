@@ -5,6 +5,9 @@ import { useMemo } from "react";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormFieldError } from "@/components/ui/form-field-error";
+import { useFormFieldError, useFormFieldErrors } from "@/contexts/FormFieldErrorsContext";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
@@ -97,6 +100,11 @@ export function PartoFormFields({
     return (a?.raca ?? "").trim();
   }, [animaisSafe, formState.animalId]);
 
+  const animalIdError = useFormFieldError("animalId");
+  const dataError = useFormFieldError("data");
+  const numeroCriasError = useFormFieldError("numeroCrias");
+  const allFieldErrors = useFormFieldErrors();
+
   return (
     <>
       <AnimalSelect
@@ -108,6 +116,7 @@ export function PartoFormFields({
         label="Animal (mãe)"
         placeholder="Selecione"
         femeasOnly
+        error={animalIdError}
       />
       <div className="space-y-2">
         <Label htmlFor="parto-data-hora">Data e hora do parto</Label>
@@ -118,6 +127,7 @@ export function PartoFormFields({
           onChange={(v) => setFormState((s) => ({ ...s, data: v }))}
           placeholder="Selecione data e hora"
         />
+        <FormFieldError message={dataError} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="parto-num-crias">Número de animais na cria</Label>
@@ -126,6 +136,8 @@ export function PartoFormFields({
           type="number"
           min={1}
           value={formState.numeroCrias}
+          aria-invalid={numeroCriasError ? true : undefined}
+          className={cn("text-foreground", numeroCriasError && "border-destructive")}
           onChange={(e) => {
             const raw = e.target.value;
             setFormState((s) => {
@@ -137,8 +149,8 @@ export function PartoFormFields({
               return { ...s, numeroCrias: raw, crias };
             });
           }}
-          className="text-foreground"
         />
+        <FormFieldError message={numeroCriasError} />
       </div>
       {includeCriasRepeater && formState.crias.length > 0 ? (
         <div className="space-y-4 border-t border-border pt-4">
@@ -149,10 +161,15 @@ export function PartoFormFields({
             FILHO-… (macho) ou FILHA-… (fêmea), identificação da mãe-data-parto-n, se você não informar o
             brinco.
           </p>
-          {formState.crias.map((row, i) => (
+          {formState.crias.map((row, i) => {
+            const pesoError = allFieldErrors[`cria_${i}_peso`];
+            return (
             <div
               key={i}
-              className="rounded-md border border-border bg-muted/30 p-3 space-y-3"
+              className={cn(
+                "rounded-md border bg-muted/30 p-3 space-y-3",
+                pesoError ? "border-destructive/40" : "border-border"
+              )}
             >
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-3">
               <div className="space-y-2 sm:col-span-1">
@@ -224,8 +241,13 @@ export function PartoFormFields({
                       return { ...s, crias };
                     })
                   }
-                  className="text-foreground"
+                  className={cn(
+                    "text-foreground",
+                    pesoError && "border-destructive"
+                  )}
+                  aria-invalid={pesoError ? true : undefined}
                 />
+                <FormFieldError message={pesoError} />
               </div>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3">
@@ -269,7 +291,8 @@ export function PartoFormFields({
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : null}
       <div className="space-y-2">

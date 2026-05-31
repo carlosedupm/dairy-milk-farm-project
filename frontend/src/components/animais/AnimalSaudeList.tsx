@@ -35,6 +35,8 @@ import {
 } from "@/components/layout/list/ListRowActionsMenu";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
+import { getApiErrorMessage } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 
 export const ANIMAL_SAUDE_EMPTY_MESSAGE =
   "Nenhum registo de saúde para este animal.";
@@ -80,6 +82,7 @@ export function AnimalSaudeList({ animalId, items, perfil }: Props) {
   const canEdit = canEditarRegistroSaude(perfil);
   const canDelete = canExcluirRegistroSaude(perfil);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState("");
 
   const deleteMutation = useMutation({
     mutationFn: (saudeId: number) => remove(animalId, saudeId),
@@ -92,7 +95,17 @@ export function AnimalSaudeList({ animalId, items, perfil }: Props) {
         queryKey: ["animais", animalId, "contexto"],
       });
       invalidateAnimalTimeline(queryClient, animalId);
+      setDeleteError("");
       setDeleteId(null);
+      toast.success("Registo de saúde excluído");
+    },
+    onError: (err: unknown) => {
+      const message = getApiErrorMessage(
+        err,
+        "Não foi possível excluir este registo."
+      );
+      setDeleteError(message);
+      toast.error(message);
     },
   });
 
@@ -213,11 +226,22 @@ export function AnimalSaudeList({ animalId, items, perfil }: Props) {
       />
       <DeleteRecordDialog
         open={deleteId != null}
-        onOpenChange={(open) => !open && setDeleteId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteId(null);
+            setDeleteError("");
+          }
+        }}
         title="Excluir registo de saúde"
         description="O status de saúde do animal será recalculado. Esta ação não pode ser desfeita."
-        onConfirm={() => deleteId != null && deleteMutation.mutate(deleteId)}
+        onConfirm={() => {
+          if (deleteId != null) {
+            setDeleteError("");
+            deleteMutation.mutate(deleteId);
+          }
+        }}
         isPending={deleteMutation.isPending}
+        error={deleteError}
       />
     </>
   );

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import {
   Select,
   SelectContent,
@@ -13,7 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+  parsePrefixedConformidadeMessage,
+} from "@/lib/errors";
+import { validateUsuarioForm, type FieldErrors } from "@/lib/form-validation";
 import { PERFIS_DISPONIVEIS, PERFIL_LABEL } from "@/lib/perfilLabels";
 
 type CreatePayload = UsuarioCreate;
@@ -50,22 +57,30 @@ export function UsuarioForm({
   const perfilReadOnly = !!(initial && perfilNaoEditavel(initial.perfil));
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
   const [error, setError] = useState("");
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!nome.trim()) {
-      setError("Nome é obrigatório.");
+    setConformidadeCode(undefined);
+    setFieldErrors({});
+
+    const validation = validateUsuarioForm({
+      nome,
+      email,
+      senha,
+      isCreate: !initial,
+    });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
       return;
     }
-    if (!email.trim()) {
-      setError("Email é obrigatório.");
-      return;
-    }
-    if (!initial && !senha.trim()) {
-      setError("Senha é obrigatória ao criar usuário.");
-      return;
-    }
+    setIsValidationError(false);
+
     try {
       const payload: CreatePayload | UpdatePayload = {
         nome: nome.trim(),
@@ -81,8 +96,14 @@ export function UsuarioForm({
       await onSubmit(payload);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Erro ao salvar. Tente novamente."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     }
   };
+
+  const parsed = error ? parsePrefixedConformidadeMessage(error) : null;
+  const displayMessage = parsed?.message ?? error;
+  const displayCode = conformidadeCode ?? parsed?.conformidadeCode;
 
   return (
     <Card>
@@ -91,40 +112,45 @@ export function UsuarioForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="nome">Nome *</Label>
+          {error?.trim() ? (
+            <FormValidationAlert
+              message={displayMessage}
+              conformidadeCode={displayCode}
+              isValidation={isValidationError}
+            />
+          ) : null}
+
+          <FormField label="Nome" htmlFor="nome" required error={fieldErrors.nome}>
             <Input
-              id="nome"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              required
               placeholder="Nome do usuário"
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+          </FormField>
+
+          <FormField label="Email" htmlFor="email" required error={fieldErrors.email}>
             <Input
-              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
               placeholder="email@exemplo.com"
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="senha">
-              Senha {initial ? "(deixe em branco para não alterar)" : "*"}
-            </Label>
+          </FormField>
+
+          <FormField
+            label={initial ? "Senha (deixe em branco para não alterar)" : "Senha"}
+            htmlFor="senha"
+            required={!initial}
+            error={fieldErrors.senha}
+          >
             <Input
-              id="senha"
               type="password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              required={!initial}
               placeholder={initial ? "••••••••" : "Senha"}
             />
-          </div>
+          </FormField>
+
           <div className="space-y-2">
             <Label htmlFor="perfil">Perfil</Label>
             {perfilReadOnly ? (
@@ -165,7 +191,6 @@ export function UsuarioForm({
               </Label>
             </div>
           )}
-          {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" disabled={isPending}>
             {isPending ? "Salvando…" : submitLabel}
           </Button>

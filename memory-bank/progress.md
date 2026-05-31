@@ -23,6 +23,20 @@
 
 ## ✅ O que foi concluído
 
+### **Exclusão em listagens — erro visível + toast (✅ 2026-05-30)**
+
+- [x] `DeleteRecordDialog`: props `error` e `conformidadeCode` (badge INT/TMP em alertas)
+- [x] Padrão replicado: `deleteError` + `onError`/`onSuccess` + toasts; diálogo aberto em falha de API
+- [x] Tabelas: `CoberturaTable`, `CioTable`, `PartoTable`, `AnimalTable`, `ProducaoTable`, `FazendaTable`, `AnimalSaudeList`, `AlertasTable`
+- [x] UX 409 cobertura (BR-COBERTURAS-004) visível no modal e toast — não só no console
+- [ ] Pendente: exclusão na ficha `/animais/[id]` (fluxo inline, sem `DeleteRecordDialog`)
+
+### **Form validation inline + global + toast (✅ 2026-05-30)**
+
+- [x] `FormFieldError`, `FormField`, `lib/form-validation.ts`, `FormValidationAlert`, `GestaoFormLayout` + contexto de erros por campo
+- [x] Sonner (`use-toast`, `Toaster`); migrados animais, produção, gestão, admin
+- [x] `systemPatterns.md` + regra Cursor `frontend-ui-patterns.mdc`
+
 ### **`lactacao_id` em produção (✅ 2026-05-30)**
 
 - [x] Migration `34_add_lactacao_id_producao_leite`: coluna nullable + FK + índice
@@ -797,6 +811,13 @@
 - ✅ **Documentação**: `docs/business/integracoes.md`; `docs/integracoes/README.md`; OpenAPI embed + `docs/openapi/`; Swagger UI pública; Postman/README.
 - 📋 **Pendente**: teste ponta-a-ponta em staging com integrador real; rotação de chaves expostas em testes manuais.
 
+### **2026-05-30 — Exclusão em listagens (erro no diálogo + toast)**
+
+- ✅ **`DeleteRecordDialog`**: `error` + `conformidadeCode` opcional; `FormValidationAlert` «Não foi possível excluir».
+- ✅ **Padrão nas `*Table`**: estado `deleteError`, `onError` com `getApiErrorMessage` + `toast.error`, `onSuccess` com `toast.success`, limpar erro ao fechar/confirmar; diálogo não fecha em erro de API.
+- ✅ **Consumidores**: coberturas, cios, partos, animais, produção, fazendas, saúde (`AnimalSaudeList`), alertas.
+- ✅ **Cobertura 409**: mensagem de vínculo gestação/toque visível (BR-COBERTURAS-004).
+
 ### **2026-05-24 — Coberturas: filtros na listagem**
 
 - ✅ **`CoberturasListToolbar`**: filtros por animal (fêmea), tipo (IA/IATF/Monta natural/TE) e intervalo de datas; botão «Limpar filtros»; grid responsivo alinhado a `/producao`.
@@ -813,6 +834,6 @@
 
 ---
 
-**Última atualização**: 2026-05-30 (AnimalSelect cicloContext; BR-CICLO-015)
-**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` em código | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Agricultura em consolidação | Senha aguarda SMTP
+**Última atualização**: 2026-05-30 (Exclusão listagens erro+toast; form validation; lactacao_id)
+**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

@@ -8,6 +8,7 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { BackLink } from '@/components/layout/BackLink'
 import { AnimalForm } from '@/components/animais/AnimalForm'
+import { toast } from '@/hooks/use-toast'
 
 function EditarAnimalContent() {
   const params = useParams()
@@ -24,6 +25,7 @@ function EditarAnimalContent() {
   const mutation = useMutation({
     mutationFn: (p: AnimalUpdate) => update(id, p),
     onSuccess: () => {
+      toast.success('Animal atualizado')
       queryClient.invalidateQueries({ queryKey: ['animais'] })
       router.push('/animais')
     },

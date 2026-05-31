@@ -4,6 +4,9 @@ import type { Dispatch, SetStateAction } from "react";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormFieldError } from "@/components/ui/form-field-error";
+import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
@@ -70,6 +73,10 @@ export function ToqueFormFields({
 }: Props) {
   const precisaCobertura = classificacaoRequiresCobertura(formState.classificacao);
   const obsSugestoes = obsSugestoesFor(formState.classificacao);
+  const animalIdError = useFormFieldError("animalId");
+  const dataError = useFormFieldError("data");
+  const classificacaoError = useFormFieldError("classificacao");
+  const coberturaIdError = useFormFieldError("coberturaId");
 
   return (
     <>
@@ -83,6 +90,7 @@ export function ToqueFormFields({
         label="Animal"
         placeholder="Selecione"
         femeasOnly
+        error={animalIdError}
       />
       <div className="space-y-2">
         <Label htmlFor="toque-data-hora">Data e hora</Label>
@@ -93,6 +101,7 @@ export function ToqueFormFields({
           onChange={(data) => setFormState((s) => ({ ...s, data }))}
           placeholder="Selecione data e hora"
         />
+        <FormFieldError message={dataError} />
       </div>
       <div className="space-y-2">
         <Label>Diagnóstico</Label>
@@ -106,7 +115,13 @@ export function ToqueFormFields({
             }))
           }
         >
-          <SelectTrigger className="text-foreground">
+          <SelectTrigger
+            className={cn(
+              "text-foreground",
+              classificacaoError && "border-destructive"
+            )}
+            aria-invalid={classificacaoError ? true : undefined}
+          >
             <SelectValue placeholder="Selecione o diagnóstico" />
           </SelectTrigger>
           <SelectContent>
@@ -117,6 +132,7 @@ export function ToqueFormFields({
             ))}
           </SelectContent>
         </Select>
+        <FormFieldError message={classificacaoError} />
       </div>
 
       {precisaCobertura ? (
@@ -135,7 +151,14 @@ export function ToqueFormFields({
                 setFormState((s) => ({ ...s, coberturaId }))
               }
             >
-              <SelectTrigger id="cobertura" className="text-foreground">
+              <SelectTrigger
+                id="cobertura"
+                className={cn(
+                  "text-foreground",
+                  coberturaIdError && "border-destructive"
+                )}
+                aria-invalid={coberturaIdError ? true : undefined}
+              >
                 <SelectValue placeholder="Selecione a cobertura" />
               </SelectTrigger>
               <SelectContent>
@@ -147,6 +170,7 @@ export function ToqueFormFields({
               </SelectContent>
             </Select>
           )}
+          <FormFieldError message={coberturaIdError} />
         </div>
       ) : null}
 

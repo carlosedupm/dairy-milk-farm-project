@@ -1,0 +1,261 @@
+import type { OrigemAquisicao } from "@/services/animais";
+import type { CoberturaFormState } from "@/components/gestao/CoberturaFormFields";
+import type { CioFormState } from "@/components/gestao/CioFormFields";
+import type { PartoFormState } from "@/components/gestao/PartoFormFields";
+import type { AnimalSaudeFormState } from "@/components/animais/AnimalSaudeFormFields";
+
+export type FieldErrors = Partial<Record<string, string>>;
+
+export type FormValidationResult = {
+  valid: boolean;
+  fields: FieldErrors;
+  summary?: string;
+};
+
+export function mergeFormErrors(...parts: FieldErrors[]): FieldErrors {
+  return Object.assign({}, ...parts);
+}
+
+function invalid(
+  fields: FieldErrors,
+  summary = "Corrija os campos assinalados."
+): FormValidationResult {
+  return { valid: false, fields, summary };
+}
+
+function valid(): FormValidationResult {
+  return { valid: true, fields: {} };
+}
+
+export type AnimalFormInput = {
+  identificacao: string;
+  fazendaId: number;
+  fazendaUnicaId?: number;
+  origemAquisicao: OrigemAquisicao;
+  dataNascimento: string;
+};
+
+export function validateAnimalForm(input: AnimalFormInput): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.identificacao.trim()) {
+    fields.identificacao = "Identificação é obrigatória.";
+  }
+  const effectiveFazenda = input.fazendaUnicaId ?? input.fazendaId;
+  if (!effectiveFazenda || effectiveFazenda <= 0) {
+    fields.fazendaId = "Selecione uma fazenda.";
+  }
+  if (input.origemAquisicao === "NASCIDO" && !input.dataNascimento.trim()) {
+    fields.dataNascimento =
+      "Data de nascimento é obrigatória para animais nascidos na propriedade.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export type ProducaoFormInput = {
+  animalId: number;
+  quantidade: string;
+};
+
+export function validateProducaoForm(input: ProducaoFormInput): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.animalId || input.animalId <= 0) {
+    fields.animalId = "Selecione um animal em lactação.";
+  }
+  const qtd = parseFloat(input.quantidade);
+  if (isNaN(qtd) || qtd <= 0) {
+    fields.quantidade = "Quantidade deve ser maior que zero.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateCoberturaForm(
+  formState: CoberturaFormState
+): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!formState.animalId) {
+    fields.animalId = "Selecione um animal.";
+  }
+  if (!formState.data.trim()) {
+    fields.data = "Informe a data e hora da cobertura.";
+  }
+  if (formState.tipo === "MONTA_NATURAL") {
+    const hasReprodutor =
+      !!formState.touroAnimalId || !!formState.touroInfo.trim();
+    if (!hasReprodutor) {
+      fields.touro =
+        "Para monta natural, selecione um reprodutor ou informe dados do touro.";
+    }
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateCioForm(formState: CioFormState): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!formState.animalId) {
+    fields.animalId = "Selecione um animal.";
+  }
+  if (!formState.dataDetectado.trim()) {
+    fields.dataDetectado = "Informe a data e hora do cio.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validatePartoForm(
+  formState: PartoFormState,
+  options?: { skipCrias?: boolean }
+): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!formState.animalId) {
+    fields.animalId = "Selecione um animal.";
+  }
+  if (!formState.data.trim()) {
+    fields.data = "Informe a data e hora do parto.";
+  }
+  if (options?.skipCrias) {
+    if (Object.keys(fields).length > 0) return invalid(fields);
+    return valid();
+  }
+  const n = Math.max(1, parseInt(formState.numeroCrias, 10) || 1);
+  if (formState.crias.length !== n) {
+    fields.numeroCrias =
+      "Ajuste o número de animais na cria para coincidir com os dados informados.";
+  }
+  for (let i = 0; i < n; i++) {
+    const row = formState.crias[i];
+    if (!row) continue;
+    if (row.condicao === "VIVO" && row.peso.trim()) {
+      const p = Number(row.peso.trim().replace(",", "."));
+      if (!Number.isFinite(p) || p < 0) {
+        fields[`cria_${i}_peso`] = `Peso inválido na cria ${i + 1}. Use número em kg (ex.: 38 ou 38,5).`;
+      }
+    }
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export type ToqueFormInput = {
+  animalId: string;
+  data: string;
+  classificacao: string;
+  coberturaId: string;
+};
+
+export function validateToqueForm(input: ToqueFormInput): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.animalId) {
+    fields.animalId = "Selecione um animal.";
+  }
+  if (!input.data.trim()) {
+    fields.data = "Informe a data e hora do toque.";
+  }
+  if (!input.classificacao.trim()) {
+    fields.classificacao = "Selecione a classificação operacional.";
+  }
+  if (input.classificacao === "PRENHA" && !input.coberturaId) {
+    fields.coberturaId = "Selecione a cobertura associada ao diagnóstico prenha.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateLactacaoForm(input: {
+  animalId: string;
+  dataInicio: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.animalId) {
+    fields.animalId = "Selecione um animal.";
+  }
+  if (!input.dataInicio.trim()) {
+    fields.dataInicio = "Informe a data de início.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateSecagemForm(input: {
+  animalId: string;
+  data: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.animalId) {
+    fields.animalId = "Selecione um animal.";
+  }
+  if (!input.data.trim()) {
+    fields.data = "Informe a data da secagem.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateRegistrarBaixa(input: {
+  animalId: string;
+  dataSaida: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.animalId) {
+    fields.animalId = "Selecione um animal.";
+  }
+  if (!input.dataSaida.trim()) {
+    fields.dataSaida = "Informe a data da baixa.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateAnimalSaudeForm(
+  formState: AnimalSaudeFormState
+): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!formState.tipoCaso.trim()) {
+    fields.tipoCaso = "Selecione o tipo de caso.";
+  }
+  if (!formState.dataInicio.trim()) {
+    fields.dataInicio = "Informe a data de início.";
+  }
+  if (!formState.status.trim()) {
+    fields.status = "Selecione o status.";
+  }
+  if (
+    formState.dataFim.trim() &&
+    formState.dataFim < formState.dataInicio
+  ) {
+    fields.dataFim = "A data de fim não pode ser anterior à data de início.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateUsuarioForm(input: {
+  nome: string;
+  email: string;
+  senha: string;
+  isCreate: boolean;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.nome.trim()) {
+    fields.nome = "Nome é obrigatório.";
+  }
+  if (!input.email.trim()) {
+    fields.email = "Email é obrigatório.";
+  }
+  if (input.isCreate && !input.senha.trim()) {
+    fields.senha = "Senha é obrigatória ao criar usuário.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateFazendaForm(input: { nome: string }): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.nome.trim()) {
+    fields.nome = "Nome é obrigatório.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}

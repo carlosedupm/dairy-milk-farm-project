@@ -8,6 +8,8 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Exclusão em listagens — erro no diálogo + toast**: `DeleteRecordDialog` com props `error` e `conformidadeCode` (alertas INT/TMP); padrão em todas as tabelas com exclusão — `deleteError` em estado, `onError` com `getApiErrorMessage` + `toast.error` (diálogo permanece aberto), `toast.success` no `onSuccess`, limpar erro ao fechar/confirmar; aplicado em `CoberturaTable`, `CioTable`, `PartoTable`, `AnimalTable`, `ProducaoTable`, `FazendaTable`, `AnimalSaudeList`, `AlertasTable`. Cobertura: mensagem 409 quando gestação/toque vinculado (BR-COBERTURAS-004). **Pendente alinhar**: exclusão inline na ficha `/animais/[id]`.
+1. ✅ **Form Validation — inline + global + toast (UX forms)**: `FormFieldError`, `FormField`, `lib/form-validation.ts`, `FormValidationAlert` com scroll e títulos validação/API; `GestaoFormLayout` com alerta no topo e `FormFieldErrorsContext`; Sonner (`use-toast`, `Toaster` top-right); migrados Animais, Produção, Gestão (coberturas/partos/toques/cio/lactação/secagem/baixa/saúde), Admin (usuário/fazenda/integração); `AnimalSelect` com prop `error`.
 1. ✅ **Ficha animal — CTA «Próximas ações» (BR-ANIMAIS-007)**: `BuildProximasAcoes` com prioridade Parto > Secagem > Cobertura > Toque > Produção (máx. 2), toque ≥15 dias (`HasPendenteToqueByAnimalID`), sem baixa nas sugestões; `AnimalProximasAcoesCta` (primário, RBAC desabilitado, sticky mobile + safe-area); docs `animais.md` / `ciclo-rebanho.md`.
 1. ✅ **Header — menu contextual por perfil**: `useMenuItems` + `useHeaderVisibility`; nav só com áreas permitidas (`hasNav`); label «Gestão reprodutiva» para FUNCIONARIO; nav/busca exigem fazenda ativa (2+ vínculos); `Header.tsx` ~126 linhas; `HeaderMobileDrawer`, `HeaderAccountPopover`; `getNavAreaLabel` em `headerNav.ts`.
 2. ✅ **AnimalSelect — filtro por estado do ciclo (BR-CICLO-015)**: 4 endpoints `GET .../animais/para-cobertura|para-toque|para-parto|para-abertura-lactacao`; secagem reutiliza `em-lactacao`; `AnimalSelect` com `cicloContext`, mensagens orientativas de lista vazia e `preserveSelected` em edição de cobertura/parto.
@@ -235,5 +237,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-05-30 (Header menu contextual; AnimalSelect cicloContext)
-**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 (incl. saúde/alertas) | **Assistente Live** saúde/alertas (GERENTE+; FUNCIONARIO bloqueado) | Checklist staging pendente | Recuperação senha aguarda SMTP
+**Última atualização**: 2026-05-30 (Exclusão listagens: DeleteRecordDialog + toast; form validation)
+**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP

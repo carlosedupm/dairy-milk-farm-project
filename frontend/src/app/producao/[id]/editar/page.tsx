@@ -9,6 +9,7 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { BackLink } from '@/components/layout/BackLink'
 import { ProducaoForm } from '@/components/producao/ProducaoForm'
+import { toast } from '@/hooks/use-toast'
 
 function EditarProducaoContent() {
   const params = useParams()
@@ -25,6 +26,7 @@ function EditarProducaoContent() {
   const mutation = useMutation({
     mutationFn: (p: ProducaoUpdate) => update(id, p),
     onSuccess: (_data, variables) => {
+      toast.success('Produção atualizada')
       queryClient.invalidateQueries({ queryKey: ['producao'] })
       queryClient.invalidateQueries({ queryKey: ['resumo-pecuario'] })
       if (variables.animal_id) {

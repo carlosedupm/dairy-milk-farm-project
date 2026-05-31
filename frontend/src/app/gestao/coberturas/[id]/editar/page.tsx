@@ -12,11 +12,15 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   CoberturaFormFields,
-  coberturaFormSubmitDisabled,
   type CoberturaFormState,
 } from "@/components/gestao/CoberturaFormFields";
 import { GestaoEditarBloqueadoGuard } from "@/components/gestao/GestaoEditarBloqueadoGuard";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+} from "@/lib/errors";
+import { validateCoberturaForm, type FieldErrors } from "@/lib/form-validation";
+import { toast } from "@/hooks/use-toast";
 import { toDatetimeLocalInputValue } from "@/lib/format";
 
 function initialFormState(c: Cobertura): CoberturaFormState {
@@ -40,6 +44,10 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState(() => initialFormState(cobertura));
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
@@ -59,21 +67,51 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coberturas", fazendaId] });
       queryClient.invalidateQueries({ queryKey: ["cobertura", cobertura.id] });
+      toast.success("Cobertura atualizada");
       router.push("/gestao/coberturas");
     },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao salvar."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
+    },
   });
+
+  const handleSubmit = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    const validation = validateCoberturaForm(formState);
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+    setFieldErrors({});
+    setIsValidationError(false);
+    mutation.mutate();
+  };
+
+  const displayError =
+    formError ||
+    (mutation.isError
+      ? getApiErrorMessage(mutation.error, "Erro ao salvar.")
+      : undefined);
 
   return (
     <GestaoFormLayout
       title="Editar cobertura"
       backHref="/gestao/coberturas"
       submitLabel="Salvar"
-      onSubmit={() => mutation.mutate()}
+      onSubmit={handleSubmit}
       isPending={mutation.isPending}
-      error={
-        mutation.isError ? getApiErrorMessage(mutation.error, "Erro ao salvar.") : undefined
+      error={displayError}
+      errorConformidadeCode={
+        conformidadeCode ??
+        (mutation.isError ? getApiErrorConformidadeCode(mutation.error) : undefined)
       }
-      submitDisabled={coberturaFormSubmitDisabled(formState)}
+      isValidationError={isValidationError}
+      fieldErrors={fieldErrors}
     >
       <CoberturaFormFields
         fazendaId={fazendaId}

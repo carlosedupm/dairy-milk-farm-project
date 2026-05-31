@@ -26,6 +26,7 @@
 - **Componentes**: Shadcn/UI (compatível com React 19)
 - **Gerenciamento de Estado**: TanStack Query 5.x
 - **Cliente HTTP**: Axios 1.7.9
+- **Toast (feedback)**: Sonner (`sonner`) — `hooks/use-toast.ts`, `components/ui/sonner.tsx`, `<Toaster />` em `Providers` (canto superior direito)
 - **Logging**: logs do runtime do Next.js e `console` no app (sem logger estruturado dedicado no frontend)
 
 ### Infraestrutura

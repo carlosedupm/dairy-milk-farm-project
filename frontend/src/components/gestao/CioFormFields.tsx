@@ -2,8 +2,9 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormFieldError } from "@/components/ui/form-field-error";
+import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
 import {
@@ -33,6 +34,9 @@ type Props = {
 };
 
 export function CioFormFields({ animais, formState, setFormState }: Props) {
+  const animalIdError = useFormFieldError("animalId");
+  const dataError = useFormFieldError("dataDetectado");
+
   return (
     <>
       <AnimalSelect
@@ -42,6 +46,7 @@ export function CioFormFields({ animais, formState, setFormState }: Props) {
         label="Animal"
         placeholder="Selecione"
         femeasOnly
+        error={animalIdError}
       />
       <div className="space-y-2">
         <Label htmlFor="cio-data-detectado">Data e hora detectado</Label>
@@ -52,6 +57,7 @@ export function CioFormFields({ animais, formState, setFormState }: Props) {
           onChange={(v) => setFormState((s) => ({ ...s, dataDetectado: v }))}
           placeholder="Selecione data e hora"
         />
+        <FormFieldError message={dataError} />
       </div>
       <div className="space-y-2">
         <Label>Método (opcional)</Label>

@@ -10,6 +10,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { ProducaoForm } from "@/components/producao/ProducaoForm";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
+import { toast } from "@/hooks/use-toast";
 
 function NovaProducaoContent() {
   const router = useRouter();
@@ -31,6 +32,7 @@ function NovaProducaoContent() {
   const mutation = useMutation({
     mutationFn: (p: ProducaoCreate) => create(p),
     onSuccess: async (_data, variables) => {
+      toast.success("Produção registada");
       await queryClient.invalidateQueries({ queryKey: ["producao"] });
       await queryClient.invalidateQueries({ queryKey: ["resumo-pecuario"] });
       if (variables.animal_id) {

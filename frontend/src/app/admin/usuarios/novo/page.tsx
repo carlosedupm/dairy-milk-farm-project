@@ -8,6 +8,7 @@ import { RequireAdminRoute } from '@/components/layout/RequireAdminRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { BackLink } from '@/components/layout/BackLink'
 import { UsuarioForm } from '@/components/admin/UsuarioForm'
+import { toast } from '@/hooks/use-toast'
 
 export default function AdminUsuarioNovoPage() {
   const router = useRouter()
@@ -16,6 +17,7 @@ export default function AdminUsuarioNovoPage() {
   const createMutation = useMutation({
     mutationFn: createUsuario,
     onSuccess: () => {
+      toast.success('Utilizador criado')
       queryClient.invalidateQueries({ queryKey: ['admin', 'usuarios'] })
       queryClient.invalidateQueries({
         queryKey: ['admin', 'usuarios', 'pendentes-provisao'],

@@ -22,6 +22,8 @@ import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog"
 import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
 import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
 import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { getApiErrorMessage } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import { HeartPulse } from "lucide-react";
 
 type Props = {
@@ -40,16 +42,28 @@ export function CioTable({ items, fazendaId, novoHref }: Props) {
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
+  const [deleteError, setDeleteError] = useState("");
 
   const deleteMutation = useMutation({
     mutationFn: remove,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cios", fazendaId] });
+      setDeleteError("");
       setDeleteDialogOpenId(null);
+      toast.success("Cio excluído");
+    },
+    onError: (err: unknown) => {
+      const message = getApiErrorMessage(
+        err,
+        "Não foi possível excluir este cio."
+      );
+      setDeleteError(message);
+      toast.error(message);
     },
   });
 
   const handleDelete = (id: number) => {
+    setDeleteError("");
     deleteMutation.mutate(id);
   };
 
@@ -156,14 +170,18 @@ export function CioTable({ items, fazendaId, novoHref }: Props) {
       <DeleteRecordDialog
         open={deleteDialogOpenId != null}
         onOpenChange={(open) => {
-          if (!open) setDeleteDialogOpenId(null);
+          if (!open) {
+            setDeleteDialogOpenId(null);
+            setDeleteError("");
+          }
         }}
         title="Excluir registro de cio"
-        description="Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita."
+        description="Tem certeza que deseja excluir este registro? Não é possível excluir se o animal já saiu do rebanho. Esta ação não pode ser desfeita."
         onConfirm={() => {
           if (deleteDialogOpenId != null) handleDelete(deleteDialogOpenId);
         }}
         isPending={deleteMutation.isPending}
+        error={deleteError}
       />
     </>
   );

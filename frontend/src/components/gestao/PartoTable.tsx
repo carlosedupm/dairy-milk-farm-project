@@ -24,6 +24,8 @@ import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveList
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
 import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
+import { getApiErrorMessage } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 
 type Props = {
   items: Parto[];
@@ -40,6 +42,7 @@ export function PartoTable({ items, fazendaId }: Props) {
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
+  const [deleteError, setDeleteError] = useState("");
 
   const deleteMutation = useMutation({
     mutationFn: remove,
@@ -58,11 +61,22 @@ export function PartoTable({ items, fazendaId }: Props) {
       }
       queryClient.invalidateQueries({ queryKey: ["animais"] });
       queryClient.invalidateQueries({ queryKey: ["crias"] });
+      setDeleteError("");
       setDeleteDialogOpenId(null);
+      toast.success("Parto excluído");
+    },
+    onError: (err: unknown) => {
+      const message = getApiErrorMessage(
+        err,
+        "Não foi possível excluir este parto."
+      );
+      setDeleteError(message);
+      toast.error(message);
     },
   });
 
   const handleDelete = (id: number) => {
+    setDeleteError("");
     deleteMutation.mutate(id);
   };
 
@@ -162,14 +176,18 @@ export function PartoTable({ items, fazendaId }: Props) {
       <DeleteRecordDialog
         open={deleteDialogOpenId != null}
         onOpenChange={(open) => {
-          if (!open) setDeleteDialogOpenId(null);
+          if (!open) {
+            setDeleteDialogOpenId(null);
+            setDeleteError("");
+          }
         }}
         title="Excluir registro de parto"
-        description="Tem certeza que deseja excluir este registro? Registros de crias ligados a este parto também serão removidos. Esta ação não pode ser desfeita."
+        description="Tem certeza que deseja excluir este registro? As crias ligadas a este parto também serão removidas. Não é possível excluir se a matriz já saiu do rebanho."
         onConfirm={() => {
           if (deleteDialogOpenId != null) handleDelete(deleteDialogOpenId);
         }}
         isPending={deleteMutation.isPending}
+        error={deleteError}
       />
     </>
   );

@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { create as createParto, type PartoCriaInput } from "@/services/partos";
-import {
-  animaisFazendaQueryKey,
-} from "@/components/gestao/useAnimaisMap";
+import { animaisFazendaQueryKey } from "@/components/gestao/useAnimaisMap";
 import { listByFazenda as listGestacoesByFazenda } from "@/services/gestacoes";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -17,7 +15,12 @@ import {
   PartoFormFields,
   type PartoFormState,
 } from "@/components/gestao/PartoFormFields";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+} from "@/lib/errors";
+import { validatePartoForm, type FieldErrors } from "@/lib/form-validation";
+import { toast } from "@/hooks/use-toast";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 import { defaultCriaLinha } from "@/components/gestao/cria-constants";
 
@@ -39,6 +42,10 @@ function NovoContent() {
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState<PartoFormState>(() => emptyFormState());
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
 
@@ -51,20 +58,12 @@ function NovoContent() {
   const mutation = useMutation({
     mutationFn: async () => {
       const n = Math.max(1, parseInt(formState.numeroCrias, 10) || 1);
-      if (formState.crias.length !== n) {
-        throw new Error(
-          "Ajuste o número de animais na cria para coincidir com os dados informados (linhas abaixo)."
-        );
-      }
       const criasPayload: PartoCriaInput[] = [];
       for (let i = 0; i < n; i++) {
         const row = formState.crias[i]!;
         let peso: number | undefined;
         if (row.condicao === "VIVO" && row.peso.trim()) {
           const p = Number(row.peso.trim().replace(",", "."));
-          if (!Number.isFinite(p) || p < 0) {
-            throw new Error(`Peso inválido na cria ${i + 1}. Use número em kg (ex.: 38 ou 38,5).`);
-          }
           peso = p;
         }
         const ident = row.identificacao.trim();
@@ -77,7 +76,7 @@ function NovoContent() {
           ...(raca ? { animal_raca: raca } : {}),
         });
       }
-      const parto = await createParto({
+      return createParto({
         animal_id: Number(formState.animalId),
         data: new Date(formState.data).toISOString(),
         fazenda_id: fazendaAtiva!.id,
@@ -88,7 +87,6 @@ function NovoContent() {
         observacoes: formState.observacoes.trim() || undefined,
         crias: criasPayload,
       });
-      return parto;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["partos", fazendaAtiva?.id] });
@@ -100,7 +98,13 @@ function NovoContent() {
           queryKey: animaisFazendaQueryKey(fazendaAtiva.id, "todos"),
         });
       }
+      toast.success("Parto registado");
       router.push("/gestao/partos");
+    },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao registrar."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     },
   });
 
@@ -113,21 +117,41 @@ function NovoContent() {
     );
   }
 
+  const handleSubmit = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    const validation = validatePartoForm(formState);
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+    setFieldErrors({});
+    setIsValidationError(false);
+    mutation.mutate();
+  };
+
+  const displayError =
+    formError ||
+    (mutation.isError
+      ? getApiErrorMessage(mutation.error, "Erro ao registrar.")
+      : undefined);
+
   return (
     <GestaoFormLayout
       title="Registrar parto"
       backHref="/gestao/partos"
       submitLabel="Registrar"
-      onSubmit={() => mutation.mutate()}
+      onSubmit={handleSubmit}
       isPending={mutation.isPending}
-      error={
-        mutation.isError
-          ? mutation.error instanceof Error
-            ? mutation.error.message
-            : getApiErrorMessage(mutation.error, "Erro ao registrar.")
-          : undefined
+      error={displayError}
+      errorConformidadeCode={
+        conformidadeCode ??
+        (mutation.isError ? getApiErrorConformidadeCode(mutation.error) : undefined)
       }
-      submitDisabled={!formState.animalId || !formState.data}
+      isValidationError={isValidationError}
+      fieldErrors={fieldErrors}
     >
       <PartoFormFields
         fazendaId={fazendaId}

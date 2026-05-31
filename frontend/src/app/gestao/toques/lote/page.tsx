@@ -17,7 +17,12 @@ import {
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
 import { Label } from "@/components/ui/label";
-import { getApiErrorMessage } from "@/lib/errors";
+import { FormFieldError } from "@/components/ui/form-field-error";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+} from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 import { gestacaoToDias } from "@/lib/toquesUtils";
 
@@ -33,6 +38,10 @@ function Content() {
     sucesso: number;
     falhas: { linha: number; identificacao: string; message: string }[];
   } | null>(null);
+  const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -70,8 +79,18 @@ function Content() {
       await queryClient.invalidateQueries({ queryKey: ["resumo-pecuario"] });
       await queryClient.invalidateQueries({ queryKey: ["gestacoes"] });
       if (res.falhas.length === 0) {
+        toast.success("Lote de toques registado");
         router.push("/gestao/toques");
+      } else {
+        toast.warning(
+          `${res.sucesso} registo(s) OK; ${res.falhas.length} falha(s) — veja detalhes abaixo`
+        );
       }
+    },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao enviar lote."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     },
   });
 
@@ -84,21 +103,38 @@ function Content() {
     );
   }
 
-  const linhasValidas = linhas.some((l) => l.identificacao.trim());
+  const handleSubmit = () => {
+    setFormError("");
+    setFieldErrors({});
+    setConformidadeCode(undefined);
+    const fields: Record<string, string> = {};
+    if (!data.trim()) {
+      fields.data = "Informe a data e hora da palpação.";
+    }
+    if (!linhas.some((l) => l.identificacao.trim())) {
+      fields.linhas = "Informe pelo menos uma identificação de animal.";
+    }
+    if (Object.keys(fields).length > 0) {
+      setFieldErrors(fields);
+      setFormError("Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+    setIsValidationError(false);
+    mutation.mutate();
+  };
 
   return (
     <GestaoFormLayout
       title="Registrar toques em lote"
       backHref="/gestao/toques"
       submitLabel="Enviar lote"
-      onSubmit={() => mutation.mutate()}
+      onSubmit={handleSubmit}
       isPending={mutation.isPending}
-      error={
-        mutation.isError
-          ? getApiErrorMessage(mutation.error, "Erro ao enviar lote.")
-          : undefined
-      }
-      submitDisabled={!linhasValidas}
+      error={formError}
+      errorConformidadeCode={conformidadeCode}
+      isValidationError={isValidationError}
+      fieldErrors={fieldErrors}
     >
       <div className="space-y-2 max-w-sm">
         <Label htmlFor="lote-data">Data/hora da palpação</Label>
@@ -109,7 +145,10 @@ function Content() {
           onChange={setData}
           placeholder="Selecione data e hora"
         />
+        <FormFieldError message={fieldErrors.data} />
       </div>
+
+      <FormFieldError message={fieldErrors.linhas} />
 
       <ToqueLoteEditor
         linhas={linhas}

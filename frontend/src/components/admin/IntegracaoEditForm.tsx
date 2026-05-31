@@ -15,7 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getApiErrorMessage } from "@/lib/errors";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
+import { FormFieldError } from "@/components/ui/form-field-error";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+  parsePrefixedConformidadeMessage,
+} from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 
 type Props = {
   cliente: IntegracaoCliente;
@@ -30,7 +37,9 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
   const [scopes, setScopes] = useState<string[]>(cliente.scopes ?? []);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showKeyDialog, setShowKeyDialog] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [nomeError, setNomeError] = useState("");
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -40,34 +49,63 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
         scopes,
       }),
     onSuccess: () => {
-      setMsg("Alterações guardadas.");
+      setError("");
+      toast.success("Alterações guardadas");
       queryClient.invalidateQueries({
         queryKey: ["admin", "integracoes", cliente.id],
       });
     },
-    onError: (err) =>
-      setMsg(getApiErrorMessage(err, "Erro ao guardar alterações.")),
+    onError: (err) => {
+      setError(getApiErrorMessage(err, "Erro ao guardar alterações."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+    },
   });
 
   const rotateMutation = useMutation({
     mutationFn: () => rotacionarChaveIntegracao(cliente.id),
     onSuccess: (res) => {
+      setError("");
       setApiKey(res.api_key);
       setShowKeyDialog(true);
+      toast.info("Chave rotacionada — copie a nova chave no diálogo");
       queryClient.invalidateQueries({
         queryKey: ["admin", "integracoes", cliente.id],
       });
     },
-    onError: (err) =>
-      setMsg(getApiErrorMessage(err, "Erro ao rotacionar chave.")),
+    onError: (err) => {
+      setError(getApiErrorMessage(err, "Erro ao rotacionar chave."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+    },
   });
 
   const revokeMutation = useMutation({
     mutationFn: () => revogarIntegracao(cliente.id),
-    onSuccess: onRevoked,
-    onError: (err) =>
-      setMsg(getApiErrorMessage(err, "Erro ao revogar cliente.")),
+    onSuccess: () => {
+      toast.success("Cliente de integração revogado");
+      onRevoked();
+    },
+    onError: (err) => {
+      setError(getApiErrorMessage(err, "Erro ao revogar cliente."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+    },
   });
+
+  const handleSave = () => {
+    setError("");
+    setNomeError("");
+    setConformidadeCode(undefined);
+    if (!nome.trim()) {
+      const msg = "Nome é obrigatório.";
+      setNomeError(msg);
+      setError(msg);
+      return;
+    }
+    saveMutation.mutate();
+  };
+
+  const parsed = error ? parsePrefixedConformidadeMessage(error) : null;
+  const displayMessage = parsed?.message ?? error;
+  const displayCode = conformidadeCode ?? parsed?.conformidadeCode;
 
   return (
     <>
@@ -76,13 +114,22 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
           <CardTitle>Configuração</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error?.trim() ? (
+            <FormValidationAlert
+              message={displayMessage}
+              conformidadeCode={displayCode}
+            />
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="nome-edit">Nome</Label>
             <Input
               id="nome-edit"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
+              aria-invalid={nomeError ? true : undefined}
+              className={nomeError ? "border-destructive" : undefined}
             />
+            <FormFieldError message={nomeError} />
           </div>
           <div className="space-y-2">
             <Label>Fazendas</Label>
@@ -129,7 +176,7 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              onClick={() => saveMutation.mutate()}
+              onClick={handleSave}
               disabled={saveMutation.isPending}
             >
               Guardar
@@ -159,7 +206,6 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
               Revogar
             </Button>
           </div>
-          {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
         </CardContent>
       </Card>
 

@@ -12,10 +12,14 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   ToqueFormFields,
-  toqueFormSubmitDisabled,
   type ToqueFormState,
 } from "@/components/gestao/ToqueFormFields";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+} from "@/lib/errors";
+import { validateToqueForm, type FieldErrors } from "@/lib/form-validation";
+import { toast } from "@/hooks/use-toast";
 import { invalidateAnimalTimeline } from "@/services/animais";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 import {
@@ -47,6 +51,10 @@ function NovoContent() {
   const [formState, setFormState] = useState<ToqueFormState>(() =>
     emptyFormState(defaultAnimalId)
   );
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
   const precisaCobertura = classificacaoRequiresCobertura(formState.classificacao);
@@ -103,6 +111,7 @@ function NovoContent() {
       });
     },
     onSuccess: async () => {
+      toast.success("Toque registado");
       const aid = Number(formState.animalId);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["toques", fazendaId] }),
@@ -120,6 +129,11 @@ function NovoContent() {
         router.push("/gestao/toques");
       }
     },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao registrar."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
+    },
   });
 
   if (!fazendaAtiva) {
@@ -131,23 +145,46 @@ function NovoContent() {
     );
   }
 
+  const handleSubmit = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    const validation = validateToqueForm({
+      animalId: formState.animalId,
+      data: formState.data,
+      classificacao: formState.classificacao,
+      coberturaId: coberturaSelectValue,
+    });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+    setFieldErrors({});
+    setIsValidationError(false);
+    mutation.mutate();
+  };
+
+  const displayError =
+    formError ||
+    (mutation.isError
+      ? getApiErrorMessage(mutation.error, "Erro ao registrar.")
+      : undefined);
+
   return (
     <GestaoFormLayout
       title="Registrar toque (diagnóstico)"
       backHref="/gestao/toques"
       submitLabel="Registrar"
-      onSubmit={() => mutation.mutate()}
+      onSubmit={handleSubmit}
       isPending={mutation.isPending}
-      error={
-        mutation.isError
-          ? getApiErrorMessage(mutation.error, "Erro ao registrar.")
-          : undefined
+      error={displayError}
+      errorConformidadeCode={
+        conformidadeCode ??
+        (mutation.isError ? getApiErrorConformidadeCode(mutation.error) : undefined)
       }
-      submitDisabled={toqueFormSubmitDisabled(
-        formState,
-        coberturaSelectValue,
-        coberturasDoAnimal.length
-      )}
+      isValidationError={isValidationError}
+      fieldErrors={fieldErrors}
     >
       <ToqueFormFields
         fazendaId={fazendaId}

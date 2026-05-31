@@ -21,11 +21,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import {
   getApiErrorMessage,
   parsePrefixedConformidadeMessage,
 } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import { formatDatePtBr } from "@/lib/format";
 import {
   alertaSeveridadeLabel,
@@ -108,12 +108,26 @@ export function AlertasTable({
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteConformidadeCode, setDeleteConformidadeCode] = useState<
+    string | undefined
+  >(undefined);
 
   const deleteMutation = useMutation({
     mutationFn: (alertaId: number) => deleteAlerta(fazendaId, alertaId),
     onSuccess: () => {
       onDeleteSuccess();
+      setDeleteError("");
+      setDeleteConformidadeCode(undefined);
       setDeleteDialogOpenId(null);
+      toast.success("Alerta excluído");
+    },
+    onError: (err: unknown) => {
+      const raw = getApiErrorMessage(err, "Erro ao excluir.");
+      const parsed = parsePrefixedConformidadeMessage(raw);
+      setDeleteError(parsed.message);
+      setDeleteConformidadeCode(parsed.conformidadeCode);
+      toast.error(parsed.message || raw);
     },
   });
 
@@ -163,10 +177,6 @@ export function AlertasTable({
       />
     );
   }
-
-  const deleteErrorMsg = deleteMutation.error
-    ? getApiErrorMessage(deleteMutation.error, "Erro ao excluir.")
-    : "";
 
   return (
     <>
@@ -282,25 +292,25 @@ export function AlertasTable({
 
       <DeleteRecordDialog
         open={deleteDialogOpenId != null}
-        onOpenChange={(open) => !open && setDeleteDialogOpenId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteDialogOpenId(null);
+            setDeleteError("");
+            setDeleteConformidadeCode(undefined);
+          }
+        }}
         title="Excluir alerta"
-        description={
-          <>
-            Este alerta manual será removido permanentemente.
-            {deleteErrorMsg ? (
-              <FormValidationAlert
-                className="mt-2"
-                title="Erro ao excluir"
-                {...parsePrefixedConformidadeMessage(deleteErrorMsg)}
-              />
-            ) : null}
-          </>
-        }
-        onConfirm={() =>
-          deleteDialogOpenId != null &&
-          deleteMutation.mutate(deleteDialogOpenId)
-        }
+        description="Este alerta manual será removido permanentemente."
+        onConfirm={() => {
+          if (deleteDialogOpenId != null) {
+            setDeleteError("");
+            setDeleteConformidadeCode(undefined);
+            deleteMutation.mutate(deleteDialogOpenId);
+          }
+        }}
         isPending={deleteMutation.isPending}
+        error={deleteError}
+        conformidadeCode={deleteConformidadeCode}
       />
     </>
   );

@@ -4,6 +4,8 @@ import type { Dispatch, SetStateAction } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormFieldError } from "@/components/ui/form-field-error";
+import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
 import {
   Select,
   SelectContent,
@@ -12,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { todayISODate } from "@/lib/date-limits";
+import { cn } from "@/lib/utils";
 import {
   STATUS_CASO_SAUDE,
   STATUS_CASO_SAUDE_LABELS,
@@ -54,6 +57,11 @@ type Props = {
 };
 
 export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
+  const tipoCasoError = useFormFieldError("tipoCaso");
+  const dataInicioError = useFormFieldError("dataInicio");
+  const dataFimError = useFormFieldError("dataFim");
+  const statusError = useFormFieldError("status");
+
   return (
     <>
       <div className="space-y-2">
@@ -62,7 +70,13 @@ export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
           value={formState.tipoCaso}
           onValueChange={(v) => setFormState((s) => ({ ...s, tipoCaso: v }))}
         >
-          <SelectTrigger className="text-foreground">
+          <SelectTrigger
+            className={cn(
+              "text-foreground",
+              tipoCasoError && "border-destructive"
+            )}
+            aria-invalid={tipoCasoError ? true : undefined}
+          >
             <SelectValue placeholder="Selecione" />
           </SelectTrigger>
           <SelectContent>
@@ -73,6 +87,7 @@ export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
             ))}
           </SelectContent>
         </Select>
+        <FormFieldError message={tipoCasoError} />
       </div>
       <div className="space-y-2">
         <Label>Data de início *</Label>
@@ -82,6 +97,7 @@ export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
           maxDate={todayISODate()}
           placeholder="Selecione a data"
         />
+        <FormFieldError message={dataInicioError} />
       </div>
       <div className="space-y-2">
         <Label>Data de fim (opcional)</Label>
@@ -92,11 +108,7 @@ export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
           maxDate={todayISODate()}
           placeholder="Sem data de fim"
         />
-        {formState.dataFim.trim() && formState.dataFim < formState.dataInicio ? (
-          <p className="text-xs text-destructive">
-            A data de fim não pode ser anterior à data de início.
-          </p>
-        ) : null}
+        <FormFieldError message={dataFimError} />
       </div>
       <div className="space-y-2">
         <Label>Status *</Label>
@@ -104,7 +116,13 @@ export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
           value={formState.status}
           onValueChange={(v) => setFormState((s) => ({ ...s, status: v }))}
         >
-          <SelectTrigger className="text-foreground">
+          <SelectTrigger
+            className={cn(
+              "text-foreground",
+              statusError && "border-destructive"
+            )}
+            aria-invalid={statusError ? true : undefined}
+          >
             <SelectValue placeholder="Selecione" />
           </SelectTrigger>
           <SelectContent>
@@ -115,6 +133,7 @@ export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
             ))}
           </SelectContent>
         </Select>
+        <FormFieldError message={statusError} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="obs-saude">Observações (opcional)</Label>

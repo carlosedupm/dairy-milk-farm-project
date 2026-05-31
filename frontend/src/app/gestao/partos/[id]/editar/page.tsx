@@ -15,7 +15,12 @@ import {
   PartoFormFields,
   type PartoFormState,
 } from "@/components/gestao/PartoFormFields";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+} from "@/lib/errors";
+import { validatePartoForm, type FieldErrors } from "@/lib/form-validation";
+import { toast } from "@/hooks/use-toast";
 import { toDatetimeLocalInputValue } from "@/lib/format";
 import { defaultCriaLinha } from "@/components/gestao/cria-constants";
 import { PartoEditCriasPanel } from "@/components/gestao/PartoEditCriasPanel";
@@ -43,6 +48,10 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState(() => initialFormState(parto));
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const { data: gestacoes = [] } = useQuery({
     queryKey: ["gestacoes", fazendaId],
@@ -75,21 +84,51 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["partos", fazendaId] });
       queryClient.invalidateQueries({ queryKey: ["parto", parto.id] });
+      toast.success("Parto atualizado");
       router.push("/gestao/partos");
     },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao salvar."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
+    },
   });
+
+  const handleSubmit = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    const validation = validatePartoForm(formState, { skipCrias: true });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+    setFieldErrors({});
+    setIsValidationError(false);
+    mutation.mutate();
+  };
+
+  const displayError =
+    formError ||
+    (mutation.isError
+      ? getApiErrorMessage(mutation.error, "Erro ao salvar.")
+      : undefined);
 
   return (
     <GestaoFormLayout
       title="Editar parto"
       backHref="/gestao/partos"
       submitLabel="Salvar"
-      onSubmit={() => mutation.mutate()}
+      onSubmit={handleSubmit}
       isPending={mutation.isPending}
-      error={
-        mutation.isError ? getApiErrorMessage(mutation.error, "Erro ao salvar.") : undefined
+      error={displayError}
+      errorConformidadeCode={
+        conformidadeCode ??
+        (mutation.isError ? getApiErrorConformidadeCode(mutation.error) : undefined)
       }
-      submitDisabled={!formState.animalId || !formState.data}
+      isValidationError={isValidationError}
+      fieldErrors={fieldErrors}
     >
       <PartoFormFields
         fazendaId={fazendaId}

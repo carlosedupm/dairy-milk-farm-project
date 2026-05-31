@@ -35,6 +35,8 @@ import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu"
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { getApiErrorMessage } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import { Beef } from "lucide-react";
 
 type Props = {
@@ -80,17 +82,29 @@ export function AnimalTable({
   const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<number | null>(
     null
   );
+  const [deleteError, setDeleteError] = useState("");
   const deleteTarget = items.find((a) => a.id === deleteDialogOpenId);
 
   const deleteMutation = useMutation({
     mutationFn: remove,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["animais"] });
+      setDeleteError("");
       setDeleteDialogOpenId(null);
+      toast.success("Animal excluído");
+    },
+    onError: (err: unknown) => {
+      const message = getApiErrorMessage(
+        err,
+        "Não foi possível excluir este animal."
+      );
+      setDeleteError(message);
+      toast.error(message);
     },
   });
 
   const handleDelete = (id: number) => {
+    setDeleteError("");
     deleteMutation.mutate(id);
   };
 
@@ -265,7 +279,10 @@ export function AnimalTable({
         <DeleteRecordDialog
           open={deleteDialogOpenId != null}
           onOpenChange={(open) => {
-            if (!open) setDeleteDialogOpenId(null);
+            if (!open) {
+              setDeleteDialogOpenId(null);
+              setDeleteError("");
+            }
           }}
           title="Excluir animal"
           description={
@@ -277,6 +294,7 @@ export function AnimalTable({
           }
           onConfirm={() => handleDelete(deleteTarget.id)}
           isPending={deleteMutation.isPending}
+          error={deleteError}
         />
       ) : null}
     </>

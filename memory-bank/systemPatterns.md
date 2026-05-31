@@ -518,13 +518,15 @@ Migrations: `23` (ciclo/leite), `24` (`animais.created_by`), `25` (`integracao_*
 - **Estilização**: Tailwind CSS com tema customizado
 - **Combos/seletores**: usar `Select` do Shadcn para campos de seleção (evitar `<select>` nativo), incluindo formulários da área Admin (`/admin/usuarios`).
 
-### **Erros de validação em formulários**
+### **Erros de validação e feedback em formulários**
 
-- **Componente**: `FormValidationAlert` (`components/ui/form-validation-alert.tsx`) — caixa com `role="alert"`, `aria-live="polite"`, borda/fundo `destructive`, ícone `AlertCircle`, título («Não foi possível guardar» por defeito), mensagem com `break-words`, opcional **Badge** com código `TMP-*` / `INT-*`.
-- **Posição**: **Sempre acima** do botão de envio primário (nunca só `<p className="text-destructive">` abaixo do botão em formulários longos).
-- **Gestão**: [`GestaoFormLayout`](frontend/src/components/gestao/GestaoFormLayout.tsx) integra o alerta + `scrollIntoView` quando o erro aparece; parsing via `parsePrefixedConformidadeMessage` / `getApiErrorConformidadeCode` em [`lib/errors.ts`](frontend/src/lib/errors.ts).
-- **Outros**: `ProducaoForm`, `AnimalForm`, `RestricoesLeiteHomePanel` (dialogs), `PartoEditCriasPanel` — mesmo componente.
-- **Zoom/reflow**: texto legível com fonte ampliada; não depender de scroll até ao fim do card para ver o feedback.
+- **Inline**: `FormFieldError` (`components/ui/form-field-error.tsx`) — `role="alert"`, `aria-live="polite"`, abaixo do controlo; opcional `FormField` wrapper com `aria-invalid` / `border-destructive`.
+- **Global**: `FormValidationAlert` (`components/ui/form-validation-alert.tsx`) — no **topo** do formulário (antes dos campos); `scrollIntoView` quando a mensagem aparece; títulos «Verifique os campos» (validação client) vs «Não foi possível guardar» (API); **Badge** `TMP-*` / `INT-*` via `parsePrefixedConformidadeMessage` / `getApiErrorConformidadeCode` ([`lib/errors.ts`](frontend/src/lib/errors.ts)).
+- **Validação client**: funções em [`lib/form-validation.ts`](frontend/src/lib/form-validation.ts) (`validateAnimalForm`, `validateCoberturaForm`, …) → `fieldErrors` + resumo; **não** depender só de `submitDisabled` sem mensagem.
+- **Gestão**: [`GestaoFormLayout`](frontend/src/components/gestao/GestaoFormLayout.tsx) — alerta no topo + `FormFieldErrorsProvider` / `useFormFieldError` nos `*FormFields`; `AnimalSelect` aceita prop `error`.
+- **Toast** (sucesso / info / aviso): [`hooks/use-toast.ts`](frontend/src/hooks/use-toast.ts) (Sonner) + `<Toaster position="top-right" />` em [`Providers`](frontend/src/components/layout/Providers.tsx); após `mutation.onSuccess` nas páginas (ex.: «Animal criado»). Erros de API em forms mantêm `FormValidationAlert`; `toast.error` para ações rápidas fora de form longo.
+- **Proibido** em forms de domínio: `<p className="text-destructive">` solto no lugar do padrão acima (estados de página «ID inválido» podem manter texto simples).
+- **Zoom/reflow**: alerta global visível sem scroll até ao botão em forms longos (`PartoFormFields`, etc.).
 
 ### **Dialogs de Confirmação**
 
@@ -654,6 +656,7 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 - **Seleção em listas longas**: Para pickers com muitos itens (ex.: animais da fazenda), usar combobox pesquisável (`AnimalSelect` — Popover + campo de busca + filtro no cliente em `animalSelectUtils.ts`), não Radix Select com scroll infinito. Limite de exibição (~50) com mensagem para refinar a busca; alvos de toque ≥ 44px nas opções.
 - **Home autenticada (`Dashboard`)**: **`DashboardKpiGrid`** no topo (4 tiles `ResumoKpiTile`: partos 7d, em lactação, alertas críticos, leite hoje; skeleton; zero → «Nenhum» via `lib/kpiFormat.ts`; drill-down em `lib/resumoPecuarioLinks.ts`; oculto em perfil restrito). Abaixo, painéis **`HomeCollapsiblePanel`** (`<details>`; expandido se há itens): `RestricoesLeiteHomePanel` (`id="restricoes-leite"`), `AlertasHomePanel`, `PecuarioResumoHomePanel` (lista partos 30d), **`ConformidadeHomePanel`** (`showConformidadePanelForPerfil` — oculto FUNCIONARIO/USER). Busca animal só via **header** + atalho mobile; atalhos de acesso rápido. Listas internas com `max-h` + scroll (zoom/reflow).
 - **Listagens responsivas (mobile &lt; `md`)**: Em tabelas com coluna **Ações**, usar **`ResponsiveListContainer`** + **`MobileListCard`** (`frontend/src/components/layout/list/`) no mobile e manter **tabela** em `md+` (`hidden md:block`). **Toque no corpo do card** = ação principal (`href` ou `onPrimaryClick` — ex.: Ver animal, editar registo, selecionar fazenda). **Ações secundárias/destrutivas** = menu **⋮** (`ListRowActionsMenu`, Popover) com `stopPropagation` no gatilho; **Excluir** nunca só no toque da linha — usar **`DeleteRecordDialog`** único por tabela (estado `deleteDialogOpenId`) partilhado entre mobile e desktop. Listas só leitura (gestação, toque, secagem, lactação): card → `/animais/:id`. **`MobileListCard`**: `title`/`subtitle` são `ReactNode` — renderizar com **`<div>`**, não `<p>` (evita hidratação quando o título inclui `Badge` ou outros filhos com `<div>`). Referências antigas: `FolgasHistoricoTable`, `RestricoesLeiteHomePanel`. Consumidores (2026-05-22): `AnimalTable`, `PartoTable`, `CioTable`, `CoberturaTable`, `ProducaoTable`, `GestacaoTable`, `SecagemTable`, `ToqueTable`, `LactacaoTable`, `FazendaTable`, `UsuarioTable`, `IntegracaoTable`. **2026-05-29**: `AlertasTable` (`/alertas`). **2026-05-30**: **`EmptyState`** unificado em listagens principais (`/animais`, `/producao`, `/alertas`, `/fazendas`, `/gestao/cios|coberturas|toques`) — empty no corpo da tabela + erro/retry via `QueryListContent`.
+- **Exclusão — feedback de erro (2026-05-30)**: estado `deleteError` (+ `deleteConformidadeCode` em `AlertasTable`); `onError` → `getApiErrorMessage` + `toast.error` (diálogo **aberto**); `onSuccess` → `toast.success` + fechar; limpar erro ao fechar/confirmar; props `error` / `conformidadeCode` no `DeleteRecordDialog` («Não foi possível excluir»). Tabelas: coberturas, cios, partos, animais, produção, fazendas, `AnimalSaudeList`, alertas. 409 cobertura com vínculos (BR-COBERTURAS-004) visível no modal.
 
 #### **Zoom do navegador, escala de texto do sistema e reflow**
 
@@ -708,4 +711,4 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 **Versão dos Padrões**: 2.28 (Go + Next.js) — RBAC saúde animal (FUNCIONARIO GET+POST; PUT/DELETE restritos).
 
-**Última atualização**: 2026-05-30 (Design system tokens semânticos; EmptyState listagens; Assistente Live)
+**Última atualização**: 2026-05-30 (DeleteRecordDialog erro+toast; form validation; GestaoFormLayout)

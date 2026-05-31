@@ -5,8 +5,11 @@ import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormFieldError } from "@/components/ui/form-field-error";
+import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -16,7 +19,6 @@ import {
 } from "@/components/ui/select";
 import type { Animal } from "@/services/animais";
 
-/** Valores aceitos pela API (backend). */
 export const COBERTURA_TIPOS = ["IA", "IATF", "MONTA_NATURAL", "TE"] as const;
 
 export type CoberturaFormState = {
@@ -44,6 +46,9 @@ export function CoberturaFormFields({
   preserveSelected = false,
 }: Props) {
   const isMontaNatural = formState.tipo === "MONTA_NATURAL";
+  const animalIdError = useFormFieldError("animalId");
+  const dataError = useFormFieldError("data");
+  const touroError = useFormFieldError("touro");
 
   return (
     <>
@@ -56,6 +61,7 @@ export function CoberturaFormFields({
         label="Animal (fêmea)"
         placeholder="Selecione"
         femeasOnly
+        error={animalIdError}
       />
       <div className="space-y-2">
         <Label>Tipo</Label>
@@ -84,6 +90,7 @@ export function CoberturaFormFields({
           onChange={(v) => setFormState((s) => ({ ...s, data: v }))}
           placeholder="Selecione data e hora"
         />
+        <FormFieldError message={dataError} />
       </div>
       <AnimalSelect
         animais={animais}
@@ -98,6 +105,7 @@ export function CoberturaFormFields({
         label={isMontaNatural ? "Reprodutor (touro/boi) *" : "Reprodutor (opcional)"}
         placeholder="Selecione o touro ou boi cadastrado"
         reprodutoresOnly
+        error={isMontaNatural ? touroError : undefined}
       />
       <div className="space-y-2">
         <Label htmlFor="cobertura-touro-info">
@@ -115,8 +123,13 @@ export function CoberturaFormFields({
             }));
           }}
           placeholder="Nome ou código do touro/sêmen"
-          className="text-foreground"
+          className={cn(
+            "text-foreground",
+            isMontaNatural && touroError && "border-destructive"
+          )}
+          aria-invalid={isMontaNatural && touroError ? true : undefined}
         />
+        {isMontaNatural ? <FormFieldError message={touroError} /> : null}
       </div>
       <div className="space-y-2">
         <Label htmlFor="cobertura-observacoes">Observações (opcional)</Label>
@@ -134,7 +147,6 @@ export function CoberturaFormFields({
   );
 }
 
-/** Para MONTA_NATURAL exige reprodutor por animal cadastrado ou texto livre. */
 export function coberturaFormSubmitDisabled(formState: CoberturaFormState): boolean {
   const hasReprodutor =
     !!formState.touroAnimalId || !!formState.touroInfo.trim();

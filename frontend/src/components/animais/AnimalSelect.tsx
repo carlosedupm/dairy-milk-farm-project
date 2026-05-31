@@ -15,6 +15,7 @@ import { useAnimaisCicloContext } from "@/components/animais/useAnimaisCicloCont
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormFieldError } from "@/components/ui/form-field-error";
 import {
   Popover,
   PopoverContent,
@@ -49,6 +50,7 @@ type Props = {
   /** Modo edição: animal selecionado permanece visível fora do filtro */
   preserveSelected?: boolean;
   id?: string;
+  error?: string;
 };
 
 /**
@@ -68,6 +70,7 @@ export function AnimalSelect({
   fazendaId,
   preserveSelected = false,
   id,
+  error,
 }: Props) {
   const listboxId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -194,7 +197,9 @@ export function AnimalSelect({
   };
 
   const triggerId = id ?? `${listboxId}-trigger`;
+  const errorId = `${triggerId}-error`;
   const searchId = `${listboxId}-search`;
+  const hasError = Boolean(error?.trim());
 
   const emptyMessage = hasSearchQuery
     ? "Nenhum animal encontrado."
@@ -221,10 +226,13 @@ export function AnimalSelect({
             aria-expanded={open}
             aria-controls={listboxId}
             aria-haspopup="listbox"
+            aria-invalid={hasError || undefined}
+            aria-describedby={hasError ? errorId : undefined}
             disabled={disabled || loadingCiclo}
             className={cn(
               "h-11 min-h-[44px] w-full justify-between px-3 font-normal",
               !selectedAnimal && "text-muted-foreground",
+              hasError && "border-destructive",
             )}
           >
             <span className="truncate text-left">
@@ -322,6 +330,7 @@ export function AnimalSelect({
           </div>
         </PopoverContent>
       </Popover>
+      <FormFieldError id={errorId} message={error} />
     </div>
   );
 }

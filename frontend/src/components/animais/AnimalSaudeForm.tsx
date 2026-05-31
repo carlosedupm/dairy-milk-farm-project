@@ -11,7 +11,6 @@ import {
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   AnimalSaudeFormFields,
-  animalSaudeFormSubmitDisabled,
   animalSaudeFormToPayload,
   emptyAnimalSaudeFormState,
   type AnimalSaudeFormState,
@@ -23,7 +22,12 @@ import {
   type AnimalSaudeRegistro,
 } from "@/services/animalSaude";
 import { invalidateAnimalTimeline } from "@/services/animais";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+} from "@/lib/errors";
+import { validateAnimalSaudeForm, type FieldErrors } from "@/lib/form-validation";
+import { toast } from "@/hooks/use-toast";
 
 type Props = {
   animalId: number;
@@ -51,6 +55,10 @@ export function AnimalSaudeForm({ animalId, mode, initial, saudeId }: Props) {
   const [formState, setFormState] = useState<AnimalSaudeFormState>(() =>
     initial ? stateFromRegistro(initial) : emptyAnimalSaudeFormState()
   );
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const listHref = `/animais/${animalId}/saude`;
   const canSubmit =
@@ -79,7 +87,22 @@ export function AnimalSaudeForm({ animalId, mode, initial, saudeId }: Props) {
           queryKey: ["animais", animalId, "saude", saudeId],
         });
       }
+      toast.success(
+        mode === "create"
+          ? "Registo de saúde criado"
+          : "Registo de saúde atualizado"
+      );
       router.push(listHref);
+    },
+    onError: (err: unknown) => {
+      setFormError(
+        getApiErrorMessage(
+          err,
+          mode === "create" ? "Erro ao registrar." : "Erro ao salvar."
+        )
+      );
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     },
   });
 
@@ -92,22 +115,35 @@ export function AnimalSaudeForm({ animalId, mode, initial, saudeId }: Props) {
     );
   }
 
+  const handleSubmit = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    const validation = validateAnimalSaudeForm(formState);
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+    setFieldErrors({});
+    setIsValidationError(false);
+    mutation.mutate();
+  };
+
   return (
     <GestaoFormLayout
       title={mode === "create" ? "Novo registo de saúde" : "Editar registo de saúde"}
       backHref={listHref}
       submitLabel={mode === "create" ? "Registrar" : "Salvar"}
-      onSubmit={() => mutation.mutate()}
+      onSubmit={handleSubmit}
       isPending={mutation.isPending}
-      error={
-        mutation.isError
-          ? getApiErrorMessage(
-              mutation.error,
-              mode === "create" ? "Erro ao registrar." : "Erro ao salvar."
-            )
-          : undefined
+      error={formError}
+      errorConformidadeCode={
+        conformidadeCode ??
+        (mutation.isError ? getApiErrorConformidadeCode(mutation.error) : undefined)
       }
-      submitDisabled={animalSaudeFormSubmitDisabled(formState)}
+      isValidationError={isValidationError}
+      fieldErrors={fieldErrors}
     >
       <p className="text-muted-foreground text-sm">
         O status de saúde do animal na ficha é recalculado automaticamente com

@@ -9,6 +9,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { AnimalForm } from "@/components/animais/AnimalForm";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
+import { toast } from "@/hooks/use-toast";
 
 function NovoAnimalContent() {
   const router = useRouter();
@@ -27,6 +28,7 @@ function NovoAnimalContent() {
   const mutation = useMutation({
     mutationFn: (p: AnimalCreate) => create(p),
     onSuccess: async (data) => {
+      toast.success("Animal criado");
       await queryClient.invalidateQueries({ queryKey: ["animais"] });
       if (data?.fazenda_id) {
         await queryClient.invalidateQueries({

@@ -33,7 +33,7 @@ Ao criar ou alterar página, listagem ou formulário:
 
 1. **Data**: `DatePicker` (não `Input type="date"`); data+hora → `DateTimePickerPtBr`.
 2. **Animal**: `AnimalSelect` — operacional (`useAnimaisOperacionalList`) ou **`cicloContext`** em forms de ciclo (`useAnimaisCicloContext`).
-3. **Erros**: `FormValidationAlert` + `getApiErrorMessage` (não `<p className="text-destructive">`).
+3. **Erros e sucesso**: validação client → `FormFieldError` no campo + `FormValidationAlert` no topo do form (`isValidation` quando aplicável); API → `getApiErrorMessage` + `getApiErrorConformidadeCode`; sucesso → `toast.success` / `toast.info` / `toast.warning` via `hooks/use-toast.ts` (não `<p className="text-destructive">` em forms).
 4. **Listagem com ações**: `ResponsiveListContainer`, `MobileListCard`, `ListRowActionsMenu`, `DeleteRecordDialog`, `QueryListContent`, `ListPaginationBar`.
 5. **Página fina**: extrair `*Table`, `*ListToolbar`, `*Dialog` para `components/<domínio>/`; lógica pesada em `hooks/use*Page.ts`.
 6. **Fazenda ativa**: `useFazendaAtiva()` + `isReady` antes de pedir seleção de fazenda.

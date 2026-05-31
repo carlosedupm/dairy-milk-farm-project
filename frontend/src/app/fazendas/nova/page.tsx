@@ -8,6 +8,7 @@ import { RequireAdminRoute } from "@/components/layout/RequireAdminRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { FazendaForm } from "@/components/fazendas/FazendaForm";
+import { toast } from "@/hooks/use-toast";
 
 function NovaFazendaContent() {
   const router = useRouter();
@@ -15,6 +16,7 @@ function NovaFazendaContent() {
   const mutation = useMutation({
     mutationFn: (p: FazendaCreate) => create(p),
     onSuccess: async () => {
+      toast.success("Fazenda criada");
       await queryClient.invalidateQueries({ queryKey: ["fazendas"] });
       await queryClient.invalidateQueries({ queryKey: ["me", "fazendas"] });
       router.push("/fazendas");

@@ -15,7 +15,8 @@ Consulte [`memory-bank/systemPatterns.md`](../../memory-bank/systemPatterns.md) 
 | Campo só data | `Input type="date"` | `DatePicker` (`YYYY-MM-DD`) |
 | Data+hora (parto, cio, produção) | `.slice(0,16)` em ISO | `DateTimePickerPtBr` + `toDatetimeLocalInputValue` |
 | Animal da fazenda | `Input type="number"` (ID) | `AnimalSelect`; listagem operacional (`useAnimaisOperacionalList`) ou **`cicloContext`** em forms de ciclo (`useAnimaisCicloContext`) |
-| Erro de API em form/dialog | `<p className="text-destructive">` | `FormValidationAlert` + `getApiErrorMessage` |
+| Erro em form (validação ou API) | `<p className="text-destructive">` só no campo ou só no fim | `FormFieldError` inline + `FormValidationAlert` no topo + `getApiErrorMessage` / `validate*` em `lib/form-validation.ts` |
+| Sucesso após guardar (form/página) | redirect silencioso | `toast.success` (`hooks/use-toast.ts`) |
 | Listagem com Ações | só tabela | `ResponsiveListContainer` + `MobileListCard` + `ListRowActionsMenu` + `DeleteRecordDialog` |
 | Paginação server-side | offset ad hoc | `ListPaginationBar` |
 | Loading/erro/empty de lista | spinner custom / `<p>` solto | `QueryListContent` + `EmptyState` (`components/ui/empty-state.tsx`) |

@@ -28,6 +28,8 @@ import { todayISODate } from "@/lib/date-limits";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
+import { FormFieldError } from "@/components/ui/form-field-error";
 import {
   Select,
   SelectContent,
@@ -35,8 +37,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getApiErrorMessage, parsePrefixedConformidadeMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+  parsePrefixedConformidadeMessage,
+} from "@/lib/errors";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
+import {
+  validateAnimalForm,
+  type FieldErrors,
+} from "@/lib/form-validation";
 
 type Props = {
   initial?: Animal | null;
@@ -44,7 +54,6 @@ type Props = {
   isPending?: boolean;
   submitLabel?: string;
   defaultFazendaId?: number;
-  /** Quando definido, usa esta fazenda e não exibe o seletor (usuário com uma única fazenda). */
   fazendaUnicaId?: number;
 };
 
@@ -58,7 +67,6 @@ export function AnimalForm({
 }: Props) {
   const { fazendaAtiva } = useFazendaAtiva();
 
-  // Usar fazenda ativa como fallback se não tiver defaultFazendaId
   const initialFazendaId =
     fazendaUnicaId ??
     defaultFazendaId ??
@@ -88,27 +96,37 @@ export function AnimalForm({
     (initial?.categoria as Categoria) ?? ""
   );
   const [error, setError] = useState("");
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  // Usar fazendas vinculadas ao usuário (não todas)
   const { data: fazendas = [] } = useQuery<Fazenda[]>({
     queryKey: ["me", "fazendas"],
     queryFn: getMinhasFazendas,
   });
 
+  const clearErrors = () => {
+    setError("");
+    setConformidadeCode(undefined);
+    setIsValidationError(false);
+    setFieldErrors({});
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    clearErrors();
 
-    if (!identificacao.trim()) {
-      setError("Identificação é obrigatória.");
-      return;
-    }
-    if (!fazendaId || fazendaId <= 0) {
-      setError("Selecione uma fazenda.");
-      return;
-    }
-    if (origemAquisicao === "NASCIDO" && !dataNascimento.trim()) {
-      setError("Data de nascimento é obrigatória para animais nascidos na propriedade.");
+    const validation = validateAnimalForm({
+      identificacao,
+      fazendaId,
+      fazendaUnicaId,
+      origemAquisicao,
+      dataNascimento,
+    });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
       return;
     }
 
@@ -125,7 +143,7 @@ export function AnimalForm({
     if (origemAquisicao === "NASCIDO" && dataNascimento.trim()) {
       payload.data_nascimento = dataNascimento.trim();
     } else if (origemAquisicao === "COMPRADO") {
-      payload.data_nascimento = null; // Limpar ao mudar para comprado
+      payload.data_nascimento = null;
     }
     if (dataEntrada.trim()) payload.data_entrada = dataEntrada.trim();
 
@@ -133,8 +151,14 @@ export function AnimalForm({
       await onSubmit(payload);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Erro ao salvar. Tente novamente."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     }
   };
+
+  const parsed = error ? parsePrefixedConformidadeMessage(error) : null;
+  const displayMessage = parsed?.message ?? error;
+  const displayCode = conformidadeCode ?? parsed?.conformidadeCode;
 
   return (
     <Card>
@@ -143,6 +167,14 @@ export function AnimalForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error?.trim() ? (
+            <FormValidationAlert
+              message={displayMessage}
+              conformidadeCode={displayCode}
+              isValidation={isValidationError}
+            />
+          ) : null}
+
           {fazendaUnicaId != null ? (
             <div className="space-y-2">
               <Label>Fazenda</Label>
@@ -157,7 +189,13 @@ export function AnimalForm({
                 value={fazendaId?.toString() ?? ""}
                 onValueChange={(v) => setFazendaId(Number(v))}
               >
-                <SelectTrigger>
+                <SelectTrigger
+                  id="fazenda"
+                  aria-invalid={fieldErrors.fazendaId ? true : undefined}
+                  className={
+                    fieldErrors.fazendaId ? "border-destructive" : undefined
+                  }
+                >
                   <SelectValue placeholder="Selecione uma fazenda" />
                 </SelectTrigger>
                 <SelectContent>
@@ -168,6 +206,7 @@ export function AnimalForm({
                   ))}
                 </SelectContent>
               </Select>
+              <FormFieldError message={fieldErrors.fazendaId} />
             </div>
           )}
 
@@ -196,26 +235,26 @@ export function AnimalForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="identificacao">Identificação *</Label>
+            <FormField
+              label="Identificação"
+              htmlFor="identificacao"
+              required
+              error={fieldErrors.identificacao}
+            >
               <Input
-                id="identificacao"
                 value={identificacao}
                 onChange={(e) => setIdentificacao(e.target.value)}
-                required
                 placeholder="Ex.: BR001 ou Mimosa"
               />
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label htmlFor="raca">Raça</Label>
+            <FormField label="Raça" htmlFor="raca">
               <Input
-                id="raca"
                 value={raca}
                 onChange={(e) => setRaca(e.target.value)}
                 placeholder="Ex.: Holandesa"
               />
-            </div>
+            </FormField>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -232,6 +271,7 @@ export function AnimalForm({
                   placeholder="Selecione a data"
                   manualInput
                 />
+                <FormFieldError message={fieldErrors.dataNascimento} />
               </div>
             )}
             <div className="space-y-2">
@@ -312,12 +352,6 @@ export function AnimalForm({
               </Select>
             </div>
           </div>
-
-          {error ? (
-            <FormValidationAlert
-              {...parsePrefixedConformidadeMessage(error)}
-            />
-          ) : null}
 
           <Button type="submit" size="lg" disabled={isPending}>
             {isPending ? "Salvando…" : submitLabel}

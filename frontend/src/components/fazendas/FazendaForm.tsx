@@ -7,7 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import { getApiErrorMessage } from "@/lib/errors";
+import { FormField } from "@/components/ui/form-field";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+  parsePrefixedConformidadeMessage,
+} from "@/lib/errors";
+import { validateFazendaForm, type FieldErrors } from "@/lib/form-validation";
 
 type Props = {
   initial?: Fazenda | null;
@@ -28,14 +35,25 @@ export function FazendaForm({
     initial?.fundacao ? initial.fundacao.slice(0, 10) : ""
   );
   const [error, setError] = useState("");
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!nome.trim()) {
-      setError("Nome é obrigatório.");
+    setConformidadeCode(undefined);
+    setFieldErrors({});
+
+    const validation = validateFazendaForm({ nome });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
       return;
     }
+    setIsValidationError(false);
+
     const payload: FazendaCreate = {
       nome: nome.trim(),
     };
@@ -45,8 +63,14 @@ export function FazendaForm({
       await onSubmit(payload);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Erro ao salvar. Tente novamente."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     }
   };
+
+  const parsed = error ? parsePrefixedConformidadeMessage(error) : null;
+  const displayMessage = parsed?.message ?? error;
+  const displayCode = conformidadeCode ?? parsed?.conformidadeCode;
 
   return (
     <Card>
@@ -55,16 +79,22 @@ export function FazendaForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="nome">Nome *</Label>
+          {error?.trim() ? (
+            <FormValidationAlert
+              message={displayMessage}
+              conformidadeCode={displayCode}
+              isValidation={isValidationError}
+            />
+          ) : null}
+
+          <FormField label="Nome" htmlFor="nome" required error={fieldErrors.nome}>
             <Input
-              id="nome"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              required
               placeholder="Ex.: Fazenda São João"
             />
-          </div>
+          </FormField>
+
           <div className="space-y-2">
             <Label htmlFor="localizacao">Localização</Label>
             <Input
@@ -83,7 +113,6 @@ export function FazendaForm({
               placeholder="Selecione a data"
             />
           </div>
-          {error && <p className="text-base text-destructive">{error}</p>}
           <Button type="submit" size="lg" disabled={isPending}>
             {isPending ? "Salvando…" : submitLabel}
           </Button>

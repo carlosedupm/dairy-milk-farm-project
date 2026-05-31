@@ -12,10 +12,14 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   CoberturaFormFields,
-  coberturaFormSubmitDisabled,
   type CoberturaFormState,
 } from "@/components/gestao/CoberturaFormFields";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+} from "@/lib/errors";
+import { validateCoberturaForm, type FieldErrors } from "@/lib/form-validation";
+import { toast } from "@/hooks/use-toast";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 
 function emptyFormState(): CoberturaFormState {
@@ -34,6 +38,10 @@ function NovoContent() {
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState<CoberturaFormState>(() => emptyFormState());
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
 
@@ -54,7 +62,13 @@ function NovoContent() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coberturas", fazendaAtiva?.id] });
+      toast.success("Cobertura registada");
       router.push("/gestao/coberturas");
+    },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao registrar."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     },
   });
 
@@ -67,15 +81,41 @@ function NovoContent() {
     );
   }
 
+  const handleSubmit = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    const validation = validateCoberturaForm(formState);
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+    setFieldErrors({});
+    setIsValidationError(false);
+    mutation.mutate();
+  };
+
+  const displayError =
+    formError ||
+    (mutation.isError
+      ? getApiErrorMessage(mutation.error, "Erro ao registrar.")
+      : undefined);
+
   return (
     <GestaoFormLayout
       title="Registrar cobertura"
       backHref="/gestao/coberturas"
       submitLabel="Registrar"
-      onSubmit={() => mutation.mutate()}
+      onSubmit={handleSubmit}
       isPending={mutation.isPending}
-      error={mutation.isError ? getApiErrorMessage(mutation.error, "Erro ao registrar.") : undefined}
-      submitDisabled={coberturaFormSubmitDisabled(formState)}
+      error={displayError}
+      errorConformidadeCode={
+        conformidadeCode ??
+        (mutation.isError ? getApiErrorConformidadeCode(mutation.error) : undefined)
+      }
+      isValidationError={isValidationError}
+      fieldErrors={fieldErrors}
     >
       <CoberturaFormFields
         fazendaId={fazendaId}

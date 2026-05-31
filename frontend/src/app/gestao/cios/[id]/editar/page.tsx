@@ -14,11 +14,15 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   CioFormFields,
-  cioFormSubmitDisabled,
   type CioFormState,
 } from "@/components/gestao/CioFormFields";
 import { GestaoEditarBloqueadoGuard } from "@/components/gestao/GestaoEditarBloqueadoGuard";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+} from "@/lib/errors";
+import { validateCioForm, type FieldErrors } from "@/lib/form-validation";
+import { toast } from "@/hooks/use-toast";
 import { toDatetimeLocalInputValue } from "@/lib/format";
 
 function initialFormState(cio: Cio): CioFormState {
@@ -42,6 +46,10 @@ function CioEditForm({ cio, animais, fazendaId }: CioEditFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState(() => initialFormState(cio));
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -55,21 +63,51 @@ function CioEditForm({ cio, animais, fazendaId }: CioEditFormProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cios", fazendaId] });
       queryClient.invalidateQueries({ queryKey: ["cio", cio.id] });
+      toast.success("Cio atualizado");
       router.push("/gestao/cios");
     },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao salvar."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
+    },
   });
+
+  const handleSubmit = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    const validation = validateCioForm(formState);
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+    setFieldErrors({});
+    setIsValidationError(false);
+    mutation.mutate();
+  };
+
+  const displayError =
+    formError ||
+    (mutation.isError
+      ? getApiErrorMessage(mutation.error, "Erro ao salvar.")
+      : undefined);
 
   return (
     <GestaoFormLayout
       title="Editar cio"
       backHref="/gestao/cios"
       submitLabel="Salvar"
-      onSubmit={() => mutation.mutate()}
+      onSubmit={handleSubmit}
       isPending={mutation.isPending}
-      error={
-        mutation.isError ? getApiErrorMessage(mutation.error, "Erro ao salvar.") : undefined
+      error={displayError}
+      errorConformidadeCode={
+        conformidadeCode ??
+        (mutation.isError ? getApiErrorConformidadeCode(mutation.error) : undefined)
       }
-      submitDisabled={cioFormSubmitDisabled(formState)}
+      isValidationError={isValidationError}
+      fieldErrors={fieldErrors}
     >
       <CioFormFields animais={animais} formState={formState} setFormState={setFormState} />
     </GestaoFormLayout>
