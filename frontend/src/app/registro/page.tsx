@@ -16,7 +16,11 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PageContainer } from '@/components/layout/PageContainer'
+import { FormFieldError } from '@/components/ui/form-field-error'
+import { FormValidationAlert } from '@/components/ui/form-validation-alert'
+import { toast } from '@/hooks/use-toast'
 import { getApiErrorMessage } from '@/lib/errors'
+import { validateRegistroForm, type FieldErrors } from '@/lib/form-validation'
 import { getAreasMode, getDefaultLandingPath } from '@/config/appAccess'
 
 function RegistroForm() {
@@ -25,6 +29,8 @@ function RegistroForm() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [isValidationError, setIsValidationError] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const { user, isAuthenticated, isReady } = useAuth()
@@ -44,20 +50,26 @@ function RegistroForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setIsValidationError(false)
+    setFieldErrors({})
 
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem.')
-      return
-    }
-
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.')
+    const validation = validateRegistroForm({
+      nome,
+      email,
+      password,
+      confirmPassword,
+    })
+    if (!validation.valid) {
+      setFieldErrors(validation.fields)
+      setError(validation.summary ?? 'Corrija os campos assinalados.')
+      setIsValidationError(true)
       return
     }
 
     setLoading(true)
     try {
       await register({ nome, email, password })
+      toast.success('Conta criada')
       setSuccess(true)
       // Redirecionar para login após 2 segundos
       setTimeout(() => {
@@ -67,6 +79,7 @@ function RegistroForm() {
       setError(
         getApiErrorMessage(err, 'Erro ao criar conta. Tente novamente.')
       )
+      setIsValidationError(false)
     } finally {
       setLoading(false)
     }
@@ -145,6 +158,9 @@ function RegistroForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error?.trim() ? (
+              <FormValidationAlert message={error} isValidation={isValidationError} />
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="nome">Nome</Label>
               <Input
@@ -153,8 +169,10 @@ function RegistroForm() {
                 placeholder="Seu nome"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
+                aria-invalid={fieldErrors.nome ? true : undefined}
                 required
               />
+              <FormFieldError message={fieldErrors.nome} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -164,8 +182,10 @@ function RegistroForm() {
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={fieldErrors.email ? true : undefined}
                 required
               />
+              <FormFieldError message={fieldErrors.email} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
@@ -175,9 +195,11 @@ function RegistroForm() {
                 placeholder="Mínimo 6 caracteres"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={fieldErrors.senha ? true : undefined}
                 required
                 minLength={6}
               />
+              <FormFieldError message={fieldErrors.senha} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar senha</Label>
@@ -187,12 +209,11 @@ function RegistroForm() {
                 placeholder="Repita a senha"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                aria-invalid={fieldErrors.confirmPassword ? true : undefined}
                 required
               />
+              <FormFieldError message={fieldErrors.confirmPassword} />
             </div>
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Criando conta…' : 'Criar conta'}
             </Button>

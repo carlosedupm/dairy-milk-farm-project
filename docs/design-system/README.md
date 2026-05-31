@@ -7,6 +7,7 @@ Documentação do design system do frontend CeialMilk.
 | Documento | Descrição |
 |-----------|-----------|
 | [tokens.md](tokens.md) | Tokens semânticos: cores, tipografia, espaçamento, radius, sombras, breakpoints |
+| [form-patterns.md](form-patterns.md) | Validação, erros inline/global e toast (sucesso/info/aviso) |
 
 ## Arquivos relacionados
 
@@ -17,4 +18,4 @@ Documentação do design system do frontend CeialMilk.
 | [`frontend/design-tokens/tokens.json`](../../frontend/design-tokens/tokens.json) | Dicionário W3C DTCG exportável |
 | [`frontend/scripts/validate-design-tokens.mjs`](../../frontend/scripts/validate-design-tokens.mjs) | Validação CI: paridade CSS↔JSON + cores literais |
 
-**Última atualização**: 2026-05-30
+**Última atualização**: 2026-05-31

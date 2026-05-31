@@ -520,11 +520,13 @@ Migrations: `23` (ciclo/leite), `24` (`animais.created_by`), `25` (`integracao_*
 
 ### **Erros de validação e feedback em formulários**
 
+Documentação canónica: [`docs/design-system/form-patterns.md`](../docs/design-system/form-patterns.md).
+
 - **Inline**: `FormFieldError` (`components/ui/form-field-error.tsx`) — `role="alert"`, `aria-live="polite"`, abaixo do controlo; opcional `FormField` wrapper com `aria-invalid` / `border-destructive`.
 - **Global**: `FormValidationAlert` (`components/ui/form-validation-alert.tsx`) — no **topo** do formulário (antes dos campos); `scrollIntoView` quando a mensagem aparece; títulos «Verifique os campos» (validação client) vs «Não foi possível guardar» (API); **Badge** `TMP-*` / `INT-*` via `parsePrefixedConformidadeMessage` / `getApiErrorConformidadeCode` ([`lib/errors.ts`](frontend/src/lib/errors.ts)).
 - **Validação client**: funções em [`lib/form-validation.ts`](frontend/src/lib/form-validation.ts) (`validateAnimalForm`, `validateCoberturaForm`, …) → `fieldErrors` + resumo; **não** depender só de `submitDisabled` sem mensagem.
 - **Gestão**: [`GestaoFormLayout`](frontend/src/components/gestao/GestaoFormLayout.tsx) — alerta no topo + `FormFieldErrorsProvider` / `useFormFieldError` nos `*FormFields`; `AnimalSelect` aceita prop `error`.
-- **Toast** (sucesso / info / aviso): [`hooks/use-toast.ts`](frontend/src/hooks/use-toast.ts) (Sonner) + `<Toaster position="top-right" />` em [`Providers`](frontend/src/components/layout/Providers.tsx); após `mutation.onSuccess` nas páginas (ex.: «Animal criado»). Erros de API em forms mantêm `FormValidationAlert`; `toast.error` para ações rápidas fora de form longo.
+- **Toast** (sucesso / info / aviso): [`hooks/use-toast.ts`](frontend/src/hooks/use-toast.ts) (`useToast()` + `toast`) + `<Toaster position="top-right" />` em [`Providers`](frontend/src/components/layout/Providers.tsx); contrato a11y em [`components/ui/toast.tsx`](frontend/src/components/ui/toast.tsx). Após `mutation.onSuccess` nas páginas (ex.: «Animal criado»). Erros de API em forms mantêm `FormValidationAlert`; `toast.error` para ações rápidas fora de form longo.
 - **Proibido** em forms de domínio: `<p className="text-destructive">` solto no lugar do padrão acima (estados de página «ID inválido» podem manter texto simples).
 - **Zoom/reflow**: alerta global visível sem scroll até ao botão em forms longos (`PartoFormFields`, etc.).
 

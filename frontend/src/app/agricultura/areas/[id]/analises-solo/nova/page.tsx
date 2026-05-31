@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getArea, createAnaliseSolo } from "@/services/agricultura";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+  parsePrefixedConformidadeMessage,
+} from "@/lib/errors";
+import { validateAnaliseSoloForm, type FieldErrors } from "@/lib/form-validation";
+import { toast } from "@/hooks/use-toast";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -14,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
+import { FormFieldError } from "@/components/ui/form-field-error";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 
 function NovaAnaliseSoloContent() {
   const params = useParams<{ id?: string }>();
@@ -29,6 +37,10 @@ function NovaAnaliseSoloContent() {
   const [materiaOrganica, setMateriaOrganica] = useState("");
   const [recomendacoes, setRecomendacoes] = useState("");
   const [laboratorio, setLaboratorio] = useState("");
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const { data: area } = useQuery({
     queryKey: ["areas", areaId],
@@ -50,9 +62,36 @@ function NovaAnaliseSoloContent() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["analises-solo", areaId] });
+      toast.success("Análise de solo registrada");
       router.push(`/agricultura/areas/${areaId}/analises-solo`);
     },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao registrar análise."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
+    },
   });
+
+  const handleSubmit = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    setIsValidationError(false);
+    setFieldErrors({});
+
+    const validation = validateAnaliseSoloForm({ dataColeta });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+
+    createMutation.mutate();
+  };
+
+  const parsed = formError ? parsePrefixedConformidadeMessage(formError) : null;
+  const displayMessage = parsed?.message ?? formError;
+  const displayCode = conformidadeCode ?? parsed?.conformidadeCode;
 
   if (!params?.id) {
     return (
@@ -80,6 +119,13 @@ function NovaAnaliseSoloContent() {
           <CardTitle>Nova análise de solo – {area?.nome ?? "Área"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {formError?.trim() ? (
+            <FormValidationAlert
+              message={displayMessage}
+              conformidadeCode={displayCode}
+              isValidation={isValidationError}
+            />
+          ) : null}
           <div>
             <Label htmlFor="data_coleta">Data da coleta *</Label>
             <DatePicker
@@ -88,6 +134,7 @@ function NovaAnaliseSoloContent() {
               onChange={setDataColeta}
               placeholder="Data da coleta"
             />
+            <FormFieldError message={fieldErrors.dataColeta} />
           </div>
           <div>
             <Label htmlFor="data_resultado">Data do resultado (opcional)</Label>
@@ -124,12 +171,9 @@ function NovaAnaliseSoloContent() {
             <Label htmlFor="recomendacoes">Recomendações (opcional)</Label>
             <Textarea id="recomendacoes" value={recomendacoes} onChange={(e) => setRecomendacoes(e.target.value)} rows={3} />
           </div>
-          <Button onClick={() => createMutation.mutate()} disabled={!dataColeta || createMutation.isPending}>
+          <Button onClick={handleSubmit} disabled={createMutation.isPending}>
             {createMutation.isPending ? "Salvando…" : "Registrar análise"}
           </Button>
-          {createMutation.isError && (
-            <p className="text-destructive text-sm">{getApiErrorMessage(createMutation.error, "Erro ao registrar análise.")}</p>
-          )}
         </CardContent>
       </Card>
     </PageContainer>

@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FormFieldError } from "@/components/ui/form-field-error";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,10 +31,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
 import {
+  getApiErrorConformidadeCode,
   getApiErrorMessage,
   parsePrefixedConformidadeMessage,
 } from "@/lib/errors";
+import { validateCriarAlertaForm, type FieldErrors } from "@/lib/form-validation";
 
 type Props = {
   open: boolean;
@@ -61,6 +65,10 @@ export function CriarAlertaDialog({
   onSuccess,
 }: Props) {
   const [form, setForm] = useState(emptyForm);
+  const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -73,23 +81,53 @@ export function CriarAlertaDialog({
         data_prevista: form.dataPrevista || null,
       }),
     onSuccess: () => {
+      toast.success("Alerta criado");
       onSuccess();
       onOpenChange(false);
       setForm(emptyForm());
+      setFormError("");
+      setFieldErrors({});
+    },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao criar alerta."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     },
   });
+
+  const clearErrors = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
+    setIsValidationError(false);
+    setFieldErrors({});
+  };
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       setForm(emptyForm());
+      clearErrors();
       createMutation.reset();
     }
     onOpenChange(next);
   };
 
-  const createErrorMsg = createMutation.error
-    ? getApiErrorMessage(createMutation.error, "Erro ao criar alerta.")
-    : "";
+  const handleSubmit = () => {
+    clearErrors();
+
+    const validation = validateCriarAlertaForm({ titulo: form.titulo });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+
+    createMutation.mutate();
+  };
+
+  const parsed = formError ? parsePrefixedConformidadeMessage(formError) : null;
+  const displayMessage = parsed?.message ?? formError;
+  const displayCode = conformidadeCode ?? parsed?.conformidadeCode;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -98,6 +136,13 @@ export function CriarAlertaDialog({
           <DialogTitle>Novo alerta manual</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {formError?.trim() ? (
+            <FormValidationAlert
+              message={displayMessage}
+              conformidadeCode={displayCode}
+              isValidation={isValidationError}
+            />
+          ) : null}
           <div className="space-y-1">
             <Label htmlFor="alerta-titulo">Título</Label>
             <Input
@@ -105,7 +150,9 @@ export function CriarAlertaDialog({
               value={form.titulo}
               onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
               maxLength={200}
+              aria-invalid={fieldErrors.titulo ? true : undefined}
             />
+            <FormFieldError message={fieldErrors.titulo} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="alerta-descricao">Descrição</Label>
@@ -160,11 +207,6 @@ export function CriarAlertaDialog({
               manualInput
             />
           </div>
-          {createErrorMsg ? (
-            <FormValidationAlert
-              {...parsePrefixedConformidadeMessage(createErrorMsg)}
-            />
-          ) : null}
         </div>
         <DialogFooter>
           <Button
@@ -178,8 +220,8 @@ export function CriarAlertaDialog({
             type="button"
             size="lg"
             className="min-h-[44px]"
-            disabled={!form.titulo.trim() || createMutation.isPending}
-            onClick={() => createMutation.mutate()}
+            disabled={createMutation.isPending}
+            onClick={handleSubmit}
           >
             {createMutation.isPending ? "A criar…" : "Criar"}
           </Button>

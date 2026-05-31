@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createSafraCultura } from "@/services/agricultura";
-import { getApiErrorMessage } from "@/lib/errors";
+import {
+  getApiErrorConformidadeCode,
+  getApiErrorMessage,
+  parsePrefixedConformidadeMessage,
+} from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Props = {
@@ -38,6 +44,8 @@ export function CreateSafraCulturaDialog({
   const [dataPlantio, setDataPlantio] = useState("");
   const [dataColheita, setDataColheita] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [formError, setFormError] = useState("");
+  const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -52,26 +60,53 @@ export function CreateSafraCulturaDialog({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["safras-culturas", areaId, ano] });
+      toast.success("Safra/cultura criada");
       onOpenChange(false);
       setCultura("MILHO");
       setStatus("PLANTADA");
       setDataPlantio("");
       setDataColheita("");
       setObservacoes("");
+      setFormError("");
+    },
+    onError: (err: unknown) => {
+      setFormError(getApiErrorMessage(err, "Erro ao criar safra/cultura."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
     },
   });
 
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setFormError("");
+      setConformidadeCode(undefined);
+      createMutation.reset();
+    }
+    onOpenChange(next);
+  };
+
   const handleSubmit = () => {
+    setFormError("");
+    setConformidadeCode(undefined);
     createMutation.mutate();
   };
 
+  const parsed = formError ? parsePrefixedConformidadeMessage(formError) : null;
+  const displayMessage = parsed?.message ?? formError;
+  const displayCode = conformidadeCode ?? parsed?.conformidadeCode;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Nova cultura – Safra {ano} – {areaNome ?? "Área"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          {formError?.trim() ? (
+            <FormValidationAlert
+              message={displayMessage}
+              conformidadeCode={displayCode}
+            />
+          ) : null}
           <div>
             <Label htmlFor="cultura">Cultura</Label>
             <Select value={cultura} onValueChange={setCultura}>
@@ -120,14 +155,9 @@ export function CreateSafraCulturaDialog({
             <Label htmlFor="observacoes">Observações (opcional)</Label>
             <Input id="observacoes" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
           </div>
-          {createMutation.isError && (
-            <p className="text-destructive text-sm">
-              {getApiErrorMessage(createMutation.error, "Erro ao criar safra/cultura.")}
-            </p>
-          )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={createMutation.isPending}>

@@ -259,3 +259,130 @@ export function validateFazendaForm(input: { nome: string }): FormValidationResu
   if (Object.keys(fields).length > 0) return invalid(fields);
   return valid();
 }
+
+export function validateLoginForm(input: {
+  email: string;
+  password: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.email.trim()) {
+    fields.email = "Email é obrigatório.";
+  }
+  if (!input.password.trim()) {
+    fields.password = "Senha é obrigatória.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateRegistroForm(input: {
+  nome: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.nome.trim()) {
+    fields.nome = "Nome é obrigatório.";
+  }
+  if (!input.email.trim()) {
+    fields.email = "Email é obrigatório.";
+  }
+  if (!input.password.trim()) {
+    fields.senha = "Senha é obrigatória.";
+  } else if (input.password.length < 6) {
+    fields.senha = "A senha deve ter pelo menos 6 caracteres.";
+  }
+  if (input.password !== input.confirmPassword) {
+    fields.confirmPassword = "As senhas não coincidem.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateAreaForm(input: {
+  nome: string;
+  hectares: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.nome.trim()) {
+    fields.nome = "Nome é obrigatório.";
+  }
+  const ha = parseFloat(input.hectares);
+  if (!input.hectares.trim() || isNaN(ha) || ha <= 0) {
+    fields.hectares = "Informe hectares maior que zero.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateFornecedorForm(input: { nome: string }): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.nome.trim()) {
+    fields.nome = "Nome é obrigatório.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateAnaliseSoloForm(input: {
+  dataColeta: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.dataColeta.trim()) {
+    fields.dataColeta = "Informe a data da coleta.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateCustoAgriculturaForm(input: {
+  valor: string;
+  data: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  const valor = parseFloat(input.valor);
+  if (!input.valor.trim() || isNaN(valor) || valor < 0) {
+    fields.valor = "Informe um valor válido (≥ 0).";
+  }
+  if (!input.data.trim()) {
+    fields.data = "Informe a data do custo.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateProducaoAgriculturaForm(input: {
+  quantidadeKg: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  const qtd = parseFloat(input.quantidadeKg);
+  if (!input.quantidadeKg.trim() || isNaN(qtd) || qtd <= 0) {
+    fields.quantidadeKg = "Quantidade deve ser maior que zero.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateReceitaAgriculturaForm(input: {
+  valor: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  const valor = parseFloat(input.valor);
+  if (!input.valor.trim() || isNaN(valor) || valor < 0) {
+    fields.valor = "Informe um valor válido (≥ 0).";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateCriarAlertaForm(input: {
+  titulo: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!input.titulo.trim()) {
+    fields.titulo = "Título é obrigatório.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}

@@ -15,7 +15,10 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PageContainer } from '@/components/layout/PageContainer'
+import { FormFieldError } from '@/components/ui/form-field-error'
+import { FormValidationAlert } from '@/components/ui/form-validation-alert'
 import { getApiErrorMessage } from '@/lib/errors'
+import { validateLoginForm, type FieldErrors } from '@/lib/form-validation'
 import {
   getAreasMode,
   getDefaultLandingPath,
@@ -75,6 +78,8 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [isValidationError, setIsValidationError] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [loading, setLoading] = useState(false)
   const { login, user, isAuthenticated, isReady } = useAuth()
   const router = useRouter()
@@ -101,6 +106,17 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setIsValidationError(false)
+    setFieldErrors({})
+
+    const validation = validateLoginForm({ email, password })
+    if (!validation.valid) {
+      setFieldErrors(validation.fields)
+      setError(validation.summary ?? 'Corrija os campos assinalados.')
+      setIsValidationError(true)
+      return
+    }
+
     setLoading(true)
     try {
       const logged = await login(email, password)
@@ -117,6 +133,7 @@ function LoginForm() {
       setError(
         getApiErrorMessage(err, 'Erro ao fazer login. Verifique email e senha.')
       )
+      setIsValidationError(false)
       setLoading(false)
     }
   }
@@ -138,6 +155,9 @@ function LoginForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error?.trim() ? (
+              <FormValidationAlert message={error} isValidation={isValidationError} />
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -146,8 +166,10 @@ function LoginForm() {
                 placeholder="admin@ceialmilk.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={fieldErrors.email ? true : undefined}
                 required
               />
+              <FormFieldError message={fieldErrors.email} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
@@ -156,12 +178,11 @@ function LoginForm() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={fieldErrors.password ? true : undefined}
                 required
               />
+              <FormFieldError message={fieldErrors.password} />
             </div>
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}
             </Button>

@@ -23,6 +23,7 @@ import {
   type FolgasRodizioDia,
 } from "@/services/folgas";
 import { getApiErrorMessage } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
 import { getDefaultLandingPath } from "@/config/appAccess";
 import {
@@ -286,6 +287,7 @@ export function useFolgasPage() {
       invalidateFolgas();
       setCfgOpen(false);
       setFormError("");
+      toast.success("Configuração de folgas salva");
     },
     onError: (e) => setFormError(getApiErrorMessage(e, "Erro ao salvar.")),
   });
@@ -296,6 +298,7 @@ export function useFolgasPage() {
       invalidateFolgas();
       setGerarOpen(false);
       setFormError("");
+      toast.success("Escala gerada");
     },
     onError: (e) => setFormError(getApiErrorMessage(e, "Erro ao gerar.")),
   });
@@ -316,6 +319,7 @@ export function useFolgasPage() {
       setAltMotivo("");
       setAltExcecao("");
       setFormError("");
+      toast.success("Folga alterada");
     },
     onError: (e) => {
       const msg = getApiErrorMessage(e, "Erro ao alterar.");
@@ -344,6 +348,7 @@ export function useFolgasPage() {
       setJustOpen(false);
       setJustMotivo("");
       setFormError("");
+      toast.success("Justificativa registrada");
     },
     onError: (e) => setFormError(getApiErrorMessage(e, "Erro ao justificar.")),
   });

@@ -1,6 +1,14 @@
+import { useMemo } from "react";
 import { toast as sonnerToast } from "sonner";
 
-export const toast = {
+export type ToastApi = {
+  success: (message: string, description?: string) => void;
+  error: (message: string, description?: string) => void;
+  info: (message: string, description?: string) => void;
+  warning: (message: string, description?: string) => void;
+};
+
+const toastApi: ToastApi = {
   success: (message: string, description?: string) =>
     sonnerToast.success(message, description ? { description } : undefined),
   error: (message: string, description?: string) =>
@@ -11,4 +19,10 @@ export const toast = {
     sonnerToast.warning(message, description ? { description } : undefined),
 };
 
-export { toast as useToast };
+/** API imperativa — use em mutations, services e páginas finas. */
+export const toast = toastApi;
+
+/** Hook React que expõe a mesma API (variantes success / error / info / warning). */
+export function useToast(): ToastApi {
+  return useMemo(() => toastApi, []);
+}

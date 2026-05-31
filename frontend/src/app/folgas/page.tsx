@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { useFolgasPage } from "@/hooks/useFolgasPage";
 import {
   CalendarDays,
@@ -552,9 +553,9 @@ function FolgasContent() {
                 </div>
               );
             })}
-            {formError && (
-              <p className="text-base text-destructive">{formError}</p>
-            )}
+            {formError ? (
+              <FormValidationAlert message={formError} />
+            ) : null}
           </div>
           <DialogFooter>
             <Button
@@ -585,9 +586,9 @@ function FolgasContent() {
               manualmente.
             </DialogDescription>
           </DialogHeader>
-          {formError && (
-            <p className="text-base text-destructive">{formError}</p>
-          )}
+          {formError ? (
+            <FormValidationAlert message={formError} />
+          ) : null}
           <DialogFooter>
             <Button
               type="button"
@@ -688,9 +689,9 @@ function FolgasContent() {
                     />
                   </div>
                 )}
-                {formError && (
-                  <p className="text-base text-destructive">{formError}</p>
-                )}
+                {formError ? (
+                  <FormValidationAlert message={formError} />
+                ) : null}
               </div>
               <DialogFooter>
                 <Button
@@ -719,9 +720,9 @@ function FolgasContent() {
                   Deseja continuar?
                 </DialogDescription>
               </DialogHeader>
-              {formError && (
-                <p className="text-base text-destructive">{formError}</p>
-              )}
+              {formError ? (
+                <FormValidationAlert message={formError} />
+              ) : null}
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button
                   type="button"
@@ -763,9 +764,9 @@ function FolgasContent() {
                 className="min-h-[44px]"
               />
             </div>
-            {formError && (
-              <p className="text-base text-destructive">{formError}</p>
-            )}
+            {formError ? (
+              <FormValidationAlert message={formError} />
+            ) : null}
           </div>
           <DialogFooter>
             <Button
