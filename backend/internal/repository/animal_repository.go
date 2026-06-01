@@ -248,7 +248,7 @@ func (r *AnimalRepository) ListParaToqueByFazendaID(ctx context.Context, fazenda
 		AND EXISTS (
 			SELECT 1 FROM coberturas cb
 			WHERE cb.animal_id = a.id AND cb.fazenda_id = a.fazenda_id
-			AND cb.data <= CURRENT_TIMESTAMP - ($3 || ' days')::interval
+			AND cb.data <= CURRENT_TIMESTAMP - ($3 * interval '1 day')
 			AND NOT EXISTS (
 				SELECT 1 FROM diagnosticos_gestacao dg WHERE dg.cobertura_id = cb.id
 			)

@@ -1,13 +1,5 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
 import { Search } from "lucide-react";
 import { AnimalSearchPanel } from "@/components/animais/AnimalSearchPanel";
 import {
@@ -27,87 +19,30 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "@/components/ui/popover";
-import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { usePathname } from "next/navigation";
+import { useAdaptiveSearch } from "@/hooks/useAdaptiveSearch";
 import { cn } from "@/lib/utils";
 
-type AnimalSearchHeaderFieldProps = {
-  /** Mobile: ocupa espaço flexível na barra */
+type HeaderBuscaTriggerProps = {
   compact?: boolean;
 };
 
-export function AnimalSearchHeaderField({
-  compact = false,
-}: AnimalSearchHeaderFieldProps) {
-  const searchCtx = useAnimalSearchDialog();
-  const pathname = usePathname();
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const isHome = pathname === "/";
-  const inputId = useId();
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const [identificacao, setIdentificacao] = useState("");
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  const resetSearch = useCallback(() => {
-    setIdentificacao("");
-    setPopoverOpen(false);
-    setDialogOpen(false);
-  }, []);
-
-  const closeOverlays = useCallback(() => {
-    setPopoverOpen(false);
-    setDialogOpen(false);
-  }, []);
-
-  const openSearch = useCallback(() => {
-    inputRef.current?.focus();
-    if (isDesktop) {
-      setPopoverOpen(true);
-    } else {
-      setDialogOpen(true);
-    }
-  }, [isDesktop]);
-
-  useEffect(() => {
-    if (!searchCtx) return;
-    searchCtx.registerSearchField({ openSearch });
-    return () => searchCtx.registerSearchField(null);
-  }, [searchCtx, openSearch]);
-
-  const handleInputFocus = useCallback(() => {
-    if (isDesktop) {
-      setPopoverOpen(true);
-      return;
-    }
-    setDialogOpen(true);
-    inputRef.current?.blur();
-  }, [isDesktop]);
-
-  const handleInputChange = useCallback(
-    (value: string) => {
-      setIdentificacao(value);
-      if (value.trim().length > 0) {
-        if (isDesktop) {
-          setPopoverOpen(true);
-        } else {
-          setDialogOpen(true);
-        }
-      }
-    },
-    [isDesktop],
-  );
-
-  function handleSubmitRapido(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (isDesktop) {
-      setPopoverOpen(true);
-    } else {
-      setDialogOpen(true);
-    }
-  }
+export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps) {
+  const {
+    identificacao,
+    setIdentificacao,
+    popoverOpen,
+    setPopoverOpen,
+    dialogOpen,
+    setDialogOpen,
+    isDesktop,
+    isHome,
+    inputId,
+    inputRef,
+    resetSearch,
+    handleInputFocus,
+    handleInputChange,
+    handleSubmitRapido,
+  } = useAdaptiveSearch();
 
   const inputClassName = cn(
     "min-h-[44px] min-w-0 pl-9 text-base",
