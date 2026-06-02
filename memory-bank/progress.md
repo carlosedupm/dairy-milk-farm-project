@@ -23,6 +23,12 @@
 
 ## ✅ O que foi concluído
 
+### **Scroll infinito mobile — listagens (✅ 2026-06-01 — t_ds_007)**
+
+- [x] `hooks/useMobileInfiniteList.ts` — `useInfiniteQuery`, sentinela, `clientPages`, reset de scroll ao filtrar
+- [x] `MobileInfiniteListFooter` + `MobileInfiniteListSkeleton` em `components/layout/list/`
+- [x] `/animais`, `/alertas`, `/producao`, `/gestao/coberturas` — infinite &lt; `md`, paginação `md+`
+
 ### **Toolbar filtros + URL-sync (✅ 2026-06-01 — t_ds_006)**
 
 - [x] `hooks/useFilterSync.ts` + `lib/filter-url.ts` + `ResponsiveFiltersShell`
@@ -870,6 +876,6 @@
 
 ---
 
-**Última atualização**: 2026-06-01 (t_ds_006 — toolbar filtros + URL-sync)
+**Última atualização**: 2026-06-01 (t_ds_007 — scroll infinito mobile nas listagens principais)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

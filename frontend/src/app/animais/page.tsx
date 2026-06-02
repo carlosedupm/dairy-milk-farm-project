@@ -18,9 +18,12 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X, Building2, Beef } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useMobileInfiniteList } from "@/hooks/useMobileInfiniteList";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useFilterSync } from "@/hooks/useFilterSync";
+import { MobileInfiniteListFooter } from "@/components/layout/list/MobileInfiniteListFooter";
+import type { Animal } from "@/services/animais";
 import { formatListCountSuffix } from "@/lib/filter-url";
 import {
   animaisFilterFields,
@@ -87,10 +90,8 @@ function AnimaisContent() {
 
   const loteNum = filters.lote_id ? Number.parseInt(filters.lote_id, 10) : 0;
 
-  const queryParams = useMemo(
+  const baseListParams = useMemo(
     () => ({
-      limit: pageSize,
-      offset,
       fazenda_id: fazendaId,
       identificacao: debouncedIdent || undefined,
       categoria: filters.categoria || undefined,
@@ -101,8 +102,6 @@ function AnimaisContent() {
       rebanho: filters.rebanho,
     }),
     [
-      pageSize,
-      offset,
       fazendaId,
       debouncedIdent,
       filters.categoria,
@@ -114,13 +113,40 @@ function AnimaisContent() {
     ],
   );
 
+  const filterKey = `${debouncedIdent}|${fazendaId ?? ""}|${filters.categoria}|${filters.sexo}|${filters.status_saude}|${filters.status_reprodutivo}|${filters.lote_id}|${filters.rebanho}|${pageSize}|${emLactacaoMode}`;
+
   const listEnabled =
     fazendaReady && fazendaId != null && fazendaId > 0 && !emLactacaoMode;
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["animais", "list", queryParams],
-    queryFn: () => listPaginated(queryParams),
+  const mobileInfinite = useMobileInfiniteList<
+    Animal,
+    Awaited<ReturnType<typeof listPaginated>>
+  >({
+    queryKey: ["animais", "list", "infinite", baseListParams, pageSize],
     enabled: listEnabled,
+    pageSize,
+    queryFn: ({ pageParam }) =>
+      listPaginated({
+        ...baseListParams,
+        limit: pageSize,
+        offset: pageParam,
+      }),
+    getItemsFromPage: (page) => page.animais,
+    getTotalFromPage: (page) => page.total,
+    resetDeps: [filterKey],
+  });
+
+  const { isDesktop } = mobileInfinite;
+
+  const desktopQueryParams = useMemo(
+    () => ({ ...baseListParams, limit: pageSize, offset }),
+    [baseListParams, pageSize, offset],
+  );
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["animais", "list", desktopQueryParams],
+    queryFn: () => listPaginated(desktopQueryParams),
+    enabled: listEnabled && isDesktop,
   });
 
   const lactacaoQuery = useQuery({
@@ -137,20 +163,60 @@ function AnimaisContent() {
     return all.filter((a) => a.identificacao.toLowerCase().includes(term));
   }, [lactacaoQuery.data, debouncedIdent]);
 
-  const items = emLactacaoMode ? lactacaoFiltered : (data?.animais ?? []);
-  const total = emLactacaoMode ? lactacaoFiltered.length : (data?.total ?? 0);
+  const mobileLactacaoInfinite = useMobileInfiniteList<
+    Animal,
+    { items: Animal[]; total: number }
+  >({
+    queryKey: ["animais", "em-lactacao", "infinite", fazendaId, debouncedIdent],
+    enabled: emLactacaoMode && fazendaReady && fazendaId != null && fazendaId > 0,
+    pageSize: 25,
+    queryFn: async () => ({ items: [], total: 0 }),
+    clientPages: {
+      items: lactacaoFiltered,
+      isLoading: lactacaoQuery.isLoading,
+    },
+    getItemsFromPage: (page) => page.items,
+    getTotalFromPage: (page) => page.total,
+    resetDeps: [filterKey],
+  });
+
+  const activeInfinite = emLactacaoMode ? mobileLactacaoInfinite : mobileInfinite;
+
+  const items = emLactacaoMode
+    ? isDesktop
+      ? lactacaoFiltered
+      : mobileLactacaoInfinite.items
+    : isDesktop
+      ? (data?.animais ?? [])
+      : mobileInfinite.items;
+
+  const total = emLactacaoMode
+    ? lactacaoFiltered.length
+    : isDesktop
+      ? (data?.total ?? 0)
+      : mobileInfinite.total;
+
   const listLoading = emLactacaoMode
-    ? !fazendaReady || lactacaoQuery.isLoading
-    : !fazendaReady || isLoading;
+    ? !fazendaReady ||
+      lactacaoQuery.isLoading ||
+      (!isDesktop &&
+        mobileLactacaoInfinite.isLoading &&
+        mobileLactacaoInfinite.items.length === 0)
+    : !fazendaReady ||
+      (isDesktop && isLoading) ||
+      (!isDesktop &&
+        mobileInfinite.isLoading &&
+        mobileInfinite.items.length === 0);
+
   const listError = emLactacaoMode ? lactacaoQuery.error : error;
   const listRefetch = emLactacaoMode
     ? () => void lactacaoQuery.refetch()
     : () => void refetch();
 
-  const filterKey = `${debouncedIdent}|${fazendaId ?? ""}|${filters.categoria}|${filters.sexo}|${filters.status_saude}|${filters.status_reprodutivo}|${filters.lote_id}|${filters.rebanho}|${pageSize}`;
-  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
-  if (prevFilterKey !== filterKey) {
-    setPrevFilterKey(filterKey);
+  const desktopFilterKey = `${debouncedIdent}|${fazendaId ?? ""}|${filters.categoria}|${filters.sexo}|${filters.status_saude}|${filters.status_reprodutivo}|${filters.lote_id}|${filters.rebanho}|${pageSize}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(desktopFilterKey);
+  if (prevFilterKey !== desktopFilterKey) {
+    setPrevFilterKey(desktopFilterKey);
     setOffset(0);
   }
 
@@ -270,6 +336,7 @@ function AnimaisContent() {
                 />
                 {!emLactacaoMode ? (
                   <ListPaginationBar
+                    className="hidden md:flex"
                     total={total}
                     pageSize={pageSize}
                     offset={offset}
@@ -281,6 +348,13 @@ function AnimaisContent() {
                     }}
                   />
                 ) : null}
+                <MobileInfiniteListFooter
+                  sentinelRef={activeInfinite.sentinelRef}
+                  isFetchingNextPage={activeInfinite.isFetchingNextPage}
+                  allLoaded={activeInfinite.allLoaded}
+                  total={activeInfinite.total}
+                  hasItems={items.length > 0}
+                />
               </div>
             </QueryListContent>
           </div>

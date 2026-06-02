@@ -11,6 +11,7 @@ import { CriarAlertaDialog } from "@/components/alertas/CriarAlertaDialog";
 import { Button } from "@/components/ui/button";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { ListPaginationBar } from "@/components/ui/pagination";
+import { MobileInfiniteListFooter } from "@/components/layout/list/MobileInfiniteListFooter";
 import { useAlertasPage } from "@/hooks/useAlertasPage";
 import { formatListCountSuffix } from "@/lib/filter-url";
 import {
@@ -51,6 +52,7 @@ function AlertasContent() {
     invalidate,
     createOpen,
     setCreateOpen,
+    mobileInfinite,
   } = useAlertasPage();
 
   if (fazendaReady && !fazendaAtiva) {
@@ -127,12 +129,20 @@ function AlertasContent() {
             />
             {total > 0 ? (
               <ListPaginationBar
+                className="hidden md:flex"
                 total={total}
                 pageSize={pageSize}
                 offset={offset}
                 onOffsetChange={setOffset}
               />
             ) : null}
+            <MobileInfiniteListFooter
+              sentinelRef={mobileInfinite.sentinelRef}
+              isFetchingNextPage={mobileInfinite.isFetchingNextPage}
+              allLoaded={mobileInfinite.allLoaded}
+              total={mobileInfinite.total}
+              hasItems={alertas.length > 0}
+            />
           </div>
         </QueryListContent>
 

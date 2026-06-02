@@ -23,9 +23,12 @@ import {
   alertasListQueryKey,
   listAlertas,
   updateAlertaStatus,
+  type Alerta,
+  type AlertasListResponse,
   type StatusAlerta,
 } from "@/services/alertas";
 import { useFilterSync } from "@/hooks/useFilterSync";
+import { useMobileInfiniteList } from "@/hooks/useMobileInfiniteList";
 
 export function useAlertasPage() {
   const { fazendaAtiva, isReady: fazendaReady } = useFazendaAtiva();
@@ -37,15 +40,15 @@ export function useAlertasPage() {
   const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const { filters, setFilter, clearFilters } = useFilterSync({
-      pathname: "/alertas",
-      defaults: emptyAlertasFilterState(),
-      fields: alertasFilterFields,
-    });
+    pathname: "/alertas",
+    defaults: emptyAlertasFilterState(),
+    fields: alertasFilterFields,
+  });
 
   const [offset, setOffset] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const listParams = useMemo(() => {
+  const baseListParams = useMemo(() => {
     const period = alertasPeriodToApiParams(filters.start, filters.end);
     return {
       status:
@@ -57,7 +60,6 @@ export function useAlertasPage() {
           : filters.severidade,
       ...period,
       limit: ALERTAS_PAGE_SIZE,
-      offset,
     };
   }, [
     filters.status,
@@ -65,8 +67,12 @@ export function useAlertasPage() {
     filters.severidade,
     filters.start,
     filters.end,
-    offset,
   ]);
+
+  const listParams = useMemo(
+    () => ({ ...baseListParams, offset }),
+    [baseListParams, offset],
+  );
 
   const filterKey = `${filters.status}|${filters.tipo}|${filters.severidade}|${filters.start}|${filters.end}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
@@ -75,11 +81,34 @@ export function useAlertasPage() {
     setOffset(0);
   }
 
+  const mobileInfinite = useMobileInfiniteList<Alerta, AlertasListResponse>({
+    queryKey: [...alertasListQueryKey(fazendaId, baseListParams), "infinite"],
+    enabled: fazendaId > 0,
+    pageSize: ALERTAS_PAGE_SIZE,
+    queryFn: ({ pageParam }) =>
+      listAlertas(fazendaId, { ...baseListParams, offset: pageParam }),
+    getItemsFromPage: (page) => page.alertas,
+    getTotalFromPage: (page) => page.total,
+    resetDeps: [filterKey],
+  });
+
+  const { isDesktop } = mobileInfinite;
+
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: alertasListQueryKey(fazendaId, listParams),
     queryFn: () => listAlertas(fazendaId, listParams),
-    enabled: fazendaId > 0,
+    enabled: fazendaId > 0 && isDesktop,
   });
+
+  const alertas = isDesktop
+    ? (data?.alertas ?? [])
+    : mobileInfinite.items;
+  const total = isDesktop ? (data?.total ?? 0) : mobileInfinite.total;
+
+  const isLoadingList =
+    isDesktop
+      ? isLoading
+      : mobileInfinite.isLoading && mobileInfinite.items.length === 0;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["alertas", fazendaId] });
@@ -105,15 +134,17 @@ export function useAlertasPage() {
     fazendaAtiva,
     fazendaId,
     animais,
-    alertas: data?.alertas ?? [],
-    total: data?.total ?? 0,
-    isLoading,
+    alertas,
+    total,
+    isLoading: isLoadingList,
     isFetching,
     error,
     refetch,
     offset,
     setOffset,
     pageSize: ALERTAS_PAGE_SIZE,
+    isDesktop,
+    mobileInfinite,
     filters,
     hasActiveFilters: hasActiveAlertasFilters(filters),
     setStatusFilter: (status: string) => setFilter("status", status),

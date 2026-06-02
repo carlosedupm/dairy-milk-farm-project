@@ -25,6 +25,9 @@ import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { canRegistrarProducao } from "@/config/appAccess";
 import { useFilterSync } from "@/hooks/useFilterSync";
+import { useMobileInfiniteList } from "@/hooks/useMobileInfiniteList";
+import { MobileInfiniteListFooter } from "@/components/layout/list/MobileInfiniteListFooter";
+import type { ProducaoLeite } from "@/services/producao";
 import { formatListCountSuffix } from "@/lib/filter-url";
 import {
   emptyProducaoFilterState,
@@ -117,17 +120,45 @@ function ProducaoContent() {
     enabled: listEnabled,
   });
 
-  const filterKey = `${filters.start}|${filters.end}|${pageSize}|${filters.lactacao_id}`;
+  const filterKey = `${filters.start}|${filters.end}|${pageSize}|${filters.lactacao_id}|${fazendaId}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
     setOffset(0);
   }
 
+  const mobileInfinite = useMobileInfiniteList<
+    ProducaoLeite,
+    { items: ProducaoLeite[]; total: number }
+  >({
+    queryKey: [
+      "producao",
+      "infinite",
+      fazendaId,
+      dateFilterActive ? filters.start : null,
+      dateFilterActive ? filters.end : null,
+      lactacaoId ?? null,
+    ],
+    enabled: listEnabled,
+    pageSize,
+    queryFn: async () => ({ items: [], total: 0 }),
+    clientPages: {
+      items,
+      isLoading: !fazendaReady || isLoading,
+    },
+    getItemsFromPage: (page) => page.items,
+    getTotalFromPage: (page) => page.total,
+    resetDeps: [filterKey],
+  });
+
+  const { isDesktop } = mobileInfinite;
+
   const paginatedItems = useMemo(
     () => items.slice(offset, offset + pageSize),
     [items, offset, pageSize],
   );
+
+  const displayItems = isDesktop ? paginatedItems : mobileInfinite.items;
 
   const filtersActive = hasActiveProducaoFilters(filters) || hasActiveFilters;
 
@@ -196,13 +227,19 @@ function ProducaoContent() {
             />
 
             <QueryListContent
-              isLoading={!fazendaReady || isLoading}
+              isLoading={
+                !fazendaReady ||
+                isLoading ||
+                (!isDesktop &&
+                  mobileInfinite.isLoading &&
+                  mobileInfinite.items.length === 0)
+              }
               error={error}
               errorFallback="Erro ao carregar registros de produção. Tente novamente."
               onRetry={() => void refetch()}
             >
               <ProducaoTable
-                items={paginatedItems}
+                items={displayItems}
                 fazendaId={fazendaId}
                 showAnimal
                 lactacoesById={lactacoesById}
@@ -218,14 +255,24 @@ function ProducaoContent() {
             </QueryListContent>
 
             {items.length > 0 ? (
-              <ListPaginationBar
-                total={items.length}
-                pageSize={pageSize}
-                offset={offset}
-                pageSizeOptions={[...PAGE_SIZE_OPTIONS]}
-                onPageSizeChange={setPageSize}
-                onOffsetChange={setOffset}
-              />
+              <>
+                <ListPaginationBar
+                  className="hidden md:flex"
+                  total={items.length}
+                  pageSize={pageSize}
+                  offset={offset}
+                  pageSizeOptions={[...PAGE_SIZE_OPTIONS]}
+                  onPageSizeChange={setPageSize}
+                  onOffsetChange={setOffset}
+                />
+                <MobileInfiniteListFooter
+                  sentinelRef={mobileInfinite.sentinelRef}
+                  isFetchingNextPage={mobileInfinite.isFetchingNextPage}
+                  allLoaded={mobileInfinite.allLoaded}
+                  total={mobileInfinite.total}
+                  hasItems={displayItems.length > 0}
+                />
+              </>
             ) : null}
           </div>
         )}

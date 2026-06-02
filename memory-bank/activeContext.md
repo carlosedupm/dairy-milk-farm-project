@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Scroll infinito mobile nas listagens (t_ds_007)**: `useMobileInfiniteList` + `MobileInfiniteListFooter`/`MobileInfiniteListSkeleton`; `/animais` (API + modo em lactação client), `/alertas`, `/producao`, `/gestao/coberturas` (client slice); desktop mantém `ListPaginationBar` (`hidden md:flex`); coberturas com paginação desktop nova.
 1. ✅ **Toolbar filtros avançados + URL-sync (t_ds_006)**: hook **`useFilterSync`**; **`ResponsiveFiltersShell`** (Dialog &lt; md); 11 listagens com toolbar — novas em cios, partos, secagens, lactações, gestações, fazendas; URL-sync em animais, produção, alertas, coberturas, toques; título `(N de M)`; validação `YYYY-MM-DD` e `start ≤ end`; drill-down gestações preservado.
 1. ✅ **Ficha animal — layout tabs + sidebar (BR-ANIMAIS-008)**: `/animais/[id]` com 4 tabs (Visão Geral, Saúde, Produção, Histórico), sidebar fixa de resumo, breadcrumb contextual, URLs `?tab=`, redirects `/saude` e `/producao`; Radix Tabs; hook `useAnimalFichaPage`; lazy fetch saúde/produção.
 1. ✅ **Header responsivo — busca, drawer e a11y (t_ux responsive)**: `Header.tsx` &lt; 100 linhas (~91); subcomponentes `HeaderBrand`, `HeaderNav`, `HeaderActions`, `HeaderBuscaTrigger`, `HeaderMobileBar`, `HeaderBanners`; `useHeaderScrollState` (sticky + blur/sombra + `safe-area-inset-top`); `useAdaptiveSearch` (Popover desktop / Dialog mobile); drawer com animação CSS 300ms, `safe-area-inset-bottom`, `aria-expanded`/`aria-controls` no hamburger, retorno de foco via `onCloseAutoFocus`; busca com ARIA no input e foco de retorno ao fechar overlay.
@@ -243,5 +244,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-01 (t_ds_006 — useFilterSync + toolbars URL-sync nas 11 listagens)
+**Última atualização**: 2026-06-01 (t_ds_007 — scroll infinito mobile; paginação desktop nas listagens principais)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP
