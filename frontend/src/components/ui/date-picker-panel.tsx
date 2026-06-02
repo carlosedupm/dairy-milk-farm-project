@@ -9,9 +9,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import {
   composeLocalDatetimeString,
+  defaultDatetimeParts,
   parseValueToDatetimeParts,
   type DatetimeParts,
-} from "@/components/ui/datetime-picker-pt-br";
+} from "@/lib/datetime-input";
 import { parseISODateLocal, todayISODate } from "@/lib/date-limits";
 
 export type DatePickerPanelMode = "date" | "datetime";
@@ -44,17 +45,6 @@ const nativeSelectClassName = cn(
 
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
-}
-
-function defaultParts(): DatetimeParts {
-  const n = new Date();
-  return {
-    year: n.getFullYear(),
-    month: n.getMonth() + 1,
-    day: n.getDate(),
-    hour: n.getHours(),
-    minute: n.getMinutes(),
-  };
 }
 
 /** Corpo do picker: calendário + hora/min (sem portal Radix aninhado). */
@@ -107,7 +97,7 @@ export function DatePickerPanel({
   const parts = React.useMemo(
     () =>
       mode === "datetime"
-        ? (parseValueToDatetimeParts(value) ?? defaultParts())
+        ? (parseValueToDatetimeParts(value) ?? defaultDatetimeParts())
         : null,
     [mode, value]
   );

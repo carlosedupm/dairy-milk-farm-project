@@ -289,8 +289,8 @@ export function ProducaoForm({
             </p>
           ) : null}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="dataHora">Data/Hora</Label>
               <DateTimePickerPtBr
                 id="dataHora"

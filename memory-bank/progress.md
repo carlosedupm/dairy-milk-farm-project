@@ -720,6 +720,10 @@
 - ✅ **useAnimaisMap**: Garantia de array iterável (`Array.isArray(data) ? data : []`) para evitar "animais is not iterable" em rotas como `/gestao/toques`
 - ✅ **Assistente Virtual (modo Live)**: Resposta exibida como texto puro (sem ReactMarkdown), sem negrito a partir de `*`; usuário não precisa "falar" asterisco; TTS e visual consistentes
 
+### **2026-06-02 - DateTimePicker unificado**
+
+- ✅ **DateTimePickerUnificado**: compõe `DatePickerUnificado` + selects nativos inline hora (0–23) / minuto (0–59); utilitários em `lib/datetime-input.ts` (clamp, `maxDateTime`, validação datetime futuro); valor `YYYY-MM-DDTHH:mm`; `DateTimePickerPtBr` re-exporta; produção, cio, cobertura, parto e toque atualizados automaticamente; mobile (`min-h-[44px]`, grid responsivo).
+
 ### **2026-06-02 - DatePicker unificado**
 
 - ✅ **DatePickerUnificado**: input com máscara `DD/MM/AAAA` + calendário em Dialog em todos os breakpoints; utilitários em `lib/date-input.ts`; validação inline (incompleta, inválida, fora de `minDate`/`maxDate`); a11y (`aria-label`, `aria-invalid`, `aria-describedby`); mobile (`inputMode="numeric"`, alvos 44px); `DatePicker` re-exporta o componente unificado.
@@ -880,6 +884,6 @@
 
 ---
 
-**Última atualização**: 2026-06-02 (DatePicker unificado — máscara DD/MM/AAAA)
+**Última atualização**: 2026-06-02 (DateTimePicker unificado — input data + selects inline hora/minuto)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2
