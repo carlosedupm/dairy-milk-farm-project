@@ -12,6 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
 import {
+  minDatePartoFromGestacao,
+  resolveGestacaoForParto,
+} from "@/lib/gestao-date-limits";
+import { GestaoDateMinHint } from "@/components/gestao/GestaoDateMinHint";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -57,6 +62,16 @@ type Props = {
   includeCriasRepeater?: boolean;
   preserveSelected?: boolean;
 };
+
+export function usePartoMinDate(
+  gestacoes: Gestacao[],
+  gestacaoId: string
+): string | undefined {
+  return useMemo(() => {
+    const gestacao = resolveGestacaoForParto(gestacoes, gestacaoId);
+    return minDatePartoFromGestacao(gestacao);
+  }, [gestacoes, gestacaoId]);
+}
 
 export function PartoFormFields({
   fazendaId,
@@ -104,6 +119,7 @@ export function PartoFormFields({
   const dataError = useFormFieldError("data");
   const numeroCriasError = useFormFieldError("numeroCrias");
   const allFieldErrors = useFormFieldErrors();
+  const minDate = usePartoMinDate(gestacoesSafe, formState.gestacaoId);
 
   return (
     <>
@@ -124,8 +140,13 @@ export function PartoFormFields({
           id="parto-data-hora"
           value={formState.data}
           maxDate={todayISODate()}
+          minDate={minDate}
           onChange={(v) => setFormState((s) => ({ ...s, data: v }))}
           placeholder="Selecione data e hora"
+        />
+        <GestaoDateMinHint
+          minDate={minDate}
+          prefix="Data mínima: confirmação da gestação em"
         />
         <FormFieldError message={dataError} />
       </div>

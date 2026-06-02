@@ -13,12 +13,14 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   PartoFormFields,
+  usePartoMinDate,
   type PartoFormState,
 } from "@/components/gestao/PartoFormFields";
 import {
   getApiErrorConformidadeCode,
   getApiErrorMessage,
 } from "@/lib/errors";
+import { todayISODate } from "@/lib/date-limits";
 import { validatePartoForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
@@ -60,6 +62,8 @@ function NovoContent() {
     queryFn: () => listGestacoesByFazenda(fazendaId),
     enabled: fazendaId > 0,
   });
+
+  const minDate = usePartoMinDate(gestacoes, formState.gestacaoId);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -129,7 +133,10 @@ function NovoContent() {
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
-    const validation = validatePartoForm(formState);
+    const validation = validatePartoForm(formState, {
+      minDate,
+      maxDate: todayISODate(),
+    });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");

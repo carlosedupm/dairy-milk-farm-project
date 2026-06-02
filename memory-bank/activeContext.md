@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **DatePicker unificado — formulários de gestão**: `lib/gestao-date-limits.ts` (min/max temporais, mensagens PT); `SecagemFormFields` e `LactacaoFormFields` extraídos; cobertura/toque/parto/cio/secagem/lactação com `DatePicker`/`DateTimePickerPtBr` (compõe `DatePickerUnificado`), `minDate` dinâmico contextual, `GestaoDateMinHint`, validação client em `validate*Form`; clamp `minDate`/`maxDate` em `datetime-picker-unificado.tsx`.
 1. ✅ **DateTimePicker unificado (data + hora)**: `DateTimePickerUnificado` (`datetime-picker-unificado.tsx`) — compõe `DatePickerUnificado` (máscara DD/MM/AAAA + calendário) + selects nativos inline hora/minuto; utilitários em `lib/datetime-input.ts` (clamp, `maxDateTime`, validação datetime futuro); `DateTimePickerPtBr` re-exporta o componente; 6 call sites (produção, cio, cobertura, parto, toque) ganham UX sem Dialog para hora; a11y e mobile (`min-h-[44px]`, `text-base`).
 1. ✅ **DatePicker unificado (DD/MM/AAAA)**: `DatePickerUnificado` (`date-picker-unificado.tsx`) — input com máscara automática + calendário em Dialog; utilitários em `lib/date-input.ts` (validação incompleta/inválida/fora do range); `DatePicker` re-exporta o componente unificado; prop `manualInput` removida dos call sites; a11y (`aria-label`, `aria-invalid`, `aria-describedby`); mobile (`inputMode="numeric"`, alvos 44px).
 1. ✅ **Scroll infinito mobile nas listagens (t_ds_007)**: `useMobileInfiniteList` + `MobileInfiniteListFooter`/`MobileInfiniteListSkeleton`; `/animais` (API + modo em lactação client), `/alertas`, `/producao`, `/gestao/coberturas` (client slice); desktop mantém `ListPaginationBar` (`hidden md:flex`); coberturas com paginação desktop nova.
@@ -246,5 +247,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-02 (DateTimePicker unificado — input data + selects inline hora/minuto)
+**Última atualização**: 2026-06-02 (DatePicker unificado — formulários de gestão com minDate contextual)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP

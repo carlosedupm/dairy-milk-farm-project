@@ -5,6 +5,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import {
   clampDatetimeToMax,
+  clampDatetimeToMin,
   composeLocalDatetimeString,
   datetimeInputErrorMessage,
   defaultDatetimeParts,
@@ -81,11 +82,12 @@ export function DateTimePickerUnificado({
 
   React.useEffect(() => {
     if (!value.trim()) return;
-    const clamped = clampDatetimeToMax(value, cap);
-    if (clamped !== value) {
-      onChange(clamped);
+    let next = clampDatetimeToMin(value, minDate);
+    next = clampDatetimeToMax(next, cap);
+    if (next !== value) {
+      onChange(next);
     }
-  }, [value, cap, onChange]);
+  }, [value, cap, minDate, onChange]);
 
   const emitChange = React.useCallback(
     (next: string) => {
@@ -95,7 +97,8 @@ export function DateTimePickerUnificado({
         return;
       }
 
-      const clamped = clampDatetimeToMax(next, cap);
+      let clamped = clampDatetimeToMin(next, minDate);
+      clamped = clampDatetimeToMax(clamped, cap);
       const validation = validateDatetime(clamped, {
         minDate,
         maxDate,

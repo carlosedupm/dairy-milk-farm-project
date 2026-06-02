@@ -724,6 +724,11 @@
 
 - ✅ **DateTimePickerUnificado**: compõe `DatePickerUnificado` + selects nativos inline hora (0–23) / minuto (0–59); utilitários em `lib/datetime-input.ts` (clamp, `maxDateTime`, validação datetime futuro); valor `YYYY-MM-DDTHH:mm`; `DateTimePickerPtBr` re-exporta; produção, cio, cobertura, parto e toque atualizados automaticamente; mobile (`min-h-[44px]`, grid responsivo).
 
+### **2026-06-02 - DatePicker unificado — formulários de gestão**
+
+- ✅ **`lib/gestao-date-limits.ts`**: helpers `minDate` por evento (cio, cobertura+15d, gestação, lactação); mensagens PT em `GESTAO_DATE_MESSAGES`.
+- ✅ **FormFields**: `SecagemFormFields`, `LactacaoFormFields`; cobertura/toque/parto/cio com `DateTimePickerPtBr` + `minDate`/`maxDate`; `GestaoDateMinHint`; validação submit em `validate*Form`; clamp `minDate` em `datetime-picker-unificado.tsx`.
+
 ### **2026-06-02 - DatePicker unificado**
 
 - ✅ **DatePickerUnificado**: input com máscara `DD/MM/AAAA` + calendário em Dialog em todos os breakpoints; utilitários em `lib/date-input.ts`; validação inline (incompleta, inválida, fora de `minDate`/`maxDate`); a11y (`aria-label`, `aria-invalid`, `aria-describedby`); mobile (`inputMode="numeric"`, alvos 44px); `DatePicker` re-exporta o componente unificado.

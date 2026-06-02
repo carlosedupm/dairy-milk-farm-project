@@ -19,6 +19,7 @@ import {
   getApiErrorConformidadeCode,
   getApiErrorMessage,
 } from "@/lib/errors";
+import { todayISODate } from "@/lib/date-limits";
 import { validateCioForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
@@ -98,7 +99,7 @@ function NovoContent() {
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
-    const validation = validateCioForm(formState);
+    const validation = validateCioForm(formState, { maxDate: todayISODate() });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");

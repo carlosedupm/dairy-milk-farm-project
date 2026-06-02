@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
+import { GestaoDateMinHint } from "@/components/gestao/GestaoDateMinHint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormFieldError } from "@/components/ui/form-field-error";
@@ -11,6 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
+import {
+  minDateToqueFromCobertura,
+  resolveCoberturaForToque,
+} from "@/lib/gestao-date-limits";
 import {
   Select,
   SelectContent,
@@ -52,6 +58,21 @@ type Props = {
   preserveSelected?: boolean;
 };
 
+export function useToqueMinDate(
+  coberturasDoAnimal: Cobertura[],
+  coberturaId: string,
+  coberturaSelectValue: string
+): string | undefined {
+  return useMemo(() => {
+    const cobertura = resolveCoberturaForToque(
+      coberturasDoAnimal,
+      coberturaId,
+      coberturaSelectValue
+    );
+    return minDateToqueFromCobertura(cobertura);
+  }, [coberturasDoAnimal, coberturaId, coberturaSelectValue]);
+}
+
 function obsSugestoesFor(classificacao: ClassificacaoOperacional): readonly string[] {
   if (classificacao === "VAZIA" || classificacao === "VAZIA_PEV") {
     return OBS_SUGESTOES_VAZIA;
@@ -80,6 +101,11 @@ export function ToqueFormFields({
   const dataError = useFormFieldError("data");
   const classificacaoError = useFormFieldError("classificacao");
   const coberturaIdError = useFormFieldError("coberturaId");
+  const minDate = useToqueMinDate(
+    coberturasDoAnimal,
+    formState.coberturaId,
+    coberturaSelectValue
+  );
 
   return (
     <>
@@ -102,8 +128,13 @@ export function ToqueFormFields({
           id="toque-data-hora"
           value={formState.data}
           maxDate={todayISODate()}
+          minDate={minDate}
           onChange={(data) => setFormState((s) => ({ ...s, data }))}
           placeholder="Selecione data e hora"
+        />
+        <GestaoDateMinHint
+          minDate={minDate}
+          prefix="Data mínima: 15 dias após a cobertura de"
         />
         <FormFieldError message={dataError} />
       </div>

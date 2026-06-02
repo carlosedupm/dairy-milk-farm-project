@@ -13,12 +13,14 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   PartoFormFields,
+  usePartoMinDate,
   type PartoFormState,
 } from "@/components/gestao/PartoFormFields";
 import {
   getApiErrorConformidadeCode,
   getApiErrorMessage,
 } from "@/lib/errors";
+import { todayISODate } from "@/lib/date-limits";
 import { validatePartoForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { toDatetimeLocalInputValue } from "@/lib/format";
@@ -68,6 +70,7 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
   });
 
   const racaMae = (animalMatriz?.raca ?? "").trim();
+  const minDate = usePartoMinDate(gestacoes, formState.gestacaoId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -97,7 +100,11 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
-    const validation = validatePartoForm(formState, { skipCrias: true });
+    const validation = validatePartoForm(formState, {
+      skipCrias: true,
+      minDate,
+      maxDate: todayISODate(),
+    });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");

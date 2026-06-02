@@ -9,20 +9,27 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
-import { AnimalSelect } from "@/components/animais/AnimalSelect";
-import { DatePicker } from "@/components/ui/date-picker";
-import { FormFieldError } from "@/components/ui/form-field-error";
-import { todayISODate } from "@/lib/date-limits";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  LactacaoFormFields,
+  type LactacaoFormState,
+} from "@/components/gestao/LactacaoFormFields";
 import {
   getApiErrorConformidadeCode,
   getApiErrorMessage,
 } from "@/lib/errors";
+import { todayISODate } from "@/lib/date-limits";
 import { validateLactacaoForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
 import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
+
+function emptyFormState(animalId = ""): LactacaoFormState {
+  return {
+    animalId,
+    numeroLactacao: "1",
+    dataInicio: new Date().toISOString().slice(0, 10),
+  };
+}
 
 function NovoContent() {
   const router = useRouter();
@@ -30,9 +37,9 @@ function NovoContent() {
     useGestaoNovoUrlParams();
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
-  const [animalId, setAnimalId] = useState(preselectedAnimalId);
-  const [numeroLactacao, setNumeroLactacao] = useState("1");
-  const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
+  const [formState, setFormState] = useState<LactacaoFormState>(() =>
+    emptyFormState(preselectedAnimalId)
+  );
   const [formError, setFormError] = useState("");
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
@@ -43,15 +50,15 @@ function NovoContent() {
   const mutation = useMutation({
     mutationFn: () =>
       create({
-        animal_id: Number(animalId),
-        numero_lactacao: Math.max(1, parseInt(numeroLactacao, 10) || 1),
-        data_inicio: dataInicio,
+        animal_id: Number(formState.animalId),
+        numero_lactacao: Math.max(1, parseInt(formState.numeroLactacao, 10) || 1),
+        data_inicio: formState.dataInicio,
         fazenda_id: fazendaAtiva!.id,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lactacoes", fazendaAtiva?.id] });
       toast.success("Lactação registada");
-      const aid = Number(animalId);
+      const aid = Number(formState.animalId);
       router.push(
         gestaoNovoSuccessPath(aid > 0 ? String(aid) : "", "/gestao/lactacoes"),
       );
@@ -75,7 +82,10 @@ function NovoContent() {
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
-    const validation = validateLactacaoForm({ animalId, dataInicio });
+    const validation = validateLactacaoForm(
+      { animalId: formState.animalId, dataInicio: formState.dataInicio },
+      { maxDate: todayISODate() }
+    );
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
@@ -108,36 +118,12 @@ function NovoContent() {
       isValidationError={isValidationError}
       fieldErrors={fieldErrors}
     >
-      <AnimalSelect
+      <LactacaoFormFields
         fazendaId={fazendaId}
-        cicloContext="lactacao"
+        formState={formState}
+        setFormState={setFormState}
         preserveSelected={hasPreselectedAnimal}
-        value={animalId}
-        onValueChange={setAnimalId}
-        label="Animal"
-        placeholder="Selecione"
-        femeasOnly
-        error={fieldErrors.animalId}
       />
-      <div>
-        <Label>Número da lactação</Label>
-        <Input
-          type="number"
-          min={1}
-          value={numeroLactacao}
-          onChange={(e) => setNumeroLactacao(e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Data de início</Label>
-        <DatePicker
-          value={dataInicio}
-          onChange={setDataInicio}
-          maxDate={todayISODate()}
-          placeholder="Selecione a data"
-        />
-        <FormFieldError message={fieldErrors.dataInicio} />
-      </div>
     </GestaoFormLayout>
   );
 }

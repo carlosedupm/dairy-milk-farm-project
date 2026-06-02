@@ -11,6 +11,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   CoberturaFormFields,
+  useCoberturaMinDate,
   type CoberturaFormState,
 } from "@/components/gestao/CoberturaFormFields";
 import { GestaoEditarBloqueadoGuard } from "@/components/gestao/GestaoEditarBloqueadoGuard";
@@ -18,6 +19,7 @@ import {
   getApiErrorConformidadeCode,
   getApiErrorMessage,
 } from "@/lib/errors";
+import { todayISODate } from "@/lib/date-limits";
 import { validateCoberturaForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { toDatetimeLocalInputValue } from "@/lib/format";
@@ -47,6 +49,7 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const minDate = useCoberturaMinDate(formState.animalId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -77,7 +80,10 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
-    const validation = validateCoberturaForm(formState);
+    const validation = validateCoberturaForm(formState, {
+      minDate,
+      maxDate: todayISODate(),
+    });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");

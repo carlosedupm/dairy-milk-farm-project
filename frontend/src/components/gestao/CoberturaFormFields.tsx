@@ -6,7 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { applyAnimalProfileFilters } from "@/components/animais/animalSelectUtils";
 import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
+import { GestaoDateMinHint } from "@/components/gestao/GestaoDateMinHint";
 import { get as getAnimal } from "@/services/animais";
+import { listByAnimal as listCiosByAnimal } from "@/services/cios";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +16,7 @@ import { FormFieldError } from "@/components/ui/form-field-error";
 import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
+import { minDateCoberturaFromCios } from "@/lib/gestao-date-limits";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -40,6 +43,16 @@ type Props = {
   preserveSelected?: boolean;
 };
 
+export function useCoberturaMinDate(animalId: string): string | undefined {
+  const animalIdNum = Number(animalId);
+  const { data: cios = [] } = useQuery({
+    queryKey: ["cios", "by-animal", animalIdNum],
+    queryFn: () => listCiosByAnimal(animalIdNum),
+    enabled: animalIdNum > 0,
+  });
+  return minDateCoberturaFromCios(cios);
+}
+
 export function CoberturaFormFields({
   fazendaId,
   formState,
@@ -50,6 +63,7 @@ export function CoberturaFormFields({
   const animalIdError = useFormFieldError("animalId");
   const dataError = useFormFieldError("data");
   const touroError = useFormFieldError("touro");
+  const minDate = useCoberturaMinDate(formState.animalId);
 
   const { data: animaisFazenda = [], isLoading: loadingAnimais } =
     useAnimaisOperacionalList(fazendaId);
@@ -145,8 +159,13 @@ export function CoberturaFormFields({
           id="cobertura-data-hora"
           value={formState.data}
           maxDate={todayISODate()}
+          minDate={minDate}
           onChange={(v) => setFormState((s) => ({ ...s, data: v }))}
           placeholder="Selecione data e hora"
+        />
+        <GestaoDateMinHint
+          minDate={minDate}
+          prefix="Data mínima: após o cio de"
         />
         <FormFieldError message={dataError} />
       </div>

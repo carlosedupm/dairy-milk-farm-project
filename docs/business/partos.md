@@ -48,7 +48,7 @@ Registro de **parto** da matriz, opcionalmente com **crias** no mesmo POST, aber
 
 - **Enunciado**: `data` não futura; ≥ entrada/nascimento; se `gestacao_id`, ≥ `data_confirmacao` da gestação — BR-CICLO-012–014 (TMP-001, TMP-002, TMP-004).
 - **Efeito**: bloqueio no servidor (400).
-- **Implementação**: `PartoService` + `ciclo_integridade_temporal.go`; `PartoFormFields` com `maxDate` agora.
+- **Implementação**: `PartoService` + `ciclo_integridade_temporal.go`; `PartoFormFields` com `DateTimePickerPtBr` (`maxDate=hoje`, `minDate` = `data_confirmacao` da gestação vinculada); validação client em `validatePartoForm`.
 - **Estado**: implementado.
 
 ### BR-PARTOS-007 — Lista elegível no formulário
@@ -60,4 +60,4 @@ Registro de **parto** da matriz, opcionalmente com **crias** no mesmo POST, aber
 
 ---
 
-**Última atualização**: 2026-05-30 (BR-PARTOS-007 — lista elegível)
+**Última atualização**: 2026-06-02 (BR-PARTOS-006 — minDate UI gestão)

@@ -12,12 +12,14 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   ToqueFormFields,
+  useToqueMinDate,
   type ToqueFormState,
 } from "@/components/gestao/ToqueFormFields";
 import {
   getApiErrorConformidadeCode,
   getApiErrorMessage,
 } from "@/lib/errors";
+import { todayISODate } from "@/lib/date-limits";
 import { validateToqueForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { invalidateAnimalTimeline } from "@/services/animais";
@@ -92,6 +94,12 @@ function NovoContent() {
       : "";
   }, [formState.coberturaId, coberturasDoAnimal]);
 
+  const minDate = useToqueMinDate(
+    coberturasDoAnimal,
+    formState.coberturaId,
+    coberturaSelectValue
+  );
+
   const mutation = useMutation({
     mutationFn: () => {
       const coberturaIdNum = precisaCobertura ? Number(coberturaSelectValue) : 0;
@@ -151,12 +159,15 @@ function NovoContent() {
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
-    const validation = validateToqueForm({
-      animalId: formState.animalId,
-      data: formState.data,
-      classificacao: formState.classificacao,
-      coberturaId: coberturaSelectValue,
-    });
+    const validation = validateToqueForm(
+      {
+        animalId: formState.animalId,
+        data: formState.data,
+        classificacao: formState.classificacao,
+        coberturaId: coberturaSelectValue,
+      },
+      { minDate, maxDate: todayISODate() }
+    );
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");

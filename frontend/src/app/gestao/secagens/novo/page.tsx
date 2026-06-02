@@ -9,19 +9,27 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
-import { AnimalSelect } from "@/components/animais/AnimalSelect";
-import { DatePicker } from "@/components/ui/date-picker";
-import { FormFieldError } from "@/components/ui/form-field-error";
-import { todayISODate } from "@/lib/date-limits";
-import { Label } from "@/components/ui/label";
+import {
+  SecagemFormFields,
+  useSecagemMinDate,
+  type SecagemFormState,
+} from "@/components/gestao/SecagemFormFields";
 import {
   getApiErrorConformidadeCode,
   getApiErrorMessage,
 } from "@/lib/errors";
+import { todayISODate } from "@/lib/date-limits";
 import { validateSecagemForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
 import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
+
+function emptyFormState(animalId = ""): SecagemFormState {
+  return {
+    animalId,
+    data: new Date().toISOString().slice(0, 10),
+  };
+}
 
 function NovoContent() {
   const router = useRouter();
@@ -29,26 +37,28 @@ function NovoContent() {
     useGestaoNovoUrlParams();
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
-  const [animalId, setAnimalId] = useState(preselectedAnimalId);
-  const [dataSecagem, setDataSecagem] = useState(new Date().toISOString().slice(0, 10));
+  const [formState, setFormState] = useState<SecagemFormState>(() =>
+    emptyFormState(preselectedAnimalId)
+  );
   const [formError, setFormError] = useState("");
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
+  const minDate = useSecagemMinDate(formState.animalId);
 
   const mutation = useMutation({
     mutationFn: () =>
       create({
-        animal_id: Number(animalId),
-        data_secagem: dataSecagem,
+        animal_id: Number(formState.animalId),
+        data_secagem: formState.data,
         fazenda_id: fazendaAtiva!.id,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["secagens", fazendaAtiva?.id] });
       toast.success("Secagem registada");
-      const aid = Number(animalId);
+      const aid = Number(formState.animalId);
       router.push(
         gestaoNovoSuccessPath(aid > 0 ? String(aid) : "", "/gestao/secagens"),
       );
@@ -72,10 +82,10 @@ function NovoContent() {
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
-    const validation = validateSecagemForm({
-      animalId,
-      data: dataSecagem,
-    });
+    const validation = validateSecagemForm(
+      { animalId: formState.animalId, data: formState.data },
+      { minDate, maxDate: todayISODate() }
+    );
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
@@ -108,27 +118,12 @@ function NovoContent() {
       isValidationError={isValidationError}
       fieldErrors={fieldErrors}
     >
-      <AnimalSelect
+      <SecagemFormFields
         fazendaId={fazendaId}
-        cicloContext="secagem"
+        formState={formState}
+        setFormState={setFormState}
         preserveSelected={hasPreselectedAnimal}
-        value={animalId}
-        onValueChange={setAnimalId}
-        label="Animal"
-        placeholder="Selecione"
-        femeasOnly
-        error={fieldErrors.animalId}
       />
-      <div className="space-y-2">
-        <Label>Data da secagem</Label>
-        <DatePicker
-          value={dataSecagem}
-          onChange={setDataSecagem}
-          maxDate={todayISODate()}
-          placeholder="Selecione a data"
-        />
-        <FormFieldError message={fieldErrors.data} />
-      </div>
     </GestaoFormLayout>
   );
 }

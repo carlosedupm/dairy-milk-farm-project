@@ -3,6 +3,12 @@ import type { CoberturaFormState } from "@/components/gestao/CoberturaFormFields
 import type { CioFormState } from "@/components/gestao/CioFormFields";
 import type { PartoFormState } from "@/components/gestao/PartoFormFields";
 import type { AnimalSaudeFormState } from "@/components/animais/AnimalSaudeFormFields";
+import {
+  GESTAO_DATE_MESSAGES,
+  isIsoDateAfterMax,
+  isIsoDateBeforeMin,
+} from "@/lib/gestao-date-limits";
+import { todayISODate } from "@/lib/date-limits";
 
 export type FieldErrors = Partial<Record<string, string>>;
 
@@ -71,14 +77,22 @@ export function validateProducaoForm(input: ProducaoFormInput): FormValidationRe
 }
 
 export function validateCoberturaForm(
-  formState: CoberturaFormState
+  formState: CoberturaFormState,
+  options?: { minDate?: string; maxDate?: string }
 ): FormValidationResult {
   const fields: FieldErrors = {};
+  const maxDate = options?.maxDate ?? todayISODate();
   if (!formState.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!formState.data.trim()) {
     fields.data = "Informe a data e hora da cobertura.";
+  } else {
+    if (isIsoDateBeforeMin(formState.data, options?.minDate)) {
+      fields.data = GESTAO_DATE_MESSAGES.coberturaAfterCio;
+    } else if (isIsoDateAfterMax(formState.data, maxDate)) {
+      fields.data = GESTAO_DATE_MESSAGES.datetimeFuture;
+    }
   }
   if (formState.tipo === "MONTA_NATURAL") {
     const hasReprodutor =
@@ -92,13 +106,19 @@ export function validateCoberturaForm(
   return valid();
 }
 
-export function validateCioForm(formState: CioFormState): FormValidationResult {
+export function validateCioForm(
+  formState: CioFormState,
+  options?: { maxDate?: string }
+): FormValidationResult {
   const fields: FieldErrors = {};
+  const maxDate = options?.maxDate ?? todayISODate();
   if (!formState.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!formState.dataDetectado.trim()) {
     fields.dataDetectado = "Informe a data e hora do cio.";
+  } else if (isIsoDateAfterMax(formState.dataDetectado, maxDate)) {
+    fields.dataDetectado = GESTAO_DATE_MESSAGES.datetimeFuture;
   }
   if (Object.keys(fields).length > 0) return invalid(fields);
   return valid();
@@ -106,14 +126,21 @@ export function validateCioForm(formState: CioFormState): FormValidationResult {
 
 export function validatePartoForm(
   formState: PartoFormState,
-  options?: { skipCrias?: boolean }
+  options?: { skipCrias?: boolean; minDate?: string; maxDate?: string }
 ): FormValidationResult {
   const fields: FieldErrors = {};
+  const maxDate = options?.maxDate ?? todayISODate();
   if (!formState.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!formState.data.trim()) {
     fields.data = "Informe a data e hora do parto.";
+  } else {
+    if (isIsoDateBeforeMin(formState.data, options?.minDate)) {
+      fields.data = GESTAO_DATE_MESSAGES.partoAfterGestacao;
+    } else if (isIsoDateAfterMax(formState.data, maxDate)) {
+      fields.data = GESTAO_DATE_MESSAGES.datetimeFuture;
+    }
   }
   if (options?.skipCrias) {
     if (Object.keys(fields).length > 0) return invalid(fields);
@@ -145,13 +172,23 @@ export type ToqueFormInput = {
   coberturaId: string;
 };
 
-export function validateToqueForm(input: ToqueFormInput): FormValidationResult {
+export function validateToqueForm(
+  input: ToqueFormInput,
+  options?: { minDate?: string; maxDate?: string }
+): FormValidationResult {
   const fields: FieldErrors = {};
+  const maxDate = options?.maxDate ?? todayISODate();
   if (!input.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!input.data.trim()) {
     fields.data = "Informe a data e hora do toque.";
+  } else {
+    if (isIsoDateBeforeMin(input.data, options?.minDate)) {
+      fields.data = GESTAO_DATE_MESSAGES.toqueAfterCobertura;
+    } else if (isIsoDateAfterMax(input.data, maxDate)) {
+      fields.data = GESTAO_DATE_MESSAGES.datetimeFuture;
+    }
   }
   if (!input.classificacao.trim()) {
     fields.classificacao = "Selecione a classificação operacional.";
@@ -163,31 +200,47 @@ export function validateToqueForm(input: ToqueFormInput): FormValidationResult {
   return valid();
 }
 
-export function validateLactacaoForm(input: {
-  animalId: string;
-  dataInicio: string;
-}): FormValidationResult {
+export function validateLactacaoForm(
+  input: {
+    animalId: string;
+    dataInicio: string;
+  },
+  options?: { maxDate?: string }
+): FormValidationResult {
   const fields: FieldErrors = {};
+  const maxDate = options?.maxDate ?? todayISODate();
   if (!input.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!input.dataInicio.trim()) {
     fields.dataInicio = "Informe a data de início.";
+  } else if (isIsoDateAfterMax(input.dataInicio, maxDate)) {
+    fields.dataInicio = GESTAO_DATE_MESSAGES.dateFuture;
   }
   if (Object.keys(fields).length > 0) return invalid(fields);
   return valid();
 }
 
-export function validateSecagemForm(input: {
-  animalId: string;
-  data: string;
-}): FormValidationResult {
+export function validateSecagemForm(
+  input: {
+    animalId: string;
+    data: string;
+  },
+  options?: { minDate?: string; maxDate?: string }
+): FormValidationResult {
   const fields: FieldErrors = {};
+  const maxDate = options?.maxDate ?? todayISODate();
   if (!input.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!input.data.trim()) {
     fields.data = "Informe a data da secagem.";
+  } else {
+    if (isIsoDateBeforeMin(input.data, options?.minDate)) {
+      fields.data = GESTAO_DATE_MESSAGES.secagemAfterLactacao;
+    } else if (isIsoDateAfterMax(input.data, maxDate)) {
+      fields.data = GESTAO_DATE_MESSAGES.dateFuture;
+    }
   }
   if (Object.keys(fields).length > 0) return invalid(fields);
   return valid();

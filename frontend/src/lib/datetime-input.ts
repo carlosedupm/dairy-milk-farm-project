@@ -72,6 +72,16 @@ export function clampDatetimeToMax(value: string, cap?: string): string {
   return value > cap ? cap : value;
 }
 
+/** Ajusta valor abaixo de minDate (parte civil) para o início do dia mínimo. */
+export function clampDatetimeToMin(value: string, minDate?: string): string {
+  if (!minDate || !value.trim()) return value;
+  const parts = parseValueToDatetimeParts(value);
+  if (!parts) return value;
+  const dayIso = toDayIso(parts);
+  if (dayIso >= minDate) return value;
+  return `${minDate}T00:00`;
+}
+
 export function getAvailableHours(
   parts: DatetimeParts,
   cap?: string

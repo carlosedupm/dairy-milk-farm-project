@@ -44,7 +44,7 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 
 - **Enunciado**: `data` não futura; ≥ entrada/nascimento; se `cio_id`, ≥ data do cio — [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-012–014 (TMP-001 a TMP-003).
 - **Efeito**: bloqueio no servidor (400).
-- **Implementação**: `CoberturaService` + `ciclo_integridade_temporal.go`; `CoberturaFormFields` com `maxDate` agora.
+- **Implementação**: `CoberturaService` + `ciclo_integridade_temporal.go`; `CoberturaFormFields` com `DateTimePickerPtBr` (`maxDate=hoje`, `minDate` após cio do animal via `lib/gestao-date-limits.ts`); validação client em `validateCoberturaForm`.
 - **Estado**: implementado.
 
 ### BR-COBERTURAS-006 — Lista elegível no formulário
@@ -60,4 +60,4 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 
 ---
 
-**Última atualização**: 2026-05-30 (BR-COBERTURAS-006 — lista elegível)
+**Última atualização**: 2026-06-02 (BR-COBERTURAS-005 — minDate UI gestão)

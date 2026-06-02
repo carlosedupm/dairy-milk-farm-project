@@ -37,16 +37,16 @@ Ciclo de **lactação** por animal, normalmente aberto automaticamente no parto.
 
 - **Enunciado**: `data_inicio` não futura nem anterior à entrada/nascimento — BR-CICLO-012–013 (TMP-001, TMP-002).
 - **Efeito**: bloqueio no servidor (400).
-- **Implementação**: `LactacaoService` + `ciclo_integridade_temporal.go`; `/gestao/lactacoes/novo` com `maxDate=hoje`.
+- **Implementação**: `LactacaoService` + `ciclo_integridade_temporal.go`; `LactacaoFormFields` com `DatePicker` (`maxDate=hoje`); validação client em `validateLactacaoForm`.
 - **Estado**: implementado.
 
 ### BR-LACTACAO-006 — Lista elegível para abertura manual
 
 - **Enunciado**: `GET /api/v1/fazendas/:id/animais/para-abertura-lactacao` retorna fêmeas no rebanho **sem** lactação ativa; UI usa `AnimalSelect` com `cicloContext="lactacao"`.
 - **Efeito**: alinhado a BR-LACTACAO-002 na listagem do formulário `/gestao/lactacoes/novo`.
-- **Implementação**: `AnimalRepository.ListParaAberturaLactacaoByFazendaID`.
+- **Implementação**: `AnimalRepository.ListParaAberturaLactacaoByFazendaID`; `LactacaoFormFields`.
 - **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
 
 ---
 
-**Última atualização**: 2026-05-30 (BR-LACTACAO-006 — lista elegível)
+**Última atualização**: 2026-06-02 (BR-LACTACAO-005 — LactacaoFormFields)

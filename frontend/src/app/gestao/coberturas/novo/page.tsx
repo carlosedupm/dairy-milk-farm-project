@@ -12,12 +12,14 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   CoberturaFormFields,
+  useCoberturaMinDate,
   type CoberturaFormState,
 } from "@/components/gestao/CoberturaFormFields";
 import {
   getApiErrorConformidadeCode,
   getApiErrorMessage,
 } from "@/lib/errors";
+import { todayISODate } from "@/lib/date-limits";
 import { validateCoberturaForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
@@ -50,6 +52,7 @@ function NovoContent() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
+  const minDate = useCoberturaMinDate(formState.animalId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -102,7 +105,10 @@ function NovoContent() {
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
-    const validation = validateCoberturaForm(formState);
+    const validation = validateCoberturaForm(formState, {
+      minDate,
+      maxDate: todayISODate(),
+    });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
