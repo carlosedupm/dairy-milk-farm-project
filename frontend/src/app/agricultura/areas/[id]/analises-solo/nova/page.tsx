@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getArea, createAnaliseSolo } from "@/services/agricultura";
@@ -19,7 +19,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
+import {
+  resolveAnaliseSoloColetaLimits,
+  resolveAnaliseSoloResultadoLimits,
+} from "@/lib/agricultura-date-limits";
+import { DatePickerUnificado } from "@/components/ui/date-picker";
 import { FormFieldError } from "@/components/ui/form-field-error";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 
@@ -41,6 +45,12 @@ function NovaAnaliseSoloContent() {
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  const coletaLimits = useMemo(() => resolveAnaliseSoloColetaLimits(), []);
+  const resultadoLimits = useMemo(
+    () => resolveAnaliseSoloResultadoLimits(dataColeta),
+    [dataColeta]
+  );
 
   const { data: area } = useQuery({
     queryKey: ["areas", areaId],
@@ -78,7 +88,10 @@ function NovaAnaliseSoloContent() {
     setIsValidationError(false);
     setFieldErrors({});
 
-    const validation = validateAnaliseSoloForm({ dataColeta });
+    const validation = validateAnaliseSoloForm({
+      dataColeta,
+      dataResultado: dataResultado,
+    });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
@@ -128,22 +141,26 @@ function NovaAnaliseSoloContent() {
           ) : null}
           <div>
             <Label htmlFor="data_coleta">Data da coleta *</Label>
-            <DatePicker
+            <DatePickerUnificado
               id="data_coleta"
               value={dataColeta || undefined}
               onChange={setDataColeta}
               placeholder="Data da coleta"
+              maxDate={coletaLimits.maxDate}
             />
             <FormFieldError message={fieldErrors.dataColeta} />
           </div>
           <div>
             <Label htmlFor="data_resultado">Data do resultado (opcional)</Label>
-            <DatePicker
+            <DatePickerUnificado
               id="data_resultado"
               value={dataResultado || undefined}
               onChange={setDataResultado}
               placeholder="Data do resultado"
+              minDate={resultadoLimits.minDate}
+              maxDate={resultadoLimits.maxDate}
             />
+            <FormFieldError message={fieldErrors.dataResultado} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

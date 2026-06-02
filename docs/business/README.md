@@ -55,6 +55,12 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 | Leite — descarte / laboratório | [leite-restricoes.md](./leite-restricoes.md) | ✅ |
 | Baixa do rebanho | [baixa-rebanho.md](./baixa-rebanho.md) | ✅ |
 
+### Agricultura
+
+| Módulo | Arquivo | Regras | Estado |
+|--------|---------|--------|--------|
+| **Agricultura (safras, custos, solo)** | [agricultura.md](./agricultura.md) | `BR-AGRI-001`–`004` | ✅ |
+
 ### Operação e plataforma
 
 | Módulo | Arquivo | Estado do catálogo |
@@ -66,4 +72,4 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 
 ---
 
-**Última atualização**: 2026-05-29 (Onda 3.3: índice ciclo → saúde → alertas → auditoria)
+**Última atualização**: 2026-06-02 (catálogo agricultura — limites de data nos formulários)

@@ -4,6 +4,12 @@ import type { CioFormState } from "@/components/gestao/CioFormFields";
 import type { PartoFormState } from "@/components/gestao/PartoFormFields";
 import type { AnimalSaudeFormState } from "@/components/animais/AnimalSaudeFormFields";
 import {
+  AGRICULTURA_DATE_MESSAGES,
+  resolveColheitaDateLimits,
+  resolvePlantioDateLimits,
+  type SafraCulturaDateRange,
+} from "@/lib/agricultura-date-limits";
+import {
   GESTAO_DATE_MESSAGES,
   isIsoDateAfterMax,
   isIsoDateBeforeMin,
@@ -378,53 +384,171 @@ export function validateFornecedorForm(input: { nome: string }): FormValidationR
   return valid();
 }
 
-export function validateAnaliseSoloForm(input: {
-  dataColeta: string;
+function validateAgriculturaIsoDate(
+  fields: FieldErrors,
+  fieldKey: string,
+  value: string,
+  options: {
+    required?: boolean;
+    requiredMessage?: string;
+    minDate?: string;
+    maxDate?: string;
+    beforeMinMessage?: string;
+    afterMaxMessage?: string;
+  }
+): void {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    if (options.required) {
+      fields[fieldKey] =
+        options.requiredMessage ?? "Informe a data.";
+    }
+    return;
+  }
+  const maxDate = options.maxDate ?? todayISODate();
+  if (isIsoDateAfterMax(trimmed, maxDate)) {
+    fields[fieldKey] =
+      options.afterMaxMessage ?? AGRICULTURA_DATE_MESSAGES.dateFuture;
+  } else if (isIsoDateBeforeMin(trimmed, options.minDate)) {
+    fields[fieldKey] =
+      options.beforeMinMessage ?? AGRICULTURA_DATE_MESSAGES.dateOutsideSafra;
+  }
+}
+
+export function validateSafraCulturaForm(input: {
+  ano: number;
+  dataPlantio: string;
+  dataColheita: string;
 }): FormValidationResult {
   const fields: FieldErrors = {};
-  if (!input.dataColeta.trim()) {
-    fields.dataColeta = "Informe a data da coleta.";
+  const plantioLimits = resolvePlantioDateLimits(
+    input.ano,
+    input.dataColheita || undefined
+  );
+  const colheitaLimits = resolveColheitaDateLimits(
+    input.ano,
+    input.dataPlantio || undefined
+  );
+
+  if (input.dataPlantio.trim()) {
+    validateAgriculturaIsoDate(fields, "dataPlantio", input.dataPlantio, {
+      minDate: plantioLimits.minDate,
+      maxDate: plantioLimits.maxDate,
+      beforeMinMessage: AGRICULTURA_DATE_MESSAGES.plantioTooOld,
+      afterMaxMessage: AGRICULTURA_DATE_MESSAGES.dateFuture,
+    });
   }
+
+  if (input.dataColheita.trim()) {
+    validateAgriculturaIsoDate(fields, "dataColheita", input.dataColheita, {
+      minDate: colheitaLimits.minDate,
+      maxDate: colheitaLimits.maxDate,
+      afterMaxMessage: AGRICULTURA_DATE_MESSAGES.dateFuture,
+    });
+    if (
+      input.dataPlantio.trim() &&
+      input.dataColheita.slice(0, 10) < input.dataPlantio.slice(0, 10)
+    ) {
+      fields.dataColheita = AGRICULTURA_DATE_MESSAGES.colheitaBeforePlantio;
+    }
+  }
+
   if (Object.keys(fields).length > 0) return invalid(fields);
   return valid();
 }
 
-export function validateCustoAgriculturaForm(input: {
-  valor: string;
-  data: string;
+export function validateAnaliseSoloForm(input: {
+  dataColeta: string;
+  dataResultado?: string;
 }): FormValidationResult {
+  const fields: FieldErrors = {};
+  const today = todayISODate();
+
+  validateAgriculturaIsoDate(fields, "dataColeta", input.dataColeta, {
+    required: true,
+    requiredMessage: "Informe a data da coleta.",
+    maxDate: today,
+    afterMaxMessage: AGRICULTURA_DATE_MESSAGES.dateFuture,
+  });
+
+  const resultado = input.dataResultado?.trim() ?? "";
+  if (resultado) {
+    const minDate = input.dataColeta.trim().slice(0, 10) || undefined;
+    validateAgriculturaIsoDate(fields, "dataResultado", resultado, {
+      minDate,
+      maxDate: today,
+      beforeMinMessage:
+        "A data do resultado deve ser igual ou posterior à data da coleta.",
+      afterMaxMessage: AGRICULTURA_DATE_MESSAGES.dateFuture,
+    });
+  }
+
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
+export function validateCustoAgriculturaForm(
+  input: {
+    valor: string;
+    data: string;
+  },
+  options?: { safraRange?: SafraCulturaDateRange }
+): FormValidationResult {
   const fields: FieldErrors = {};
   const valor = parseFloat(input.valor);
   if (!input.valor.trim() || isNaN(valor) || valor < 0) {
     fields.valor = "Informe um valor válido (≥ 0).";
   }
-  if (!input.data.trim()) {
-    fields.data = "Informe a data do custo.";
-  }
+  validateAgriculturaIsoDate(fields, "data", input.data, {
+    required: true,
+    requiredMessage: "Informe a data do custo.",
+    minDate: options?.safraRange?.minDate,
+    maxDate: options?.safraRange?.maxDate,
+  });
   if (Object.keys(fields).length > 0) return invalid(fields);
   return valid();
 }
 
-export function validateProducaoAgriculturaForm(input: {
-  quantidadeKg: string;
-}): FormValidationResult {
+export function validateProducaoAgriculturaForm(
+  input: {
+    quantidadeKg: string;
+    data: string;
+  },
+  options?: { safraRange?: SafraCulturaDateRange }
+): FormValidationResult {
   const fields: FieldErrors = {};
   const qtd = parseFloat(input.quantidadeKg);
   if (!input.quantidadeKg.trim() || isNaN(qtd) || qtd <= 0) {
     fields.quantidadeKg = "Quantidade deve ser maior que zero.";
   }
+  validateAgriculturaIsoDate(fields, "data", input.data, {
+    required: true,
+    requiredMessage: "Informe a data da produção.",
+    minDate: options?.safraRange?.minDate,
+    maxDate: options?.safraRange?.maxDate,
+  });
   if (Object.keys(fields).length > 0) return invalid(fields);
   return valid();
 }
 
-export function validateReceitaAgriculturaForm(input: {
-  valor: string;
-}): FormValidationResult {
+export function validateReceitaAgriculturaForm(
+  input: {
+    valor: string;
+    data: string;
+  },
+  options?: { safraRange?: SafraCulturaDateRange }
+): FormValidationResult {
   const fields: FieldErrors = {};
   const valor = parseFloat(input.valor);
   if (!input.valor.trim() || isNaN(valor) || valor < 0) {
     fields.valor = "Informe um valor válido (≥ 0).";
   }
+  validateAgriculturaIsoDate(fields, "data", input.data, {
+    required: true,
+    requiredMessage: "Informe a data da receita.",
+    minDate: options?.safraRange?.minDate,
+    maxDate: options?.safraRange?.maxDate,
+  });
   if (Object.keys(fields).length > 0) return invalid(fields);
   return valid();
 }

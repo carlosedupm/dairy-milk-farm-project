@@ -720,6 +720,11 @@
 - ✅ **useAnimaisMap**: Garantia de array iterável (`Array.isArray(data) ? data : []`) para evitar "animais is not iterable" em rotas como `/gestao/toques`
 - ✅ **Assistente Virtual (modo Live)**: Resposta exibida como texto puro (sem ReactMarkdown), sem negrito a partir de `*`; usuário não precisa "falar" asterisco; TTS e visual consistentes
 
+### **2026-06-02 - DatePicker unificado — formulários de agricultura**
+
+- ✅ **`lib/agricultura-date-limits.ts`**: `resolveSafraCulturaDateRange`, limites plantio/colheita por ano, análise de solo ≤ hoje; mensagens em `AGRICULTURA_DATE_MESSAGES`; testes Vitest.
+- ✅ **5 formulários**: `CreateSafraCulturaDialog`, custo/produção/receita por safra, nova análise de solo — `DatePickerUnificado` + validação submit alinhada ao picker; catálogo `docs/business/agricultura.md`.
+
 ### **2026-06-02 - DateTimePicker unificado**
 
 - ✅ **DateTimePickerUnificado**: compõe `DatePickerUnificado` + selects nativos inline hora (0–23) / minuto (0–59); utilitários em `lib/datetime-input.ts` (clamp, `maxDateTime`, validação datetime futuro); valor `YYYY-MM-DDTHH:mm`; `DateTimePickerPtBr` re-exporta; produção, cio, cobertura, parto e toque atualizados automaticamente; mobile (`min-h-[44px]`, grid responsivo).

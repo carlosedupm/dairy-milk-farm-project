@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSafraCultura, createCusto, listFornecedoresByFazenda } from "@/services/agricultura";
@@ -19,7 +19,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/date-picker";
+import { resolveSafraCulturaDateRange } from "@/lib/agricultura-date-limits";
+import { DatePickerUnificado } from "@/components/ui/date-picker";
 import { FormFieldError } from "@/components/ui/form-field-error";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -49,6 +50,8 @@ function NovoCustoContent() {
     queryFn: () => getSafraCultura(safraCulturaId),
     enabled: !Number.isNaN(safraCulturaId),
   });
+
+  const safraRange = useMemo(() => resolveSafraCulturaDateRange(sc), [sc]);
 
   const { data: fornecedores = [] } = useQuery({
     queryKey: ["fornecedores", fazendaAtiva?.id],
@@ -87,7 +90,10 @@ function NovoCustoContent() {
     setIsValidationError(false);
     setFieldErrors({});
 
-    const validation = validateCustoAgriculturaForm({ valor, data });
+    const validation = validateCustoAgriculturaForm(
+      { valor, data },
+      { safraRange }
+    );
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
@@ -176,11 +182,13 @@ function NovoCustoContent() {
           </div>
           <div>
             <Label htmlFor="data">Data *</Label>
-            <DatePicker
+            <DatePickerUnificado
               id="data"
               value={data}
               onChange={setData}
               placeholder="Data do custo"
+              minDate={safraRange.minDate}
+              maxDate={safraRange.maxDate}
             />
             <FormFieldError message={fieldErrors.data} />
           </div>

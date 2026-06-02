@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **DatePicker unificado — formulários de agricultura**: 5 call sites com `DatePickerUnificado` + `lib/agricultura-date-limits.ts` (plantio ≤5 anos, movimentos no período da safra, solo ≤ hoje); `validateSafraCulturaForm` e validadores de custo/produção/receita/análise de solo com range; testes Vitest; `docs/business/agricultura.md` (`BR-AGRI-001`–`004`).
 1. ✅ **DatePicker unificado — formulários de gestão (t_ux_010, RF01–RF06)**: 6× `*FormFields` importam `DatePickerUnificado` / `DateTimePickerUnificado`; `lib/gestao-date-limits.ts` + testes `npm run test:unit`; parto infere `minDate` da gestação `CONFIRMADA` do animal sem vínculo manual (`resolveGestacaoForPartoMinDate`); `GestaoDateMinHint`, `validate*Form` pt-BR; QA `tsc` + `lint` OK.
 1. ✅ **DateTimePicker unificado (data + hora)**: `DateTimePickerUnificado` (`datetime-picker-unificado.tsx`) — compõe `DatePickerUnificado` (máscara DD/MM/AAAA + calendário) + selects nativos inline hora/minuto; utilitários em `lib/datetime-input.ts` (clamp, `maxDateTime`, validação datetime futuro); `DateTimePickerPtBr` re-exporta o componente; 6 call sites (produção, cio, cobertura, parto, toque) ganham UX sem Dialog para hora; a11y e mobile (`min-h-[44px]`, `text-base`).
 1. ✅ **DatePicker unificado (DD/MM/AAAA)**: `DatePickerUnificado` (`date-picker-unificado.tsx`) — input com máscara automática + calendário em Dialog; utilitários em `lib/date-input.ts` (validação incompleta/inválida/fora do range); `DatePicker` re-exporta o componente unificado; prop `manualInput` removida dos call sites; a11y (`aria-label`, `aria-invalid`, `aria-describedby`); mobile (`inputMode="numeric"`, alvos 44px).
@@ -247,5 +248,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-02 (DatePicker unificado — formulários de gestão com minDate contextual)
+**Última atualização**: 2026-06-02 (DatePicker unificado — formulários de agricultura com minDate/maxDate contextual)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP

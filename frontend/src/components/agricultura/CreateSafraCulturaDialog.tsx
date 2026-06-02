@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createSafraCultura } from "@/services/agricultura";
 import {
@@ -8,6 +8,11 @@ import {
   getApiErrorMessage,
   parsePrefixedConformidadeMessage,
 } from "@/lib/errors";
+import {
+  resolveColheitaDateLimits,
+  resolvePlantioDateLimits,
+} from "@/lib/agricultura-date-limits";
+import { validateSafraCulturaForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -19,7 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePickerUnificado } from "@/components/ui/date-picker";
+import { FormFieldError } from "@/components/ui/form-field-error";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -45,7 +51,29 @@ export function CreateSafraCulturaDialog({
   const [dataColheita, setDataColheita] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [formError, setFormError] = useState("");
+  const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  const plantioLimits = useMemo(
+    () => resolvePlantioDateLimits(ano, dataColheita || undefined),
+    [ano, dataColheita]
+  );
+  const colheitaLimits = useMemo(
+    () => resolveColheitaDateLimits(ano, dataPlantio || undefined),
+    [ano, dataPlantio]
+  );
+
+  const handlePlantioChange = (value: string) => {
+    setDataPlantio(value);
+    if (
+      dataColheita &&
+      value &&
+      dataColheita.slice(0, 10) < value.slice(0, 10)
+    ) {
+      setDataColheita("");
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -68,10 +96,12 @@ export function CreateSafraCulturaDialog({
       setDataColheita("");
       setObservacoes("");
       setFormError("");
+      setFieldErrors({});
     },
     onError: (err: unknown) => {
       setFormError(getApiErrorMessage(err, "Erro ao criar safra/cultura."));
       setConformidadeCode(getApiErrorConformidadeCode(err));
+      setIsValidationError(false);
     },
   });
 
@@ -79,6 +109,8 @@ export function CreateSafraCulturaDialog({
     if (!next) {
       setFormError("");
       setConformidadeCode(undefined);
+      setIsValidationError(false);
+      setFieldErrors({});
       createMutation.reset();
     }
     onOpenChange(next);
@@ -87,6 +119,21 @@ export function CreateSafraCulturaDialog({
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
+    setIsValidationError(false);
+    setFieldErrors({});
+
+    const validation = validateSafraCulturaForm({
+      ano,
+      dataPlantio,
+      dataColheita,
+    });
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+
     createMutation.mutate();
   };
 
@@ -105,6 +152,7 @@ export function CreateSafraCulturaDialog({
             <FormValidationAlert
               message={displayMessage}
               conformidadeCode={displayCode}
+              isValidation={isValidationError}
             />
           ) : null}
           <div>
@@ -135,21 +183,31 @@ export function CreateSafraCulturaDialog({
           </div>
           <div>
             <Label htmlFor="data_plantio">Data do plantio (opcional)</Label>
-            <DatePicker
+            <DatePickerUnificado
               id="data_plantio"
               value={dataPlantio || undefined}
-              onChange={setDataPlantio}
+              onChange={handlePlantioChange}
               placeholder="Data do plantio"
+              minDate={plantioLimits.minDate}
+              maxDate={plantioLimits.maxDate}
+              minYear={plantioLimits.minYear}
+              maxYear={plantioLimits.maxYear}
             />
+            <FormFieldError message={fieldErrors.dataPlantio} />
           </div>
           <div>
             <Label htmlFor="data_colheita">Data da colheita (opcional)</Label>
-            <DatePicker
+            <DatePickerUnificado
               id="data_colheita"
               value={dataColheita || undefined}
               onChange={setDataColheita}
               placeholder="Data da colheita"
+              minDate={colheitaLimits.minDate}
+              maxDate={colheitaLimits.maxDate}
+              minYear={colheitaLimits.minYear}
+              maxYear={colheitaLimits.maxYear}
             />
+            <FormFieldError message={fieldErrors.dataColheita} />
           </div>
           <div>
             <Label htmlFor="observacoes">Observações (opcional)</Label>
