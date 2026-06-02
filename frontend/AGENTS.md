@@ -31,7 +31,7 @@ frontend/src/
 
 Ao criar ou alterar página, listagem ou formulário:
 
-1. **Data**: `DatePicker` (não `Input type="date"`); data+hora → `DateTimePickerPtBr`.
+1. **Data**: `DatePicker` / `DatePickerUnificado` (input `DD/MM/AAAA` + calendário; não `Input type="date"`); data+hora → `DateTimePickerPtBr`.
 2. **Animal**: `AnimalSelect` — operacional (`useAnimaisOperacionalList`) ou **`cicloContext`** em forms de ciclo (`useAnimaisCicloContext`).
 3. **Erros e sucesso**: validação client → `FormFieldError` no campo + `FormValidationAlert` no topo do form (`isValidation` quando aplicável); API → `getApiErrorMessage` + `getApiErrorConformidadeCode`; sucesso → `toast.success` / `toast.info` / `toast.warning` via `hooks/use-toast.ts` (`useToast()` ou `toast`); ver [`docs/design-system/form-patterns.md`](../docs/design-system/form-patterns.md).
 4. **Listagem com ações**: `ResponsiveListContainer`, `MobileListCard`, `ListRowActionsMenu`, `DeleteRecordDialog`, `QueryListContent`, `ListPaginationBar`.

@@ -720,11 +720,15 @@
 - ✅ **useAnimaisMap**: Garantia de array iterável (`Array.isArray(data) ? data : []`) para evitar "animais is not iterable" em rotas como `/gestao/toques`
 - ✅ **Assistente Virtual (modo Live)**: Resposta exibida como texto puro (sem ReactMarkdown), sem negrito a partir de `*`; usuário não precisa "falar" asterisco; TTS e visual consistentes
 
+### **2026-06-02 - DatePicker unificado**
+
+- ✅ **DatePickerUnificado**: input com máscara `DD/MM/AAAA` + calendário em Dialog em todos os breakpoints; utilitários em `lib/date-input.ts`; validação inline (incompleta, inválida, fora de `minDate`/`maxDate`); a11y (`aria-label`, `aria-invalid`, `aria-describedby`); mobile (`inputMode="numeric"`, alvos 44px); `DatePicker` re-exporta o componente unificado.
+
 ### **2026-05-06 - Animais: usabilidade de datas históricas**
 
 - ✅ **DatePicker com entrada manual**: suporte a digitação com autoformatação `DD/MM/AAAA` (usuário pode focar em digitar os números), conversão para `YYYY-MM-DD`, validação de data inválida e manutenção de compatibilidade com `onChange`.
 - ✅ **Navegação rápida de ano**: calendário do DatePicker configurado com dropdown de anos (faixa configurável), reduzindo cliques para datas antigas.
-- ✅ **Formulário de Animal**: campos `data_nascimento`, `data_entrada` e `data_saida` em novo/editar animal usando modo manual (`manualInput`) para acelerar registros retroativos.
+- ✅ **Formulário de Animal**: campos `data_nascimento`, `data_entrada` e `data_saida` em novo/editar animal com digitação rápida para registros retroativos.
 - ✅ **Correção de offset de fuso em data pura**: `formatDatePtBr` no frontend passou a tratar `YYYY-MM-DD` sem deslocamento de timezone (evita exibir/gravar um dia anterior em cenários como `01/01/2022` → `31/12/2021`).
 
 ### **2026-05-06 - Gestão Pecuária: animal automático da cria**
@@ -876,6 +880,6 @@
 
 ---
 
-**Última atualização**: 2026-06-01 (t_ds_007 — scroll infinito mobile nas listagens principais)
+**Última atualização**: 2026-06-02 (DatePicker unificado — máscara DD/MM/AAAA)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

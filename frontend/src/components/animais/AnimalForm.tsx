@@ -269,7 +269,6 @@ export function AnimalForm({
                   onChange={(v) => setDataNascimento(v)}
                   maxDate={todayISODate()}
                   placeholder="Selecione a data"
-                  manualInput
                 />
                 <FormFieldError message={fieldErrors.dataNascimento} />
               </div>
@@ -289,7 +288,6 @@ export function AnimalForm({
                 onChange={(v) => setDataEntrada(v)}
                 maxDate={todayISODate()}
                 placeholder="Selecione a data"
-                manualInput
               />
             </div>
           </div>

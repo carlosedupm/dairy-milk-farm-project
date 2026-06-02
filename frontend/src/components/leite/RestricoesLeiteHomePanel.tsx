@@ -420,7 +420,6 @@ export function RestricoesLeiteHomePanel() {
                 value={inicioEm || undefined}
                 onChange={(v) => setInicioEm(v)}
                 maxDate={todayISODate()}
-                manualInput
               />
               <p className="text-xs text-muted-foreground">
                 Se vazio, usa a data de hoje.
@@ -491,7 +490,6 @@ export function RestricoesLeiteHomePanel() {
                 <DatePicker
                   value={liberadoEm || undefined}
                   onChange={(v) => setLiberadoEm(v)}
-                  manualInput
                 />
                 <p className="text-xs text-muted-foreground">
                   Se vazio, usa hoje.

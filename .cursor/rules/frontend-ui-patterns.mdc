@@ -12,7 +12,7 @@ Consulte [`memory-bank/systemPatterns.md`](../../memory-bank/systemPatterns.md) 
 
 | Situação | ❌ Não | ✅ Sim |
 |---|---|---|
-| Campo só data | `Input type="date"` | `DatePicker` (`YYYY-MM-DD`) |
+| Campo só data | `Input type="date"` | `DatePicker` / `DatePickerUnificado` — input `DD/MM/AAAA` + calendário (`YYYY-MM-DD`) |
 | Data+hora (parto, cio, produção) | `.slice(0,16)` em ISO | `DateTimePickerPtBr` + `toDatetimeLocalInputValue` |
 | Animal da fazenda | `Input type="number"` (ID) | `AnimalSelect`; listagem operacional (`useAnimaisOperacionalList`) ou **`cicloContext`** em forms de ciclo (`useAnimaisCicloContext`) |
 | Erro em form (validação ou API) | `<p className="text-destructive">` só no campo ou só no fim | `FormFieldError` inline + `FormValidationAlert` no topo + `getApiErrorMessage` / `validate*` em `lib/form-validation.ts` |

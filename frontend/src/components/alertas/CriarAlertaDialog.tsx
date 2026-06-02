@@ -204,7 +204,6 @@ export function CriarAlertaDialog({
               onChange={(dataPrevista) =>
                 setForm((f) => ({ ...f, dataPrevista }))
               }
-              manualInput
             />
           </div>
         </div>
