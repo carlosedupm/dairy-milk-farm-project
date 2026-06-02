@@ -190,6 +190,7 @@ export function DateTimePickerUnificado({
             minDate={minDate}
             maxDate={maxDate}
             ariaLabel={dateAriaLabel}
+            showConfirmationMessage={false}
           />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:contents">

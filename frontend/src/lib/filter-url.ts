@@ -19,6 +19,18 @@ export function isValidYmd(value: string): boolean {
   );
 }
 
+/** Lê um param de URL como YYYY-MM-DD válido; senão string vazia. */
+export function parseYmdParam(raw: string | null | undefined): string {
+  const trimmed = raw?.trim() ?? "";
+  return isValidYmd(trimmed) ? trimmed : "";
+}
+
+/** Grava na URL só YMD válido; inválido/vazio → omitir param. */
+export function serializeYmdParam(value: string): string | null {
+  const trimmed = value.trim();
+  return isValidYmd(trimmed) ? trimmed : null;
+}
+
 /** Retorna par válido ou null se inválido/incompleto ou start > end. */
 export function parseDateRange(
   start: string | null | undefined,

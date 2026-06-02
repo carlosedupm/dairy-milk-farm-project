@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import type { Animal } from "@/services/animais";
 import { countActiveCoberturaUrlFilters } from "@/lib/coberturas-filter";
+import { parseDateRange } from "@/lib/filter-url";
 
 const ALL_TIPOS = "__all__";
 
@@ -126,11 +127,11 @@ export function coberturasFilterStateToParams(
   startDate?: string;
   endDate?: string;
 } {
-  const dateFilterActive = Boolean(state.start && state.end);
+  const range = parseDateRange(state.start, state.end);
   return {
     animalId: state.animal_id ? Number(state.animal_id) : undefined,
     tipo: state.tipo !== ALL_TIPOS ? state.tipo : undefined,
-    startDate: dateFilterActive ? state.start : undefined,
-    endDate: dateFilterActive ? state.end : undefined,
+    startDate: range?.start,
+    endDate: range?.end,
   };
 }

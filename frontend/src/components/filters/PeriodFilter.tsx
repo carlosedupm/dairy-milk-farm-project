@@ -48,6 +48,7 @@ export function PeriodFilter({
           onChange={(nextStart) => onChange({ start: nextStart, end })}
           placeholder={startPlaceholder}
           className={pickerClassName}
+          showConfirmationMessage={false}
         />
       </div>
       <div className="space-y-2 min-w-0">
@@ -58,6 +59,7 @@ export function PeriodFilter({
           onChange={(nextEnd) => onChange({ start, end: nextEnd })}
           placeholder={endPlaceholder}
           className={pickerClassName}
+          showConfirmationMessage={false}
         />
         <FormFieldError message={orderError} />
       </div>

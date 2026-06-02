@@ -10,13 +10,13 @@ import {
   type TipoAlerta,
 } from "@/services/alertas";
 import type { FilterFieldDef } from "@/hooks/useFilterSync";
-import { parseDateRange, parseOptionalString } from "@/lib/filter-url";
+import { parseOptionalString, serializeYmdParam } from "@/lib/filter-url";
 import {
   getDefaultServerListPeriod,
   isDefaultServerListPeriod,
   parseServerListPeriodEnd,
   parseServerListPeriodStart,
-  resolveServerListPeriod,
+  resolveServerListPeriodForApi,
 } from "@/lib/period-filter";
 
 export const ALERTAS_FILTER_ALL = "__all__";
@@ -112,20 +112,14 @@ export const alertasFilterFields: FilterFieldDef<AlertasFilterState>[] = [
     key: "start",
     param: "start",
     parse: (raw, params) => parseServerListPeriodStart(raw, params),
-    serialize: (value, state) => {
-      const range = parseDateRange(value, state.end);
-      return range?.start ?? null;
-    },
+    serialize: (value) => serializeYmdParam(value),
     isDefault: (value) => value === getDefaultServerListPeriod().start,
   },
   {
     key: "end",
     param: "end",
     parse: (raw, params) => parseServerListPeriodEnd(raw, params),
-    serialize: (value, state) => {
-      const range = parseDateRange(state.start, value);
-      return range?.end ?? null;
-    },
+    serialize: (value) => serializeYmdParam(value),
     isDefault: (value) => value === getDefaultServerListPeriod().end,
   },
 ];
@@ -141,13 +135,12 @@ export function countActiveAlertasFilters(
   return count;
 }
 
-/** Envia start/end à API (período válido ou default 30 dias). */
+/** Envia start/end à API; null se ordem inválida (não consultar). */
 export function alertasPeriodToApiParams(
   start: string,
   end: string,
-): { start: string; end: string } {
-  const range = resolveServerListPeriod(start, end);
-  return { start: range.start, end: range.end };
+): { start: string; end: string } | null {
+  return resolveServerListPeriodForApi(start, end);
 }
 
 export function hasActiveAlertasFilters(

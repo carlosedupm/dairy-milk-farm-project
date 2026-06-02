@@ -1,5 +1,9 @@
 import { addDaysToISODate } from "@/lib/gestao-date-limits";
-import { isValidYmd, parseDateRange } from "@/lib/filter-url";
+import {
+  isValidYmd,
+  parseDateRange,
+  parseYmdParam,
+} from "@/lib/filter-url";
 import { formatLocalDateYmd } from "@/lib/resumoPecuarioLinks";
 
 /** Dias civis inclusivos no período padrão de listagens server-side. */
@@ -44,14 +48,34 @@ export function resolveServerListPeriod(
   return getDefaultServerListPeriod();
 }
 
+/**
+ * Período para consultas server-side (produção, alertas).
+ * Retorna null quando início > fim (UI inválida — não usar fallback silencioso).
+ */
+export function resolveServerListPeriodForApi(
+  start: string,
+  end: string,
+): PeriodRange | null {
+  if (getPeriodRangeOrderError(start, end)) return null;
+  const range = parseDateRange(start, end);
+  if (range) return range;
+  const s = start.trim();
+  const e = end.trim();
+  const hasStart = isValidYmd(s);
+  const hasEnd = isValidYmd(e);
+  if (hasStart !== hasEnd) return null;
+  if (!hasStart && !hasEnd) return getDefaultServerListPeriod();
+  return null;
+}
+
 /** Parse de `start` para useFilterSync (listagens server-side). */
 export function parseServerListPeriodStart(
   raw: string | null,
   params: URLSearchParams,
 ): string {
-  const range = parseDateRange(raw, params.get("end"));
-  if (range) return range.start;
-  if (!raw?.trim() && !params.get("end")?.trim()) {
+  const parsed = parseYmdParam(raw);
+  if (parsed) return parsed;
+  if (!parseYmdParam(params.get("end"))) {
     return getDefaultServerListPeriod().start;
   }
   return "";
@@ -62,9 +86,9 @@ export function parseServerListPeriodEnd(
   raw: string | null,
   params: URLSearchParams,
 ): string {
-  const range = parseDateRange(params.get("start"), raw);
-  if (range) return range.end;
-  if (!params.get("start")?.trim() && !raw?.trim()) {
+  const parsed = parseYmdParam(raw);
+  if (parsed) return parsed;
+  if (!parseYmdParam(params.get("start"))) {
     return getDefaultServerListPeriod().end;
   }
   return "";

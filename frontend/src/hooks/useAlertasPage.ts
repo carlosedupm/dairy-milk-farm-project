@@ -48,8 +48,13 @@ export function useAlertasPage() {
   const [offset, setOffset] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
 
+  const periodForApi = useMemo(
+    () => alertasPeriodToApiParams(filters.start, filters.end),
+    [filters.start, filters.end],
+  );
+
   const baseListParams = useMemo(() => {
-    const period = alertasPeriodToApiParams(filters.start, filters.end);
+    if (!periodForApi) return null;
     return {
       status:
         filters.status === ALERTAS_FILTER_ALL ? undefined : filters.status,
@@ -58,21 +63,22 @@ export function useAlertasPage() {
         filters.severidade === ALERTAS_FILTER_ALL
           ? undefined
           : filters.severidade,
-      ...period,
+      ...periodForApi,
       limit: ALERTAS_PAGE_SIZE,
     };
   }, [
     filters.status,
     filters.tipo,
     filters.severidade,
-    filters.start,
-    filters.end,
+    periodForApi,
   ]);
 
   const listParams = useMemo(
-    () => ({ ...baseListParams, offset }),
+    () => (baseListParams ? { ...baseListParams, offset } : null),
     [baseListParams, offset],
   );
+
+  const listQueryEnabled = fazendaId > 0 && listParams !== null;
 
   const filterKey = `${filters.status}|${filters.tipo}|${filters.severidade}|${filters.start}|${filters.end}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
@@ -82,11 +88,14 @@ export function useAlertasPage() {
   }
 
   const mobileInfinite = useMobileInfiniteList<Alerta, AlertasListResponse>({
-    queryKey: [...alertasListQueryKey(fazendaId, baseListParams), "infinite"],
-    enabled: fazendaId > 0,
+    queryKey: [
+      ...alertasListQueryKey(fazendaId, listParams ?? { limit: ALERTAS_PAGE_SIZE, offset: 0, start: "", end: "" }),
+      "infinite",
+    ],
+    enabled: listQueryEnabled,
     pageSize: ALERTAS_PAGE_SIZE,
     queryFn: ({ pageParam }) =>
-      listAlertas(fazendaId, { ...baseListParams, offset: pageParam }),
+      listAlertas(fazendaId, { ...listParams!, offset: pageParam }),
     getItemsFromPage: (page) => page.alertas,
     getTotalFromPage: (page) => page.total,
     resetDeps: [filterKey],
@@ -95,9 +104,12 @@ export function useAlertasPage() {
   const { isDesktop } = mobileInfinite;
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: alertasListQueryKey(fazendaId, listParams),
-    queryFn: () => listAlertas(fazendaId, listParams),
-    enabled: fazendaId > 0 && isDesktop,
+    queryKey: alertasListQueryKey(
+      fazendaId,
+      listParams ?? { limit: ALERTAS_PAGE_SIZE, offset: 0, start: "", end: "" },
+    ),
+    queryFn: () => listAlertas(fazendaId, listParams!),
+    enabled: listQueryEnabled && isDesktop,
   });
 
   const alertas = isDesktop

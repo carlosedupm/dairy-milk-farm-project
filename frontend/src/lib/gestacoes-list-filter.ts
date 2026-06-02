@@ -8,6 +8,8 @@ import {
   parseDateRange,
   parseOptionalInt,
   parseOptionalString,
+  parseYmdParam,
+  serializeYmdParam,
 } from "@/lib/filter-url";
 import type { FilterFieldDef } from "@/hooks/useFilterSync";
 import { isPartoPrevistoProximos7Dias } from "@/lib/gestacoesFilters";
@@ -118,27 +120,15 @@ export const gestacoesFilterFields: FilterFieldDef<GestacoesFilterState>[] = [
   {
     key: "start",
     param: "start",
-    parse: (raw, params) => {
-      const range = parseDateRange(raw, params.get("end"));
-      return range?.start ?? "";
-    },
-    serialize: (value, state) => {
-      const range = parseDateRange(value, state.end);
-      return range?.start ?? null;
-    },
+    parse: (raw) => parseYmdParam(raw),
+    serialize: (value) => serializeYmdParam(value),
     isDefault: (value) => value === "",
   },
   {
     key: "end",
     param: "end",
-    parse: (raw, params) => {
-      const range = parseDateRange(params.get("start"), raw);
-      return range?.end ?? "";
-    },
-    serialize: (value, state) => {
-      const range = parseDateRange(state.start, value);
-      return range?.end ?? null;
-    },
+    parse: (raw) => parseYmdParam(raw),
+    serialize: (value) => serializeYmdParam(value),
     isDefault: (value) => value === "",
   },
   {

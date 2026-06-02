@@ -24,9 +24,9 @@ export type DatePickerOverlayProps = {
 };
 
 const dialogContentClassName = cn(
-  "!flex w-[calc(100%-2rem)] max-w-md !flex-col gap-0 overflow-hidden !p-0",
+  /* !grid do DialogContent base → coluna flex para header + calendário + atalhos */
+  "!flex !grid-cols-none w-[calc(100%-2rem)] max-w-md !flex-col gap-0 overflow-hidden !p-0",
   "max-h-[min(92dvh,calc(100dvh-2rem))]",
-  /* Centrado com altura limitada — evita corte por translate quando o conteúdo é alto */
   "top-[50%] translate-x-[-50%] translate-y-[-50%]",
   "sm:rounded-lg"
 );

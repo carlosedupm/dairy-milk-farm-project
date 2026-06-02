@@ -162,15 +162,12 @@ export function DatePickerPanel({
         selected={calendarSelected}
         onSelect={handleDateSelect}
         disabled={isDayDisabled}
-        captionLayout="dropdown-years"
+        captionLayout="dropdown"
+        navLayout="around"
         startMonth={new Date(minYear, 0)}
         endMonth={new Date(maxYear, 11)}
         initialFocus
         className="mx-auto w-full max-w-full min-w-[20rem] p-0"
-        classNames={{
-          dropdowns:
-            "inline-flex shrink-0 flex-nowrap items-center justify-center gap-2",
-        }}
       />
     </div>
   );

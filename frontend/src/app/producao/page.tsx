@@ -58,6 +58,7 @@ function ProducaoContent() {
   const [offset, setOffset] = useState(0);
 
   const period = producaoResolvedPeriod(filters);
+  const periodValid = period !== null;
   const lactacaoId = producaoLactacaoIdFromFilters(filters);
 
   useEffect(() => {
@@ -85,7 +86,8 @@ function ProducaoContent() {
     };
   }, [searchParams, fazendaReady, fazendaAtiva?.id, setFazendaAtiva]);
 
-  const listEnabled = fazendaReady && fazendaId != null && fazendaId > 0;
+  const listEnabled =
+    fazendaReady && fazendaId != null && fazendaId > 0 && periodValid;
 
   const { data: lactacoes = [] } = useQuery({
     queryKey: ["lactacoes", fazendaId],
@@ -109,12 +111,12 @@ function ProducaoContent() {
       "producao",
       "list",
       fazendaId,
-      period.start,
-      period.end,
+      period?.start ?? filters.start,
+      period?.end ?? filters.end,
       lactacaoId ?? null,
     ],
     queryFn: () =>
-      listByDateRange(period.start, period.end, fazendaId!, lactacaoId),
+      listByDateRange(period!.start, period!.end, fazendaId!, lactacaoId),
     enabled: listEnabled,
   });
 
@@ -133,8 +135,8 @@ function ProducaoContent() {
       "producao",
       "infinite",
       fazendaId,
-      period.start,
-      period.end,
+      period?.start ?? filters.start,
+      period?.end ?? filters.end,
       lactacaoId ?? null,
     ],
     enabled: listEnabled,

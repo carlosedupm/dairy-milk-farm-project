@@ -21,22 +21,19 @@ function Calendar({
     root: "rdp-root",
     months: "flex flex-col sm:flex-row gap-4",
     month: "flex flex-col gap-4",
-    /** Dropdowns nativos: dependem de `react-day-picker/style.css` + classes `rdp-*`; Tailwind reforça overlay invisível. */
-    dropdowns: "rdp-dropdowns relative inline-flex items-center gap-2",
-    dropdown_root: "rdp-dropdown_root relative inline-flex items-center",
-    dropdown:
-      "rdp-dropdown absolute inset-y-0 left-0 z-[2] m-0 w-full cursor-inherit appearance-none border-0 p-0 opacity-0 leading-[inherit]",
-    caption_label:
-      "rdp-caption_label relative z-[1] inline-flex items-center whitespace-nowrap border-0",
+    /** Dropdowns nativos visíveis — estilos finais em `globals.css` (.rdp-root .rdp-dropdown). */
+    dropdowns: "rdp-dropdowns relative inline-flex shrink-0 flex-nowrap items-center gap-2",
+    dropdown_root: "rdp-dropdown_root relative inline-flex shrink-0 items-center",
+    dropdown: "rdp-dropdown",
+    caption_label: "rdp-caption_label",
     months_dropdown: "rdp-months_dropdown",
     years_dropdown: "rdp-years_dropdown",
-    month_caption:
-      "relative flex min-h-10 w-full flex-wrap items-center justify-center gap-2 px-11 pt-1 text-center",
-    nav: "flex items-center gap-1",
+    month_caption: "rdp-month_caption",
+    nav: "rdp-nav",
     button_previous:
-      "absolute left-0 min-h-[44px] min-w-[44px] rounded-md border border-input bg-background p-0 opacity-50 hover:opacity-100",
+      "rdp-button_previous min-h-[44px] min-w-[44px] rounded-md border border-input bg-background p-0 opacity-80 hover:opacity-100",
     button_next:
-      "absolute right-0 min-h-[44px] min-w-[44px] rounded-md border border-input bg-background p-0 opacity-50 hover:opacity-100",
+      "rdp-button_next min-h-[44px] min-w-[44px] rounded-md border border-input bg-background p-0 opacity-80 hover:opacity-100",
     month_grid: "w-full min-w-0 border-collapse space-y-1",
     weekdays: "flex w-full",
     weekday:

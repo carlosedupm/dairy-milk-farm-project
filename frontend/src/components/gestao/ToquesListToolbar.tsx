@@ -26,6 +26,7 @@ export function ToquesListToolbar({
         onChange={onDataFiltroChange}
         placeholder="Selecione o dia"
         className="w-full min-h-[44px]"
+        showConfirmationMessage={false}
       />
     </div>
   );

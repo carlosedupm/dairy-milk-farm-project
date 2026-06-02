@@ -1,10 +1,15 @@
 import type { FilterFieldDef } from "@/hooks/useFilterSync";
-import { parseDateRange, parseOptionalInt } from "@/lib/filter-url";
+import {
+  parseDateRange,
+  parseOptionalInt,
+  serializeYmdParam,
+} from "@/lib/filter-url";
 import {
   getDefaultServerListPeriod,
   parseServerListPeriodEnd,
   parseServerListPeriodStart,
-  resolveServerListPeriod,
+  resolveServerListPeriodForApi,
+  type PeriodRange,
 } from "@/lib/period-filter";
 import {
   defaultProducaoFilterState,
@@ -18,20 +23,14 @@ export const producaoFilterFields: FilterFieldDef<ProducaoFilterState>[] = [
     key: "start",
     param: "start",
     parse: (raw, params) => parseServerListPeriodStart(raw, params),
-    serialize: (value, state) => {
-      const range = parseDateRange(value, state.end);
-      return range?.start ?? null;
-    },
+    serialize: (value) => serializeYmdParam(value),
     isDefault: (value) => value === getDefaultServerListPeriod().start,
   },
   {
     key: "end",
     param: "end",
     parse: (raw, params) => parseServerListPeriodEnd(raw, params),
-    serialize: (value, state) => {
-      const range = parseDateRange(state.start, value);
-      return range?.end ?? null;
-    },
+    serialize: (value) => serializeYmdParam(value),
     isDefault: (value) => value === getDefaultServerListPeriod().end,
   },
   {
@@ -63,8 +62,8 @@ export function producaoLactacaoIdFromFilters(
 
 export function producaoResolvedPeriod(
   filters: ProducaoFilterState,
-): { start: string; end: string } {
-  return resolveServerListPeriod(filters.start, filters.end);
+): PeriodRange | null {
+  return resolveServerListPeriodForApi(filters.start, filters.end);
 }
 
 /** @deprecated Use producaoResolvedPeriod — mantido para compatibilidade pontual. */

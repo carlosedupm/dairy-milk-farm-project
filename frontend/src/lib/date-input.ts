@@ -86,6 +86,37 @@ export function parseDisplayToIso(
   return { iso };
 }
 
+export function isValidDisplayDate(
+  display: string,
+  opts: ParseDisplayOptions
+): boolean {
+  const digits = digitsOnly(display);
+  if (digits.length !== 8) return false;
+  return !parseDisplayToIso(display, opts).error;
+}
+
+/** Se há exatamente 2 dígitos (dia 01–31), completa DD/MM/AAAA com mês/ano locais. */
+export function tryCompleteDayWithCurrentMonthYear(
+  display: string,
+  opts: ParseDisplayOptions
+): { display: string; iso: string } | null {
+  const digits = digitsOnly(display);
+  if (digits.length !== 2) return null;
+
+  const day = Number(digits);
+  if (day < 1 || day > 31) return null;
+
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = String(now.getFullYear());
+  const completed = `${digits.padStart(2, "0")}/${month}/${year}`;
+
+  const parsed = parseDisplayToIso(completed, opts);
+  if (parsed.error || !parsed.iso) return null;
+
+  return { display: completed, iso: parsed.iso };
+}
+
 export function dateInputErrorMessage(
   code: DateInputErrorCode,
   opts?: { minDate?: string; maxDate?: string }
