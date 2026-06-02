@@ -9,11 +9,11 @@ import { FormFieldError } from "@/components/ui/form-field-error";
 import { useFormFieldError, useFormFieldErrors } from "@/contexts/FormFieldErrorsContext";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
-import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
+import { DateTimePickerUnificado } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
 import {
   minDatePartoFromGestacao,
-  resolveGestacaoForParto,
+  resolveGestacaoForPartoMinDate,
 } from "@/lib/gestao-date-limits";
 import { GestaoDateMinHint } from "@/components/gestao/GestaoDateMinHint";
 import {
@@ -65,12 +65,17 @@ type Props = {
 
 export function usePartoMinDate(
   gestacoes: Gestacao[],
-  gestacaoId: string
+  gestacaoId: string,
+  animalId: string
 ): string | undefined {
   return useMemo(() => {
-    const gestacao = resolveGestacaoForParto(gestacoes, gestacaoId);
+    const gestacao = resolveGestacaoForPartoMinDate(
+      gestacoes,
+      gestacaoId,
+      animalId
+    );
     return minDatePartoFromGestacao(gestacao);
-  }, [gestacoes, gestacaoId]);
+  }, [gestacoes, gestacaoId, animalId]);
 }
 
 export function PartoFormFields({
@@ -119,7 +124,11 @@ export function PartoFormFields({
   const dataError = useFormFieldError("data");
   const numeroCriasError = useFormFieldError("numeroCrias");
   const allFieldErrors = useFormFieldErrors();
-  const minDate = usePartoMinDate(gestacoesSafe, formState.gestacaoId);
+  const minDate = usePartoMinDate(
+    gestacoesSafe,
+    formState.gestacaoId,
+    formState.animalId
+  );
 
   return (
     <>
@@ -136,7 +145,7 @@ export function PartoFormFields({
       />
       <div className="space-y-2">
         <Label htmlFor="parto-data-hora">Data e hora do parto</Label>
-        <DateTimePickerPtBr
+        <DateTimePickerUnificado
           id="parto-data-hora"
           value={formState.data}
           maxDate={todayISODate()}

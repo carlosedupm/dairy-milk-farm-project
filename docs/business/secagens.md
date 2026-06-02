@@ -34,7 +34,7 @@ Registro de **secagem** da matriz (período seco antes do parto ou por baixa pro
 
 - **Enunciado**: `data_secagem` não futura; ≥ entrada/nascimento; ≥ início da lactação ativa quando existir — BR-CICLO-012–014 (TMP-001, TMP-002, TMP-005).
 - **Efeito**: bloqueio no servidor (400).
-- **Implementação**: `SecagemService` + `ciclo_integridade_temporal.go`; `SecagemFormFields` com `DatePicker` (`maxDate=hoje`, `minDate` = início da lactação ativa via contexto do animal); validação client em `validateSecagemForm`.
+- **Implementação**: `SecagemService` + `ciclo_integridade_temporal.go`; `SecagemFormFields` com `DatePickerUnificado` (`maxDate=hoje`, `minDate` = início da lactação ativa via contexto do animal); validação client em `validateSecagemForm`.
 - **Estado**: implementado.
 
 ### BR-SECAGENS-005 — Lista elegível no formulário

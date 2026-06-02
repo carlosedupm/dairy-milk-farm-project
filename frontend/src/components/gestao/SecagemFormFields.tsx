@@ -5,7 +5,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { GestaoDateMinHint } from "@/components/gestao/GestaoDateMinHint";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePickerUnificado } from "@/components/ui/date-picker";
 import { FormFieldError } from "@/components/ui/form-field-error";
 import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
 import { Label } from "@/components/ui/label";
@@ -70,7 +70,7 @@ export function SecagemFormFields({
       />
       <div className="space-y-2">
         <Label htmlFor="secagem-data">Data da secagem</Label>
-        <DatePicker
+        <DatePickerUnificado
           id="secagem-data"
           value={formState.data}
           onChange={(data) => setFormState((s) => ({ ...s, data }))}

@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FormFieldError } from "@/components/ui/form-field-error";
 import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
-import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
+import { DateTimePickerUnificado } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
 import { minDateCoberturaFromCios } from "@/lib/gestao-date-limits";
 import { cn } from "@/lib/utils";
@@ -155,7 +155,7 @@ export function CoberturaFormFields({
       </div>
       <div className="space-y-2">
         <Label htmlFor="cobertura-data-hora">Data e hora</Label>
-        <DateTimePickerPtBr
+        <DateTimePickerUnificado
           id="cobertura-data-hora"
           value={formState.data}
           maxDate={todayISODate()}

@@ -73,6 +73,35 @@ export function resolveGestacaoForParto(
   return gestacoes.find((g) => g.id.toString() === gestacaoId);
 }
 
+/** Gestação CONFIRMADA do animal (ex.: formulário de parto sem vínculo manual). */
+export function resolveGestacaoAtivaForPartoAnimal(
+  gestacoes: Gestacao[],
+  animalId: string
+): Gestacao | undefined {
+  const aid = Number(animalId);
+  if (!aid) return undefined;
+  const confirmed = gestacoes.filter(
+    (g) => g.animal_id === aid && g.status === "CONFIRMADA"
+  );
+  if (confirmed.length === 0) return undefined;
+  return [...confirmed].sort(
+    (a, b) =>
+      new Date(b.data_confirmacao).getTime() -
+      new Date(a.data_confirmacao).getTime()
+  )[0];
+}
+
+export function resolveGestacaoForPartoMinDate(
+  gestacoes: Gestacao[],
+  gestacaoId: string,
+  animalId: string
+): Gestacao | undefined {
+  return (
+    resolveGestacaoForParto(gestacoes, gestacaoId) ??
+    resolveGestacaoAtivaForPartoAnimal(gestacoes, animalId)
+  );
+}
+
 export const GESTAO_DATE_MESSAGES = {
   coberturaAfterCio: "A cobertura deve ser posterior ao cio registrado.",
   toqueAfterCobertura:

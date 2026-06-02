@@ -11,7 +11,7 @@ import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
+import { DateTimePickerUnificado } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
 import {
   minDateToqueFromCobertura,
@@ -124,7 +124,7 @@ export function ToqueFormFields({
       />
       <div className="space-y-2">
         <Label htmlFor="toque-data-hora">Data e hora</Label>
-        <DateTimePickerPtBr
+        <DateTimePickerUnificado
           id="toque-data-hora"
           value={formState.data}
           maxDate={todayISODate()}

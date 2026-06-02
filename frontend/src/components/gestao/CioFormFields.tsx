@@ -5,7 +5,7 @@ import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { Label } from "@/components/ui/label";
 import { FormFieldError } from "@/components/ui/form-field-error";
 import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
-import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
+import { DateTimePickerUnificado } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
 import {
   Select,
@@ -50,7 +50,7 @@ export function CioFormFields({ animais, formState, setFormState }: Props) {
       />
       <div className="space-y-2">
         <Label htmlFor="cio-data-detectado">Data e hora detectado</Label>
-        <DateTimePickerPtBr
+        <DateTimePickerUnificado
           id="cio-data-detectado"
           value={formState.dataDetectado}
           maxDate={todayISODate()}

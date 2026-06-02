@@ -63,7 +63,11 @@ function NovoContent() {
     enabled: fazendaId > 0,
   });
 
-  const minDate = usePartoMinDate(gestacoes, formState.gestacaoId);
+  const minDate = usePartoMinDate(
+    gestacoes,
+    formState.gestacaoId,
+    formState.animalId
+  );
 
   const mutation = useMutation({
     mutationFn: async () => {

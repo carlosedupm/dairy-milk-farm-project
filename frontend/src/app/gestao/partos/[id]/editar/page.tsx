@@ -70,7 +70,11 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
   });
 
   const racaMae = (animalMatriz?.raca ?? "").trim();
-  const minDate = usePartoMinDate(gestacoes, formState.gestacaoId);
+  const minDate = usePartoMinDate(
+    gestacoes,
+    formState.gestacaoId,
+    formState.animalId
+  );
 
   const mutation = useMutation({
     mutationFn: () =>

@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePickerUnificado } from "@/components/ui/date-picker";
 import { FormFieldError } from "@/components/ui/form-field-error";
 import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
 import { todayISODate } from "@/lib/date-limits";
@@ -61,7 +61,7 @@ export function LactacaoFormFields({
       </div>
       <div className="space-y-2">
         <Label htmlFor="lactacao-data-inicio">Data de início</Label>
-        <DatePicker
+        <DatePickerUnificado
           id="lactacao-data-inicio"
           value={formState.dataInicio}
           onChange={(dataInicio) =>

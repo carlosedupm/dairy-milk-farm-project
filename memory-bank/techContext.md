@@ -28,6 +28,7 @@
 - **Cliente HTTP**: Axios 1.7.9
 - **Toast (feedback)**: Sonner (`sonner`) — `hooks/use-toast.ts`, `components/ui/sonner.tsx`, `<Toaster />` em `Providers` (canto superior direito)
 - **Logging**: logs do runtime do Next.js e `console` no app (sem logger estruturado dedicado no frontend)
+- **Testes unitários (lib)**: Vitest 3.x — `npm run test:unit` (ex.: `src/lib/gestao-date-limits.test.ts`)
 
 ### Infraestrutura
 
@@ -147,6 +148,7 @@ O projeto inclui um **Dev Container** (`.devcontainer/`) alinhado à stack Go + 
 
 - **Backend**: `cd backend && go run ./cmd/api` (porta 8080).
 - **Frontend**: `cd frontend && npm run dev` ou `npm run dev --prefix frontend` (porta 3000).
+- **Testes frontend (unit)**: `cd frontend && npm run test:unit`
 - **Post-create** (automático): `apt-get install postgresql-client`, `go mod download -C backend` e `npm install --prefix frontend`.
 
 ### Variáveis de ambiente (ceialmilk-dev)

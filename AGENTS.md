@@ -50,7 +50,7 @@ Validação antes de PR:
 
 ```bash
 cd backend && go test ./internal/service/... -count=1
-cd frontend && npm run lint && npx tsc --noEmit
+cd frontend && npm run test:unit && npm run lint && npx tsc --noEmit
 ```
 
 DevContainer: `.devcontainer/` — Reopen in Container sobe Go, Node e PostgreSQL.
