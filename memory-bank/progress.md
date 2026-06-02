@@ -722,7 +722,7 @@
 
 ### **2026-06-02 - DatePicker unificado — formulários de agricultura**
 
-- ✅ **`lib/agricultura-date-limits.ts`**: `resolveSafraCulturaDateRange`, limites plantio/colheita por ano, análise de solo ≤ hoje; mensagens em `AGRICULTURA_DATE_MESSAGES`; testes Vitest.
+- ✅ **`lib/agricultura-date-limits.ts`**: `resolveSafraCulturaDateRange`, limites plantio/colheita por ano, análise de solo ≤ hoje; mensagens em `AGRICULTURA_DATE_MESSAGES`.
 - ✅ **5 formulários**: `CreateSafraCulturaDialog`, custo/produção/receita por safra, nova análise de solo — `DatePickerUnificado` + validação submit alinhada ao picker; catálogo `docs/business/agricultura.md`.
 
 ### **2026-06-02 - DateTimePicker unificado**

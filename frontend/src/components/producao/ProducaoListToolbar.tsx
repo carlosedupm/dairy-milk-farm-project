@@ -1,7 +1,11 @@
 "use client";
 
-import { DatePicker } from "@/components/ui/date-picker";
+import { PeriodFilter } from "@/components/filters/PeriodFilter";
 import { Label } from "@/components/ui/label";
+import {
+  getDefaultServerListPeriod,
+  isDefaultServerListPeriod,
+} from "@/lib/period-filter";
 import { ResponsiveFiltersShell } from "@/components/layout/ResponsiveFiltersShell";
 import {
   Select,
@@ -28,9 +32,24 @@ export const emptyProducaoFilterState = (): ProducaoFilterState => ({
   lactacao_id: LACTACAO_ALL,
 });
 
+/** Estado inicial de produção (período = últimos 30 dias). */
+export const defaultProducaoFilterState = (): ProducaoFilterState => {
+  const { start, end } = getDefaultServerListPeriod();
+  return {
+    start,
+    end,
+    lactacao_id: LACTACAO_ALL,
+  };
+};
+
 export function countActiveProducaoFilters(state: ProducaoFilterState): number {
   let count = 0;
-  if (state.start || state.end) count += 1;
+  if (
+    (state.start || state.end) &&
+    !isDefaultServerListPeriod(state.start, state.end)
+  ) {
+    count += 1;
+  }
   if (state.lactacao_id !== LACTACAO_ALL) count += 1;
   return count;
 }
@@ -84,24 +103,13 @@ export function ProducaoListToolbar({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="producao-filter-start">Data inicial</Label>
-        <DatePicker
-          id="producao-filter-start"
-          value={values.start}
-          onChange={(start) => onChange({ ...values, start })}
-          placeholder="Selecione a data inicial"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="producao-filter-end">Data final</Label>
-        <DatePicker
-          id="producao-filter-end"
-          value={values.end}
-          onChange={(end) => onChange({ ...values, end })}
-          placeholder="Selecione a data final"
-        />
-      </div>
+      <PeriodFilter
+        idPrefix="producao-filter"
+        start={values.start}
+        end={values.end}
+        onChange={({ start, end }) => onChange({ ...values, start, end })}
+        className="sm:col-span-2"
+      />
     </div>
   );
 

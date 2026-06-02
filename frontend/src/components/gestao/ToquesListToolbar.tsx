@@ -1,6 +1,6 @@
 "use client";
 
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePickerUnificado } from "@/components/ui/date-picker-unificado";
 import { Label } from "@/components/ui/label";
 import { ResponsiveFiltersShell } from "@/components/layout/ResponsiveFiltersShell";
 
@@ -20,11 +20,12 @@ export function ToquesListToolbar({
   const form = (
     <div className="max-w-xs space-y-2">
       <Label htmlFor="filtro-data-toques">Dia da palpação</Label>
-      <DatePicker
+      <DatePickerUnificado
         id="filtro-data-toques"
         value={dataFiltro}
         onChange={onDataFiltroChange}
         placeholder="Selecione o dia"
+        className="w-full min-h-[44px]"
       />
     </div>
   );

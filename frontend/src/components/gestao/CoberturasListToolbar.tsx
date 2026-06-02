@@ -3,7 +3,7 @@
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { ResponsiveFiltersShell } from "@/components/layout/ResponsiveFiltersShell";
 import { COBERTURA_TIPOS } from "@/components/gestao/CoberturaFormFields";
-import { DatePicker } from "@/components/ui/date-picker";
+import { PeriodFilter } from "@/components/filters/PeriodFilter";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -84,24 +84,13 @@ export function CoberturasListToolbar({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="coberturas-filter-start">Data inicial</Label>
-        <DatePicker
-          id="coberturas-filter-start"
-          value={values.start}
-          onChange={(start) => onChange({ ...values, start })}
-          placeholder="Selecione a data inicial"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="coberturas-filter-end">Data final</Label>
-        <DatePicker
-          id="coberturas-filter-end"
-          value={values.end}
-          onChange={(end) => onChange({ ...values, end })}
-          placeholder="Selecione a data final"
-        />
-      </div>
+      <PeriodFilter
+        idPrefix="coberturas-filter"
+        start={values.start}
+        end={values.end}
+        onChange={({ start, end }) => onChange({ ...values, start, end })}
+        className="sm:col-span-2"
+      />
     </div>
   );
 

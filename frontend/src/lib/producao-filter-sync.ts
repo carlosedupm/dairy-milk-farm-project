@@ -1,6 +1,13 @@
 import type { FilterFieldDef } from "@/hooks/useFilterSync";
 import { parseDateRange, parseOptionalInt } from "@/lib/filter-url";
 import {
+  getDefaultServerListPeriod,
+  parseServerListPeriodEnd,
+  parseServerListPeriodStart,
+  resolveServerListPeriod,
+} from "@/lib/period-filter";
+import {
+  defaultProducaoFilterState,
   emptyProducaoFilterState,
   PRODUCAO_LACTACAO_ALL,
   type ProducaoFilterState,
@@ -10,28 +17,22 @@ export const producaoFilterFields: FilterFieldDef<ProducaoFilterState>[] = [
   {
     key: "start",
     param: "start",
-    parse: (raw, params) => {
-      const range = parseDateRange(raw, params.get("end"));
-      return range?.start ?? "";
-    },
+    parse: (raw, params) => parseServerListPeriodStart(raw, params),
     serialize: (value, state) => {
       const range = parseDateRange(value, state.end);
       return range?.start ?? null;
     },
-    isDefault: (value) => value === "",
+    isDefault: (value) => value === getDefaultServerListPeriod().start,
   },
   {
     key: "end",
     param: "end",
-    parse: (raw, params) => {
-      const range = parseDateRange(params.get("start"), raw);
-      return range?.end ?? "";
-    },
+    parse: (raw, params) => parseServerListPeriodEnd(raw, params),
     serialize: (value, state) => {
       const range = parseDateRange(state.start, value);
       return range?.end ?? null;
     },
-    isDefault: (value) => value === "",
+    isDefault: (value) => value === getDefaultServerListPeriod().end,
   },
   {
     key: "lactacao_id",
@@ -46,7 +47,11 @@ export const producaoFilterFields: FilterFieldDef<ProducaoFilterState>[] = [
   },
 ];
 
-export { emptyProducaoFilterState, type ProducaoFilterState };
+export {
+  defaultProducaoFilterState,
+  emptyProducaoFilterState,
+  type ProducaoFilterState,
+};
 
 export function producaoLactacaoIdFromFilters(
   filters: ProducaoFilterState,
@@ -56,6 +61,15 @@ export function producaoLactacaoIdFromFilters(
   return Number.isNaN(id) || id <= 0 ? undefined : id;
 }
 
-export function producaoDateFilterActive(filters: ProducaoFilterState): boolean {
+export function producaoResolvedPeriod(
+  filters: ProducaoFilterState,
+): { start: string; end: string } {
+  return resolveServerListPeriod(filters.start, filters.end);
+}
+
+/** @deprecated Use producaoResolvedPeriod — mantido para compatibilidade pontual. */
+export function producaoDateFilterActive(
+  filters: ProducaoFilterState,
+): boolean {
   return Boolean(parseDateRange(filters.start, filters.end));
 }

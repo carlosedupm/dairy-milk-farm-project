@@ -11,6 +11,13 @@ import {
 } from "@/services/alertas";
 import type { FilterFieldDef } from "@/hooks/useFilterSync";
 import { parseDateRange, parseOptionalString } from "@/lib/filter-url";
+import {
+  getDefaultServerListPeriod,
+  isDefaultServerListPeriod,
+  parseServerListPeriodEnd,
+  parseServerListPeriodStart,
+  resolveServerListPeriod,
+} from "@/lib/period-filter";
 
 export const ALERTAS_FILTER_ALL = "__all__";
 export const ALERTAS_PAGE_SIZE = 25;
@@ -40,6 +47,18 @@ export function emptyAlertasFilterState(): AlertasFilterState {
     severidade: ALERTAS_FILTER_ALL,
     start: "",
     end: "",
+  };
+}
+
+/** Estado inicial de alertas (período = últimos 30 dias). */
+export function defaultAlertasFilterState(): AlertasFilterState {
+  const { start, end } = getDefaultServerListPeriod();
+  return {
+    status: ALERTAS_FILTER_ALL,
+    tipo: ALERTAS_FILTER_ALL,
+    severidade: ALERTAS_FILTER_ALL,
+    start,
+    end,
   };
 }
 
@@ -92,28 +111,22 @@ export const alertasFilterFields: FilterFieldDef<AlertasFilterState>[] = [
   {
     key: "start",
     param: "start",
-    parse: (raw, params) => {
-      const range = parseDateRange(raw, params.get("end"));
-      return range?.start ?? "";
-    },
+    parse: (raw, params) => parseServerListPeriodStart(raw, params),
     serialize: (value, state) => {
       const range = parseDateRange(value, state.end);
       return range?.start ?? null;
     },
-    isDefault: (value) => value === "",
+    isDefault: (value) => value === getDefaultServerListPeriod().start,
   },
   {
     key: "end",
     param: "end",
-    parse: (raw, params) => {
-      const range = parseDateRange(params.get("start"), raw);
-      return range?.end ?? "";
-    },
+    parse: (raw, params) => parseServerListPeriodEnd(raw, params),
     serialize: (value, state) => {
       const range = parseDateRange(state.start, value);
       return range?.end ?? null;
     },
-    isDefault: (value) => value === "",
+    isDefault: (value) => value === getDefaultServerListPeriod().end,
   },
 ];
 
@@ -124,17 +137,16 @@ export function countActiveAlertasFilters(
   if (filters.status !== ALERTAS_FILTER_ALL) count += 1;
   if (filters.tipo !== ALERTAS_FILTER_ALL) count += 1;
   if (filters.severidade !== ALERTAS_FILTER_ALL) count += 1;
-  if (filters.start || filters.end) count += 1;
+  if (!isDefaultServerListPeriod(filters.start, filters.end)) count += 1;
   return count;
 }
 
-/** Envia start/end à API apenas quando ambas as datas estão preenchidas. */
+/** Envia start/end à API (período válido ou default 30 dias). */
 export function alertasPeriodToApiParams(
   start: string,
   end: string,
-): { start?: string; end?: string } {
-  const range = parseDateRange(start, end);
-  if (!range) return {};
+): { start: string; end: string } {
+  const range = resolveServerListPeriod(start, end);
   return { start: range.start, end: range.end };
 }
 
@@ -145,8 +157,7 @@ export function hasActiveAlertasFilters(
     filters.status !== ALERTAS_FILTER_ALL ||
     filters.tipo !== ALERTAS_FILTER_ALL ||
     filters.severidade !== ALERTAS_FILTER_ALL ||
-    filters.start !== "" ||
-    filters.end !== ""
+    !isDefaultServerListPeriod(filters.start, filters.end)
   );
 }
 

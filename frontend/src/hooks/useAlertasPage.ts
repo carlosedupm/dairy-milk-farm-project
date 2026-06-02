@@ -16,7 +16,7 @@ import {
   ALERTAS_PAGE_SIZE,
   alertasFilterFields,
   alertasPeriodToApiParams,
-  emptyAlertasFilterState,
+  defaultAlertasFilterState,
   hasActiveAlertasFilters,
 } from "@/components/alertas/alertas-utils";
 import {
@@ -41,7 +41,7 @@ export function useAlertasPage() {
 
   const { filters, setFilter, clearFilters } = useFilterSync({
     pathname: "/alertas",
-    defaults: emptyAlertasFilterState(),
+    defaults: defaultAlertasFilterState(),
     fields: alertasFilterFields,
   });
 

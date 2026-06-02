@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
+import { PeriodFilter } from "@/components/filters/PeriodFilter";
 import { Label } from "@/components/ui/label";
 import { ResponsiveFiltersShell } from "@/components/layout/ResponsiveFiltersShell";
 import {
@@ -107,28 +107,16 @@ export function AlertasListToolbar({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 items-end">
-        <div className="space-y-2 min-w-0">
-          <Label htmlFor="filtro-start">Data inicial</Label>
-          <DatePicker
-            id="filtro-start"
-            value={filters.start}
-            onChange={onStartDateChange}
-            placeholder="Selecione a data inicial"
-            className="w-full"
-          />
-        </div>
-        <div className="space-y-2 min-w-0">
-          <Label htmlFor="filtro-end">Data final</Label>
-          <DatePicker
-            id="filtro-end"
-            value={filters.end}
-            onChange={onEndDateChange}
-            placeholder="Selecione a data final"
-            className="w-full"
-          />
-        </div>
-      </div>
+      <PeriodFilter
+        idPrefix="alertas-filter"
+        start={filters.start}
+        end={filters.end}
+        onChange={({ start, end }) => {
+          onStartDateChange(start);
+          onEndDateChange(end);
+        }}
+        pickerClassName="w-full"
+      />
 
       <div className="flex flex-wrap gap-2">
         <Button

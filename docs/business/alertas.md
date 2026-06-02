@@ -86,7 +86,8 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 - **Escopo**: Listagem JWT e M2M (`GET /integracoes/alertas`).
 - **Perfis / permissões**: mesma matriz de leitura de alertas.
 - **Efeito**: filtro server-side; combina com status/tipo/severidade.
-- **Implementação**: `AlertaHandler.List`, `AlertaRepository.buildAlertaListWhere`, `AlertasListToolbar` (dois `DatePicker`), `useAlertasPage`, `alertas-utils.ts`.
+- **UI (listagem)**: sem `start`/`end` na URL, o cliente envia à API o intervalo dos **últimos 30 dias civis inclusivos** (hoje − 29 … hoje); «Limpar filtros» repõe esse padrão. Par inválido na UI (`start` > `end`) mostra «Data início não pode ser maior que data fim» e não aplica corte até o par ser válido.
+- **Implementação**: `AlertaHandler.List`, `AlertaRepository.buildAlertaListWhere`, `PeriodFilter` + `AlertasListToolbar`, `useAlertasPage`, `alertas-utils.ts` (`defaultAlertasFilterState`, `resolveServerListPeriod`).
 - **Estado**: implementado.
 
 ### BR-ALERTA-015 — Badge de alertas abertos no Header
@@ -243,4 +244,4 @@ Implementação: `models.IsTransicaoAlertaStatusValida`, `AlertaService.UpdateSt
 
 ---
 
-**Última atualização**: 2026-05-31 (BR-ALERTA-014 filtro período; BR-ALERTA-015 badge Header)
+**Última atualização**: 2026-06-02 (BR-ALERTA-014 default 30d UI + PeriodFilter)

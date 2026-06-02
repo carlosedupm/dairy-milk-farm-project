@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { list, listByDateRange } from "@/services/producao";
+import { listByDateRange } from "@/services/producao";
 import { listByFazenda } from "@/services/lactacoes";
 import { getMinhasFazendas } from "@/services/fazendas";
 import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
@@ -30,10 +30,10 @@ import { MobileInfiniteListFooter } from "@/components/layout/list/MobileInfinit
 import type { ProducaoLeite } from "@/services/producao";
 import { formatListCountSuffix } from "@/lib/filter-url";
 import {
-  emptyProducaoFilterState,
-  producaoDateFilterActive,
+  defaultProducaoFilterState,
   producaoFilterFields,
   producaoLactacaoIdFromFilters,
+  producaoResolvedPeriod,
 } from "@/lib/producao-filter-sync";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
@@ -49,7 +49,7 @@ function ProducaoContent() {
   const { filters, setFilters, clearFilters, hasActiveFilters } =
     useFilterSync({
       pathname: "/producao",
-      defaults: emptyProducaoFilterState(),
+      defaults: defaultProducaoFilterState(),
       fields: producaoFilterFields,
       preserveParams: ["fazenda_id"],
     });
@@ -57,7 +57,7 @@ function ProducaoContent() {
   const [pageSize, setPageSize] = useState<number>(25);
   const [offset, setOffset] = useState(0);
 
-  const dateFilterActive = producaoDateFilterActive(filters);
+  const period = producaoResolvedPeriod(filters);
   const lactacaoId = producaoLactacaoIdFromFilters(filters);
 
   useEffect(() => {
@@ -109,14 +109,12 @@ function ProducaoContent() {
       "producao",
       "list",
       fazendaId,
-      dateFilterActive ? filters.start : null,
-      dateFilterActive ? filters.end : null,
+      period.start,
+      period.end,
       lactacaoId ?? null,
     ],
     queryFn: () =>
-      dateFilterActive
-        ? listByDateRange(filters.start, filters.end, fazendaId!, lactacaoId)
-        : list({ fazenda_id: fazendaId!, lactacao_id: lactacaoId }),
+      listByDateRange(period.start, period.end, fazendaId!, lactacaoId),
     enabled: listEnabled,
   });
 
@@ -135,8 +133,8 @@ function ProducaoContent() {
       "producao",
       "infinite",
       fazendaId,
-      dateFilterActive ? filters.start : null,
-      dateFilterActive ? filters.end : null,
+      period.start,
+      period.end,
       lactacaoId ?? null,
     ],
     enabled: listEnabled,

@@ -2,7 +2,7 @@
 
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { ResponsiveFiltersShell } from "@/components/layout/ResponsiveFiltersShell";
-import { DatePicker } from "@/components/ui/date-picker";
+import { PeriodFilter } from "@/components/filters/PeriodFilter";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -82,24 +82,17 @@ export function GestacoesListToolbar({
           Partos previstos em 7 dias
         </Button>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="gestacoes-filter-start">Parto previsto — de</Label>
-        <DatePicker
-          id="gestacoes-filter-start"
-          value={values.start}
-          onChange={(start) => onChange({ ...values, start })}
-          placeholder="Data inicial"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="gestacoes-filter-end">Parto previsto — até</Label>
-        <DatePicker
-          id="gestacoes-filter-end"
-          value={values.end}
-          onChange={(end) => onChange({ ...values, end })}
-          placeholder="Data final"
-        />
-      </div>
+      <PeriodFilter
+        idPrefix="gestacoes-filter"
+        start={values.start}
+        end={values.end}
+        onChange={({ start, end }) => onChange({ ...values, start, end })}
+        startLabel="Parto previsto — de"
+        endLabel="Parto previsto — até"
+        startPlaceholder="Data inicial"
+        endPlaceholder="Data final"
+        className="sm:col-span-2 lg:col-span-2"
+      />
     </div>
   );
 

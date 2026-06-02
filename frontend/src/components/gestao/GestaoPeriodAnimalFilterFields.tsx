@@ -1,8 +1,7 @@
 "use client";
 
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Label } from "@/components/ui/label";
+import { PeriodFilter } from "@/components/filters/PeriodFilter";
 import type { Animal } from "@/services/animais";
 import type { GestaoPeriodFilterState } from "@/lib/gestao-period-filter";
 
@@ -31,24 +30,13 @@ export function GestaoPeriodAnimalFilterFields({
         placeholder="Todos os animais"
         femeasOnly={femeasOnly}
       />
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-start`}>Data inicial</Label>
-        <DatePicker
-          id={`${idPrefix}-start`}
-          value={values.start}
-          onChange={(start) => onChange({ ...values, start })}
-          placeholder="Selecione a data inicial"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-end`}>Data final</Label>
-        <DatePicker
-          id={`${idPrefix}-end`}
-          value={values.end}
-          onChange={(end) => onChange({ ...values, end })}
-          placeholder="Selecione a data final"
-        />
-      </div>
+      <PeriodFilter
+        idPrefix={idPrefix}
+        start={values.start}
+        end={values.end}
+        onChange={({ start, end }) => onChange({ ...values, start, end })}
+        className="sm:col-span-2 lg:col-span-2"
+      />
     </div>
   );
 }
