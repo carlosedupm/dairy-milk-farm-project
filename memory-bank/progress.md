@@ -23,6 +23,15 @@
 
 ## ✅ O que foi concluído
 
+### **Ficha animal — tabs + sidebar (✅ 2026-06-01)**
+
+- [x] Layout 2 colunas desktop / coluna única mobile (`AnimalFichaShell`, `PageContainer wide`)
+- [x] Radix Tabs acessíveis (`components/ui/tabs.tsx`) — Visão Geral, Saúde, Produção, Histórico
+- [x] Sidebar fixa (`AnimalFichaSidebar`) com resumo via `animalResumoUtils`
+- [x] URLs `?tab=saude|producao|historico`; redirects rotas legadas
+- [x] Breadcrumb contextual; forms saúde voltam para `?tab=saude`
+- [x] BR-ANIMAIS-008; BR-CICLO-008 atualizado
+
 ### **Design System — tokens semânticos (✅ 2026-05-30)**
 
 - [x] **RF01**: [`docs/design-system/tokens.md`](../docs/design-system/tokens.md) — tabelas completas (cores, tipografia, espaçamento, radius, sombras, breakpoints)

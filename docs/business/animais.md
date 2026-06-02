@@ -5,7 +5,7 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 **Implementação principal**
 
 - Backend: `backend/internal/handlers/animal_handler.go`, `backend/internal/service/animal_service.go`, `backend/internal/service/gestacao_service.go` (`BuildResumoContexto`), rotas em `backend/cmd/api/main.go`.
-- Frontend: `frontend/src/components/animais/AnimalSearchPanel.tsx`, `frontend/src/components/animais/animalResumoUtils.ts`, `frontend/src/services/animais.ts`; entrada na home via `AnimalSearchHeaderField` + atalho mobile no `Dashboard`.
+- Frontend: `frontend/src/components/animais/AnimalSearchPanel.tsx`, `frontend/src/components/animais/animalResumoUtils.ts`, `frontend/src/services/animais.ts`; ficha com tabs em `frontend/src/components/animais/ficha/`; entrada na home via `AnimalSearchHeaderField` + atalho mobile no `Dashboard`.
 - Produção (resumo contextual): `backend/internal/service/producao_service.go`.
 - Gestação confirmada (toque positivo): `backend/internal/service/diagnostico_gestacao_service.go`, tabela `gestacoes`.
 
@@ -64,11 +64,20 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 ### BR-ANIMAIS-007 — Próximas ações na ficha (CTA de ciclo)
 
 - **Enunciado**: `proximas_acoes[]` sugere até **duas** ações operacionais de ciclo, ordenadas por prioridade: **Parto > Secagem > Cobertura > Toque > Produção**. «Registrar baixa» **não** entra nas sugestões (fluxo dedicado na ficha). **Toque** só quando existir cobertura há ≥15 dias sem diagnóstico (alinhado a BR-CICLO-015). Animal fora do rebanho ou macho → array vazio.
-- **Escopo**: `GET /api/v1/animais/:id/contexto`; UI em `/animais/:id`.
+- **Escopo**: `GET /api/v1/animais/:id/contexto`; UI na tab **Visão Geral** de `/animais/:id`.
 - **Perfis / permissões**: CTAs visíveis conforme `proximas_acoes[]`; botão **desabilitado** na UI se `href_path` não permitido para o perfil (`appAccess` / `perfil_access.go`).
 - **Efeito**: orientação no curral; bloqueio de escrita mantido na API ao submeter formulários.
 - **Implementação**: `AnimalCicloService.BuildProximasAcoes`, `CoberturaRepository.HasPendenteToqueByAnimalID`; `AnimalProximasAcoesCta.tsx`, `animalProximasAcoesUtils.ts`, `AnimalFichaCiclo.tsx`.
-- **UI**: botões primários (`variant="default"`, `size="touch"`); desktop = card «Próximas ações»; mobile = barra fixa inferior com `env(safe-area-inset-bottom)` e `pb-32` no conteúdo da página para não tapar a timeline.
+- **UI**: botões primários (`variant="default"`, `size="touch"`); desktop = card «Próximas ações»; mobile = barra fixa inferior com `env(safe-area-inset-bottom)` e `pb-32` no conteúdo da tab Visão Geral para não tapar o scroll.
+- **Estado**: implementado.
+
+### BR-ANIMAIS-008 — Ficha com tabs e sidebar
+
+- **Enunciado**: A ficha `/animais/:id` organiza o conteúdo em **quatro tabs** — **Visão Geral** (cadastro, ações, estado reprodutivo e CTAs), **Saúde** (lista CRUD de casos), **Produção** (agrupamento por lactação) e **Histórico** (timeline paginada) — com **sidebar fixa** de resumo do animal (identificação, meta, gestação, produção, fazenda).
+- **Escopo**: UI; URLs `?tab=saude|producao|historico` (Visão Geral sem query); rotas `/animais/:id/saude` e `/animais/:id/producao` redirecionam para a tab equivalente; formulários CRUD de saúde (`/saude/novo`, `/saude/:id/editar`) permanecem em rotas dedicadas.
+- **Perfis / permissões**: mesmas regras das secções integradas (saúde, produção, gestão de animal).
+- **Efeito**: informativo e navegação client-side sem reload; breadcrumb contextual.
+- **Implementação**: `AnimalFichaShell`, `AnimalFichaSidebar`, `AnimalFichaTabs`, tab panels em `frontend/src/components/animais/ficha/`; `useAnimalFichaPage`; `components/ui/tabs.tsx` (Radix).
 - **Estado**: implementado.
 
 ### BR-ANIMAIS-006 — Baixa do rebanho (fluxo dedicado)
@@ -89,4 +98,4 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 ---
 
-**Última atualização**: 2026-05-30
+**Última atualização**: 2026-06-01

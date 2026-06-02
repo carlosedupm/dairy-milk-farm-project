@@ -136,10 +136,10 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ### BR-CICLO-008 — Ficha do animal com histórico unificado
 
-- **Enunciado**: Na ficha `/animais/:id`, o utilizador vê **estado atual** (gestação, lactação, restrição de leite, próximas ações) via contexto e **timeline paginada** de eventos (ciclo, saúde, alertas, baixa) com scroll infinito na UI.
+- **Enunciado**: Na ficha `/animais/:id`, o utilizador vê **estado atual** (gestação, lactação, restrição de leite, próximas ações) na tab **Visão Geral** via contexto e **timeline paginada** na tab **Histórico** (eventos ciclo, saúde, alertas, baixa) com scroll infinito na UI. Layout com **sidebar de resumo** e tabs — ver [animais.md](./animais.md) BR-ANIMAIS-008.
 - **Escopo**: UI + `GET /api/v1/animais/:id/contexto` (sem timeline embutida) + `GET /api/v1/animais/:id/timeline?limit=&offset=&tipo=`.
-- **Efeito**: informativo e navegação; filtros `todos|ciclo|saude|alertas`.
-- **Implementação**: `TimelineRepository` (UNION SQL paginado), `AnimalCicloService.ListTimelinePaginated`, `AnimalTimelineSection`, `AnimalFichaCiclo`; [animais.md](./animais.md) BR-ANIMAIS-004; [saude-animal.md](./saude-animal.md) BR-SAUDE-005; [alertas.md](./alertas.md) BR-ALERTA-013.
+- **Efeito**: informativo e navegação; filtros `todos|ciclo|saude|alertas` na tab Histórico.
+- **Implementação**: `TimelineRepository` (UNION SQL paginado), `AnimalCicloService.ListTimelinePaginated`, `AnimalTimelineSection`, `AnimalFichaCiclo`, `AnimalFichaShell`; [animais.md](./animais.md) BR-ANIMAIS-004/008; [saude-animal.md](./saude-animal.md) BR-SAUDE-005; [alertas.md](./alertas.md) BR-ALERTA-013.
 - **Estado**: **implementado**.
 
 ### BR-CICLO-009 — Visibilidade gerencial na home
@@ -218,8 +218,9 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 | Saúde (casos clínicos) | Implementado | CRUD, sync `status_saude`, timeline, RBAC — [saude-animal.md](./saude-animal.md); vacinas = backlog |
 | Alertas proativos | Implementado | Geração diária, dedup, auto-resolve, Web Push, UI `/alertas` — [alertas.md](./alertas.md) |
 | Dashboard pecuário | Implementado | `DashboardKpiGrid` + painéis colapsáveis (BR-CICLO-009, BR-GESTACOES-005) |
-| Ficha animal (timeline) | Implementado | BR-CICLO-008; paginação `GET .../timeline` |
-| Ficha animal (próximas ações CTA) | Implementado | BR-ANIMAIS-007; máx. 2; sticky mobile |
+| Ficha animal (tabs + sidebar) | Implementado | BR-ANIMAIS-008 |
+| Ficha animal (timeline) | Implementado | BR-CICLO-008; tab Histórico; paginação `GET .../timeline` |
+| Ficha animal (próximas ações CTA) | Implementado | BR-ANIMAIS-007; tab Visão Geral; máx. 2; sticky mobile |
 | Saída do rebanho (baixa) | Implementado | [baixa-rebanho.md](./baixa-rebanho.md) BR-CICLO-011; rótulos Gestão BR-BAIXA-009 |
 | Validação temporal (escrita) | Implementado | BR-CICLO-012–014; TMP-001–006; ver [auditoria.md](./auditoria.md) BR-AUDIT-010 |
 
@@ -232,4 +233,4 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ---
 
-**Última atualização**: 2026-05-30 (BR-ANIMAIS-007 — CTA próximas ações na ficha)
+**Última atualização**: 2026-06-01 (BR-ANIMAIS-008 — ficha com tabs e sidebar)

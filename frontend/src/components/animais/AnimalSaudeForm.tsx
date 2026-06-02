@@ -28,6 +28,7 @@ import {
 } from "@/lib/errors";
 import { validateAnimalSaudeForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
+import { animalFichaSaudeTabHref } from "@/components/animais/ficha/animalFichaTabs";
 
 type Props = {
   animalId: number;
@@ -60,7 +61,7 @@ export function AnimalSaudeForm({ animalId, mode, initial, saudeId }: Props) {
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  const listHref = `/animais/${animalId}/saude`;
+  const listHref = animalFichaSaudeTabHref(animalId);
   const canSubmit =
     mode === "create" ? canCriarRegistroSaude(perfil) : canEditarRegistroSaude(perfil);
 

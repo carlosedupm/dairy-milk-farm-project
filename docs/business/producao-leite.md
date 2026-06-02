@@ -51,7 +51,7 @@ Registro diário de **volume de leite** por animal na fazenda.
 ### BR-PRODUCAO-006 — Vínculo automático à lactação (`lactacao_id`)
 
 - **Enunciado**: Ao registrar produção (`POST`), o servidor preenche `lactacao_id` com a lactação da fazenda cujo intervalo (`data_inicio` … `data_fim`) cobre a **data civil** do registo. O cliente **não** envia `lactacao_id`. Em `PUT`, o campo não é aceito no body; o servidor **preserva** o vínculo existente salvo alteração de `animal_id` ou `data_hora`, quando recalcula. Registos legados permanecem com `lactacao_id` NULL.
-- **Escopo**: `producao_leite` + `lactacoes`; listagens `GET /api/v1/producao` e `GET .../filter/by-date` aceitam filtro opcional `lactacao_id`; ficha do animal em `/animais/:id/producao` agrupa produção por lactação (total, média diária, duração).
+- **Escopo**: `producao_leite` + `lactacoes`; listagens `GET /api/v1/producao` e `GET .../filter/by-date` aceitam filtro opcional `lactacao_id`; tab **Produção** da ficha (`/animais/:id?tab=producao`) agrupa produção por lactação (total, média diária, duração); rota `/animais/:id/producao` redireciona para a tab.
 - **Efeito**: bloqueio implícito via validações INT-002/TMP-006 se não houver lactação cobrindo a data; filtro GET restringe resultados; UI informativa no formulário.
 - **Implementação**: migration `34_add_lactacao_id_producao_leite`; `FindLactacaoForProducaoDate`, `ProducaoService`, `ProducaoHandler`; frontend `producao.ts`, `/producao`, `/animais/[id]/producao`; alinhado a [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-007.
 - **Estado**: implementado.

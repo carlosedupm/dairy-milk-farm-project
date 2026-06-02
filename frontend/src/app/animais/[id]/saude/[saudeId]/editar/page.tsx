@@ -14,6 +14,7 @@ import {
   getById,
 } from "@/services/animalSaude";
 import { getApiErrorMessage } from "@/lib/errors";
+import { animalFichaSaudeTabHref } from "@/components/animais/ficha/animalFichaTabs";
 
 function EditarContent() {
   const params = useParams();
@@ -53,7 +54,7 @@ function EditarContent() {
   if (!canEditarRegistroSaude(user?.perfil)) {
     return (
       <PageContainer variant="narrow">
-        <BackLink href={`/animais/${animalId}/saude`}>Voltar</BackLink>
+        <BackLink href={animalFichaSaudeTabHref(animalId)}>Voltar</BackLink>
         <p className="text-muted-foreground mt-4">
           O seu perfil não pode editar registos de saúde.
         </p>
@@ -81,7 +82,7 @@ function EditarContent() {
   if (registroError || !registro) {
     return (
       <PageContainer variant="narrow">
-        <BackLink href={`/animais/${animalId}/saude`}>Voltar</BackLink>
+        <BackLink href={animalFichaSaudeTabHref(animalId)}>Voltar</BackLink>
         <p className="text-destructive mt-4">
           {getApiErrorMessage(registroError, "Registo não encontrado.")}
         </p>
@@ -92,7 +93,7 @@ function EditarContent() {
   if (isAnimalForaDoRebanho(animal)) {
     return (
       <PageContainer variant="narrow">
-        <BackLink href={`/animais/${animalId}/saude`}>Voltar</BackLink>
+        <BackLink href={animalFichaSaudeTabHref(animalId)}>Voltar</BackLink>
         <p className="text-muted-foreground mt-4">
           Animal fora do rebanho — edição de saúde indisponível.
         </p>

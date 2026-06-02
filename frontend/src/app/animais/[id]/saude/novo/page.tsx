@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { AnimalSaudeForm } from "@/components/animais/AnimalSaudeForm";
+import { animalFichaSaudeTabHref } from "@/components/animais/ficha/animalFichaTabs";
 import { get as getAnimal, isAnimalForaDoRebanho } from "@/services/animais";
 
 function NovoContent() {
@@ -47,7 +48,7 @@ function NovoContent() {
   if (isAnimalForaDoRebanho(animal)) {
     return (
       <PageContainer variant="narrow">
-        <BackLink href={`/animais/${animalId}/saude`}>Voltar</BackLink>
+        <BackLink href={animalFichaSaudeTabHref(animalId)}>Voltar</BackLink>
         <p className="text-muted-foreground mt-4">
           Não é possível registar saúde para animal fora do rebanho.
         </p>

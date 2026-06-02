@@ -23,7 +23,7 @@
 - **Linguagem**: TypeScript 5.7.2
 - **Estilização**: Tailwind CSS 3.4.17
 - **Tailwind `content`**: `frontend/tailwind.config.ts` inclui `src/app`, `src/components`, `src/pages` e **`src/contexts`** — ficheiros em `contexts/` com `className` (ex.: `AnimalSearchDialogContext`) devem estar no scan; caso contrário utilitários arbitrários não entram no CSS e `tailwind-merge` pode deixar o DOM sem `width`/`max-height` efetivos (diálogo “invisível” por cima do overlay).
-- **Componentes**: Shadcn/UI (compatível com React 19)
+- **Componentes**: Shadcn/UI (compatível com React 19); `@radix-ui/react-tabs` para tabs acessíveis (`components/ui/tabs.tsx`)
 - **Gerenciamento de Estado**: TanStack Query 5.x
 - **Cliente HTTP**: Axios 1.7.9
 - **Toast (feedback)**: Sonner (`sonner`) — `hooks/use-toast.ts`, `components/ui/sonner.tsx`, `<Toaster />` em `Providers` (canto superior direito)

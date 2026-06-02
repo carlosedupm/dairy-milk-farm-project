@@ -612,7 +612,17 @@ Documentação canónica: [`docs/design-system/form-patterns.md`](../docs/design
 - **Padrão**: Usar o componente `PageContainer` para wrappers de `<main>` em todas as páginas
 - **Variantes**: `default` (max-w-5xl), `narrow` (max-w-2xl), `wide` (container max-w-6xl), `centered` (flex center para login/home)
 - **Implementação**: `frontend/src/components/layout/PageContainer.tsx` com props `variant`, `className`, `children`
-- **Uso**: Fazendas → default; nova/editar fazenda → narrow; Dev Studio → wide; login e home → centered
+- **Uso**: Fazendas → default; nova/editar fazenda → narrow; Dev Studio → wide; **ficha do animal** → wide (layout 2 colunas + tabs); login e home → centered
+
+### **Ficha do animal (tabs + sidebar)**
+
+- **Rota**: `/animais/[id]` com query opcional `?tab=geral|saude|producao|historico` (default `geral`, omitido na URL).
+- **Layout**: `PageContainer variant="wide"`; grid `lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]` — sidebar sticky (`AnimalFichaSidebar`) + painel principal com Radix Tabs.
+- **Componentes**: `components/animais/ficha/` — `AnimalFichaShell`, `AnimalFichaSidebar`, `AnimalFichaTabs`, tab panels (`AnimalFichaTabVisaoGeral`, `AnimalFichaTabSaude`, `AnimalFichaTabProducao`, `AnimalFichaTabHistorico`); hook `hooks/useAnimalFichaPage.ts`; constantes `animalFichaTabs.ts`.
+- **Navegação**: troca de tab via `router.push(..., { scroll: false })`; breadcrumb `PageBreadcrumb` contextual; rotas legadas `/animais/[id]/saude` e `/producao` redirecionam para `?tab=`.
+- **Lazy fetch**: queries de saúde/produção só quando a tab correspondente está ativa.
+- **CTA mobile**: `animalProximasAcoesPageSpacerClass` apenas na tab Visão Geral (`AnimalFichaCiclo`).
+- **Regra de negócio**: BR-ANIMAIS-008; timeline continua em tab Histórico (BR-CICLO-008).
 
 ### **Extração de Erro da API (getApiErrorMessage)**
 
