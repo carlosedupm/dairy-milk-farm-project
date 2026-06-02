@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { create } from "@/services/coberturas";
-import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
+import { invalidateAnimalTimeline } from "@/services/animais";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -20,11 +20,13 @@ import {
 } from "@/lib/errors";
 import { validateCoberturaForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
+import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
+import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 
-function emptyFormState(): CoberturaFormState {
+function emptyFormState(animalId = ""): CoberturaFormState {
   return {
-    animalId: "",
+    animalId,
     tipo: "MONTA_NATURAL",
     data: nowDatetimeLocalInputValue(),
     touroAnimalId: "",
@@ -35,17 +37,19 @@ function emptyFormState(): CoberturaFormState {
 
 function NovoContent() {
   const router = useRouter();
+  const { animalId: preselectedAnimalId, hasPreselectedAnimal } =
+    useGestaoNovoUrlParams();
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
-  const [formState, setFormState] = useState<CoberturaFormState>(() => emptyFormState());
+  const [formState, setFormState] = useState<CoberturaFormState>(() =>
+    emptyFormState(preselectedAnimalId),
+  );
   const [formError, setFormError] = useState("");
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
-
-  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -60,10 +64,24 @@ function NovoContent() {
           : formState.touroInfo.trim() || undefined,
         observacoes: formState.observacoes.trim() || undefined,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coberturas", fazendaAtiva?.id] });
+    onSuccess: async () => {
+      const aid = Number(formState.animalId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["coberturas", fazendaAtiva?.id] }),
+        ...(aid > 0
+          ? [
+              queryClient.invalidateQueries({ queryKey: ["animais", aid] }),
+              queryClient.invalidateQueries({
+                queryKey: ["animais", aid, "contexto"],
+              }),
+              invalidateAnimalTimeline(queryClient, aid),
+            ]
+          : []),
+      ]);
       toast.success("Cobertura registada");
-      router.push("/gestao/coberturas");
+      router.push(
+        gestaoNovoSuccessPath(aid > 0 ? String(aid) : "", "/gestao/coberturas"),
+      );
     },
     onError: (err: unknown) => {
       setFormError(getApiErrorMessage(err, "Erro ao registrar."));
@@ -119,18 +137,28 @@ function NovoContent() {
     >
       <CoberturaFormFields
         fazendaId={fazendaId}
-        animais={animais}
         formState={formState}
         setFormState={setFormState}
+        preserveSelected={hasPreselectedAnimal}
       />
     </GestaoFormLayout>
+  );
+}
+
+function NovoPageFallback() {
+  return (
+    <PageContainer variant="narrow">
+      <p className="text-muted-foreground">Carregando…</p>
+    </PageContainer>
   );
 }
 
 export default function NovoPage() {
   return (
     <ProtectedRoute>
-      <NovoContent />
+      <Suspense fallback={<NovoPageFallback />}>
+        <NovoContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

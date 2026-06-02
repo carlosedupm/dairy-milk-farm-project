@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { create } from "@/services/cios";
+import { invalidateAnimalTimeline } from "@/services/animais";
 import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -20,11 +21,13 @@ import {
 } from "@/lib/errors";
 import { validateCioForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
+import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
+import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 
-function emptyFormState(): CioFormState {
+function emptyFormState(animalId = ""): CioFormState {
   return {
-    animalId: "",
+    animalId,
     dataDetectado: nowDatetimeLocalInputValue(),
     metodo: "",
     intensidade: "",
@@ -33,9 +36,12 @@ function emptyFormState(): CioFormState {
 
 function NovoContent() {
   const router = useRouter();
+  const { animalId: preselectedAnimalId } = useGestaoNovoUrlParams();
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
-  const [formState, setFormState] = useState<CioFormState>(() => emptyFormState());
+  const [formState, setFormState] = useState<CioFormState>(() =>
+    emptyFormState(preselectedAnimalId),
+  );
   const [formError, setFormError] = useState("");
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
@@ -54,10 +60,24 @@ function NovoContent() {
         metodo_deteccao: formState.metodo || undefined,
         intensidade: formState.intensidade || undefined,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cios", fazendaAtiva?.id] });
+    onSuccess: async () => {
+      const aid = Number(formState.animalId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["cios", fazendaAtiva?.id] }),
+        ...(aid > 0
+          ? [
+              queryClient.invalidateQueries({ queryKey: ["animais", aid] }),
+              queryClient.invalidateQueries({
+                queryKey: ["animais", aid, "contexto"],
+              }),
+              invalidateAnimalTimeline(queryClient, aid),
+            ]
+          : []),
+      ]);
       toast.success("Cio registado");
-      router.push("/gestao/cios");
+      router.push(
+        gestaoNovoSuccessPath(aid > 0 ? String(aid) : "", "/gestao/cios"),
+      );
     },
     onError: (err: unknown) => {
       setFormError(getApiErrorMessage(err, "Erro ao registrar."));
@@ -116,10 +136,20 @@ function NovoContent() {
   );
 }
 
+function NovoPageFallback() {
+  return (
+    <PageContainer variant="narrow">
+      <p className="text-muted-foreground">Carregando…</p>
+    </PageContainer>
+  );
+}
+
 export default function NovoPage() {
   return (
     <ProtectedRoute>
-      <NovoContent />
+      <Suspense fallback={<NovoPageFallback />}>
+        <NovoContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

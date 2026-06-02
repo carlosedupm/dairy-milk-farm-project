@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,12 +20,16 @@ import {
 } from "@/lib/errors";
 import { validateSecagemForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
+import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
+import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
 
 function NovoContent() {
   const router = useRouter();
+  const { animalId: preselectedAnimalId, hasPreselectedAnimal } =
+    useGestaoNovoUrlParams();
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
-  const [animalId, setAnimalId] = useState("");
+  const [animalId, setAnimalId] = useState(preselectedAnimalId);
   const [dataSecagem, setDataSecagem] = useState(new Date().toISOString().slice(0, 10));
   const [formError, setFormError] = useState("");
   const [isValidationError, setIsValidationError] = useState(false);
@@ -44,7 +48,10 @@ function NovoContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["secagens", fazendaAtiva?.id] });
       toast.success("Secagem registada");
-      router.push("/gestao/secagens");
+      const aid = Number(animalId);
+      router.push(
+        gestaoNovoSuccessPath(aid > 0 ? String(aid) : "", "/gestao/secagens"),
+      );
     },
     onError: (err: unknown) => {
       setFormError(getApiErrorMessage(err, "Erro ao registrar."));
@@ -104,6 +111,7 @@ function NovoContent() {
       <AnimalSelect
         fazendaId={fazendaId}
         cicloContext="secagem"
+        preserveSelected={hasPreselectedAnimal}
         value={animalId}
         onValueChange={setAnimalId}
         label="Animal"
@@ -125,6 +133,20 @@ function NovoContent() {
   );
 }
 
+function NovoPageFallback() {
+  return (
+    <PageContainer variant="narrow">
+      <p className="text-muted-foreground">Carregando…</p>
+    </PageContainer>
+  );
+}
+
 export default function NovoPage() {
-  return <ProtectedRoute><NovoContent /></ProtectedRoute>;
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={<NovoPageFallback />}>
+        <NovoContent />
+      </Suspense>
+    </ProtectedRoute>
+  );
 }

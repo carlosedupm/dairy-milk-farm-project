@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,17 +21,19 @@ import {
 } from "@/lib/errors";
 import { validatePartoForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
+import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
+import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 import { defaultCriaLinha } from "@/components/gestao/cria-constants";
 
-function emptyFormState(): PartoFormState {
+function emptyFormState(animalId = "", gestacaoId = ""): PartoFormState {
   return {
-    animalId: "",
+    animalId,
     data: nowDatetimeLocalInputValue(),
     numeroCrias: "1",
     crias: [defaultCriaLinha()],
     tipo: "",
-    gestacaoId: "",
+    gestacaoId,
     complicacoes: "",
     observacoes: "",
   };
@@ -39,9 +41,13 @@ function emptyFormState(): PartoFormState {
 
 function NovoContent() {
   const router = useRouter();
+  const { animalId: preselectedAnimalId, gestacaoId: preselectedGestacaoId, hasPreselectedAnimal } =
+    useGestaoNovoUrlParams();
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
-  const [formState, setFormState] = useState<PartoFormState>(() => emptyFormState());
+  const [formState, setFormState] = useState<PartoFormState>(() =>
+    emptyFormState(preselectedAnimalId, preselectedGestacaoId),
+  );
   const [formError, setFormError] = useState("");
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
@@ -99,7 +105,10 @@ function NovoContent() {
         });
       }
       toast.success("Parto registado");
-      router.push("/gestao/partos");
+      const aid = Number(formState.animalId);
+      router.push(
+        gestaoNovoSuccessPath(aid > 0 ? String(aid) : "", "/gestao/partos"),
+      );
     },
     onError: (err: unknown) => {
       setFormError(getApiErrorMessage(err, "Erro ao registrar."));
@@ -158,15 +167,26 @@ function NovoContent() {
         gestacoes={gestacoes}
         formState={formState}
         setFormState={setFormState}
+        preserveSelected={hasPreselectedAnimal}
       />
     </GestaoFormLayout>
+  );
+}
+
+function NovoPageFallback() {
+  return (
+    <PageContainer variant="narrow">
+      <p className="text-muted-foreground">Carregando…</p>
+    </PageContainer>
   );
 }
 
 export default function NovoPage() {
   return (
     <ProtectedRoute>
-      <NovoContent />
+      <Suspense fallback={<NovoPageFallback />}>
+        <NovoContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

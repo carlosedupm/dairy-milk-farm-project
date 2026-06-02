@@ -19,6 +19,10 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "@/components/ui/popover";
+import {
+  HEADER_SEARCH_DIALOG_ID,
+  HEADER_SEARCH_POPOVER_ID,
+} from "@/components/layout/headerSearchIds";
 import { useAdaptiveSearch } from "@/hooks/useAdaptiveSearch";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +47,9 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
     handleInputChange,
     handleSubmitRapido,
   } = useAdaptiveSearch();
+
+  const searchOpen = popoverOpen || dialogOpen;
+  const searchPanelId = isDesktop ? HEADER_SEARCH_POPOVER_ID : HEADER_SEARCH_DIALOG_ID;
 
   const inputClassName = cn(
     "min-h-[44px] min-w-0 pl-9 text-base",
@@ -69,6 +76,9 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
         onFocus={handleInputFocus}
         placeholder="Brinco ou nome"
         aria-label="Pesquisar animal por identificação"
+        aria-haspopup="dialog"
+        aria-expanded={searchOpen}
+        aria-controls={searchPanelId}
         className={inputClassName}
         autoComplete="off"
       />
@@ -80,12 +90,17 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverAnchor asChild>{inputField}</PopoverAnchor>
         <PopoverContent
+          id={HEADER_SEARCH_POPOVER_ID}
           align="end"
           side="bottom"
           sideOffset={8}
           collisionPadding={16}
           className={ANIMAL_SEARCH_POPOVER_CONTENT_CLASS}
           onOpenAutoFocus={(event) => event.preventDefault()}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            inputRef.current?.focus();
+          }}
         >
           {popoverOpen ? (
             <AnimalSearchPanel
@@ -106,8 +121,13 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
       {inputField}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent
+          id={HEADER_SEARCH_DIALOG_ID}
           className={ANIMAL_SEARCH_DIALOG_CONTENT_CLASS}
           onOpenAutoFocus={(event) => event.preventDefault()}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            inputRef.current?.focus();
+          }}
         >
           <DialogHeader className="shrink-0 space-y-2 pr-8 text-left">
             <DialogTitle>Buscar por identificação</DialogTitle>

@@ -48,6 +48,8 @@ type Props = {
   coberturaSelectValue: string;
   formState: ToqueFormState;
   setFormState: Dispatch<SetStateAction<ToqueFormState>>;
+  /** Animal vindo da ficha / query — mantém opção visível no select de ciclo. */
+  preserveSelected?: boolean;
 };
 
 function obsSugestoesFor(classificacao: ClassificacaoOperacional): readonly string[] {
@@ -70,6 +72,7 @@ export function ToqueFormFields({
   coberturaSelectValue,
   formState,
   setFormState,
+  preserveSelected = false,
 }: Props) {
   const precisaCobertura = classificacaoRequiresCobertura(formState.classificacao);
   const obsSugestoes = obsSugestoesFor(formState.classificacao);
@@ -83,6 +86,7 @@ export function ToqueFormFields({
       <AnimalSelect
         fazendaId={fazendaId}
         cicloContext="toque"
+        preserveSelected={preserveSelected}
         value={formState.animalId}
         onValueChange={(value) =>
           setFormState((s) => ({ ...s, animalId: value, coberturaId: "" }))

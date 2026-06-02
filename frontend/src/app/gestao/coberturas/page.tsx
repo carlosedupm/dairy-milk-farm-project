@@ -21,6 +21,7 @@ import {
   filterCoberturas,
   hasActiveCoberturaFilters,
 } from "@/lib/coberturas-filter";
+import { buildGestaoNovoHref } from "@/lib/gestaoNovoUrl";
 
 function Content() {
   const { fazendaAtiva } = useFazendaAtiva();
@@ -55,6 +56,14 @@ function Content() {
         ? ` (${filteredItems.length} de ${items.length})`
         : ` (${items.length})`;
 
+  const novoHref = useMemo(
+    () =>
+      buildGestaoNovoHref("/gestao/coberturas/novo", {
+        animalId: filterState.animalId || undefined,
+      }),
+    [filterState.animalId],
+  );
+
   if (!fazendaAtiva) {
     return (
       <PageContainer variant="default">
@@ -69,7 +78,7 @@ function Content() {
       title={`Coberturas – ${fazendaAtiva.nome}${titleSuffix}`}
       backHref="/gestao"
       fazendaId={fazendaId}
-      newHref="/gestao/coberturas/novo"
+      newHref={novoHref}
     >
       <div className="space-y-6">
         <CoberturasListToolbar
@@ -90,7 +99,7 @@ function Content() {
             fazendaId={fazendaId}
             hasActiveFilters={filtersAffectResults}
             onClearFilters={() => setFilterState(emptyCoberturasFilterState())}
-            novoHref="/gestao/coberturas/novo"
+            novoHref={novoHref}
           />
         </QueryListContent>
       </div>

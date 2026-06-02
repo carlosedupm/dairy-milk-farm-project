@@ -1,37 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
-import { Button } from "@/components/ui/button";
-import { PWAInstallPrompt } from "@/components/layout/PWAInstallPrompt";
-import { PushPermissionBanner } from "@/components/layout/PushPermissionBanner";
 import { HeaderBrand } from "@/components/layout/HeaderBrand";
 import { HeaderNav } from "@/components/layout/HeaderNav";
 import { HeaderBuscaTrigger } from "@/components/layout/HeaderBuscaTrigger";
 import { HeaderActions } from "@/components/layout/HeaderActions";
+import { HeaderBanners } from "@/components/layout/HeaderBanners";
+import { HeaderMobileBar } from "@/components/layout/HeaderMobileBar";
 import { HeaderMobileDrawer } from "@/components/layout/HeaderMobileDrawer";
-import { userIdentityInitials } from "@/components/layout/UserIdentitySummary";
+import { useHeaderScrollState } from "@/hooks/useHeaderScrollState";
 import { useHeaderVisibility } from "@/hooks/useHeaderVisibility";
 import { useMenuItems } from "@/hooks/useMenuItems";
-import { Menu } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const { headerClassName } = useHeaderScrollState();
   const visibility = useHeaderVisibility();
   const { groups, hasNav, getAreaLabel } = useMenuItems();
   const animalSearch = useAnimalSearchDialog();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 0);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const {
     user,
@@ -50,14 +40,7 @@ export function Header() {
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full border-b transition-all duration-200",
-        scrolled
-          ? "bg-card/80 backdrop-blur-md shadow-sm border-border"
-          : "bg-card border-border"
-      )}
-    >
+    <header className={headerClassName}>
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex h-14 items-center gap-3">
           <HeaderBrand />
@@ -75,35 +58,23 @@ export function Header() {
             />
           </div>
 
-          <div className="flex lg:hidden min-w-0 flex-1 items-center gap-1 ml-auto">
-            {showBuscaAnimal ? <HeaderBuscaTrigger key={pathname} compact /> : null}
-            {user ? (
-              <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-semibold uppercase text-foreground"
-                aria-label={mobileIdentityLabel}
-                title={mobileIdentityLabel}
-              >
-                {userIdentityInitials(user)}
-              </div>
-            ) : null}
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Abrir menu"
-              onClick={() => setMobileMenuOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </div>
+          <HeaderMobileBar
+            showBuscaAnimal={showBuscaAnimal}
+            user={user}
+            mobileIdentityLabel={mobileIdentityLabel}
+            menuOpen={mobileMenuOpen}
+            onOpenMenu={() => setMobileMenuOpen(true)}
+            menuTriggerRef={menuTriggerRef}
+          />
         </div>
 
-        <PWAInstallPrompt />
-        <PushPermissionBanner />
+        <HeaderBanners />
       </div>
 
       <HeaderMobileDrawer
         open={mobileMenuOpen}
         onClose={closeMobileMenu}
+        menuTriggerRef={menuTriggerRef}
         user={user}
         isAdmin={isAdmin}
         isProprietario={isProprietario}

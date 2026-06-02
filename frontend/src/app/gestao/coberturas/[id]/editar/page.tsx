@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
-import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { get, update, type Cobertura } from "@/services/coberturas";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -48,8 +47,6 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-
-  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -115,7 +112,6 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
     >
       <CoberturaFormFields
         fazendaId={fazendaId}
-        animais={animais}
         formState={formState}
         setFormState={setFormState}
         preserveSelected

@@ -11,6 +11,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { ProducaoForm } from "@/components/producao/ProducaoForm";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
 import { toast } from "@/hooks/use-toast";
+import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
 
 function NovaProducaoContent() {
   const router = useRouter();
@@ -41,7 +42,12 @@ function NovaProducaoContent() {
         });
         invalidateAnimalTimeline(queryClient, variables.animal_id);
       }
-      router.push("/producao");
+      router.push(
+        gestaoNovoSuccessPath(
+          variables.animal_id ? String(variables.animal_id) : "",
+          "/producao",
+        ),
+      );
     },
   });
 

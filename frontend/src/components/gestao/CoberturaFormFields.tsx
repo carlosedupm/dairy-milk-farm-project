@@ -1,7 +1,12 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
+import { applyAnimalProfileFilters } from "@/components/animais/animalSelectUtils";
+import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
+import { get as getAnimal } from "@/services/animais";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,8 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Animal } from "@/services/animais";
-
 export const COBERTURA_TIPOS = ["IA", "IATF", "MONTA_NATURAL", "TE"] as const;
 
 export type CoberturaFormState = {
@@ -32,7 +35,6 @@ export type CoberturaFormState = {
 
 type Props = {
   fazendaId: number;
-  animais: Animal[];
   formState: CoberturaFormState;
   setFormState: Dispatch<SetStateAction<CoberturaFormState>>;
   preserveSelected?: boolean;
@@ -40,7 +42,6 @@ type Props = {
 
 export function CoberturaFormFields({
   fazendaId,
-  animais,
   formState,
   setFormState,
   preserveSelected = false,
@@ -49,6 +50,63 @@ export function CoberturaFormFields({
   const animalIdError = useFormFieldError("animalId");
   const dataError = useFormFieldError("data");
   const touroError = useFormFieldError("touro");
+
+  const { data: animaisFazenda = [], isLoading: loadingAnimais } =
+    useAnimaisOperacionalList(fazendaId);
+
+  const touroIdNum = Number(formState.touroAnimalId);
+  const touroMissingFromList =
+    touroIdNum > 0 &&
+    !animaisFazenda.some((a) => a.id === touroIdNum);
+
+  const { data: touroPreservado } = useQuery({
+    queryKey: ["animais", touroIdNum],
+    queryFn: () => getAnimal(touroIdNum),
+    enabled: touroMissingFromList,
+  });
+
+  const animaisParaTouro = useMemo(() => {
+    const base = [...animaisFazenda];
+    if (
+      touroPreservado &&
+      !base.some((a) => a.id === touroPreservado.id)
+    ) {
+      base.unshift(touroPreservado);
+    }
+    return base;
+  }, [animaisFazenda, touroPreservado]);
+
+  const reprodutoresDisponiveis = useMemo(
+    () =>
+      applyAnimalProfileFilters(animaisParaTouro, {
+        reprodutoresOnly: true,
+      }),
+    [animaisParaTouro],
+  );
+
+  useEffect(() => {
+    if (
+      !isMontaNatural ||
+      formState.touroAnimalId ||
+      formState.touroInfo.trim() ||
+      loadingAnimais
+    ) {
+      return;
+    }
+    if (reprodutoresDisponiveis.length === 1) {
+      setFormState((s) => ({
+        ...s,
+        touroAnimalId: reprodutoresDisponiveis[0]!.id.toString(),
+      }));
+    }
+  }, [
+    isMontaNatural,
+    formState.touroAnimalId,
+    formState.touroInfo,
+    loadingAnimais,
+    reprodutoresDisponiveis,
+    setFormState,
+  ]);
 
   return (
     <>
@@ -93,7 +151,7 @@ export function CoberturaFormFields({
         <FormFieldError message={dataError} />
       </div>
       <AnimalSelect
-        animais={animais}
+        animais={animaisParaTouro}
         value={formState.touroAnimalId}
         onValueChange={(v) => {
           setFormState((s) => ({
@@ -103,10 +161,25 @@ export function CoberturaFormFields({
           }));
         }}
         label={isMontaNatural ? "Reprodutor (touro/boi) *" : "Reprodutor (opcional)"}
-        placeholder="Selecione o touro ou boi cadastrado"
+        placeholder={
+          loadingAnimais
+            ? "A carregar reprodutores…"
+            : reprodutoresDisponiveis.length === 0
+              ? "Nenhum touro/boi no rebanho"
+              : "Selecione o touro ou boi cadastrado"
+        }
+        disabled={loadingAnimais}
         reprodutoresOnly
         error={isMontaNatural ? touroError : undefined}
       />
+      {isMontaNatural &&
+      !loadingAnimais &&
+      reprodutoresDisponiveis.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Cadastre um animal com sexo masculino e categoria Touro ou Boi (ex. Maxo)
+          para aparecer aqui, ou preencha o campo de touro abaixo.
+        </p>
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="cobertura-touro-info">
           {isMontaNatural ? "Touro (só se não estiver cadastrado)" : "Touro/sêmen (opcional)"}

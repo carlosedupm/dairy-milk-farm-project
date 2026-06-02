@@ -10,11 +10,14 @@ import { UserIdentitySummary } from "@/components/layout/UserIdentitySummary";
 import type { HeaderNavGroups } from "@/config/headerNav";
 import type { AppArea } from "@/config/appAccess";
 import type { IdentityUser } from "@/components/layout/UserIdentitySummary";
+import { HEADER_MOBILE_DRAWER_ID } from "@/components/layout/headerMobileDrawerIds";
 import { X, Plus } from "lucide-react";
+import type { RefObject } from "react";
 
 type HeaderMobileDrawerProps = {
   open: boolean;
   onClose: () => void;
+  menuTriggerRef?: RefObject<HTMLButtonElement | null>;
   user: IdentityUser | null;
   isAdmin: boolean;
   isProprietario: boolean;
@@ -30,6 +33,7 @@ type HeaderMobileDrawerProps = {
 export function HeaderMobileDrawer({
   open,
   onClose,
+  menuTriggerRef,
   user,
   isAdmin,
   isProprietario,
@@ -48,11 +52,22 @@ export function HeaderMobileDrawer({
           className="fixed inset-0 bg-black/50 z-40 lg:hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-300"
         />
         <DialogPrimitive.Content
+          id={HEADER_MOBILE_DRAWER_ID}
           className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-card border-l shadow-lg z-50 flex flex-col lg:hidden transition-transform duration-300 ease-in-out data-[state=closed]:translate-x-full data-[state=open]:translate-x-0"
-          aria-label="Menu de navegação"
+          onCloseAutoFocus={(event) => {
+            if (menuTriggerRef?.current) {
+              event.preventDefault();
+              menuTriggerRef.current.focus();
+            }
+          }}
         >
+          <DialogPrimitive.Description className="sr-only">
+            Navegação principal, conta, tema e sair da aplicação.
+          </DialogPrimitive.Description>
           <div className="flex h-14 items-center justify-between px-4 border-b shrink-0">
-            <span className="font-semibold">Menu</span>
+            <DialogPrimitive.Title className="font-semibold text-base leading-none">
+              Menu
+            </DialogPrimitive.Title>
             <DialogPrimitive.Close asChild>
               <Button
                 variant="ghost"

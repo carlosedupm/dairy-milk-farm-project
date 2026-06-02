@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { create } from "@/services/toques";
@@ -21,6 +21,8 @@ import {
 import { validateToqueForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { invalidateAnimalTimeline } from "@/services/animais";
+import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
+import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 import {
   classificacaoRequiresCobertura,
@@ -43,13 +45,13 @@ function emptyFormState(animalId = ""): ToqueFormState {
 
 function NovoContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const { animalId: preselectedAnimalId, hasPreselectedAnimal } =
+    useGestaoNovoUrlParams();
   const { fazendaAtiva } = useFazendaAtiva();
   const queryClient = useQueryClient();
 
-  const defaultAnimalId = searchParams.get("animal_id") ?? "";
   const [formState, setFormState] = useState<ToqueFormState>(() =>
-    emptyFormState(defaultAnimalId)
+    emptyFormState(preselectedAnimalId)
   );
   const [formError, setFormError] = useState("");
   const [isValidationError, setIsValidationError] = useState(false);
@@ -123,11 +125,12 @@ function NovoContent() {
         queryClient.invalidateQueries({ queryKey: ["gestacoes"] }),
         queryClient.invalidateQueries({ queryKey: ["coberturas", fazendaId] }),
       ]);
-      if (aid > 0) {
-        router.push(`/animais/${aid}`);
-      } else {
-        router.push("/gestao/toques");
-      }
+      router.push(
+        gestaoNovoSuccessPath(
+          aid > 0 ? String(aid) : "",
+          "/gestao/toques",
+        ),
+      );
     },
     onError: (err: unknown) => {
       setFormError(getApiErrorMessage(err, "Erro ao registrar."));
@@ -192,6 +195,7 @@ function NovoContent() {
         coberturaSelectValue={coberturaSelectValue}
         formState={formState}
         setFormState={setFormState}
+        preserveSelected={hasPreselectedAnimal}
       />
     </GestaoFormLayout>
   );
