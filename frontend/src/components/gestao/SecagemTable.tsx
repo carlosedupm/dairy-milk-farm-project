@@ -15,13 +15,22 @@ import {
 import { formatDatePtBr } from "@/lib/format";
 import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
+import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { Droplets } from "lucide-react";
 
 type Props = {
   items: Secagem[];
   fazendaId: number | undefined;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 };
 
-export function SecagemTable({ items, fazendaId }: Props) {
+export function SecagemTable({
+  items,
+  fazendaId,
+  hasActiveFilters = false,
+  onClearFilters,
+}: Props) {
   const animalIds = useMemo(
     () => items.map((i) => i.animal_id),
     [items],
@@ -30,7 +39,14 @@ export function SecagemTable({ items, fazendaId }: Props) {
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>
+      <ListEmptyState
+        icon={Droplets}
+        emptyTitle="Nenhuma secagem registada"
+        emptyDescription="Registe secagens para acompanhar o fim da lactação."
+        hasActiveFilters={hasActiveFilters}
+        filteredDescription="Nenhuma secagem corresponde aos filtros selecionados."
+        onClearFilters={onClearFilters}
+      />
     );
   }
 

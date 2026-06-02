@@ -16,18 +16,23 @@ import {
 import { formatDatePtBr } from "@/lib/format";
 import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
+import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { Heart } from "lucide-react";
 
 type Props = {
   items: Gestacao[];
   fazendaId: number | undefined;
-  /** Mensagem quando a lista está vazia (ex.: filtro «confirmadas»). */
   emptyMessage?: string;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 };
 
 export function GestacaoTable({
   items,
   fazendaId,
-  emptyMessage = "Nenhum registro.",
+  emptyMessage = "Nenhuma gestação no momento.",
+  hasActiveFilters = false,
+  onClearFilters,
 }: Props) {
   const animalIds = useMemo(
     () => items.map((i) => i.animal_id),
@@ -37,7 +42,14 @@ export function GestacaoTable({
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">{emptyMessage}</p>
+      <ListEmptyState
+        icon={Heart}
+        emptyTitle="Nenhuma gestação"
+        emptyDescription={emptyMessage}
+        hasActiveFilters={hasActiveFilters}
+        filteredDescription="Nenhuma gestação corresponde aos filtros selecionados."
+        onClearFilters={onClearFilters}
+      />
     );
   }
 

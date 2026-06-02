@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery } from "@tanstack/react-query";
 import { listByFazenda } from "@/services/coberturas";
@@ -13,11 +13,13 @@ import { CoberturaTable } from "@/components/gestao/CoberturaTable";
 import {
   CoberturasListToolbar,
   coberturasFilterStateToParams,
-  emptyCoberturasFilterState,
-  hasActiveCoberturaFilterState,
 } from "@/components/gestao/CoberturasListToolbar";
 import { QueryListContent } from "@/components/layout/QueryListContent";
+import { useFilterSync } from "@/hooks/useFilterSync";
+import { formatListCountSuffix } from "@/lib/filter-url";
 import {
+  coberturasFilterFields,
+  emptyCoberturasUrlFilterState,
   filterCoberturas,
   hasActiveCoberturaFilters,
 } from "@/lib/coberturas-filter";
@@ -26,7 +28,13 @@ import { buildGestaoNovoHref } from "@/lib/gestaoNovoUrl";
 function Content() {
   const { fazendaAtiva } = useFazendaAtiva();
   const fazendaId = fazendaAtiva?.id ?? 0;
-  const [filterState, setFilterState] = useState(emptyCoberturasFilterState);
+
+  const { filters, setFilters, clearFilters, hasActiveFilters } =
+    useFilterSync({
+      pathname: "/gestao/coberturas",
+      defaults: emptyCoberturasUrlFilterState(),
+      fields: coberturasFilterFields,
+    });
 
   const { data: items = [], isLoading, error, refetch } = useQuery({
     queryKey: ["coberturas", fazendaId],
@@ -37,8 +45,8 @@ function Content() {
   const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const filterParams = useMemo(
-    () => coberturasFilterStateToParams(filterState),
-    [filterState],
+    () => coberturasFilterStateToParams(filters),
+    [filters],
   );
 
   const filteredItems = useMemo(
@@ -46,22 +54,20 @@ function Content() {
     [items, filterParams],
   );
 
-  const filtersActive = hasActiveCoberturaFilterState(filterState);
   const filtersAffectResults = hasActiveCoberturaFilters(filterParams);
 
-  const titleSuffix =
-    items.length === 0
-      ? ""
-      : filtersAffectResults && filteredItems.length !== items.length
-        ? ` (${filteredItems.length} de ${items.length})`
-        : ` (${items.length})`;
+  const titleSuffix = formatListCountSuffix({
+    filtered: filteredItems.length,
+    total: items.length,
+    filtersActive: filtersAffectResults,
+  });
 
   const novoHref = useMemo(
     () =>
       buildGestaoNovoHref("/gestao/coberturas/novo", {
-        animalId: filterState.animalId || undefined,
+        animalId: filters.animal_id || undefined,
       }),
-    [filterState.animalId],
+    [filters.animal_id],
   );
 
   if (!fazendaAtiva) {
@@ -83,10 +89,10 @@ function Content() {
       <div className="space-y-6">
         <CoberturasListToolbar
           animais={animais}
-          values={filterState}
-          onChange={setFilterState}
-          onClear={() => setFilterState(emptyCoberturasFilterState())}
-          hasActiveFilters={filtersActive}
+          values={filters}
+          onChange={setFilters}
+          onClear={clearFilters}
+          hasActiveFilters={hasActiveFilters}
         />
         <QueryListContent
           isLoading={isLoading}
@@ -98,7 +104,7 @@ function Content() {
             items={filteredItems}
             fazendaId={fazendaId}
             hasActiveFilters={filtersAffectResults}
-            onClearFilters={() => setFilterState(emptyCoberturasFilterState())}
+            onClearFilters={clearFilters}
             novoHref={novoHref}
           />
         </QueryListContent>
@@ -110,7 +116,15 @@ function Content() {
 export default function Page() {
   return (
     <ProtectedRoute>
-      <Content />
+      <Suspense
+        fallback={
+          <PageContainer variant="default">
+            <p className="text-muted-foreground">Carregando…</p>
+          </PageContainer>
+        }
+      >
+        <Content />
+      </Suspense>
     </ProtectedRoute>
   );
 }

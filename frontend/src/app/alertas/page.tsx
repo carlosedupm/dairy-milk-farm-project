@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { ListPaginationBar } from "@/components/ui/pagination";
 import { useAlertasPage } from "@/hooks/useAlertasPage";
+import { formatListCountSuffix } from "@/lib/filter-url";
 import {
   getApiErrorMessage,
   parsePrefixedConformidadeMessage,
@@ -34,7 +35,6 @@ function AlertasContent() {
     setOffset,
     pageSize,
     filters,
-    activeTipoFilter,
     hasActiveFilters,
     setStatusFilter,
     setSeveridadeFilter,
@@ -75,10 +75,16 @@ function AlertasContent() {
     ? getApiErrorMessage(statusMutation.error, "Erro ao atualizar status.")
     : "";
 
+  const titleSuffix = formatListCountSuffix({
+    filtered: total,
+    total,
+    filtersActive: hasActiveFilters,
+  });
+
   return (
     <PageContainer variant="default">
       <ListCardLayout
-        title={`Alertas – ${fazendaAtiva.nome}`}
+        title={`Alertas – ${fazendaAtiva.nome}${titleSuffix}`}
         action={
           canCreate ? (
             <Button type="button" onClick={() => setCreateOpen(true)}>
@@ -89,11 +95,7 @@ function AlertasContent() {
         }
       >
         <AlertasListToolbar
-          statusFilter={filters.status}
-          activeTipoFilter={activeTipoFilter}
-          severidadeFilter={filters.severidade}
-          startDate={filters.startDate}
-          endDate={filters.endDate}
+          filters={filters}
           onStatusChange={setStatusFilter}
           onTipoChange={onTipoChange}
           onSeveridadeChange={setSeveridadeFilter}

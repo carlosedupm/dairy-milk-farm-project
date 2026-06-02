@@ -11,11 +11,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { ListCardLayout } from "@/components/layout/ListCardLayout";
 import { QueryListContent } from "@/components/layout/QueryListContent";
 import { AnimalTable } from "@/components/animais/AnimalTable";
-import {
-  AnimaisListToolbar,
-  emptyAnimaisFilterForm,
-  type AnimaisFilterFormState,
-} from "@/components/animais/AnimaisListToolbar";
+import { AnimaisListToolbar } from "@/components/animais/AnimaisListToolbar";
 import { ListPaginationBar } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +20,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
+import { useFilterSync } from "@/hooks/useFilterSync";
+import { formatListCountSuffix } from "@/lib/filter-url";
+import {
+  animaisFilterFields,
+  emptyAnimaisFilterForm,
+  hasActiveAnimaisToolbarFilters,
+} from "@/lib/animais-filter-sync";
 
 function AnimaisContent() {
   const { user } = useAuth();
@@ -34,9 +37,13 @@ function AnimaisContent() {
 
   const [pageSize, setPageSize] = useState(25);
   const [offset, setOffset] = useState(0);
-  const [filters, setFilters] = useState<AnimaisFilterFormState>(() =>
-    emptyAnimaisFilterForm()
-  );
+
+  const { filters, setFilters, clearFilters } = useFilterSync({
+      pathname: "/animais",
+      defaults: emptyAnimaisFilterForm(),
+      fields: animaisFilterFields,
+      preserveParams: ["em_lactacao"],
+    });
 
   const emLactacaoMode = searchParams.get("em_lactacao") === "1";
   const queryString = searchParams.toString();
@@ -51,21 +58,20 @@ function AnimaisContent() {
     let inner: number | undefined;
     const outer = window.setTimeout(() => {
       if (q) {
-        setFilters((prev) => ({ ...prev, identificacao: q }));
+        params.set("identificacao", q);
       }
+      params.delete("focusSearch");
+      params.delete("q");
+      const next = params.toString();
+      router.replace(next ? `/animais?${next}` : "/animais", {
+        scroll: false,
+      });
       inner = window.setTimeout(() => {
         const el = document.getElementById(
           "animais-filter-ident",
         ) as HTMLInputElement | null;
         el?.focus();
         if (q) el?.select();
-
-        params.delete("focusSearch");
-        params.delete("q");
-        const next = params.toString();
-        router.replace(next ? `/animais?${next}` : "/animais", {
-          scroll: false,
-        });
       }, q ? 120 : 0);
     }, 0);
 
@@ -105,7 +111,7 @@ function AnimaisContent() {
       filters.status_reprodutivo,
       loteNum,
       filters.rebanho,
-    ]
+    ],
   );
 
   const listEnabled =
@@ -128,17 +134,11 @@ function AnimaisContent() {
     const all = lactacaoQuery.data ?? [];
     if (!debouncedIdent) return all;
     const term = debouncedIdent.toLowerCase();
-    return all.filter((a) =>
-      a.identificacao.toLowerCase().includes(term),
-    );
+    return all.filter((a) => a.identificacao.toLowerCase().includes(term));
   }, [lactacaoQuery.data, debouncedIdent]);
 
-  const items = emLactacaoMode
-    ? lactacaoFiltered
-    : (data?.animais ?? []);
-  const total = emLactacaoMode
-    ? lactacaoFiltered.length
-    : (data?.total ?? 0);
+  const items = emLactacaoMode ? lactacaoFiltered : (data?.animais ?? []);
+  const total = emLactacaoMode ? lactacaoFiltered.length : (data?.total ?? 0);
   const listLoading = emLactacaoMode
     ? !fazendaReady || lactacaoQuery.isLoading
     : !fazendaReady || isLoading;
@@ -154,6 +154,9 @@ function AnimaisContent() {
     setOffset(0);
   }
 
+  const toolbarFiltersActive = hasActiveAnimaisToolbarFilters(filters);
+  const hasActiveFilters = emLactacaoMode || toolbarFiltersActive;
+
   const titleBase = fazendaAtiva
     ? emLactacaoMode
       ? `Animais em lactação — ${fazendaAtiva.nome}`
@@ -161,25 +164,14 @@ function AnimaisContent() {
     : emLactacaoMode
       ? "Animais em lactação"
       : "Animais";
-  const title =
-    total > 0 ? `${titleBase} (${total})` : titleBase;
+  const titleSuffix = formatListCountSuffix({
+    filtered: total,
+    total,
+    filtersActive: hasActiveFilters,
+  });
+  const title = `${titleBase}${titleSuffix}`;
 
   const showSelectFazendaMsg = fazendaReady && !fazendaAtiva;
-
-  const hasActiveFilters =
-    emLactacaoMode ||
-    Boolean(debouncedIdent) ||
-    Boolean(filters.categoria) ||
-    Boolean(filters.sexo) ||
-    Boolean(filters.status_saude) ||
-    Boolean(filters.status_reprodutivo) ||
-    Boolean(filters.lote_id) ||
-    filters.rebanho !== "ativos";
-
-  const handleClearFilters = () => {
-    setFilters(emptyAnimaisFilterForm());
-    setOffset(0);
-  };
 
   const { data: fazendasSemAtiva = undefined, isLoading: loadingFazendasCheck } =
     useQuery({
@@ -251,7 +243,7 @@ function AnimaisContent() {
               onChange={setFilters}
               resultCount={total}
               listLoading={listLoading}
-              onClear={handleClearFilters}
+              onClear={clearFilters}
             />
             <QueryListContent
               isLoading={listLoading}
@@ -268,7 +260,7 @@ function AnimaisContent() {
                   onClearFilters={
                     emLactacaoMode
                       ? () => router.replace("/animais")
-                      : handleClearFilters
+                      : clearFilters
                   }
                   novoAnimalHref={
                     fazendaAtiva

@@ -36,10 +36,11 @@ Ao criar ou alterar página, listagem ou formulário:
 3. **Erros e sucesso**: validação client → `FormFieldError` no campo + `FormValidationAlert` no topo do form (`isValidation` quando aplicável); API → `getApiErrorMessage` + `getApiErrorConformidadeCode`; sucesso → `toast.success` / `toast.info` / `toast.warning` via `hooks/use-toast.ts` (`useToast()` ou `toast`); ver [`docs/design-system/form-patterns.md`](../docs/design-system/form-patterns.md).
 4. **Listagem com ações**: `ResponsiveListContainer`, `MobileListCard`, `ListRowActionsMenu`, `DeleteRecordDialog`, `QueryListContent`, `ListPaginationBar`.
 5. **Página fina**: extrair `*Table`, `*ListToolbar`, `*Dialog` para `components/<domínio>/`; lógica pesada em `hooks/use*Page.ts`.
-6. **Fazenda ativa**: `useFazendaAtiva()` + `isReady` antes de pedir seleção de fazenda.
-7. **DRY**: labels/maps em `services/*` ou `*-utils.ts` — não copiar entre páginas.
+6. **Filtros de listagem**: `useFilterSync` + params URL (`lib/filter-url.ts`); toolbar com `ResponsiveFiltersShell` (Dialog abaixo de `md`); título `(N de M)` via `formatListCountSuffix`.
+7. **Fazenda ativa**: `useFazendaAtiva()` + `isReady` antes de pedir seleção de fazenda.
+8. **DRY**: labels/maps em `services/*` ou `*-utils.ts` — não copiar entre páginas.
 
-Referências: `/animais` (`AnimalTable`, `AnimaisListToolbar`); `/gestao/coberturas` (`CoberturaTable`, `CoberturasListToolbar`); `/alertas` (`AlertasTable`, `AlertasListToolbar`, `useAlertasPage`); dialog com animal/data: `RestricoesLeiteHomePanel`.
+Referências: `/animais` (`AnimaisListToolbar`, `lib/animais-filter-sync.ts`); `/gestao/coberturas` e `/gestao/cios` (`GestaoPeriodListToolbar`); `/alertas` (`useAlertasPage`); `/producao` (`ProducaoListToolbar`); dialog com animal/data: `RestricoesLeiteHomePanel`.
 
 ## Comandos
 

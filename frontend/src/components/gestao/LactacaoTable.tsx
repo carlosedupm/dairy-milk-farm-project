@@ -15,13 +15,22 @@ import {
 import { formatDatePtBr } from "@/lib/format";
 import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
+import { ListEmptyState } from "@/components/layout/ListEmptyState";
+import { Milk } from "lucide-react";
 
 type Props = {
   items: Lactacao[];
   fazendaId: number | undefined;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 };
 
-export function LactacaoTable({ items, fazendaId }: Props) {
+export function LactacaoTable({
+  items,
+  fazendaId,
+  hasActiveFilters = false,
+  onClearFilters,
+}: Props) {
   const animalIds = useMemo(
     () => items.map((i) => i.animal_id),
     [items],
@@ -30,7 +39,14 @@ export function LactacaoTable({ items, fazendaId }: Props) {
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>
+      <ListEmptyState
+        icon={Milk}
+        emptyTitle="Nenhuma lactação registada"
+        emptyDescription="Lactações são criadas automaticamente com partos ou podem ser registadas manualmente."
+        hasActiveFilters={hasActiveFilters}
+        filteredDescription="Nenhuma lactação corresponde aos filtros selecionados."
+        onClearFilters={onClearFilters}
+      />
     );
   }
 

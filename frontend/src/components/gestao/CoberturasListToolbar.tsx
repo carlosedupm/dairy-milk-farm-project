@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
+import { ResponsiveFiltersShell } from "@/components/layout/ResponsiveFiltersShell";
 import { COBERTURA_TIPOS } from "@/components/gestao/CoberturaFormFields";
-import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Animal } from "@/services/animais";
+import { countActiveCoberturaUrlFilters } from "@/lib/coberturas-filter";
 
 const ALL_TIPOS = "__all__";
 
@@ -24,17 +25,17 @@ const COBERTURA_TIPO_LABELS: Record<string, string> = {
 };
 
 export type CoberturasFilterState = {
-  animalId: string;
+  animal_id: string;
   tipo: string;
-  startDate: string;
-  endDate: string;
+  start: string;
+  end: string;
 };
 
 export const emptyCoberturasFilterState = (): CoberturasFilterState => ({
-  animalId: "",
+  animal_id: "",
   tipo: ALL_TIPOS,
-  startDate: "",
-  endDate: "",
+  start: "",
+  end: "",
 });
 
 type Props = {
@@ -52,12 +53,14 @@ export function CoberturasListToolbar({
   onClear,
   hasActiveFilters,
 }: Props) {
-  return (
+  const activeCount = countActiveCoberturaUrlFilters(values);
+
+  const form = (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end">
       <AnimalSelect
         animais={animais}
-        value={values.animalId}
-        onValueChange={(animalId) => onChange({ ...values, animalId })}
+        value={values.animal_id}
+        onValueChange={(animal_id) => onChange({ ...values, animal_id })}
         label="Animal"
         placeholder="Todos os animais"
         femeasOnly
@@ -85,8 +88,8 @@ export function CoberturasListToolbar({
         <Label htmlFor="coberturas-filter-start">Data inicial</Label>
         <DatePicker
           id="coberturas-filter-start"
-          value={values.startDate}
-          onChange={(startDate) => onChange({ ...values, startDate })}
+          value={values.start}
+          onChange={(start) => onChange({ ...values, start })}
           placeholder="Selecione a data inicial"
         />
       </div>
@@ -94,24 +97,24 @@ export function CoberturasListToolbar({
         <Label htmlFor="coberturas-filter-end">Data final</Label>
         <DatePicker
           id="coberturas-filter-end"
-          value={values.endDate}
-          onChange={(endDate) => onChange({ ...values, endDate })}
+          value={values.end}
+          onChange={(end) => onChange({ ...values, end })}
           placeholder="Selecione a data final"
         />
       </div>
-      {hasActiveFilters ? (
-        <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-[44px]"
-            onClick={onClear}
-          >
-            Limpar filtros
-          </Button>
-        </div>
-      ) : null}
     </div>
+  );
+
+  return (
+    <ResponsiveFiltersShell
+      hasActiveFilters={hasActiveFilters}
+      onClear={onClear}
+      activeCount={activeCount}
+      title="Filtros de coberturas"
+      description="Animal, tipo e período. A lista atualiza automaticamente."
+    >
+      {form}
+    </ResponsiveFiltersShell>
   );
 }
 
@@ -119,10 +122,10 @@ export function hasActiveCoberturaFilterState(
   state: CoberturasFilterState,
 ): boolean {
   return (
-    state.animalId !== "" ||
+    state.animal_id !== "" ||
     state.tipo !== ALL_TIPOS ||
-    state.startDate !== "" ||
-    state.endDate !== ""
+    state.start !== "" ||
+    state.end !== ""
   );
 }
 
@@ -134,11 +137,11 @@ export function coberturasFilterStateToParams(
   startDate?: string;
   endDate?: string;
 } {
-  const dateFilterActive = Boolean(state.startDate && state.endDate);
+  const dateFilterActive = Boolean(state.start && state.end);
   return {
-    animalId: state.animalId ? Number(state.animalId) : undefined,
+    animalId: state.animal_id ? Number(state.animal_id) : undefined,
     tipo: state.tipo !== ALL_TIPOS ? state.tipo : undefined,
-    startDate: dateFilterActive ? state.startDate : undefined,
-    endDate: dateFilterActive ? state.endDate : undefined,
+    startDate: dateFilterActive ? state.start : undefined,
+    endDate: dateFilterActive ? state.end : undefined,
   };
 }

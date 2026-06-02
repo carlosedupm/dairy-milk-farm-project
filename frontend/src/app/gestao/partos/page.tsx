@@ -1,24 +1,72 @@
 "use client";
 
+import { Suspense, useMemo } from "react";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery } from "@tanstack/react-query";
 import { listByFazenda } from "@/services/partos";
+import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { GestaoListLayout } from "@/components/gestao/GestaoListLayout";
 import { PartoTable } from "@/components/gestao/PartoTable";
-import { getApiErrorMessage } from "@/lib/errors";
+import { PartosListToolbar } from "@/components/gestao/GestaoPeriodListToolbar";
+import { QueryListContent } from "@/components/layout/QueryListContent";
+import { useFilterSync } from "@/hooks/useFilterSync";
+import { formatListCountSuffix } from "@/lib/filter-url";
+import {
+  emptyGestaoPeriodFilterState,
+  filterPartos,
+  gestaoPeriodFilterFields,
+  gestaoPeriodFilterStateToParams,
+  hasActiveGestaoPeriodFilters,
+} from "@/lib/partos-filter";
+import { buildGestaoNovoHref } from "@/lib/gestaoNovoUrl";
 
 function Content() {
   const { fazendaAtiva } = useFazendaAtiva();
   const fazendaId = fazendaAtiva?.id ?? 0;
 
-  const { data: items = [], isLoading, error } = useQuery({
+  const { filters, setFilters, clearFilters, hasActiveFilters } =
+    useFilterSync({
+      pathname: "/gestao/partos",
+      defaults: emptyGestaoPeriodFilterState(),
+      fields: gestaoPeriodFilterFields,
+    });
+
+  const { data: items = [], isLoading, error, refetch } = useQuery({
     queryKey: ["partos", fazendaId],
     queryFn: () => listByFazenda(fazendaId),
     enabled: fazendaId > 0,
   });
+
+  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
+
+  const filterParams = useMemo(
+    () => gestaoPeriodFilterStateToParams(filters),
+    [filters],
+  );
+
+  const filteredItems = useMemo(
+    () => filterPartos(items, filterParams),
+    [items, filterParams],
+  );
+
+  const filtersAffectResults = hasActiveGestaoPeriodFilters(filterParams);
+
+  const titleSuffix = formatListCountSuffix({
+    filtered: filteredItems.length,
+    total: items.length,
+    filtersActive: filtersAffectResults,
+  });
+
+  const novoHref = useMemo(
+    () =>
+      buildGestaoNovoHref("/gestao/partos/novo", {
+        animalId: filters.animal_id || undefined,
+      }),
+    [filters.animal_id],
+  );
 
   if (!fazendaAtiva) {
     return (
@@ -31,18 +79,35 @@ function Content() {
 
   return (
     <GestaoListLayout
-      title={`Partos – ${fazendaAtiva.nome}`}
+      title={`Partos – ${fazendaAtiva.nome}${titleSuffix}`}
       backHref="/gestao"
       fazendaId={fazendaId}
-      newHref="/gestao/partos/novo"
+      newHref={novoHref}
     >
-      {isLoading && <p className="text-muted-foreground">Carregando…</p>}
-      {error && (
-        <p className="text-destructive">
-          {getApiErrorMessage(error, "Erro ao carregar.")}
-        </p>
-      )}
-      {!isLoading && !error && <PartoTable items={items} fazendaId={fazendaId} />}
+      <div className="space-y-6">
+        <PartosListToolbar
+          animais={animais}
+          values={filters}
+          onChange={setFilters}
+          onClear={clearFilters}
+          hasActiveFilters={hasActiveFilters}
+          title="Filtros de partos"
+        />
+        <QueryListContent
+          isLoading={isLoading}
+          error={error}
+          errorFallback="Erro ao carregar partos. Tente novamente."
+          onRetry={() => void refetch()}
+        >
+          <PartoTable
+            items={filteredItems}
+            fazendaId={fazendaId}
+            novoHref={novoHref}
+            hasActiveFilters={filtersAffectResults}
+            onClearFilters={clearFilters}
+          />
+        </QueryListContent>
+      </div>
     </GestaoListLayout>
   );
 }
@@ -50,7 +115,15 @@ function Content() {
 export default function Page() {
   return (
     <ProtectedRoute>
-      <Content />
+      <Suspense
+        fallback={
+          <PageContainer variant="default">
+            <p className="text-muted-foreground">Carregando…</p>
+          </PageContainer>
+        }
+      >
+        <Content />
+      </Suspense>
     </ProtectedRoute>
   );
 }

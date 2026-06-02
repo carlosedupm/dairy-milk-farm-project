@@ -24,15 +24,26 @@ import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveList
 import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
 import { GestaoRegistroRowActions } from "@/components/gestao/GestaoRegistroRowActions";
 import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
+import { ListEmptyState } from "@/components/layout/ListEmptyState";
 import { getApiErrorMessage } from "@/lib/errors";
 import { toast } from "@/hooks/use-toast";
+import { Baby } from "lucide-react";
 
 type Props = {
   items: Parto[];
   fazendaId: number | undefined;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
+  novoHref?: string;
 };
 
-export function PartoTable({ items, fazendaId }: Props) {
+export function PartoTable({
+  items,
+  fazendaId,
+  hasActiveFilters = false,
+  onClearFilters,
+  novoHref = "/gestao/partos/novo",
+}: Props) {
   const queryClient = useQueryClient();
   const animalIds = useMemo(() => items.map((i) => i.animal_id), [items]);
   const { animaisById, isResolved: animaisResolved } = useGestaoAnimaisByIdMap(
@@ -82,7 +93,16 @@ export function PartoTable({ items, fazendaId }: Props) {
 
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>
+      <ListEmptyState
+        icon={Baby}
+        emptyTitle="Registre o primeiro parto"
+        emptyDescription="Registe partos para acompanhar o ciclo produtivo do rebanho."
+        registerLabel="Registrar parto"
+        registerHref={novoHref}
+        hasActiveFilters={hasActiveFilters}
+        filteredDescription="Nenhum parto corresponde aos filtros selecionados."
+        onClearFilters={onClearFilters}
+      />
     );
   }
 

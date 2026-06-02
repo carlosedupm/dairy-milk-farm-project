@@ -23,6 +23,14 @@
 
 ## ✅ O que foi concluído
 
+### **Toolbar filtros + URL-sync (✅ 2026-06-01 — t_ds_006)**
+
+- [x] `hooks/useFilterSync.ts` + `lib/filter-url.ts` + `ResponsiveFiltersShell`
+- [x] Toolbars novas: cios, partos, secagens, lactações, gestações, fazendas
+- [x] URL-sync: animais, produção (`ProducaoListToolbar`), alertas, coberturas, toques
+- [x] Filtro client-side gestão (`lib/gestao-period-filter.ts`, `lib/gestacoes-list-filter.ts`)
+- [x] Título `(N de M)` em todas as 11 listagens; back/forward restaura filtros
+
 ### **Ficha animal — tabs + sidebar (✅ 2026-06-01)**
 
 - [x] Layout 2 colunas desktop / coluna única mobile (`AnimalFichaShell`, `PageContainer wide`)
@@ -862,6 +870,6 @@
 
 ---
 
-**Última atualização**: 2026-05-31 (Alertas DoD: filtro período, atualizar, badge Header)
+**Última atualização**: 2026-06-01 (t_ds_006 — toolbar filtros + URL-sync)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

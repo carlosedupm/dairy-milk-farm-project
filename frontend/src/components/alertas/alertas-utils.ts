@@ -9,6 +9,8 @@ import {
   type StatusAlerta,
   type TipoAlerta,
 } from "@/services/alertas";
+import type { FilterFieldDef } from "@/hooks/useFilterSync";
+import { parseDateRange, parseOptionalString } from "@/lib/filter-url";
 
 export const ALERTAS_FILTER_ALL = "__all__";
 export const ALERTAS_PAGE_SIZE = 25;
@@ -27,8 +29,8 @@ export type AlertasFilterState = {
   status: string;
   tipo: string;
   severidade: string;
-  startDate: string;
-  endDate: string;
+  start: string;
+  end: string;
 };
 
 export function emptyAlertasFilterState(): AlertasFilterState {
@@ -36,57 +38,115 @@ export function emptyAlertasFilterState(): AlertasFilterState {
     status: ALERTAS_FILTER_ALL,
     tipo: ALERTAS_FILTER_ALL,
     severidade: ALERTAS_FILTER_ALL,
-    startDate: "",
-    endDate: "",
+    start: "",
+    end: "",
   };
+}
+
+export const alertasFilterFields: FilterFieldDef<AlertasFilterState>[] = [
+  {
+    key: "status",
+    param: "status",
+    parse: (raw) => {
+      const trimmed = parseOptionalString(raw) ?? "";
+      if (trimmed && (STATUS_ALERTA as readonly string[]).includes(trimmed)) {
+        return trimmed;
+      }
+      return ALERTAS_FILTER_ALL;
+    },
+    serialize: (value) =>
+      value !== ALERTAS_FILTER_ALL ? value : null,
+    isDefault: (value) => value === ALERTAS_FILTER_ALL,
+  },
+  {
+    key: "tipo",
+    param: "tipo",
+    parse: (raw) => {
+      const trimmed = parseOptionalString(raw) ?? "";
+      if (trimmed && isValidAlertaTipoFilter(trimmed)) {
+        return trimmed;
+      }
+      return ALERTAS_FILTER_ALL;
+    },
+    serialize: (value) =>
+      value !== ALERTAS_FILTER_ALL ? value : null,
+    isDefault: (value) => value === ALERTAS_FILTER_ALL,
+  },
+  {
+    key: "severidade",
+    param: "severidade",
+    parse: (raw) => {
+      const trimmed = parseOptionalString(raw) ?? "";
+      if (
+        trimmed &&
+        (SEVERIDADES_ALERTA as readonly string[]).includes(trimmed)
+      ) {
+        return trimmed;
+      }
+      return ALERTAS_FILTER_ALL;
+    },
+    serialize: (value) =>
+      value !== ALERTAS_FILTER_ALL ? value : null,
+    isDefault: (value) => value === ALERTAS_FILTER_ALL,
+  },
+  {
+    key: "start",
+    param: "start",
+    parse: (raw, params) => {
+      const range = parseDateRange(raw, params.get("end"));
+      return range?.start ?? "";
+    },
+    serialize: (value, state) => {
+      const range = parseDateRange(value, state.end);
+      return range?.start ?? null;
+    },
+    isDefault: (value) => value === "",
+  },
+  {
+    key: "end",
+    param: "end",
+    parse: (raw, params) => {
+      const range = parseDateRange(params.get("start"), raw);
+      return range?.end ?? "";
+    },
+    serialize: (value, state) => {
+      const range = parseDateRange(state.start, value);
+      return range?.end ?? null;
+    },
+    isDefault: (value) => value === "",
+  },
+];
+
+export function countActiveAlertasFilters(
+  filters: AlertasFilterState,
+): number {
+  let count = 0;
+  if (filters.status !== ALERTAS_FILTER_ALL) count += 1;
+  if (filters.tipo !== ALERTAS_FILTER_ALL) count += 1;
+  if (filters.severidade !== ALERTAS_FILTER_ALL) count += 1;
+  if (filters.start || filters.end) count += 1;
+  return count;
 }
 
 /** Envia start/end à API apenas quando ambas as datas estão preenchidas. */
 export function alertasPeriodToApiParams(
-  startDate: string,
-  endDate: string,
+  start: string,
+  end: string,
 ): { start?: string; end?: string } {
-  const start = startDate.trim();
-  const end = endDate.trim();
-  if (!start || !end) {
-    return {};
-  }
-  return { start, end };
-}
-
-/** Hidrata filtros a partir de query string (ex.: drill-down da home). */
-export function alertasFiltersFromSearchParams(
-  searchParams: Pick<URLSearchParams, "get">,
-): AlertasFilterState {
-  const base = emptyAlertasFilterState();
-  const status = searchParams.get("status")?.trim() ?? "";
-  const severidade = searchParams.get("severidade")?.trim() ?? "";
-  if (
-    status &&
-    (STATUS_ALERTA as readonly string[]).includes(status)
-  ) {
-    base.status = status;
-  }
-  if (
-    severidade &&
-    (SEVERIDADES_ALERTA as readonly string[]).includes(severidade)
-  ) {
-    base.severidade = severidade;
-  }
-  return base;
+  const range = parseDateRange(start, end);
+  if (!range) return {};
+  return { start: range.start, end: range.end };
 }
 
 export function hasActiveAlertasFilters(
   filters: AlertasFilterState,
-  tipoFromUrl: TipoAlerta | null = null
 ): boolean {
-  if (tipoFromUrl) return true;
   return (
     filters.status !== ALERTAS_FILTER_ALL ||
     filters.tipo !== ALERTAS_FILTER_ALL ||
     filters.severidade !== ALERTAS_FILTER_ALL ||
-    filters.startDate !== "" ||
-    filters.endDate !== ""
+    filters.start !== "" ||
+    filters.end !== ""
   );
 }
 

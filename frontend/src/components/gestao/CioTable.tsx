@@ -30,9 +30,17 @@ type Props = {
   items: Cio[];
   fazendaId: number | undefined;
   novoHref?: string;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 };
 
-export function CioTable({ items, fazendaId, novoHref }: Props) {
+export function CioTable({
+  items,
+  fazendaId,
+  novoHref,
+  hasActiveFilters = false,
+  onClearFilters,
+}: Props) {
   const queryClient = useQueryClient();
   const animalIds = useMemo(() => items.map((i) => i.animal_id), [items]);
   const { animaisById, isResolved: animaisResolved } = useGestaoAnimaisByIdMap(
@@ -75,6 +83,9 @@ export function CioTable({ items, fazendaId, novoHref }: Props) {
         emptyDescription="Comece pelo registo de cio para acompanhar o ciclo reprodutivo."
         registerLabel="Registrar cio"
         registerHref={novoHref}
+        hasActiveFilters={hasActiveFilters}
+        filteredDescription="Nenhum cio corresponde aos filtros selecionados."
+        onClearFilters={onClearFilters}
       />
     );
   }

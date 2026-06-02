@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useMemo } from "react";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery } from "@tanstack/react-query";
 import { listByFazenda } from "@/services/toques";
@@ -11,13 +11,50 @@ import { QueryListContent } from "@/components/layout/QueryListContent";
 import { GestaoListLayout } from "@/components/gestao/GestaoListLayout";
 import { ToqueTable } from "@/components/gestao/ToqueTable";
 import { ToquesListToolbar } from "@/components/gestao/ToquesListToolbar";
+import { useFilterSync } from "@/hooks/useFilterSync";
+import { formatListCountSuffix, isValidYmd } from "@/lib/filter-url";
+import type { FilterFieldDef } from "@/hooks/useFilterSync";
 import { todayDateInputValue } from "@/lib/toquesUtils";
+
+type ToquesFilterState = {
+  data: string;
+};
+
+const emptyToquesFilterState = (): ToquesFilterState => ({ data: "" });
+
+const toquesFilterFields: FilterFieldDef<ToquesFilterState>[] = [
+  {
+    key: "data",
+    param: "data",
+    parse: (raw) => {
+      const trimmed = raw?.trim() ?? "";
+      return trimmed && isValidYmd(trimmed) ? trimmed : "";
+    },
+    serialize: (value) => {
+      const today = todayDateInputValue();
+      if (!value || value === today) return null;
+      return value;
+    },
+    isDefault: (value) => {
+      const today = todayDateInputValue();
+      return value === "" || value === today;
+    },
+  },
+];
 
 function Content() {
   const { fazendaAtiva } = useFazendaAtiva();
   const fazendaId = fazendaAtiva?.id ?? 0;
   const today = todayDateInputValue();
-  const [dataFiltro, setDataFiltro] = useState(today);
+
+  const { filters, setFilter, clearFilters, hasActiveFilters } =
+    useFilterSync({
+      pathname: "/gestao/toques",
+      defaults: emptyToquesFilterState(),
+      fields: toquesFilterFields,
+    });
+
+  const dataFiltro = filters.data || today;
 
   const { data: items = [], isLoading, error, refetch } = useQuery({
     queryKey: ["toques", fazendaId, dataFiltro],
@@ -30,7 +67,11 @@ function Content() {
     enabled: fazendaId > 0,
   });
 
-  const hasActiveFilters = dataFiltro !== today;
+  const titleSuffix = formatListCountSuffix({
+    filtered: items.length,
+    total: items.length,
+    filtersActive: hasActiveFilters,
+  });
 
   if (!fazendaAtiva) {
     return (
@@ -43,31 +84,29 @@ function Content() {
 
   return (
     <GestaoListLayout
-      title={`Toques (Diagnósticos) – ${fazendaAtiva.nome}`}
+      title={`Toques (Diagnósticos) – ${fazendaAtiva.nome}${titleSuffix}`}
       backHref="/gestao"
       fazendaId={fazendaId}
       newHref="/gestao/toques/novo"
       secondaryHref="/gestao/toques/lote"
-      secondaryLabel="Registrar em lote"
+      secondaryLabel="Palpação em lote"
     >
-      <ToquesListToolbar
-        dataFiltro={dataFiltro}
-        onDataFiltroChange={setDataFiltro}
-      />
-      <QueryListContent
-        isLoading={isLoading}
-        error={error}
-        errorFallback="Erro ao carregar toques. Tente novamente."
-        onRetry={() => void refetch()}
-      >
-        <ToqueTable
-          items={items}
-          fazendaId={fazendaId}
+      <div className="space-y-6">
+        <ToquesListToolbar
+          dataFiltro={dataFiltro}
+          onDataFiltroChange={(data) => setFilter("data", data)}
+          onClear={clearFilters}
           hasActiveFilters={hasActiveFilters}
-          onClearFilters={() => setDataFiltro(todayDateInputValue())}
-          novoHref="/gestao/toques/novo"
         />
-      </QueryListContent>
+        <QueryListContent
+          isLoading={isLoading}
+          error={error}
+          errorFallback="Erro ao carregar toques. Tente novamente."
+          onRetry={() => void refetch()}
+        >
+          <ToqueTable items={items} fazendaId={fazendaId} />
+        </QueryListContent>
+      </div>
     </GestaoListLayout>
   );
 }
@@ -75,7 +114,15 @@ function Content() {
 export default function Page() {
   return (
     <ProtectedRoute>
-      <Content />
+      <Suspense
+        fallback={
+          <PageContainer variant="default">
+            <p className="text-muted-foreground">Carregando…</p>
+          </PageContainer>
+        }
+      >
+        <Content />
+      </Suspense>
     </ProtectedRoute>
   );
 }

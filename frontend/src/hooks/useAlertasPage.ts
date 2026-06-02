@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
@@ -15,11 +14,10 @@ import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import {
   ALERTAS_FILTER_ALL,
   ALERTAS_PAGE_SIZE,
-  alertasFiltersFromSearchParams,
+  alertasFilterFields,
   alertasPeriodToApiParams,
   emptyAlertasFilterState,
   hasActiveAlertasFilters,
-  isValidAlertaTipoFilter,
 } from "@/components/alertas/alertas-utils";
 import {
   alertasListQueryKey,
@@ -27,10 +25,9 @@ import {
   updateAlertaStatus,
   type StatusAlerta,
 } from "@/services/alertas";
+import { useFilterSync } from "@/hooks/useFilterSync";
 
 export function useAlertasPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const { fazendaAtiva, isReady: fazendaReady } = useFazendaAtiva();
   const { user } = useAuth();
   const perfil = user?.perfil;
@@ -39,27 +36,21 @@ export function useAlertasPage() {
 
   const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
-  const tipoParam = searchParams.get("tipo");
-  const tipoFromUrl =
-    tipoParam && isValidAlertaTipoFilter(tipoParam) ? tipoParam : null;
+  const { filters, setFilter, clearFilters } = useFilterSync({
+      pathname: "/alertas",
+      defaults: emptyAlertasFilterState(),
+      fields: alertasFilterFields,
+    });
 
-  const [filters, setFilters] = useState(() =>
-    alertasFiltersFromSearchParams(searchParams),
-  );
-  const activeTipoFilter = tipoFromUrl ?? filters.tipo;
   const [offset, setOffset] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
 
   const listParams = useMemo(() => {
-    const period = alertasPeriodToApiParams(
-      filters.startDate,
-      filters.endDate,
-    );
+    const period = alertasPeriodToApiParams(filters.start, filters.end);
     return {
       status:
         filters.status === ALERTAS_FILTER_ALL ? undefined : filters.status,
-      tipo:
-        activeTipoFilter === ALERTAS_FILTER_ALL ? undefined : activeTipoFilter,
+      tipo: filters.tipo === ALERTAS_FILTER_ALL ? undefined : filters.tipo,
       severidade:
         filters.severidade === ALERTAS_FILTER_ALL
           ? undefined
@@ -70,14 +61,14 @@ export function useAlertasPage() {
     };
   }, [
     filters.status,
+    filters.tipo,
     filters.severidade,
-    filters.startDate,
-    filters.endDate,
-    activeTipoFilter,
+    filters.start,
+    filters.end,
     offset,
   ]);
 
-  const filterKey = `${filters.status}|${activeTipoFilter}|${filters.severidade}|${filters.startDate}|${filters.endDate}`;
+  const filterKey = `${filters.status}|${filters.tipo}|${filters.severidade}|${filters.start}|${filters.end}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
@@ -109,22 +100,6 @@ export function useAlertasPage() {
     statusMutation.mutate({ alertaId, status });
   };
 
-  const handleTipoChange = (value: string) => {
-    setFilters((f) => ({ ...f, tipo: value }));
-    if (tipoFromUrl) {
-      router.replace("/alertas", { scroll: false });
-    }
-  };
-
-  const handleClearFilters = () => {
-    setFilters(emptyAlertasFilterState());
-    if (tipoFromUrl || searchParams.get("status") || searchParams.get("severidade")) {
-      router.replace("/alertas", { scroll: false });
-    }
-  };
-
-  const hasActiveFilters = hasActiveAlertasFilters(filters, tipoFromUrl);
-
   return {
     fazendaReady,
     fazendaAtiva,
@@ -140,18 +115,14 @@ export function useAlertasPage() {
     setOffset,
     pageSize: ALERTAS_PAGE_SIZE,
     filters,
-    activeTipoFilter,
-    hasActiveFilters,
-    setStatusFilter: (status: string) =>
-      setFilters((f) => ({ ...f, status })),
+    hasActiveFilters: hasActiveAlertasFilters(filters),
+    setStatusFilter: (status: string) => setFilter("status", status),
     setSeveridadeFilter: (severidade: string) =>
-      setFilters((f) => ({ ...f, severidade })),
-    setStartDate: (startDate: string) =>
-      setFilters((f) => ({ ...f, startDate })),
-    setEndDate: (endDate: string) =>
-      setFilters((f) => ({ ...f, endDate })),
-    onTipoChange: handleTipoChange,
-    onClearFilters: handleClearFilters,
+      setFilter("severidade", severidade),
+    setStartDate: (start: string) => setFilter("start", start),
+    setEndDate: (end: string) => setFilter("end", end),
+    onTipoChange: (tipo: string) => setFilter("tipo", tipo),
+    onClearFilters: clearFilters,
     canCreate: canCriarAlertaManual(perfil),
     canResolve: canResolverAlerta(perfil),
     canEmAndamento: canMarcarAlertaEmAndamento(perfil),
