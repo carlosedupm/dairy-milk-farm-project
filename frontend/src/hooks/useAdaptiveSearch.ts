@@ -23,34 +23,42 @@ export function useAdaptiveSearch() {
   const [identificacao, setIdentificacao] = useState("");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  /** Evita reabrir popover/dialog quando o foco volta ao input após fechar (Radix onCloseAutoFocus). */
+  const skipOpenOnFocusRef = useRef(false);
 
   const resetSearch = useCallback(() => {
     setIdentificacao("");
+    skipOpenOnFocusRef.current = true;
     setPopoverOpen(false);
     setDialogOpen(false);
   }, []);
 
   const closeOverlays = useCallback(() => {
+    skipOpenOnFocusRef.current = true;
     setPopoverOpen(false);
     setDialogOpen(false);
   }, []);
 
-  const openSearch = useCallback(() => {
-    inputRef.current?.focus();
-    if (isDesktop) {
-      setPopoverOpen(true);
-    } else {
-      setDialogOpen(true);
+  const handlePopoverOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      skipOpenOnFocusRef.current = true;
     }
-  }, [isDesktop]);
+    setPopoverOpen(open);
+  }, []);
 
-  useEffect(() => {
-    if (!searchCtx) return;
-    searchCtx.registerSearchField({ openSearch });
-    return () => searchCtx.registerSearchField(null);
-  }, [searchCtx, openSearch]);
+  const handleDialogOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      skipOpenOnFocusRef.current = true;
+    }
+    setDialogOpen(open);
+  }, []);
 
-  const handleInputFocus = useCallback(() => {
+  const returnFocusToSearchInput = useCallback(() => {
+    skipOpenOnFocusRef.current = true;
+    inputRef.current?.focus();
+  }, []);
+
+  const openSearchOverlay = useCallback(() => {
     if (isDesktop) {
       setPopoverOpen(true);
       return;
@@ -59,39 +67,58 @@ export function useAdaptiveSearch() {
     inputRef.current?.blur();
   }, [isDesktop]);
 
+  const openSearch = useCallback(() => {
+    inputRef.current?.focus();
+    openSearchOverlay();
+  }, [openSearchOverlay]);
+
+  useEffect(() => {
+    if (!searchCtx) return;
+    searchCtx.registerSearchField({ openSearch });
+    return () => searchCtx.registerSearchField(null);
+  }, [searchCtx, openSearch]);
+
+  const handleInputFocus = useCallback(() => {
+    if (skipOpenOnFocusRef.current) {
+      skipOpenOnFocusRef.current = false;
+      return;
+    }
+    openSearchOverlay();
+  }, [openSearchOverlay]);
+
+  const handleInputClick = useCallback(() => {
+    if (popoverOpen || dialogOpen) {
+      return;
+    }
+    skipOpenOnFocusRef.current = false;
+    openSearchOverlay();
+  }, [popoverOpen, dialogOpen, openSearchOverlay]);
+
   const handleInputChange = useCallback(
     (value: string) => {
       setIdentificacao(value);
       if (value.trim().length > 0) {
-        if (isDesktop) {
-          setPopoverOpen(true);
-        } else {
-          setDialogOpen(true);
-        }
+        openSearchOverlay();
       }
     },
-    [isDesktop],
+    [openSearchOverlay],
   );
 
   const handleSubmitRapido = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      if (isDesktop) {
-        setPopoverOpen(true);
-      } else {
-        setDialogOpen(true);
-      }
+      openSearchOverlay();
     },
-    [isDesktop],
+    [openSearchOverlay],
   );
 
   return {
     identificacao,
     setIdentificacao,
     popoverOpen,
-    setPopoverOpen,
+    setPopoverOpen: handlePopoverOpenChange,
     dialogOpen,
-    setDialogOpen,
+    setDialogOpen: handleDialogOpenChange,
     isDesktop,
     isHome,
     inputId,
@@ -99,7 +126,9 @@ export function useAdaptiveSearch() {
     resetSearch,
     closeOverlays,
     openSearch,
+    returnFocusToSearchInput,
     handleInputFocus,
+    handleInputClick,
     handleInputChange,
     handleSubmitRapido,
   };

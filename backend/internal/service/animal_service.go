@@ -261,23 +261,6 @@ func (s *AnimalService) Delete(ctx context.Context, id int64) error {
 	return s.repo.Delete(ctx, id)
 }
 
-// IsBrincoOrientedTerm indica se o termo de busca deve priorizar identificações numéricas (brinco).
-// Retorna true quando todos os caracteres alfanuméricos são dígitos.
-func IsBrincoOrientedTerm(term string) bool {
-	term = strings.TrimSpace(term)
-	hasAlnum := false
-	for _, r := range term {
-		if (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') ||
-			(r >= 'À' && r <= 'ÿ') {
-			return false
-		}
-		if r >= '0' && r <= '9' {
-			hasAlnum = true
-		}
-	}
-	return hasAlnum
-}
-
 // equivalenteIdentificacao retorna a forma alternativa (número ↔ por extenso) para busca; "" se não houver.
 func equivalenteIdentificacao(ident string) string {
 	ident = strings.TrimSpace(ident)
@@ -339,9 +322,12 @@ func (s *AnimalService) SearchByIdentificacaoPaginatedForFazendas(ctx context.Co
 	}
 
 	var terms []string
+	var primaryTerm, equivalentTerm string
 	if t := strings.TrimSpace(identificacao); t != "" {
+		primaryTerm = t
 		terms = append(terms, t)
 		if eq := equivalenteIdentificacao(t); eq != "" && !strings.EqualFold(eq, t) {
+			equivalentTerm = eq
 			terms = append(terms, eq)
 		}
 	}
@@ -349,12 +335,12 @@ func (s *AnimalService) SearchByIdentificacaoPaginatedForFazendas(ctx context.Co
 		return []*models.Animal{}, 0, nil
 	}
 
-	searchTerm := strings.TrimSpace(identificacao)
 	f := repository.AnimalSearchFilters{
 		FazendaIDs:         fazendaIDs,
 		IdentificacaoTerms: terms,
+		PrimaryTerm:        primaryTerm,
+		EquivalentTerm:     equivalentTerm,
 		SomenteNoRebanho:   noRebanho,
-		BrincoOriented:     IsBrincoOrientedTerm(searchTerm),
 	}
 	return s.repo.SearchByIdentificacaoPaginated(ctx, f, limit, offset)
 }
@@ -426,9 +412,12 @@ func (s *AnimalService) ListAnimaisPaginatedForFazendas(ctx context.Context, faz
 	}
 
 	var terms []string
+	var primaryTerm, equivalentTerm string
 	if t := strings.TrimSpace(q.Identificacao); t != "" {
+		primaryTerm = t
 		terms = append(terms, t)
 		if eq := equivalenteIdentificacao(t); eq != "" && !strings.EqualFold(eq, t) {
+			equivalentTerm = eq
 			terms = append(terms, eq)
 		}
 	}
@@ -436,6 +425,8 @@ func (s *AnimalService) ListAnimaisPaginatedForFazendas(ctx context.Context, faz
 	f := repository.AnimalListFilters{
 		FazendaIDs:         fazendaIDs,
 		IdentificacaoTerms: terms,
+		PrimaryTerm:        primaryTerm,
+		EquivalentTerm:     equivalentTerm,
 	}
 
 	if q.Categoria != "" {

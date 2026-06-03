@@ -113,18 +113,15 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 ### BR-ANIMAIS-010 — Busca por brinco ou nome na pesquisa principal
 
-- **Enunciado**: A busca global do header localiza animais por **brinco** (identificação numérica) ou **nome** (texto em `identificacao`), com prioridade conforme o tipo de termo digitado; resultados respeitam a **fazenda ativa** do utilizador.
+- **Enunciado**: A busca global do header localiza animais por **brinco** (identificação numérica) ou **nome** (texto em `identificacao`); resultados respeitam a **fazenda ativa** do utilizador.
 - **Escopo**: `GET /api/v1/animais/search/by-identificacao`; UI `AnimalSearchPanel` no header (`HeaderBuscaTrigger`, popover desktop / dialog mobile).
 - **Perfis / permissões**: mesmas de BR-ANIMAIS-001; `fazenda_id` opcional restringe à fazenda vinculada escolhida (header envia fazenda ativa).
-- **Efeito**: bloqueio no servidor para fazendas não vinculadas; ordenação no SQL prioriza brincos ou nomes conforme heurística do termo.
+- **Efeito**: bloqueio no servidor para fazendas não vinculadas; ordenação por relevância conforme **BR-ANIMAIS-012**.
 - **Regras**:
-  - Termo com caracteres alfanuméricos **só dígitos** → prioriza identificações que começam por dígito (brinco).
-  - Termo com **letras** → prioriza identificações com letras (nome).
   - Match parcial (`ILIKE`) + equivalência número ↔ extenso (BR-ANIMAIS-009).
   - UI: exibir `identificacao` tal como cadastrada (`formatAnimalSearchLabel`, sem prefixo `#`).
 - **Parâmetros adicionais**: `fazenda_id` (opcional) — quando omitido, mantém busca em todas as fazendas vinculadas (assistente/integrações).
 - **Implementação**:
-  - `AnimalService.IsBrincoOrientedTerm`, `AnimalRepository.BuildAnimalSearchOrderByClause`, `AnimalSearchFilters.BrincoOriented`.
   - Frontend: `animalSearchUtils.ts`, `searchByIdentificacao` com `fazenda_id`, `useFazendaAtiva` no painel.
 - **Estado**: implementado.
 
@@ -140,10 +137,29 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
   - Paginação («Ver mais») respeita o mesmo filtro.
   - Contexto expandido mantém banner «Animal fora do rebanho» para consulta sem novos eventos.
 - **Parâmetros**: `no_rebanho` — ver BR-ANIMAIS-009.
-- **Ordenação**: prefixo SQL em `BuildAnimalSearchOrderByClause` — animais fora do rebanho depois dos no rebanho; desempate conforme BR-ANIMAIS-010.
+- **Ordenação**: prefixo SQL em `BuildAnimalSearchOrderByClause` — animais fora do rebanho depois dos no rebanho; relevância conforme **BR-ANIMAIS-012**; desempate `created_at DESC`.
 - **Implementação**:
   - Backend: `AnimalRepository.BuildAnimalSearchOrderByClause`, `sqlAnimalSearchRebanhoOrderPrefix`.
   - Frontend: `useAnimalSearchIncluirBaixados`, `AnimalSearchResultLabel`, `searchByIdentificacao` com `no_rebanho`.
+- **Estado**: implementado.
+
+### BR-ANIMAIS-012 — Ordenação por relevância na busca
+
+- **Enunciado**: Resultados de busca por identificação ordenam-se por **relevância do match** em relação ao termo digitado, não por data de cadastro.
+- **Escopo**: `GET /api/v1/animais/search/by-identificacao`; listagens paginadas `GET /api/v1/animais` e `GET /api/v1/fazendas/:id/animais` quando filtro `identificacao` está presente.
+- **Perfis / permissões**: mesmas de BR-ANIMAIS-001.
+- **Efeito**: ordenação no servidor (SQL `ORDER BY`); UI exibe resultados na ordem retornada pela API.
+- **Regras** (prioridade crescente = melhor match):
+  1. **Match exato** — `LOWER(identificacao) = LOWER(termo)` (ex.: `'45'` antes de `'145'`).
+  2. **Match prefixo** — `identificacao ILIKE termo || '%'` (ex.: `'450'` após `'45'`).
+  3. **Match contains** — `identificacao ILIKE '%' || termo || '%'` (ex.: `'145'` após `'450'`).
+  4. **Match equivalente** — match apenas via termo número ↔ extenso (0–20, BR-ANIMAIS-009); menor prioridade que match directo.
+  5. **Desempate** — `created_at DESC` dentro do mesmo nível de relevância.
+- **Busca global**: prefixo rebanho (BR-ANIMAIS-011) antes do score de relevância.
+- **Implementação**:
+  - `IdentificacaoRelevanceScore`, `BuildAnimalSearchOrderByClause`, `BuildAnimalListIdentificacaoOrderByClause` em `backend/internal/repository/identificacao_relevance.go`.
+  - `AnimalSearchFilters.PrimaryTerm` / `EquivalentTerm`; `AnimalListFilters` com os mesmos campos.
+  - Testes: `identificacao_relevance_test.go`.
 - **Estado**: implementado.
 
 ---

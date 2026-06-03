@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/errors";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
@@ -20,6 +21,7 @@ import {
   formatAnimalContextoStatusLinha,
 } from "@/components/animais/animalResumoUtils";
 import { AnimalSearchResultLabel } from "@/components/animais/AnimalSearchResultLabel";
+import { formatAnimalSearchLabel } from "@/components/animais/animalSearchUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -327,7 +329,12 @@ export function AnimalSearchPanel({
       ) : null}
 
       {contexto ? (
-        <div className="min-w-0 space-y-2 rounded-lg border p-4">
+        <Link
+          href={`/animais/${contexto.animal.id}`}
+          onClick={() => onAntesNavegarDetalhe?.()}
+          className="block min-h-[44px] min-w-0 space-y-2 rounded-lg border p-4 text-left outline-none transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`Abrir ficha de ${formatAnimalSearchLabel(contexto.animal)}`}
+        >
           {contexto.fora_do_rebanho ? (
             <div
               className="rounded-md border border-muted-foreground/30 bg-muted/50 px-3 py-2 text-sm"
@@ -359,9 +366,9 @@ export function AnimalSearchPanel({
               </p>
             </div>
           ) : null}
-          <p className="font-medium break-words text-foreground">
-          <AnimalSearchResultLabel animal={contexto.animal} />
-          </p>
+          <div className="font-medium break-words text-foreground">
+            <AnimalSearchResultLabel animal={contexto.animal} />
+          </div>
           {metaLinha ? (
             <p className="break-words text-sm text-muted-foreground">
               {metaLinha}
@@ -385,15 +392,11 @@ export function AnimalSearchPanel({
               {linha.value}
             </p>
           ))}
-          <Button asChild variant="secondary" size="sm">
-            <Link
-              href={`/animais/${contexto.animal.id}`}
-              onClick={() => onAntesNavegarDetalhe?.()}
-            >
-              Abrir detalhes do animal
-            </Link>
-          </Button>
-        </div>
+          <span className="inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-primary">
+            Abrir ficha
+            <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />
+          </span>
+        </Link>
       ) : null}
     </div>
   );

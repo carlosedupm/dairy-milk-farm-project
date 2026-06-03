@@ -44,8 +44,10 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
     inputRef,
     resetSearch,
     handleInputFocus,
+    handleInputClick,
     handleInputChange,
     handleSubmitRapido,
+    returnFocusToSearchInput,
   } = useAdaptiveSearch();
 
   const searchOpen = popoverOpen || dialogOpen;
@@ -74,6 +76,7 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
         value={identificacao}
         onChange={(event) => handleInputChange(event.target.value)}
         onFocus={handleInputFocus}
+        onClick={handleInputClick}
         placeholder="Brinco ou nome"
         aria-label="Pesquisar animal por brinco ou nome"
         aria-haspopup="dialog"
@@ -99,7 +102,7 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
           onOpenAutoFocus={(event) => event.preventDefault()}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            inputRef.current?.focus();
+            returnFocusToSearchInput();
           }}
         >
           {popoverOpen ? (
@@ -126,7 +129,7 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
           onOpenAutoFocus={(event) => event.preventDefault()}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            inputRef.current?.focus();
+            returnFocusToSearchInput();
           }}
         >
           <DialogHeader className="shrink-0 space-y-2 pr-8 text-left">

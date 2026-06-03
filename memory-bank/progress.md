@@ -729,6 +729,12 @@
 
 - ✅ **DateTimePickerUnificado**: compõe `DatePickerUnificado` + selects nativos inline hora (0–23) / minuto (0–59); utilitários em `lib/datetime-input.ts` (clamp, `maxDateTime`, validação datetime futuro); valor `YYYY-MM-DDTHH:mm`; `DateTimePickerPtBr` re-exporta; produção, cio, cobertura, parto e toque atualizados automaticamente; mobile (`min-h-[44px]`, grid responsivo).
 
+### **2026-06-03 - Ordenação por relevância na busca (BR-ANIMAIS-012)**
+
+- ✅ **Backend**: `IdentificacaoRelevanceScore` + `BuildAnimalSearchOrderByClause` / `BuildAnimalListIdentificacaoOrderByClause` (exato → prefixo → contains → equivalente; desempate `created_at DESC`); aplica em busca global e listagens paginadas com filtro `identificacao`; remove `IsBrincoOrientedTerm`.
+- ✅ **Testes**: `identificacao_relevance_test.go` (tiers + SQL builder).
+- ✅ **Documentação**: `docs/business/animais.md` (BR-ANIMAIS-012); ajustes BR-ANIMAIS-010/011; `systemPatterns.md`.
+
 ### **2026-06-03 - Busca por brinco ou nome na pesquisa principal (BR-ANIMAIS-010)**
 
 - ✅ **Backend**: `IsBrincoOrientedTerm` + `BuildAnimalSearchOrderByClause` (prioridade brinco vs nome em `identificacao`); query opcional `fazenda_id` em `GET /api/v1/animais/search/by-identificacao`.
@@ -908,6 +914,6 @@
 
 ---
 
-**Última atualização**: 2026-06-03 (busca por identificação paginada — BR-ANIMAIS-009)
+**Última atualização**: 2026-06-03 (ordenação por relevância na busca — BR-ANIMAIS-012)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

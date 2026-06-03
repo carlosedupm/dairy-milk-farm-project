@@ -441,6 +441,8 @@ func (r *AnimalRepository) CountByFazenda(ctx context.Context, fazendaID int64) 
 type AnimalListFilters struct {
 	FazendaIDs         []int64
 	IdentificacaoTerms []string
+	PrimaryTerm        string
+	EquivalentTerm     string
 	Categoria          *string
 	Sexo               *string
 	StatusSaude        *string
@@ -469,15 +471,25 @@ func (r *AnimalRepository) ListAnimaisFilteredPaginated(ctx context.Context, f A
 		return nil, 0, err
 	}
 
-	nPlace := len(args) + 1
+	listArgs := append([]interface{}{}, args...)
+	var orderSQL string
+	if strings.TrimSpace(f.PrimaryTerm) != "" {
+		var orderArgs []interface{}
+		orderSQL, orderArgs = BuildAnimalListIdentificacaoOrderByClause(f.PrimaryTerm, f.EquivalentTerm, len(args))
+		listArgs = append(listArgs, orderArgs...)
+	} else {
+		orderSQL = "created_at DESC"
+	}
+
+	nPlace := len(listArgs) + 1
 	listSQL := fmt.Sprintf(`
 		SELECT %s
 		FROM animais
 		WHERE %s
-		ORDER BY created_at DESC
-		LIMIT $%d OFFSET $%d`, animalSelectColumns, whereSQL, nPlace, nPlace+1)
+		ORDER BY %s
+		LIMIT $%d OFFSET $%d`, animalSelectColumns, whereSQL, orderSQL, nPlace, nPlace+1)
 
-	listArgs := append(append([]interface{}{}, args...), limit, offset)
+	listArgs = append(listArgs, limit, offset)
 	list, err := r.queryList(ctx, listSQL, listArgs...)
 	if err != nil {
 		return nil, 0, err
@@ -489,9 +501,9 @@ func (r *AnimalRepository) ListAnimaisFilteredPaginated(ctx context.Context, f A
 type AnimalSearchFilters struct {
 	FazendaIDs         []int64
 	IdentificacaoTerms []string
+	PrimaryTerm        string
+	EquivalentTerm     string
 	SomenteNoRebanho   bool
-	// BrincoOriented true quando o termo é predominantemente numérico (prioriza brincos na ordenação).
-	BrincoOriented bool
 }
 
 // SearchByIdentificacaoPaginated busca por identificação com COUNT + LIMIT/OFFSET.
@@ -517,8 +529,9 @@ func (r *AnimalRepository) SearchByIdentificacaoPaginated(ctx context.Context, f
 		return nil, 0, err
 	}
 
-	orderSQL := BuildAnimalSearchOrderByClause(f.BrincoOriented)
-	nPlace := len(args) + 1
+	orderSQL, orderArgs := BuildAnimalSearchOrderByClause(f.PrimaryTerm, f.EquivalentTerm, len(args))
+	listArgs := append(append([]interface{}{}, args...), orderArgs...)
+	nPlace := len(listArgs) + 1
 	listSQL := fmt.Sprintf(`
 		SELECT %s
 		FROM animais
@@ -526,7 +539,7 @@ func (r *AnimalRepository) SearchByIdentificacaoPaginated(ctx context.Context, f
 		ORDER BY %s
 		LIMIT $%d OFFSET $%d`, animalSelectColumns, whereSQL, orderSQL, nPlace, nPlace+1)
 
-	listArgs := append(append([]interface{}{}, args...), limit, offset)
+	listArgs = append(listArgs, limit, offset)
 	list, err := r.queryList(ctx, listSQL, listArgs...)
 	if err != nil {
 		return nil, 0, err
@@ -555,17 +568,6 @@ func buildAnimalSearchWhereClause(f AnimalSearchFilters) (string, []interface{})
 	}
 
 	return strings.Join(parts, " AND "), args
-}
-
-// sqlAnimalSearchRebanhoOrderPrefix coloca animais fora do rebanho (BR-BAIXA-002) após os no rebanho.
-const sqlAnimalSearchRebanhoOrderPrefix = `CASE WHEN data_saida IS NOT NULL AND data_saida <= CURRENT_DATE THEN 1 ELSE 0 END`
-
-// BuildAnimalSearchOrderByClause ordena resultados priorizando brinco ou nome conforme o tipo de termo.
-func BuildAnimalSearchOrderByClause(brincoOriented bool) string {
-	if brincoOriented {
-		return sqlAnimalSearchRebanhoOrderPrefix + `, CASE WHEN identificacao ~ '^[0-9]' THEN 0 ELSE 1 END, identificacao ASC, created_at DESC`
-	}
-	return sqlAnimalSearchRebanhoOrderPrefix + `, CASE WHEN identificacao ~ '[A-Za-zÀ-ÿ]' THEN 0 ELSE 1 END, identificacao ASC, created_at DESC`
 }
 
 func appendIdentificacaoTermsWhere(terms []string, argOffset int) (string, []interface{}) {
