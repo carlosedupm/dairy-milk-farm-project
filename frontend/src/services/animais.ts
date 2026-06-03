@@ -129,6 +129,7 @@ export type AnimalSearchPage = {
 export type AnimalSearchParams = {
   offset?: number
   limit?: number
+  fazenda_id?: number
 }
 
 export function animalTimelineQueryKey(animalId: number, tipo: TimelineFilterTipo = 'todos') {
@@ -525,6 +526,7 @@ export async function searchByIdentificacao(
       identificacao,
       limit: params.limit ?? ANIMAL_SEARCH_PAGE_SIZE,
       offset: params.offset ?? 0,
+      ...(params.fazenda_id != null ? { fazenda_id: params.fazenda_id } : {}),
     },
   })
   const payload = data.data

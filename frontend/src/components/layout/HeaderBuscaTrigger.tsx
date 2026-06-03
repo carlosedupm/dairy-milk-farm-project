@@ -75,7 +75,7 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
         onChange={(event) => handleInputChange(event.target.value)}
         onFocus={handleInputFocus}
         placeholder="Brinco ou nome"
-        aria-label="Pesquisar animal por identificação"
+        aria-label="Pesquisar animal por brinco ou nome"
         aria-haspopup="dialog"
         aria-expanded={searchOpen}
         aria-controls={searchPanelId}
@@ -130,7 +130,7 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
           }}
         >
           <DialogHeader className="shrink-0 space-y-2 pr-8 text-left">
-            <DialogTitle>Buscar por identificação</DialogTitle>
+            <DialogTitle>Buscar animal</DialogTitle>
             <DialogDescription>
               Brinco, número ou nome — resultados ao parar de digitar; resumo e
               opção de abrir a ficha do animal.

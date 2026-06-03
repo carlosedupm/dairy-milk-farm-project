@@ -490,6 +490,8 @@ type AnimalSearchFilters struct {
 	FazendaIDs         []int64
 	IdentificacaoTerms []string
 	SomenteNoRebanho   bool
+	// BrincoOriented true quando o termo é predominantemente numérico (prioriza brincos na ordenação).
+	BrincoOriented bool
 }
 
 // SearchByIdentificacaoPaginated busca por identificação com COUNT + LIMIT/OFFSET.
@@ -515,13 +517,14 @@ func (r *AnimalRepository) SearchByIdentificacaoPaginated(ctx context.Context, f
 		return nil, 0, err
 	}
 
+	orderSQL := BuildAnimalSearchOrderByClause(f.BrincoOriented)
 	nPlace := len(args) + 1
 	listSQL := fmt.Sprintf(`
 		SELECT %s
 		FROM animais
 		WHERE %s
-		ORDER BY created_at DESC
-		LIMIT $%d OFFSET $%d`, animalSelectColumns, whereSQL, nPlace, nPlace+1)
+		ORDER BY %s
+		LIMIT $%d OFFSET $%d`, animalSelectColumns, whereSQL, orderSQL, nPlace, nPlace+1)
 
 	listArgs := append(append([]interface{}{}, args...), limit, offset)
 	list, err := r.queryList(ctx, listSQL, listArgs...)
@@ -552,6 +555,14 @@ func buildAnimalSearchWhereClause(f AnimalSearchFilters) (string, []interface{})
 	}
 
 	return strings.Join(parts, " AND "), args
+}
+
+// BuildAnimalSearchOrderByClause ordena resultados priorizando brinco ou nome conforme o tipo de termo.
+func BuildAnimalSearchOrderByClause(brincoOriented bool) string {
+	if brincoOriented {
+		return `CASE WHEN identificacao ~ '^[0-9]' THEN 0 ELSE 1 END, identificacao ASC, created_at DESC`
+	}
+	return `CASE WHEN identificacao ~ '[A-Za-zÀ-ÿ]' THEN 0 ELSE 1 END, identificacao ASC, created_at DESC`
 }
 
 func appendIdentificacaoTermsWhere(terms []string, argOffset int) (string, []interface{}) {

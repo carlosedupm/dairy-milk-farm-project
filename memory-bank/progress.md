@@ -729,6 +729,13 @@
 
 - ✅ **DateTimePickerUnificado**: compõe `DatePickerUnificado` + selects nativos inline hora (0–23) / minuto (0–59); utilitários em `lib/datetime-input.ts` (clamp, `maxDateTime`, validação datetime futuro); valor `YYYY-MM-DDTHH:mm`; `DateTimePickerPtBr` re-exporta; produção, cio, cobertura, parto e toque atualizados automaticamente; mobile (`min-h-[44px]`, grid responsivo).
 
+### **2026-06-03 - Busca por brinco ou nome na pesquisa principal (BR-ANIMAIS-010)**
+
+- ✅ **Backend**: `IsBrincoOrientedTerm` + `BuildAnimalSearchOrderByClause` (prioridade brinco vs nome em `identificacao`); query opcional `fazenda_id` em `GET /api/v1/animais/search/by-identificacao`.
+- ✅ **Frontend**: `formatAnimalSearchLabel` (`animalSearchUtils.ts`); `AnimalSearchPanel` envia `fazenda_id` da fazenda ativa; rótulos = identificação cadastrada; a11y «brinco ou nome».
+- ✅ **Testes**: `animal_search_test.go` (heurística + order clause).
+- ✅ **Documentação**: `docs/business/animais.md` (BR-ANIMAIS-010); Postman; `systemPatterns.md`.
+
 ### **2026-06-03 - Busca por identificação: paginação e performance (BR-ANIMAIS-009)**
 
 - ✅ **Migration 35**: `CREATE EXTENSION pg_trgm`; índice GIN `idx_animais_identificacao_trgm` em `animais.identificacao`.

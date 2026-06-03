@@ -623,6 +623,26 @@ func (h *AnimalHandler) SearchByIdentificacao(c *gin.Context) {
 		fazendaIDs = append(fazendaIDs, f.ID)
 	}
 
+	if s := c.Query("fazenda_id"); s != "" {
+		fid, err := strconv.ParseInt(s, 10, 64)
+		if err != nil || fid <= 0 {
+			response.ErrorBadRequest(c, "fazenda_id inválido", nil)
+			return
+		}
+		allowed := false
+		for _, id := range fazendaIDs {
+			if id == fid {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			response.ErrorForbidden(c, "Você não tem acesso a esta fazenda")
+			return
+		}
+		fazendaIDs = []int64{fid}
+	}
+
 	noRebanho := parseNoRebanhoQuery(c.Query("no_rebanho"))
 	limit := parseQueryIntPositiveDef(c.DefaultQuery("limit", "20"), 20)
 	offset := parseQueryIntNonNeg(c.DefaultQuery("offset", "0"), 0)

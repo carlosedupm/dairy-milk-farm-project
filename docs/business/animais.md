@@ -111,6 +111,23 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
   - UI: `AnimalSearchPanel` + `searchByIdentificacao` em `services/animais.ts` (`ANIMAL_SEARCH_PAGE_SIZE = 20`).
 - **Estado**: implementado.
 
+### BR-ANIMAIS-010 — Busca por brinco ou nome na pesquisa principal
+
+- **Enunciado**: A busca global do header localiza animais por **brinco** (identificação numérica) ou **nome** (texto em `identificacao`), com prioridade conforme o tipo de termo digitado; resultados respeitam a **fazenda ativa** do utilizador.
+- **Escopo**: `GET /api/v1/animais/search/by-identificacao`; UI `AnimalSearchPanel` no header (`HeaderBuscaTrigger`, popover desktop / dialog mobile).
+- **Perfis / permissões**: mesmas de BR-ANIMAIS-001; `fazenda_id` opcional restringe à fazenda vinculada escolhida (header envia fazenda ativa).
+- **Efeito**: bloqueio no servidor para fazendas não vinculadas; ordenação no SQL prioriza brincos ou nomes conforme heurística do termo.
+- **Regras**:
+  - Termo com caracteres alfanuméricos **só dígitos** → prioriza identificações que começam por dígito (brinco).
+  - Termo com **letras** → prioriza identificações com letras (nome).
+  - Match parcial (`ILIKE`) + equivalência número ↔ extenso (BR-ANIMAIS-009).
+  - UI: exibir `identificacao` tal como cadastrada (`formatAnimalSearchLabel`, sem prefixo `#`).
+- **Parâmetros adicionais**: `fazenda_id` (opcional) — quando omitido, mantém busca em todas as fazendas vinculadas (assistente/integrações).
+- **Implementação**:
+  - `AnimalService.IsBrincoOrientedTerm`, `AnimalRepository.BuildAnimalSearchOrderByClause`, `AnimalSearchFilters.BrincoOriented`.
+  - Frontend: `animalSearchUtils.ts`, `searchByIdentificacao` com `fazenda_id`, `useFazendaAtiva` no painel.
+- **Estado**: implementado.
+
 ---
 
 **Última atualização**: 2026-06-03

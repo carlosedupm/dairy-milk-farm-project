@@ -19,8 +19,10 @@ import {
   formatAnimalContextoMeta,
   formatAnimalContextoStatusLinha,
 } from "@/components/animais/animalResumoUtils";
+import { formatAnimalSearchLabel } from "@/components/animais/animalSearchUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useFazendaAtiva } from "@/contexts/FazendaContext";
 
 export type AnimalSearchPanelProps = {
   /** Fecha o diálogo / painel ao navegar para a ficha do animal */
@@ -46,6 +48,7 @@ export function AnimalSearchPanel({
   onIdentificacaoChange,
   variant = "default",
 }: AnimalSearchPanelProps) {
+  const { fazendaAtiva, isReady: fazendaReady } = useFazendaAtiva();
   const [identificacaoInterno, setIdentificacaoInterno] = useState("");
   const isControlled =
     identificacaoControlada !== undefined &&
@@ -91,12 +94,19 @@ export function AnimalSearchPanel({
       return;
     }
 
+    if (!fazendaReady || fazendaAtiva?.id == null) {
+      return;
+    }
+
     setLoadingBusca(true);
     setErro(null);
     setContexto(null);
 
     try {
-      const page = await searchByIdentificacao(trimmed, { offset: 0 });
+      const page = await searchByIdentificacao(trimmed, {
+        offset: 0,
+        fazenda_id: fazendaAtiva.id,
+      });
       if (seq !== buscaSeq.current) return;
 
       setResultados(page.animais);
@@ -123,11 +133,15 @@ export function AnimalSearchPanel({
         setLoadingContexto(false);
       }
     }
-  }, []);
+  }, [fazendaAtiva?.id, fazendaReady]);
 
   const carregarMais = useCallback(async () => {
     const trimmed = identificacao.trim();
-    if (!trimmed || resultados.length >= totalResultados) {
+    if (
+      !trimmed ||
+      resultados.length >= totalResultados ||
+      fazendaAtiva?.id == null
+    ) {
       return;
     }
 
@@ -138,6 +152,7 @@ export function AnimalSearchPanel({
     try {
       const page = await searchByIdentificacao(trimmed, {
         offset: resultados.length,
+        fazenda_id: fazendaAtiva.id,
       });
       if (seq !== buscaSeq.current) return;
 
@@ -153,7 +168,7 @@ export function AnimalSearchPanel({
         setLoadingMais(false);
       }
     }
-  }, [identificacao, resultados.length, totalResultados]);
+  }, [fazendaAtiva?.id, identificacao, resultados.length, totalResultados]);
 
   useEffect(() => {
     void executarBusca(debouncedTermo);
@@ -214,7 +229,7 @@ export function AnimalSearchPanel({
             value={identificacao}
             onChange={(event) => setIdentificacao(event.target.value)}
             placeholder="Ex.: 123, brinco, nome ou parte da identificação"
-            aria-label="Pesquisar animal por identificação"
+            aria-label="Pesquisar animal por brinco ou nome"
             autoFocus={autoFocus}
             aria-busy={loadingBusca || loadingContexto || loadingMais}
             className="min-w-0"
@@ -237,7 +252,7 @@ export function AnimalSearchPanel({
 
       {buscaExecutada && !loadingBusca && totalResultados === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Nenhum animal encontrado para essa identificação.
+          Nenhum animal encontrado para esse termo.
         </p>
       ) : null}
 
@@ -258,7 +273,7 @@ export function AnimalSearchPanel({
                 onClick={() => handleSelecionarAnimal(animal.id)}
                 disabled={loadingContexto}
               >
-                {animal.identificacao}
+                {formatAnimalSearchLabel(animal)}
               </Button>
             ))}
           </div>
@@ -315,7 +330,7 @@ export function AnimalSearchPanel({
             </div>
           ) : null}
           <p className="font-medium break-words text-foreground">
-            {contexto.animal.identificacao}
+            {formatAnimalSearchLabel(contexto.animal)}
           </p>
           {metaLinha ? (
             <p className="break-words text-sm text-muted-foreground">

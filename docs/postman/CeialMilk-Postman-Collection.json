@@ -373,6 +373,7 @@
               "path": ["api", "v1", "animais", "search", "by-identificacao"],
               "query": [
                 { "key": "identificacao", "value": "123", "description": "Termo parcial (obrigatório)" },
+                { "key": "fazenda_id", "value": "", "description": "Opcional — restringe à fazenda vinculada (header envia fazenda ativa)" },
                 { "key": "limit", "value": "20", "description": "Máx. por página (default 20, max 100)" },
                 { "key": "offset", "value": "0", "description": "Offset para paginação" },
                 { "key": "no_rebanho", "value": "true", "description": "true (default) | false" }
