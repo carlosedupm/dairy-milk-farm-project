@@ -14,6 +14,7 @@ Referência: `docs/business/baixa-rebanho.md` (BR-BAIXA-001 a BR-BAIXA-009); con
 - [ ] Lista `/animais` por defeito só animais no rebanho
 - [ ] Filtro «Com baixa» mostra apenas animais com `data_saida` passada
 - [ ] Busca por identificação não sugere animal baixado (com `no_rebanho` default)
+- [ ] Busca global — checkbox «Incluir animais baixados» desmarcado exclui baixados; marcado inclui com badge «Baixado» e baixados após animais no rebanho
 - [ ] `AnimalSelect` no fluxo de baixa não lista animais já baixados
 
 ## Conformidade (home)

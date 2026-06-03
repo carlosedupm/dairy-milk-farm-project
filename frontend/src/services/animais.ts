@@ -130,6 +130,8 @@ export type AnimalSearchParams = {
   offset?: number
   limit?: number
   fazenda_id?: number
+  /** true (default): só no rebanho; false: incluir baixados */
+  no_rebanho?: boolean
 }
 
 export function animalTimelineQueryKey(animalId: number, tipo: TimelineFilterTipo = 'todos') {
@@ -514,6 +516,7 @@ export async function searchByIdentificacao(
   identificacao: string,
   params: AnimalSearchParams = {},
 ): Promise<AnimalSearchPage> {
+  const somenteNoRebanho = params.no_rebanho !== false
   const { data } = await api.get<
     ApiResponse<{
       animais?: Animal[]
@@ -526,6 +529,7 @@ export async function searchByIdentificacao(
       identificacao,
       limit: params.limit ?? ANIMAL_SEARCH_PAGE_SIZE,
       offset: params.offset ?? 0,
+      no_rebanho: somenteNoRebanho ? 'true' : 'false',
       ...(params.fazenda_id != null ? { fazenda_id: params.fazenda_id } : {}),
     },
   })

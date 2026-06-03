@@ -557,12 +557,15 @@ func buildAnimalSearchWhereClause(f AnimalSearchFilters) (string, []interface{})
 	return strings.Join(parts, " AND "), args
 }
 
+// sqlAnimalSearchRebanhoOrderPrefix coloca animais fora do rebanho (BR-BAIXA-002) após os no rebanho.
+const sqlAnimalSearchRebanhoOrderPrefix = `CASE WHEN data_saida IS NOT NULL AND data_saida <= CURRENT_DATE THEN 1 ELSE 0 END`
+
 // BuildAnimalSearchOrderByClause ordena resultados priorizando brinco ou nome conforme o tipo de termo.
 func BuildAnimalSearchOrderByClause(brincoOriented bool) string {
 	if brincoOriented {
-		return `CASE WHEN identificacao ~ '^[0-9]' THEN 0 ELSE 1 END, identificacao ASC, created_at DESC`
+		return sqlAnimalSearchRebanhoOrderPrefix + `, CASE WHEN identificacao ~ '^[0-9]' THEN 0 ELSE 1 END, identificacao ASC, created_at DESC`
 	}
-	return `CASE WHEN identificacao ~ '[A-Za-zÀ-ÿ]' THEN 0 ELSE 1 END, identificacao ASC, created_at DESC`
+	return sqlAnimalSearchRebanhoOrderPrefix + `, CASE WHEN identificacao ~ '[A-Za-zÀ-ÿ]' THEN 0 ELSE 1 END, identificacao ASC, created_at DESC`
 }
 
 func appendIdentificacaoTermsWhere(terms []string, argOffset int) (string, []interface{}) {

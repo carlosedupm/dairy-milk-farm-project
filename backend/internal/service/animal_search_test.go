@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/ceialmilk/api/internal/repository"
@@ -33,8 +34,14 @@ func TestBuildAnimalSearchOrderByClause(t *testing.T) {
 	if brinco == "" {
 		t.Fatal("expected non-empty order clause for brinco-oriented search")
 	}
+	if !strings.Contains(brinco, "data_saida IS NOT NULL AND data_saida <= CURRENT_DATE") {
+		t.Fatal("expected order clause to deprioritize animais fora do rebanho")
+	}
 	nome := repository.BuildAnimalSearchOrderByClause(false)
 	if nome == "" || nome == brinco {
 		t.Fatal("expected distinct order clause for name-oriented search")
+	}
+	if !strings.Contains(nome, "data_saida IS NOT NULL AND data_saida <= CURRENT_DATE") {
+		t.Fatal("expected order clause to deprioritize animais fora do rebanho")
 	}
 }

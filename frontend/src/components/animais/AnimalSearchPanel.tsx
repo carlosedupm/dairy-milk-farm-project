@@ -19,10 +19,12 @@ import {
   formatAnimalContextoMeta,
   formatAnimalContextoStatusLinha,
 } from "@/components/animais/animalResumoUtils";
-import { formatAnimalSearchLabel } from "@/components/animais/animalSearchUtils";
+import { AnimalSearchResultLabel } from "@/components/animais/AnimalSearchResultLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
+import { useAnimalSearchIncluirBaixados } from "@/hooks/useAnimalSearchIncluirBaixados";
 
 export type AnimalSearchPanelProps = {
   /** Fecha o diálogo / painel ao navegar para a ficha do animal */
@@ -49,6 +51,8 @@ export function AnimalSearchPanel({
   variant = "default",
 }: AnimalSearchPanelProps) {
   const { fazendaAtiva, isReady: fazendaReady } = useFazendaAtiva();
+  const { incluirBaixados, setIncluirBaixados } =
+    useAnimalSearchIncluirBaixados();
   const [identificacaoInterno, setIdentificacaoInterno] = useState("");
   const isControlled =
     identificacaoControlada !== undefined &&
@@ -106,6 +110,7 @@ export function AnimalSearchPanel({
       const page = await searchByIdentificacao(trimmed, {
         offset: 0,
         fazenda_id: fazendaAtiva.id,
+        no_rebanho: incluirBaixados ? false : true,
       });
       if (seq !== buscaSeq.current) return;
 
@@ -133,7 +138,7 @@ export function AnimalSearchPanel({
         setLoadingContexto(false);
       }
     }
-  }, [fazendaAtiva?.id, fazendaReady]);
+  }, [fazendaAtiva?.id, fazendaReady, incluirBaixados]);
 
   const carregarMais = useCallback(async () => {
     const trimmed = identificacao.trim();
@@ -153,6 +158,7 @@ export function AnimalSearchPanel({
       const page = await searchByIdentificacao(trimmed, {
         offset: resultados.length,
         fazenda_id: fazendaAtiva.id,
+        no_rebanho: incluirBaixados ? false : true,
       });
       if (seq !== buscaSeq.current) return;
 
@@ -168,7 +174,7 @@ export function AnimalSearchPanel({
         setLoadingMais(false);
       }
     }
-  }, [fazendaAtiva?.id, identificacao, resultados.length, totalResultados]);
+  }, [fazendaAtiva?.id, identificacao, incluirBaixados, resultados.length, totalResultados]);
 
   useEffect(() => {
     void executarBusca(debouncedTermo);
@@ -248,12 +254,36 @@ export function AnimalSearchPanel({
         </form>
       ) : null}
 
+      <div className="flex min-h-11 items-center gap-2">
+        <input
+          type="checkbox"
+          id="animal-search-incluir-baixados"
+          checked={incluirBaixados}
+          onChange={(event) => setIncluirBaixados(event.target.checked)}
+          className="rounded border-input"
+        />
+        <Label
+          htmlFor="animal-search-incluir-baixados"
+          className="cursor-pointer text-sm font-normal"
+        >
+          Incluir animais baixados
+        </Label>
+      </div>
+
       {erro ? <p className="text-sm text-destructive">{erro}</p> : null}
 
       {buscaExecutada && !loadingBusca && totalResultados === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nenhum animal encontrado para esse termo.
-        </p>
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">
+            Nenhum animal encontrado para esse termo.
+          </p>
+          {!incluirBaixados ? (
+            <p className="text-sm text-muted-foreground">
+              Marque «Incluir animais baixados» para procurar animais com baixa
+              registada.
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {totalResultados > 0 ? (
@@ -273,7 +303,7 @@ export function AnimalSearchPanel({
                 onClick={() => handleSelecionarAnimal(animal.id)}
                 disabled={loadingContexto}
               >
-                {formatAnimalSearchLabel(animal)}
+                <AnimalSearchResultLabel animal={animal} />
               </Button>
             ))}
           </div>
@@ -330,7 +360,7 @@ export function AnimalSearchPanel({
             </div>
           ) : null}
           <p className="font-medium break-words text-foreground">
-            {formatAnimalSearchLabel(contexto.animal)}
+          <AnimalSearchResultLabel animal={contexto.animal} />
           </p>
           {metaLinha ? (
             <p className="break-words text-sm text-muted-foreground">

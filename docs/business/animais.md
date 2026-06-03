@@ -128,6 +128,24 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
   - Frontend: `animalSearchUtils.ts`, `searchByIdentificacao` com `fazenda_id`, `useFazendaAtiva` no painel.
 - **Estado**: implementado.
 
+### BR-ANIMAIS-011 — Filtro «Incluir animais baixados» na busca global
+
+- **Enunciado**: A busca global do header, por defeito, mostra **apenas** animais no rebanho operacional. O utilizador pode marcar **«Incluir animais baixados»** para incluir animais com `data_saida` efetiva (BR-BAIXA-002); nesse modo, animais baixados aparecem **após** os no rebanho na ordenação SQL e com badge informativo **«Baixado»** nos resultados.
+- **Escopo**: `GET /api/v1/animais/search/by-identificacao`; UI `AnimalSearchPanel` (`HeaderBuscaTrigger`, popover desktop / dialog mobile).
+- **Perfis / permissões**: mesmas de BR-ANIMAIS-001.
+- **Efeito**: bloqueio no servidor via `no_rebanho` (default `true`); UI envia `no_rebanho=false` quando o checkbox está marcado.
+- **Regras**:
+  - Checkbox **desmarcado** por defeito (RF02); preferência persiste em `sessionStorage` na sessão do browser (RF05).
+  - Toggle re-dispara a busca com o termo actual.
+  - Paginação («Ver mais») respeita o mesmo filtro.
+  - Contexto expandido mantém banner «Animal fora do rebanho» para consulta sem novos eventos.
+- **Parâmetros**: `no_rebanho` — ver BR-ANIMAIS-009.
+- **Ordenação**: prefixo SQL em `BuildAnimalSearchOrderByClause` — animais fora do rebanho depois dos no rebanho; desempate conforme BR-ANIMAIS-010.
+- **Implementação**:
+  - Backend: `AnimalRepository.BuildAnimalSearchOrderByClause`, `sqlAnimalSearchRebanhoOrderPrefix`.
+  - Frontend: `useAnimalSearchIncluirBaixados`, `AnimalSearchResultLabel`, `searchByIdentificacao` com `no_rebanho`.
+- **Estado**: implementado.
+
 ---
 
 **Última atualização**: 2026-06-03
