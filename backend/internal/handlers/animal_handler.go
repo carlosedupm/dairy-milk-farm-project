@@ -624,13 +624,24 @@ func (h *AnimalHandler) SearchByIdentificacao(c *gin.Context) {
 	}
 
 	noRebanho := parseNoRebanhoQuery(c.Query("no_rebanho"))
-	list, err := h.service.SearchByIdentificacaoForFazendas(c.Request.Context(), identificacao, fazendaIDs, noRebanho)
+	limit := parseQueryIntPositiveDef(c.DefaultQuery("limit", "20"), 20)
+	offset := parseQueryIntNonNeg(c.DefaultQuery("offset", "0"), 0)
+	if limit > 100 {
+		limit = 100
+	}
+
+	list, total, err := h.service.SearchByIdentificacaoPaginatedForFazendas(c.Request.Context(), identificacao, fazendaIDs, noRebanho, limit, offset)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao buscar", err.Error())
 		return
 	}
 
-	response.SuccessOK(c, list, "Busca realizada com sucesso")
+	response.SuccessOK(c, gin.H{
+		"animais": list,
+		"total":   total,
+		"limit":   limit,
+		"offset":  offset,
+	}, "Busca realizada com sucesso")
 }
 
 func (h *AnimalHandler) GetContextoByID(c *gin.Context) {

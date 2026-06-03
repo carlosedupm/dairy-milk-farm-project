@@ -729,6 +729,13 @@
 
 - ✅ **DateTimePickerUnificado**: compõe `DatePickerUnificado` + selects nativos inline hora (0–23) / minuto (0–59); utilitários em `lib/datetime-input.ts` (clamp, `maxDateTime`, validação datetime futuro); valor `YYYY-MM-DDTHH:mm`; `DateTimePickerPtBr` re-exporta; produção, cio, cobertura, parto e toque atualizados automaticamente; mobile (`min-h-[44px]`, grid responsivo).
 
+### **2026-06-03 - Busca por identificação: paginação e performance (BR-ANIMAIS-009)**
+
+- ✅ **Migration 35**: `CREATE EXTENSION pg_trgm`; índice GIN `idx_animais_identificacao_trgm` em `animais.identificacao`.
+- ✅ **Backend**: `SearchByIdentificacaoPaginated` (COUNT + LIMIT/OFFSET); `SearchByIdentificacaoPaginatedForFazendas` (termo + equivalente em OR); handler `GET /api/v1/animais/search/by-identificacao` com `limit` (default 20), `offset` e resposta `{ animais, total, limit, offset }`.
+- ✅ **Frontend**: `ANIMAL_SEARCH_PAGE_SIZE`, `searchByIdentificacao` paginado; `AnimalSearchPanel` — «Mostrando X de Y resultados» + botão **Ver mais** (append).
+- ✅ **Documentação**: `docs/business/animais.md` (BR-ANIMAIS-009); Postman; `systemPatterns.md`.
+
 ### **2026-06-02 - DatePicker unificado — formulários de gestão**
 
 - ✅ **`lib/gestao-date-limits.ts`**: helpers `minDate` por evento (cio, cobertura+15d, gestação, lactação); mensagens PT em `GESTAO_DATE_MESSAGES`.
@@ -894,6 +901,6 @@
 
 ---
 
-**Última atualização**: 2026-06-02 (DateTimePicker unificado — input data + selects inline hora/minuto)
+**Última atualização**: 2026-06-03 (busca por identificação paginada — BR-ANIMAIS-009)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

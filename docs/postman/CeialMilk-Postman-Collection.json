@@ -358,6 +358,30 @@
       "description": "Animal context and timeline",
       "item": [
         {
+          "name": "Search Animal by Identificacao",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/animais/search/by-identificacao?identificacao=123&limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "animais", "search", "by-identificacao"],
+              "query": [
+                { "key": "identificacao", "value": "123", "description": "Termo parcial (obrigatório)" },
+                { "key": "limit", "value": "20", "description": "Máx. por página (default 20, max 100)" },
+                { "key": "offset", "value": "0", "description": "Offset para paginação" },
+                { "key": "no_rebanho", "value": "true", "description": "true (default) | false" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Get Animal Context",
           "request": {
             "method": "GET",

@@ -485,6 +485,97 @@ func (r *AnimalRepository) ListAnimaisFilteredPaginated(ctx context.Context, f A
 	return list, total, nil
 }
 
+// AnimalSearchFilters critérios para busca paginada por identificação.
+type AnimalSearchFilters struct {
+	FazendaIDs         []int64
+	IdentificacaoTerms []string
+	SomenteNoRebanho   bool
+}
+
+// SearchByIdentificacaoPaginated busca por identificação com COUNT + LIMIT/OFFSET.
+func (r *AnimalRepository) SearchByIdentificacaoPaginated(ctx context.Context, f AnimalSearchFilters, limit, offset int) ([]*models.Animal, int64, error) {
+	if len(f.FazendaIDs) == 0 {
+		return []*models.Animal{}, 0, nil
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	whereSQL, args := buildAnimalSearchWhereClause(f)
+	if whereSQL == "" {
+		return []*models.Animal{}, 0, nil
+	}
+
+	countSQL := fmt.Sprintf(`SELECT COUNT(*) FROM animais WHERE %s`, whereSQL)
+	var total int64
+	if err := r.db.QueryRow(ctx, countSQL, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	nPlace := len(args) + 1
+	listSQL := fmt.Sprintf(`
+		SELECT %s
+		FROM animais
+		WHERE %s
+		ORDER BY created_at DESC
+		LIMIT $%d OFFSET $%d`, animalSelectColumns, whereSQL, nPlace, nPlace+1)
+
+	listArgs := append(append([]interface{}{}, args...), limit, offset)
+	list, err := r.queryList(ctx, listSQL, listArgs...)
+	if err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
+}
+
+func buildAnimalSearchWhereClause(f AnimalSearchFilters) (string, []interface{}) {
+	var parts []string
+	var args []interface{}
+
+	if len(f.FazendaIDs) > 0 {
+		parts = append(parts, fmt.Sprintf("fazenda_id = ANY($%d::bigint[])", len(args)+1))
+		args = append(args, f.FazendaIDs)
+	}
+
+	identPart, identArgs := appendIdentificacaoTermsWhere(f.IdentificacaoTerms, len(args))
+	if identPart == "" {
+		return "", nil
+	}
+	parts = append(parts, identPart)
+	args = append(args, identArgs...)
+
+	if f.SomenteNoRebanho {
+		parts = append(parts, sqlNoRebanho)
+	}
+
+	return strings.Join(parts, " AND "), args
+}
+
+func appendIdentificacaoTermsWhere(terms []string, argOffset int) (string, []interface{}) {
+	var cleaned []string
+	for _, t := range terms {
+		if s := strings.TrimSpace(t); s != "" {
+			cleaned = append(cleaned, s)
+		}
+	}
+	if len(cleaned) == 0 {
+		return "", nil
+	}
+	var args []interface{}
+	if len(cleaned) == 1 {
+		return fmt.Sprintf("identificacao ILIKE '%%' || $%d || '%%'", argOffset+1), []interface{}{cleaned[0]}
+	}
+	var ors []string
+	for _, t := range cleaned {
+		ors = append(ors, fmt.Sprintf("identificacao ILIKE '%%' || $%d || '%%'", argOffset+len(args)+1))
+		args = append(args, t)
+	}
+	return "(" + strings.Join(ors, " OR ") + ")", args
+}
+
 func buildAnimalListWhereClause(f AnimalListFilters) (string, []interface{}) {
 	var parts []string
 	var args []interface{}
@@ -492,22 +583,10 @@ func buildAnimalListWhereClause(f AnimalListFilters) (string, []interface{}) {
 	parts = append(parts, fmt.Sprintf("fazenda_id = ANY($%d::bigint[])", len(args)+1))
 	args = append(args, f.FazendaIDs)
 
-	var terms []string
-	for _, t := range f.IdentificacaoTerms {
-		if s := strings.TrimSpace(t); s != "" {
-			terms = append(terms, s)
-		}
-	}
-	if len(terms) == 1 {
-		parts = append(parts, fmt.Sprintf("identificacao ILIKE '%%' || $%d || '%%'", len(args)+1))
-		args = append(args, terms[0])
-	} else if len(terms) > 1 {
-		var ors []string
-		for _, t := range terms {
-			ors = append(ors, fmt.Sprintf("identificacao ILIKE '%%' || $%d || '%%'", len(args)+1))
-			args = append(args, t)
-		}
-		parts = append(parts, "("+strings.Join(ors, " OR ")+")")
+	identPart, identArgs := appendIdentificacaoTermsWhere(f.IdentificacaoTerms, len(args))
+	if identPart != "" {
+		parts = append(parts, identPart)
+		args = append(args, identArgs...)
 	}
 
 	if f.Categoria != nil && *f.Categoria != "" {

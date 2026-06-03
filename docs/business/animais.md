@@ -18,7 +18,7 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 - **Perfis / permissões**: perfis com acesso a `/animais` (inclui modo restrito de **FUNCIONARIO**); resultados limitados às fazendas vinculadas.
 - **Efeito**: bloqueio no servidor para fazendas não vinculadas; UI exibe apenas resultados autorizados.
 - **Implementação**:
-  - Busca por identificação (parcial + equivalência número ↔ por extenso): `GET /api/v1/animais/search/by-identificacao`.
+  - Busca por identificação (parcial + equivalência número ↔ por extenso, paginada): `GET /api/v1/animais/search/by-identificacao?limit=20&offset=0`.
   - Contexto do animal: `GET /api/v1/animais/:id/contexto` (animal + resumo de produção + gestação + restrição de leite opcional).
   - UI: `AnimalSearchPanel` em `AnimalSearchHeaderField` + `AnimalSearchDialogContext`; atalho `openSearch()` no `Dashboard` (mobile).
   - Validação de acesso: `ValidateFazendaAccess` + filtro por `GetByUsuarioID` na busca.
@@ -96,6 +96,21 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 - **Implementação**: migration `24_add_auditoria_animais`; `animal_handler.go`, `assistente_service.go`, `assistente_live_service.go`, `cria_service.go`.
 - **Estado**: implementado.
 
+### BR-ANIMAIS-009 — Paginação e performance da busca por identificação
+
+- **Enunciado**: A busca por identificação retorna no máximo **20** resultados por página; o cliente pode carregar mais via `offset`; a resposta inclui o **total** encontrado antes do `LIMIT`.
+- **Escopo**: `GET /api/v1/animais/search/by-identificacao` (UI JWT); índice GIN `pg_trgm` em `animais.identificacao`.
+- **Perfis / permissões**: mesmas de BR-ANIMAIS-001 (fazendas vinculadas ao usuário).
+- **Efeito**: bloqueio no servidor; UI exibe «Mostrando X de Y resultados» e botão **Ver mais** quando `X < Y`.
+- **Parâmetros**: `identificacao` (obrigatório), `limit` (default 20, max 100), `offset` (default 0), `no_rebanho` (default true).
+- **Resposta**: `{ animais, total, limit, offset }`.
+- **Equivalência número ↔ extenso**: termo principal e equivalente em **OR** na mesma query (alinhado à listagem paginada).
+- **Implementação**:
+  - Migration `35_add_animais_identificacao_trgm` (`CREATE EXTENSION pg_trgm`, índice `idx_animais_identificacao_trgm`).
+  - `AnimalRepository.SearchByIdentificacaoPaginated`, `AnimalService.SearchByIdentificacaoPaginatedForFazendas`, `AnimalHandler.SearchByIdentificacao`.
+  - UI: `AnimalSearchPanel` + `searchByIdentificacao` em `services/animais.ts` (`ANIMAL_SEARCH_PAGE_SIZE = 20`).
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-06-01
+**Última atualização**: 2026-06-03

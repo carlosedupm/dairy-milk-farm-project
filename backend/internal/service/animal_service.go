@@ -309,6 +309,37 @@ func (s *AnimalService) SearchByIdentificacaoForFazendas(ctx context.Context, id
 	return list, nil
 }
 
+// SearchByIdentificacaoPaginatedForFazendas busca paginada por identificação (termo + equivalente em OR).
+func (s *AnimalService) SearchByIdentificacaoPaginatedForFazendas(ctx context.Context, identificacao string, fazendaIDs []int64, noRebanho bool, limit, offset int) ([]*models.Animal, int64, error) {
+	if len(fazendaIDs) == 0 {
+		return []*models.Animal{}, 0, nil
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	var terms []string
+	if t := strings.TrimSpace(identificacao); t != "" {
+		terms = append(terms, t)
+		if eq := equivalenteIdentificacao(t); eq != "" && !strings.EqualFold(eq, t) {
+			terms = append(terms, eq)
+		}
+	}
+	if len(terms) == 0 {
+		return []*models.Animal{}, 0, nil
+	}
+
+	f := repository.AnimalSearchFilters{
+		FazendaIDs:         fazendaIDs,
+		IdentificacaoTerms: terms,
+		SomenteNoRebanho:   noRebanho,
+	}
+	return s.repo.SearchByIdentificacaoPaginated(ctx, f, limit, offset)
+}
+
 func (s *AnimalService) GetByStatusSaude(ctx context.Context, statusSaude string) ([]*models.Animal, error) {
 	return s.repo.GetByStatusSaude(ctx, statusSaude)
 }

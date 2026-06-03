@@ -117,6 +117,20 @@ export type AnimalTimelinePage = {
 
 export const TIMELINE_PAGE_SIZE = 20
 
+export const ANIMAL_SEARCH_PAGE_SIZE = 20
+
+export type AnimalSearchPage = {
+  animais: Animal[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export type AnimalSearchParams = {
+  offset?: number
+  limit?: number
+}
+
 export function animalTimelineQueryKey(animalId: number, tipo: TimelineFilterTipo = 'todos') {
   return ['animais', animalId, 'timeline', tipo] as const
 }
@@ -495,11 +509,31 @@ export async function countByFazenda(fazendaId: number): Promise<number> {
   return data.data?.count ?? 0
 }
 
-export async function searchByIdentificacao(identificacao: string): Promise<Animal[]> {
-  const { data } = await api.get<ApiResponse<Animal[]>>('/api/v1/animais/search/by-identificacao', {
-    params: { identificacao },
+export async function searchByIdentificacao(
+  identificacao: string,
+  params: AnimalSearchParams = {},
+): Promise<AnimalSearchPage> {
+  const { data } = await api.get<
+    ApiResponse<{
+      animais?: Animal[]
+      total?: number
+      limit?: number
+      offset?: number
+    }>
+  >('/api/v1/animais/search/by-identificacao', {
+    params: {
+      identificacao,
+      limit: params.limit ?? ANIMAL_SEARCH_PAGE_SIZE,
+      offset: params.offset ?? 0,
+    },
   })
-  return data.data ?? []
+  const payload = data.data
+  return {
+    animais: payload?.animais ?? [],
+    total: payload?.total ?? 0,
+    limit: payload?.limit ?? ANIMAL_SEARCH_PAGE_SIZE,
+    offset: payload?.offset ?? 0,
+  }
 }
 
 export async function getContexto(id: number): Promise<AnimalContexto | null> {

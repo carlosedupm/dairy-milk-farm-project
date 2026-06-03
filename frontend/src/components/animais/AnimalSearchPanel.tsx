@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getApiErrorMessage } from "@/lib/errors";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -60,19 +60,20 @@ export function AnimalSearchPanel({
   const buscaSeq = useRef(0);
 
   const [resultados, setResultados] = useState<Animal[]>([]);
+  const [totalResultados, setTotalResultados] = useState(0);
   const [contexto, setContexto] = useState<AnimalContexto | null>(null);
   const [loadingBusca, setLoadingBusca] = useState(false);
+  const [loadingMais, setLoadingMais] = useState(false);
   const [loadingContexto, setLoadingContexto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [buscaExecutada, setBuscaExecutada] = useState(false);
-
-  const totalResultados = useMemo(() => resultados.length, [resultados]);
 
   const aguardandoDebounce =
     identificacao.trim().length > 0 &&
     identificacao.trim() !== debouncedTermo &&
     !loadingBusca &&
-    !loadingContexto;
+    !loadingContexto &&
+    !loadingMais;
 
   const executarBusca = useCallback(async (termo: string) => {
     const trimmed = termo.trim();
@@ -80,10 +81,12 @@ export function AnimalSearchPanel({
 
     if (!trimmed) {
       setResultados([]);
+      setTotalResultados(0);
       setContexto(null);
       setBuscaExecutada(false);
       setErro(null);
       setLoadingBusca(false);
+      setLoadingMais(false);
       setLoadingContexto(false);
       return;
     }
@@ -93,15 +96,16 @@ export function AnimalSearchPanel({
     setContexto(null);
 
     try {
-      const items = await searchByIdentificacao(trimmed);
+      const page = await searchByIdentificacao(trimmed, { offset: 0 });
       if (seq !== buscaSeq.current) return;
 
-      setResultados(items);
+      setResultados(page.animais);
+      setTotalResultados(page.total);
       setBuscaExecutada(true);
 
-      if (items.length === 1) {
+      if (page.total === 1 && page.animais.length === 1) {
         setLoadingContexto(true);
-        const ctx = await getContexto(items[0].id);
+        const ctx = await getContexto(page.animais[0].id);
         if (seq !== buscaSeq.current) return;
         setContexto(ctx);
       }
@@ -111,6 +115,7 @@ export function AnimalSearchPanel({
         getApiErrorMessage(err, "Não foi possível pesquisar o animal agora."),
       );
       setResultados([]);
+      setTotalResultados(0);
       setBuscaExecutada(true);
     } finally {
       if (seq === buscaSeq.current) {
@@ -119,6 +124,36 @@ export function AnimalSearchPanel({
       }
     }
   }, []);
+
+  const carregarMais = useCallback(async () => {
+    const trimmed = identificacao.trim();
+    if (!trimmed || resultados.length >= totalResultados) {
+      return;
+    }
+
+    const seq = ++buscaSeq.current;
+    setLoadingMais(true);
+    setErro(null);
+
+    try {
+      const page = await searchByIdentificacao(trimmed, {
+        offset: resultados.length,
+      });
+      if (seq !== buscaSeq.current) return;
+
+      setResultados((prev) => [...prev, ...page.animais]);
+      setTotalResultados(page.total);
+    } catch (err: unknown) {
+      if (seq !== buscaSeq.current) return;
+      setErro(
+        getApiErrorMessage(err, "Não foi possível carregar mais resultados."),
+      );
+    } finally {
+      if (seq === buscaSeq.current) {
+        setLoadingMais(false);
+      }
+    }
+  }, [identificacao, resultados.length, totalResultados]);
 
   useEffect(() => {
     void executarBusca(debouncedTermo);
@@ -166,7 +201,10 @@ export function AnimalSearchPanel({
     variant === "default" ||
     loadingBusca ||
     loadingContexto ||
+    loadingMais ||
     aguardandoDebounce;
+
+  const temMaisResultados = resultados.length < totalResultados;
 
   return (
     <div className="min-w-0 space-y-4">
@@ -178,12 +216,12 @@ export function AnimalSearchPanel({
             placeholder="Ex.: 123, brinco, nome ou parte da identificação"
             aria-label="Pesquisar animal por identificação"
             autoFocus={autoFocus}
-            aria-busy={loadingBusca || loadingContexto}
+            aria-busy={loadingBusca || loadingContexto || loadingMais}
             className="min-w-0"
           />
           {showInputHelp ? (
             <p className="text-xs text-muted-foreground">
-              {loadingBusca || loadingContexto
+              {loadingBusca || loadingContexto || loadingMais
                 ? "Pesquisando…"
                 : aguardandoDebounce
                   ? "Aguardando pausa na digitação…"
@@ -206,9 +244,7 @@ export function AnimalSearchPanel({
       {totalResultados > 0 ? (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            {totalResultados === 1
-              ? "1 animal encontrado."
-              : `${totalResultados} animais encontrados.`}
+            Mostrando {resultados.length} de {totalResultados} resultados
           </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {resultados.map((animal) => (
@@ -226,6 +262,18 @@ export function AnimalSearchPanel({
               </Button>
             ))}
           </div>
+          {temMaisResultados ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-[44px] w-full"
+              onClick={() => void carregarMais()}
+              disabled={loadingMais || loadingBusca}
+              aria-busy={loadingMais}
+            >
+              {loadingMais ? "Carregando…" : "Ver mais"}
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
