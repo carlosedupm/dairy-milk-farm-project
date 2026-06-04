@@ -170,7 +170,7 @@ export function AnimalTimelineSection({ animalId }: Props) {
                 const isAlerta = item.tipo === "ALERTA";
                 const saudeEditHref =
                   isSaude && item.ref_id != null && canEditSaude
-                    ? `/animais/${animalId}/saude/${item.ref_id}/editar`
+                    ? `/animais/${animalId}/saude/editar/${item.ref_id}`
                     : null;
 
                 return (

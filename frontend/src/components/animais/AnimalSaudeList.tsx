@@ -122,7 +122,7 @@ export function AnimalSaudeList({ animalId, items, perfil }: Props) {
     if (canEdit) {
       actions.push({
         label: "Editar",
-        href: `/animais/${animalId}/saude/${item.id}/editar`,
+        href: `/animais/${animalId}/saude/editar/${item.id}`,
       });
     }
     if (canDelete) {
@@ -152,7 +152,7 @@ export function AnimalSaudeList({ animalId, items, perfil }: Props) {
             key={item.id}
             href={
               canEdit
-                ? `/animais/${animalId}/saude/${item.id}/editar`
+                ? `/animais/${animalId}/saude/editar/${item.id}`
                 : undefined
             }
             title={tipoLabel(item.tipo_caso)}
@@ -196,7 +196,7 @@ export function AnimalSaudeList({ animalId, items, perfil }: Props) {
                   <TableCell className="font-medium">
                     {canEdit ? (
                       <Link
-                        href={`/animais/${animalId}/saude/${item.id}/editar`}
+                        href={`/animais/${animalId}/saude/editar/${item.id}`}
                         className="hover:underline"
                       >
                         {tipoLabel(item.tipo_caso)}

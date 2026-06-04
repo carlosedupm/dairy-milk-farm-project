@@ -6,7 +6,7 @@ Módulo de registo de casos clínicos por animal (`animal_saude`) com CRUD no ba
 
 - Banco: migration `backend/migrations/30_add_animal_saude.up.sql` — tabela `animal_saude`, coluna `animais.status_saude`.
 - Backend: `backend/internal/models/animal_saude.go`, `backend/internal/service/animal_saude_service.go`, `backend/internal/repository/animal_saude_repository.go`, `backend/internal/handlers/animal_saude_handler.go`.
-- Frontend: `frontend/src/services/animalSaude.ts`, `frontend/src/components/animais/AnimalSaudeForm.tsx`, `AnimalSaudeList.tsx`; listagem na tab **Saúde** da ficha (`/animais/:id?tab=saude`); formulários em `/animais/:id/saude/novo`, `/[saudeId]/editar`; rota `/animais/:id/saude` redireciona para a tab.
+- Frontend: `frontend/src/services/animalSaude.ts`, `frontend/src/components/animais/AnimalSaudeForm.tsx`, `AnimalSaudeList.tsx`; listagem na tab **Saúde** da ficha (`/animais/:id?tab=saude`); formulários em `/animais/:id/saude/novo`, `/saude/editar/:saudeId`; rota `/animais/:id/saude` redireciona para a tab.
 - Timeline: `appendCasosSaudeToTimeline` em `backend/internal/service/animal_ciclo_service.go`; UI `AnimalFichaCiclo.tsx`.
 - **Assistente Live (GERENTE+)**: function calling `consultar_saude` e `registrar_saude` em `backend/internal/service/assistente_live_service.go` (`ExecuteFunction` → `AnimalSaudeService`); sem tool de exclusão/edição; `FUNCIONARIO` permanece bloqueado do assistente.
 

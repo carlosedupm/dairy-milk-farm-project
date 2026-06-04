@@ -74,7 +74,7 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 ### BR-ANIMAIS-008 — Ficha com tabs e sidebar
 
 - **Enunciado**: A ficha `/animais/:id` organiza o conteúdo em **quatro tabs** — **Visão Geral** (cadastro, ações, estado reprodutivo e CTAs), **Saúde** (lista CRUD de casos), **Produção** (agrupamento por lactação) e **Histórico** (timeline paginada) — com **sidebar fixa** de resumo do animal (identificação, meta, gestação, produção, fazenda).
-- **Escopo**: UI; URLs `?tab=saude|producao|historico` (Visão Geral sem query); rotas `/animais/:id/saude` e `/animais/:id/producao` redirecionam para a tab equivalente; formulários CRUD de saúde (`/saude/novo`, `/saude/:id/editar`) permanecem em rotas dedicadas.
+- **Escopo**: UI; URLs `?tab=saude|producao|historico` (Visão Geral sem query); rotas `/animais/:id/saude` e `/animais/:id/producao` redirecionam para a tab equivalente; formulários CRUD de saúde (`/saude/novo`, `/saude/editar/:saudeId`) permanecem em rotas dedicadas.
 - **Perfis / permissões**: mesmas regras das secções integradas (saúde, produção, gestão de animal).
 - **Efeito**: informativo e navegação client-side sem reload; breadcrumb contextual.
 - **Implementação**: `AnimalFichaShell`, `AnimalFichaSidebar`, `AnimalFichaTabs`, tab panels em `frontend/src/components/animais/ficha/`; `useAnimalFichaPage`; `components/ui/tabs.tsx` (Radix).
