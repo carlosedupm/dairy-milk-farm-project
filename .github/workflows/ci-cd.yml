@@ -29,6 +29,10 @@ jobs:
       working-directory: backend
       run: go mod verify
 
+    - name: Run Go tests
+      working-directory: backend
+      run: go test ./... -count=1
+
     - name: Build backend
       working-directory: backend
       run: go build -o /tmp/api ./cmd/api
@@ -59,6 +63,10 @@ jobs:
     - name: Install dependencies
       working-directory: frontend
       run: npm ci
+
+    - name: TypeScript check
+      working-directory: frontend
+      run: npm run typecheck
 
     - name: Run ESLint
       working-directory: frontend

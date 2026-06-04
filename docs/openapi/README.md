@@ -1,5 +1,7 @@
 # OpenAPI — CeialMilk
 
+Existem **dois contratos OpenAPI distintos** nesta pasta. Não confundir os ficheiros — têm APIs, autenticação e paths diferentes. Tamanhos similares (~32KB) são coincidência, não duplicação.
+
 ## API JWT (parcial)
 
 | Ficheiro | Descrição |
@@ -18,6 +20,10 @@ Autenticação JWT (cookie `ceialmilk_token` ou `Authorization: Bearer <jwt>`). 
 
 **Fonte de verdade para o servidor:** [`backend/internal/openapi/integracoes-v1.openapi.yaml`](../../backend/internal/openapi/integracoes-v1.openapi.yaml) (embed no binário Go).
 
-Ao alterar a API de integrações, atualize **ambos** os ficheiros (ou copie de `backend/internal/openapi/` para aqui).
+## Manutenção
 
-**Última atualização**: 2026-05-29
+1. Alterar primeiro o ficheiro em `backend/internal/openapi/`.
+2. Copiar para `docs/openapi/` (cópia versionada para documentação e import Postman).
+3. Testes de embed: `jwt_openapi_test.go`, `integracoes_docs_test.go`.
+
+**Última atualização**: 2026-06-03

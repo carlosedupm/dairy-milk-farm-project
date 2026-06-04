@@ -83,6 +83,8 @@ Em produção (`ENV=production`), o Gin confia em proxies (`SetTrustedProxies`) 
 
 **Formato**: `{version}_{descrição}.up.sql` e `{version}_{descrição}.down.sql` (ex.: `1_add_remaining_tables.up.sql`, `2_add_indexes_to_fazendas.up.sql`, `3_seed_admin.up.sql`, `4_add_refresh_tokens.up.sql`)
 
+**Numeração de migrations**: a sequência salta de **28 → 30** (não existe `29_*.sql`). Lacuna numérica acidental — nunca houve migration 29 no histórico git. O `golang-migrate` usa o prefixo numérico do ficheiro; ambientes existentes **não são afetados**. Se no futuro houver alteração de schema reservada para V29, usar o número 29 normalmente.
+
 **Row Level Security (RLS)**: A migração `19_enable_row_level_security_public_tables` ativa RLS em todas as tabelas de domínio em `public`, sem políticas para `anon`/`authenticated`. Isso alinha com linters de ambientes que expõem `public` ao PostgREST (ex.: Supabase). O backend CeialMilk usa `DATABASE_URL` com usuário que **é dono das tabelas**: no PostgreSQL, o dono ignora RLS por padrão (salvo `FORCE ROW LEVEL SECURITY`), portanto a API Go/sqlx segue inalterada. Se no futuro um cliente usar papel não-dono com menos privilégios, será preciso criar políticas RLS ou `GRANT` adequados.
 
 ### Graceful shutdown (containers)
@@ -423,7 +425,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 ---
 
-**Última atualização**: 2026-05-30 (Permissions-Policy microfone no frontend)
+**Última atualização**: 2026-06-03 (nota numeração migrations V28→V30)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

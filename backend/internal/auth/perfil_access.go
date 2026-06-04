@@ -11,6 +11,16 @@ import (
 )
 
 // Regras de acesso à API por perfil. Manter alinhado com frontend/src/config/appAccess.ts.
+//
+// Este ficheiro define whitelists apenas para perfis **limitados** (FUNCIONARIO, USER).
+// Perfis com acesso API completo (passam direto em RequirePerfilAPIAccess):
+//   ADMIN, DEVELOPER, GERENTE, GESTAO, PROPRIETARIO — ver PerfilTemAcessoAPICompleta.
+// Restrições adicionais desses perfis vêm de outras camadas:
+//   - middleware.go: RequireAdmin, RequireDeveloper, RequireGestaoFolgas
+//   - handlers/access_helper.go: ValidateFazendaAccess, ValidateFazendaAccessOrGestao
+//   - services/models: regras de domínio (folgas, alertas, baixa, etc.)
+// INTEGRACAO não usa JWT UI — auth M2M por API key em /api/v1/integracoes/*.
+//
 // USER: whitelist em requestAllowedForUser — prefixo /api/v1/me/, exceto POST /api/v1/me/fazendas (apenas PROPRIETARIO; ver BR-ACESSO-008/012).
 
 var funcionarioFolgasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/folgas/`)

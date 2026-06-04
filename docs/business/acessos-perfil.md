@@ -193,6 +193,13 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Efeito**: bloqueio 403 quando ID de fazenda alheia é usado sem vínculo.
 - **Estado**: Implementado.
 
+### BR-ACESSO-019 — Perfil GESTAO (gestão global, perfil ativo)
+
+- **Enunciado**: O perfil `GESTAO` **não é legado** — é atribuível via admin e usado em produção. Tem **acesso API completo** no middleware (`PerfilTemAcessoAPICompleta` = true), como `GERENTE` e `PROPRIETARIO`; **não** aparece em whitelists de `perfil_access.go` porque whitelists existem só para `FUNCIONARIO` e `USER`. Na UI, `getAreasMode("GESTAO")` devolve `"full"` (todas as áreas operacionais). Diferencial: junto com **ADMIN** e **DEVELOPER**, `GESTAO` pode aceder a fazendas **sem** vínculo em `usuarios_fazendas` (BR-ACESSO-013) e gerir folgas (`PodeGerenciarFolgas`).
+- **Escopo**: `backend/internal/models/perfil.go`, `backend/internal/auth/perfil_access.go`, `frontend/src/config/appAccess.ts`.
+- **Efeito**: sem restrição de whitelist; isolamento por fazenda aplicado via `ValidateFazendaAccessOrGestao` e regras de domínio (alertas, baixa, etc.).
+- **Estado**: Implementado.
+
 ---
 
-**Última atualização**: 2026-05-31 (BR-ACESSO-018: wizard USER sem fazenda, tour Dashboard)
+**Última atualização**: 2026-06-03 (BR-ACESSO-019: perfil GESTAO ativo)

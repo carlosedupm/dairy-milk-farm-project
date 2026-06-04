@@ -49,9 +49,11 @@ cd frontend && npm install && npm run dev
 Validação antes de PR:
 
 ```bash
-cd backend && go test ./internal/service/... -count=1
-cd frontend && npm run lint && npx tsc --noEmit
+cd backend && go test ./... -count=1
+cd frontend && npm run lint && npm run typecheck
 ```
+
+O CI (`.github/workflows/ci-cd.yml`) executa `go test ./...` no backend e `npm run typecheck` + ESLint no frontend.
 
 DevContainer: `.devcontainer/` — Reopen in Container sobe Go, Node e PostgreSQL.
 

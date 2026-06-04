@@ -27,6 +27,8 @@
 - **Gerenciamento de Estado**: TanStack Query 5.x
 - **Cliente HTTP**: Axios 1.7.9
 - **Toast (feedback)**: Sonner (`sonner`) — `hooks/use-toast.ts`, `components/ui/sonner.tsx`, `<Toaster />` em `Providers` (canto superior direito)
+- **Datas**: `date-fns` v4 — tipos embutidos via campo `exports` do pacote; imports como `date-fns` e `date-fns/locale`
+- **TypeScript (resolução de módulos)**: `tsconfig.json` usa `"moduleResolution": "bundler"` — **obrigatório** para resolver `exports` de `date-fns` v4, `sonner` v2 e `@radix-ui/*`. **Não** instalar `@types/sonner` (pacote inexistente no npm; sonner traz `.d.ts` próprio). Se `tsc` falhar com "Cannot find module", confirmar `npm ci` e que `moduleResolution` não foi alterado para `"node"`.
 - **Logging**: logs do runtime do Next.js e `console` no app (sem logger estruturado dedicado no frontend)
 
 ### Infraestrutura
@@ -286,5 +288,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-05-30 (migration 34 `lactacao_id`; scopes M2M saúde/alertas)
+**Última atualização**: 2026-06-03 (CI: go test + typecheck; date-fns v4 + moduleResolution bundler)
 **Stack**: Go + Next.js 16 — Fase 2 concluída; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)
