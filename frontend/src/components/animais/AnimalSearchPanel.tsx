@@ -217,6 +217,8 @@ export function AnimalSearchPanel({
         animal: contexto.animal,
         resumo_producao: contexto.resumo_producao,
         gestacao_resumo: contexto.gestacao_resumo,
+        tratamentos_ativos: contexto.tratamentos_ativos,
+        fora_do_rebanho: contexto.fora_do_rebanho,
       })
     : [];
 

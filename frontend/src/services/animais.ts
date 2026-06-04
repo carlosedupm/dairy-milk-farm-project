@@ -96,6 +96,12 @@ export type SaidaResumo = {
   registrado_por?: string
 }
 
+export type TratamentoAtivoContexto = {
+  tipo_caso: string
+  data_inicio: string
+  data_fim_prevista?: string | null
+}
+
 export type AnimalContexto = {
   animal: Animal
   resumo_producao: ProducaoResumo
@@ -106,6 +112,7 @@ export type AnimalContexto = {
   registrado_por_cadastro?: string
   fora_do_rebanho?: boolean
   saida_resumo?: SaidaResumo | null
+  tratamentos_ativos?: TratamentoAtivoContexto[]
 }
 
 export type TimelineFilterTipo = 'todos' | 'ciclo' | 'saude' | 'alertas'

@@ -7,19 +7,31 @@ import {
   type Sexo,
   STATUS_REPRODUTIVO_LABELS,
   type StatusReprodutivo,
-  STATUS_SAUDE_LABELS,
-  type StatusSaude,
+  type TratamentoAtivoContexto,
   getCategoriaLabel,
 } from "@/services/animais";
-
-export function getStatusSaudeLabel(status?: string | null): string {
-  if (!status) return "Não informado";
-  return STATUS_SAUDE_LABELS[status as StatusSaude] ?? status;
-}
+import { TIPO_CASO_SAUDE_LABELS, type TipoCasoSaude } from "@/services/animalSaude";
 
 export function getStatusReprodutivoLabel(status?: string | null): string {
   if (!status) return "Não informado";
   return STATUS_REPRODUTIVO_LABELS[status as StatusReprodutivo] ?? status;
+}
+
+export function formatTratamentoAtivoLinha(
+  tratamento: TratamentoAtivoContexto,
+): string {
+  const tipoLabel =
+    TIPO_CASO_SAUDE_LABELS[tratamento.tipo_caso as TipoCasoSaude] ??
+    tratamento.tipo_caso;
+  const inicio = formatDatePtBr(tratamento.data_inicio);
+  let line = `iniciado ${inicio !== "—" ? inicio : tratamento.data_inicio}`;
+  if (tratamento.data_fim_prevista) {
+    const fim = formatDatePtBr(tratamento.data_fim_prevista);
+    if (fim !== "—") {
+      line += ` · previsto fim ${fim}`;
+    }
+  }
+  return `${tipoLabel}: ${line}`;
 }
 
 /** Bezerra/bezerro gerados no parto — status reprodutivo não se aplica no resumo rápido. */
@@ -82,24 +94,17 @@ export function formatGestacaoResumoLinha(
 }
 
 /**
- * Saúde/reprodução só quando preenchidos e relevantes.
- * Crias jovens: omitir linha se não houver status de saúde (reprodução não se aplica).
+ * Status reprodutivo no resumo rápido (saúde coberta pelo badge).
+ * Crias jovens: omitir linha se não houver status reprodutivo.
  */
 export function formatAnimalContextoStatusLinha(animal: Animal): string | null {
   if (isAnimalCriaJovem(animal)) {
-    if (!animal.status_saude) {
-      return null;
-    }
-    return getStatusSaudeLabel(animal.status_saude);
+    return null;
   }
-  const parts: string[] = [];
-  if (animal.status_saude) {
-    parts.push(getStatusSaudeLabel(animal.status_saude));
+  if (!animal.status_reprodutivo) {
+    return null;
   }
-  if (animal.status_reprodutivo) {
-    parts.push(getStatusReprodutivoLabel(animal.status_reprodutivo));
-  }
-  return parts.length > 0 ? parts.join(" · ") : null;
+  return getStatusReprodutivoLabel(animal.status_reprodutivo);
 }
 
 /** Meta compacta: categoria · sexo · raça; crias incluem nasc. na mesma linha. */
@@ -136,8 +141,20 @@ export function buildAnimalContextoLinhasResumo(input: {
   animal: Animal;
   resumo_producao: ProducaoResumo;
   gestacao_resumo?: GestacaoResumoContexto | null;
+  tratamentos_ativos?: TratamentoAtivoContexto[] | null;
+  fora_do_rebanho?: boolean;
 }): AnimalContextoLinhaResumo[] {
   const linhas: AnimalContextoLinhaResumo[] = [];
+
+  if (!input.fora_do_rebanho && input.tratamentos_ativos?.length) {
+    for (const tratamento of input.tratamentos_ativos) {
+      linhas.push({
+        label: "Saúde",
+        value: formatTratamentoAtivoLinha(tratamento),
+        destaque: true,
+      });
+    }
+  }
 
   const gestacao = formatGestacaoResumoLinha(input.gestacao_resumo);
   if (gestacao) {

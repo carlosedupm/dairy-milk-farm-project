@@ -398,7 +398,16 @@
               "path": ["api", "v1", "animais", "{{animalId}}", "contexto"]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "200 — contexto com tratamentos ativos",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"data\": {\n    \"animal\": { \"id\": 1, \"identificacao\": \"123\", \"status_saude\": \"EM_TRATAMENTO\" },\n    \"resumo_producao\": { \"total_litros\": 0, \"media_litros\": 0, \"total_registros\": 0 },\n    \"fora_do_rebanho\": false,\n    \"gestacao_resumo\": { \"confirmada\": false, \"dias_gestacao\": 0, \"meses_gestacao\": 0 },\n    \"tratamentos_ativos\": [\n      {\n        \"tipo_caso\": \"TRATAMENTO\",\n        \"data_inicio\": \"2026-05-01\",\n        \"data_fim_prevista\": \"2026-05-15\"\n      }\n    ],\n    \"proximas_acoes\": []\n  },\n  \"message\": \"Contexto do animal carregado com sucesso\",\n  \"timestamp\": \"2026-06-03T12:00:00Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Get Animal Timeline",

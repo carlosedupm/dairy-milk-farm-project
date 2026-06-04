@@ -230,7 +230,7 @@ func main() {
 					if alertaGeracaoSvc != nil {
 						alertaAdminHandler = handlers.NewAlertaAdminHandler(alertaGeracaoSvc)
 					}
-					animalHandler := handlers.NewAnimalHandler(animalSvc, animalBaixaSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc, animalCicloSvc, userRepo)
+					animalHandler := handlers.NewAnimalHandler(animalSvc, animalBaixaSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc, animalCicloSvc, animalSaudeSvc, userRepo)
 					animalSaudeHandler := handlers.NewAnimalSaudeHandler(animalSaudeSvc, animalSvc, fazendaSvc)
 					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
 					partoSvc := service.NewPartoService(pool, partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo, criaSvc)

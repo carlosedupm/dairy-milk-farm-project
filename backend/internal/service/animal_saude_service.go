@@ -180,6 +180,31 @@ func (s *AnimalSaudeService) maybeResolveTratamentoVencido(ctx context.Context, 
 	resolveAlertaSilencioso(ctx, s.alertaResolver, animal.FazendaID, animalID, models.AlertaTipoTratamentoVencido)
 }
 
+// BuildTratamentosAtivosContexto lista casos ATIVOS de TRATAMENTO ou CIRURGIA para o contexto do animal.
+func (s *AnimalSaudeService) BuildTratamentosAtivosContexto(ctx context.Context, animalID int64) ([]models.TratamentoAtivoContexto, error) {
+	ativos, err := s.repo.ListAtivosByAnimalID(ctx, animalID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]models.TratamentoAtivoContexto, 0)
+	for _, c := range ativos {
+		if c.TipoCaso != models.AnimalSaudeTipoTratamento && c.TipoCaso != models.AnimalSaudeTipoCirurgia {
+			continue
+		}
+		item := models.TratamentoAtivoContexto{
+			TipoCaso:   c.TipoCaso,
+			DataInicio: formatDateYMD(c.DataInicio),
+		}
+		if c.DataFim != nil {
+			if df := formatDateYMD(*c.DataFim); df != "" {
+				item.DataFimPrevista = &df
+			}
+		}
+		out = append(out, item)
+	}
+	return out, nil
+}
+
 func (s *AnimalSaudeService) syncAnimalStatusSaude(ctx context.Context, animalID int64) error {
 	ativos, err := s.repo.ListAtivosByAnimalID(ctx, animalID)
 	if err != nil {

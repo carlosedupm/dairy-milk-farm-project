@@ -498,3 +498,61 @@ func TestValidateAnimalSaudeInput(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildTratamentosAtivosContexto(t *testing.T) {
+	ctx := context.Background()
+	animalID := int64(42)
+	inicio := time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)
+	fim := time.Date(2026, 5, 15, 0, 0, 0, 0, time.UTC)
+
+	repo := newFakeAnimalSaudeRepo()
+	repo.casos = []*models.AnimalSaude{
+		{ID: 1, AnimalID: animalID, TipoCaso: models.AnimalSaudeTipoTratamento, DataInicio: inicio, DataFim: &fim, Status: models.AnimalSaudeStatusAtivo},
+		{ID: 2, AnimalID: animalID, TipoCaso: models.AnimalSaudeTipoCirurgia, DataInicio: inicio, Status: models.AnimalSaudeStatusAtivo},
+		{ID: 3, AnimalID: animalID, TipoCaso: models.AnimalSaudeTipoPreventivo, DataInicio: inicio, Status: models.AnimalSaudeStatusAtivo},
+		{ID: 4, AnimalID: animalID, TipoCaso: models.AnimalSaudeTipoOutro, DataInicio: inicio, Status: models.AnimalSaudeStatusAtivo},
+		{ID: 5, AnimalID: animalID, TipoCaso: models.AnimalSaudeTipoTratamento, DataInicio: inicio, Status: models.AnimalSaudeStatusConcluido},
+	}
+	svc := newAnimalSaudeServiceForTest(repo, newFakeAnimalRepoForSaude(map[int64]*models.Animal{
+		animalID: {ID: animalID},
+	}))
+
+	got, err := svc.BuildTratamentosAtivosContexto(ctx, animalID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 tratamentos ativos, got %d", len(got))
+	}
+	if got[0].TipoCaso != models.AnimalSaudeTipoTratamento {
+		t.Fatalf("expected first tipo TRATAMENTO, got %s", got[0].TipoCaso)
+	}
+	if got[0].DataInicio != "2026-05-01" {
+		t.Fatalf("expected data_inicio 2026-05-01, got %s", got[0].DataInicio)
+	}
+	if got[0].DataFimPrevista == nil || *got[0].DataFimPrevista != "2026-05-15" {
+		t.Fatalf("expected data_fim_prevista 2026-05-15, got %v", got[0].DataFimPrevista)
+	}
+	if got[1].TipoCaso != models.AnimalSaudeTipoCirurgia {
+		t.Fatalf("expected second tipo CIRURGIA, got %s", got[1].TipoCaso)
+	}
+	if got[1].DataFimPrevista != nil {
+		t.Fatalf("expected nil data_fim_prevista for cirurgia without fim, got %v", got[1].DataFimPrevista)
+	}
+}
+
+func TestBuildTratamentosAtivosContexto_Empty(t *testing.T) {
+	ctx := context.Background()
+	repo := newFakeAnimalSaudeRepo()
+	svc := newAnimalSaudeServiceForTest(repo, newFakeAnimalRepoForSaude(map[int64]*models.Animal{
+		1: {ID: 1},
+	}))
+
+	got, err := svc.BuildTratamentosAtivosContexto(ctx, 1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("expected empty slice, got %d items", len(got))
+	}
+}

@@ -24,6 +24,7 @@ type AnimalHandler struct {
 	restricaoLeiteSvc    *service.RestricaoLeiteService
 	gestacaoSvc          *service.GestacaoService
 	cicloSvc             *service.AnimalCicloService
+	saudeSvc             *service.AnimalSaudeService
 	usuarioRepo          *repository.UsuarioRepository
 }
 
@@ -36,6 +37,7 @@ func NewAnimalHandler(
 	restricaoLeiteSvc *service.RestricaoLeiteService,
 	gestacaoSvc *service.GestacaoService,
 	cicloSvc *service.AnimalCicloService,
+	saudeSvc *service.AnimalSaudeService,
 	usuarioRepo *repository.UsuarioRepository,
 ) *AnimalHandler {
 	return &AnimalHandler{
@@ -47,6 +49,7 @@ func NewAnimalHandler(
 		restricaoLeiteSvc:  restricaoLeiteSvc,
 		gestacaoSvc:        gestacaoSvc,
 		cicloSvc:           cicloSvc,
+		saudeSvc:           saudeSvc,
 		usuarioRepo:        usuarioRepo,
 	}
 }
@@ -730,6 +733,15 @@ func (h *AnimalHandler) GetContextoByID(c *gin.Context) {
 			return
 		}
 		payload["gestacao_resumo"] = gestResumo
+	}
+
+	if h.saudeSvc != nil {
+		tratamentos, err := h.saudeSvc.BuildTratamentosAtivosContexto(c.Request.Context(), id)
+		if err != nil {
+			response.ErrorInternal(c, "Erro ao buscar tratamentos ativos do animal", err.Error())
+			return
+		}
+		payload["tratamentos_ativos"] = tratamentos
 	}
 
 	if h.cicloSvc != nil {

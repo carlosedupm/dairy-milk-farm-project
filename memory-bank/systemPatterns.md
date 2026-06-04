@@ -165,7 +165,7 @@ O frontend combina **DRY (Don't Repeat Yourself)**, **composition pattern** (Rea
 - `GET|POST|PUT|DELETE /api/v1/producao` (+ `GET /count`, `GET /filter/by-date?start&end&fazenda_id&lactacao_id`) — listagens filtradas pelas fazendas do usuário; query `fazenda_id` opcional restringe a uma fazenda vinculada; `lactacao_id` opcional filtra registos vinculados à lactação (valida acesso à fazenda da lactação)
 - `GET /api/v1/animais/:id/producao` (+ `/count`, `/resumo`) — histórico e resumo por animal; resposta inclui `lactacao_id`; UI agrupada em `/animais/:id/producao`; `POST /api/v1/producao` preenche `lactacao_id` automaticamente (ver `docs/business/producao-leite.md` BR-PRODUCAO-006)
 - `GET|POST /api/v1/animais/:id/saude` + `GET|PUT|DELETE /api/v1/animais/:id/saude/:saudeId` — CRUD de saúde animal por sub-recurso; create/update/delete recalculam `animais.status_saude` com base nos casos ativos (`EM_TRATAMENTO` > `DOENTE` > `SAUDAVEL`)
-- `GET /api/v1/animais/:id/contexto` — estado atual, gestação, lactação, restrição, próximas ações (sem timeline)
+- `GET /api/v1/animais/:id/contexto` — estado atual, gestação, lactação, restrição, `tratamentos_ativos[]` (TRATAMENTO/CIRURGIA ATIVOS), `animal.status_saude`, próximas ações (sem timeline)
 - `GET /api/v1/animais/:id/timeline?limit=&offset=&tipo=` — histórico paginado (`todos|ciclo|saude|alertas`); resposta `{ timeline, total }`
 - `GET /api/v1/fazendas/:id/animais/em-lactacao` (animais com lactação ativa; mesma autorização que listagem por fazenda)
 - `GET /api/v1/fazendas/:id/animais/para-cobertura` | `para-toque` | `para-parto` | `para-abertura-lactacao` — listagens de elegibilidade por marco do ciclo (BR-CICLO-015); `AnimalSelect` com `cicloContext` no frontend

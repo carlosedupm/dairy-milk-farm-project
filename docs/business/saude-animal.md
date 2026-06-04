@@ -99,6 +99,17 @@ UpdateStatusSaude → animais.status_saude
   - Frontend: `AnimalTimelineSection.tsx` (ícone Pill, badge «Saúde», chips de filtro, scroll infinito)
 - **Estado**: implementado.
 
+### BR-SAUDE-006 — Saúde no contexto de busca
+
+- **Enunciado**: o endpoint `GET /api/v1/animais/:id/contexto` expõe `animal.status_saude` e a lista `tratamentos_ativos[]` (casos ATIVOS de TRATAMENTO ou CIRURGIA com `tipo_caso`, `data_inicio`, `data_fim_prevista` opcional). A busca global exibe badge colorido por status (sem badge de saúde para animais fora do rebanho).
+- **Escopo**: busca por identificação (`AnimalSearchPanel`) e consulta contextual do animal.
+- **Perfis / permissões**: quem pode consultar o animal na fazenda.
+- **Efeito**: informativo na UI (badge + linhas de tratamento no card resumido); dados servidos pelo servidor no contexto.
+- **Implementação**:
+  - Backend: `AnimalSaudeService.BuildTratamentosAtivosContexto`, `AnimalHandler.GetContextoByID`
+  - Frontend: `AnimalStatusSaudeBadge`, `AnimalSearchResultLabel`, `buildAnimalContextoLinhasResumo`
+- **Estado**: implementado.
+
 ---
 
 ## Cenários de exemplo
@@ -139,4 +150,4 @@ UpdateStatusSaude → animais.status_saude
 
 ---
 
-**Última atualização**: 2026-05-30 (Assistente Live: consultar_saude, registrar_saude — GERENTE+)
+**Última atualização**: 2026-06-03 (BR-SAUDE-006 — saúde no contexto de busca)

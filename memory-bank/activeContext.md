@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Busca — dados de saúde no contexto (BR-SAUDE-006)**: `GET /api/v1/animais/:id/contexto` inclui `tratamentos_ativos[]` (TRATAMENTO/CIRURGIA ATIVOS); badge de `status_saude` (`AnimalStatusSaudeBadge`) nos resultados e ficha resumida da busca; oculto para animais fora do rebanho; linhas de tratamento no card contextual.
 1. ✅ **Busca — card de resumo clicável**: `AnimalSearchPanel` — após escolher animal, card contextual navega para `/animais/:id` (mobile e desktop); hint «Abrir ficha»; remove botão «Abrir detalhes do animal».
 1. ✅ **Busca — ordenação por relevância (BR-ANIMAIS-012)**: score SQL exato → prefixo → contains → equivalente; desempate `created_at DESC`; busca global + listagens paginadas com filtro `identificacao`; remove heurística brinco/nome (`IsBrincoOrientedTerm`).
 1. ✅ **Busca global — filtro «Incluir animais baixados» (BR-ANIMAIS-011)**: checkbox no `AnimalSearchPanel` com persistência em `sessionStorage`; `searchByIdentificacao` envia `no_rebanho`; badge «Baixado» nos resultados (`AnimalSearchResultLabel`); ordenação SQL com baixados após no rebanho; hint quando zero resultados com filtro activo.
@@ -254,5 +255,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-03 (busca — card de resumo clicável)
+**Última atualização**: 2026-06-03 (busca — saúde no contexto BR-SAUDE-006)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP
