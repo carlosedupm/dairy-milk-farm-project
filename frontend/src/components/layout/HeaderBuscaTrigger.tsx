@@ -1,7 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Search } from "lucide-react";
-import { AnimalSearchPanel } from "@/components/animais/AnimalSearchPanel";
 import {
   ANIMAL_SEARCH_DIALOG_CONTENT_CLASS,
   ANIMAL_SEARCH_POPOVER_CONTENT_CLASS,
@@ -26,6 +26,14 @@ import {
 import { useAdaptiveSearch } from "@/hooks/useAdaptiveSearch";
 import { cn } from "@/lib/utils";
 
+const AnimalSearchPanel = dynamic(
+  () =>
+    import("@/components/animais/AnimalSearchPanel").then((m) => ({
+      default: m.AnimalSearchPanel,
+    })),
+  { ssr: false },
+);
+
 type HeaderBuscaTriggerProps = {
   compact?: boolean;
 };
@@ -34,6 +42,7 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
   const {
     identificacao,
     setIdentificacao,
+    panelActive,
     popoverOpen,
     setPopoverOpen,
     dialogOpen,
@@ -50,8 +59,11 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
     returnFocusToSearchInput,
   } = useAdaptiveSearch();
 
-  const searchOpen = popoverOpen || dialogOpen;
-  const searchPanelId = isDesktop ? HEADER_SEARCH_POPOVER_ID : HEADER_SEARCH_DIALOG_ID;
+  const searchOpen =
+    panelActive && (isDesktop ? popoverOpen : dialogOpen);
+  const searchPanelId = isDesktop
+    ? HEADER_SEARCH_POPOVER_ID
+    : HEADER_SEARCH_DIALOG_ID;
 
   const inputClassName = cn(
     "min-h-[44px] min-w-0 pl-9 text-base",
@@ -81,7 +93,7 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
         aria-label="Pesquisar animal por brinco ou nome"
         aria-haspopup="dialog"
         aria-expanded={searchOpen}
-        aria-controls={searchPanelId}
+        {...(panelActive ? { "aria-controls": searchPanelId } : {})}
         className={inputClassName}
         autoComplete="off"
       />
@@ -92,20 +104,20 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
     return (
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverAnchor asChild>{inputField}</PopoverAnchor>
-        <PopoverContent
-          id={HEADER_SEARCH_POPOVER_ID}
-          align="end"
-          side="bottom"
-          sideOffset={8}
-          collisionPadding={16}
-          className={ANIMAL_SEARCH_POPOVER_CONTENT_CLASS}
-          onOpenAutoFocus={(event) => event.preventDefault()}
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            returnFocusToSearchInput();
-          }}
-        >
-          {popoverOpen ? (
+        {panelActive ? (
+          <PopoverContent
+            id={HEADER_SEARCH_POPOVER_ID}
+            align="end"
+            side="bottom"
+            sideOffset={8}
+            collisionPadding={16}
+            className={ANIMAL_SEARCH_POPOVER_CONTENT_CLASS}
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              returnFocusToSearchInput();
+            }}
+          >
             <AnimalSearchPanel
               variant="header"
               hideInput
@@ -113,8 +125,8 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
               onIdentificacaoChange={setIdentificacao}
               onAntesNavegarDetalhe={resetSearch}
             />
-          ) : null}
-        </PopoverContent>
+          </PopoverContent>
+        ) : null}
       </Popover>
     );
   }
@@ -122,25 +134,25 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
   return (
     <>
       {inputField}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent
-          id={HEADER_SEARCH_DIALOG_ID}
-          className={ANIMAL_SEARCH_DIALOG_CONTENT_CLASS}
-          onOpenAutoFocus={(event) => event.preventDefault()}
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            returnFocusToSearchInput();
-          }}
-        >
-          <DialogHeader className="shrink-0 space-y-2 pr-8 text-left">
-            <DialogTitle>Buscar animal</DialogTitle>
-            <DialogDescription>
-              Brinco, número ou nome — resultados ao parar de digitar; resumo e
-              opção de abrir a ficha do animal.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pb-1">
-            {dialogOpen ? (
+      {panelActive ? (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent
+            id={HEADER_SEARCH_DIALOG_ID}
+            className={ANIMAL_SEARCH_DIALOG_CONTENT_CLASS}
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              returnFocusToSearchInput();
+            }}
+          >
+            <DialogHeader className="shrink-0 space-y-2 pr-8 text-left">
+              <DialogTitle>Buscar animal</DialogTitle>
+              <DialogDescription>
+                Brinco, número ou nome — resultados ao parar de digitar; resumo e
+                opção de abrir a ficha do animal.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pb-1">
               <AnimalSearchPanel
                 variant="header"
                 autoFocus
@@ -148,10 +160,10 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
                 onIdentificacaoChange={setIdentificacao}
                 onAntesNavegarDetalhe={resetSearch}
               />
-            ) : null}
-          </div>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </>
   );
 }
