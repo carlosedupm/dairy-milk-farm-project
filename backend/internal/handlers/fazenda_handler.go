@@ -221,8 +221,8 @@ func (h *FazendaHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	// Validar acesso
-	if !ValidateFazendaAccess(c, h.service, id) {
+	// ADMIN/DEVELOPER/GESTAO: qualquer fazenda existente; PROPRIETARIO: vínculo em usuarios_fazendas
+	if !ValidateFazendaAccessOrGestao(c, h.service, id) {
 		return
 	}
 

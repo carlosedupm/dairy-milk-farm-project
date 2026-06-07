@@ -26,6 +26,18 @@ func PodeGerenciarFolgas(perfil string) bool {
 	}
 }
 
+// PodeDeletarFazenda indica perfis autorizados a excluir fazendas via DELETE /api/v1/fazendas/:id.
+// PROPRIETARIO exige vínculo em usuarios_fazendas (validado no handler); demais perfis aqui
+// seguem ValidateFazendaAccessOrGestao (ADMIN/DEVELOPER/GESTAO sem vínculo).
+func PodeDeletarFazenda(perfil string) bool {
+	switch perfil {
+	case PerfilAdmin, PerfilDeveloper, PerfilGestao, PerfilProprietario:
+		return true
+	default:
+		return false
+	}
+}
+
 // PodeAcessarFazendaSemVinculoGestao indica perfis que podem operar dados de qualquer fazenda existente
 // em rotas que usam ValidateFazendaAccessOrGestao (ex.: folgas para suporte/gestão global).
 // Titular (PROPRIETARIO) e GERENTE **não** entram aqui: isolamento por vínculo em usuarios_fazendas.

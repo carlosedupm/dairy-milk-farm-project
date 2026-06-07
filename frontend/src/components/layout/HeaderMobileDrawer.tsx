@@ -19,9 +19,9 @@ type HeaderMobileDrawerProps = {
   onClose: () => void;
   menuTriggerRef?: RefObject<HTMLButtonElement | null>;
   user: IdentityUser | null;
-  isAdmin: boolean;
   isProprietario: boolean;
   fazendaNomeResumo: string | null;
+  showFazendaSelectorBlock: boolean;
   showBuscaAnimal: boolean;
   showNavLinks: boolean;
   groups: HeaderNavGroups;
@@ -35,9 +35,9 @@ export function HeaderMobileDrawer({
   onClose,
   menuTriggerRef,
   user,
-  isAdmin,
   isProprietario,
   fazendaNomeResumo,
+  showFazendaSelectorBlock,
   showBuscaAnimal,
   showNavLinks,
   groups,
@@ -89,7 +89,9 @@ export function HeaderMobileDrawer({
                   variant="panel"
                   fazendaAtivaNome={fazendaNomeResumo}
                 />
-                {!isAdmin ? <FazendaSelector density="drawer" /> : null}
+                {showFazendaSelectorBlock ? (
+                  <FazendaSelector density="drawer" />
+                ) : null}
                 {isProprietario ? (
                   <Link
                     href="/fazendas/criar-minha"

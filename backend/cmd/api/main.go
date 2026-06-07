@@ -324,10 +324,10 @@ func main() {
 						v1.GET("/:id/resumo-pecuario", resumoPecuarioHandler.GetByFazendaID)
 						v1.GET("/:id/auditoria/conformidade", conformidadeHandler.GetConformidade)
 						v1.GET("/:id", fazendaHandler.GetByID)
-						// Criar, editar e excluir fazendas requerem perfil ADMIN ou DEVELOPER
+						// Criar e editar fazendas requerem perfil ADMIN ou DEVELOPER; excluir: ADMIN/DEVELOPER/GESTAO/PROPRIETARIO
 						v1.POST("", auth.RequireAdmin(), fazendaHandler.Create)
 						v1.PUT("/:id", auth.RequireAdmin(), fazendaHandler.Update)
-						v1.DELETE("/:id", auth.RequireAdmin(), fazendaHandler.Delete)
+						v1.DELETE("/:id", auth.RequirePodeDeletarFazenda(), fazendaHandler.Delete)
 						// Animais por fazenda
 						v1.GET("/:id/animais", animalHandler.GetByFazendaID)
 						v1.GET("/:id/animais/count", animalHandler.CountByFazenda)

@@ -5,8 +5,8 @@ Regras de autorização por perfil para navegação e operações na aplicação
 **Implementação principal**
 
 - Frontend: `frontend/src/config/appAccess.ts`, `frontend/src/components/layout/RouteAccessGuard.tsx`, `frontend/src/app/page.tsx`, `frontend/src/app/gestao/page.tsx`, `frontend/src/app/animais/page.tsx`, `frontend/src/components/animais/AnimalTable.tsx`, `frontend/src/app/animais/[id]/page.tsx`, `frontend/src/app/onboarding/page.tsx`, `frontend/src/app/fazendas/criar-minha/page.tsx`, `frontend/src/app/registro/page.tsx`, `frontend/src/components/admin/PendentesProvisaoPanel.tsx`, `frontend/src/app/admin/usuarios/page.tsx`, `frontend/src/lib/perfilLabels.ts`, `frontend/src/components/layout/Header.tsx`.
-- Backend: `backend/internal/auth/perfil_access.go` (middleware `RequirePerfilAPIAccess` aplicado em `/api/v1/*` autenticado); `backend/internal/handlers/admin_handler.go` (`ListPendentesProvisao`); `backend/internal/handlers/fazenda_handler.go` (`CreateMinha`); `backend/internal/repository/usuario_repository.go` (`ListPendentesProvisao`); `backend/internal/service/usuario_service.go`; `backend/internal/repository/fazenda_repository.go` (vínculos com `papel`); `backend/internal/models/vinculo_fazenda.go`.
-- Rotas de domínio envolvidas: `backend/cmd/api/main.go` (`/api/v1/animais`, `/api/v1/cios`, `/api/v1/coberturas`, `/api/v1/partos`, `/api/v1/secagens`, `/api/v1/fazendas/:id/folgas/*`, `/api/v1/fazendas/:id/restricoes-leite*`, `/api/v1/fazendas/:id/animais/em-lactacao`, `/api/v1/fazendas/:id/animais/para-cobertura|para-toque|para-parto|para-abertura-lactacao`, `/api/v1/assistente/*`); listagem/pesquisa global de fazendas (`GET /api/v1/fazendas`, `/search/*`, `/count`, `/exists`) apenas **ADMIN/DEVELOPER**; perfil `USER` com whitelist mínima em `perfil_access.go`, **sem** `POST /api/v1/me/fazendas` (ver BR-ACESSO-008/012).
+- Backend: `backend/internal/auth/perfil_access.go` (middleware `RequirePerfilAPIAccess` aplicado em `/api/v1/*` autenticado); `backend/internal/auth/middleware.go` (`RequirePodeDeletarFazenda`); `backend/internal/handlers/admin_handler.go` (`ListPendentesProvisao`); `backend/internal/handlers/fazenda_handler.go` (`CreateMinha`, `Delete`); `backend/internal/handlers/access_helper.go` (`ValidateFazendaAccessOrGestao`); `backend/internal/repository/usuario_repository.go` (`ListPendentesProvisao`); `backend/internal/service/usuario_service.go`; `backend/internal/repository/fazenda_repository.go` (vínculos com `papel`); `backend/internal/models/vinculo_fazenda.go`; `backend/internal/models/perfil.go` (`PodeDeletarFazenda`).
+- Rotas de domínio envolvidas: `backend/cmd/api/main.go` (`/api/v1/animais`, `/api/v1/cios`, `/api/v1/coberturas`, `/api/v1/partos`, `/api/v1/secagens`, `/api/v1/fazendas/:id/folgas/*`, `/api/v1/fazendas/:id/restricoes-leite*`, `/api/v1/fazendas/:id/animais/em-lactacao`, `/api/v1/fazendas/:id/animais/para-cobertura|para-toque|para-parto|para-abertura-lactacao`, `/api/v1/assistente/*`); listagem/pesquisa global de fazendas (`GET /api/v1/fazendas`, `/search/*`, `/count`, `/exists`) apenas **ADMIN/DEVELOPER**; `DELETE /api/v1/fazendas/:id` — ver **BR-ACESSO-020**; perfil `USER` com whitelist mínima em `perfil_access.go`, **sem** `POST /api/v1/me/fazendas` (ver BR-ACESSO-008/012).
 
 ---
 
@@ -200,6 +200,15 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Efeito**: sem restrição de whitelist; isolamento por fazenda aplicado via `ValidateFazendaAccessOrGestao` e regras de domínio (alertas, baixa, etc.).
 - **Estado**: Implementado.
 
+### BR-ACESSO-020 — Exclusão de fazenda (`DELETE /api/v1/fazendas/:id`)
+
+- **Enunciado**: Apenas **ADMIN**, **DEVELOPER**, **GESTAO** e **PROPRIETARIO** podem excluir uma fazenda. **ADMIN**, **DEVELOPER** e **GESTAO** podem excluir qualquer fazenda existente (sem exigir vínculo em `usuarios_fazendas`). **PROPRIETARIO** só pode excluir fazendas às quais está vinculado. Demais perfis recebem **403** no middleware; requisição sem token recebe **401**; ID inexistente retorna **404**.
+- **Escopo**: API `DELETE /api/v1/fazendas/:id`; tabela `fazendas`.
+- **Perfis / permissões**: `PodeDeletarFazenda` em `backend/internal/models/perfil.go`; middleware `RequirePodeDeletarFazenda`; validação de escopo via `ValidateFazendaAccessOrGestao` no handler `Delete`.
+- **Efeito**: bloqueio no servidor para perfis não autorizados ou fazenda fora do escopo do titular.
+- **Implementação**: `backend/cmd/api/main.go`; `backend/internal/auth/middleware.go`; `backend/internal/handlers/fazenda_handler.go`; `backend/internal/handlers/access_helper.go`.
+- **Estado**: Implementado.
+
 ---
 
-**Última atualização**: 2026-06-03 (BR-ACESSO-019: perfil GESTAO ativo)
+**Última atualização**: 2026-06-06 (BR-ACESSO-020: exclusão de fazenda por perfil)

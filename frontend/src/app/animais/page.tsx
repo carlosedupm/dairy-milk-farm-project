@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X, Building2, Beef } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useMobileInfiniteList } from "@/hooks/useMobileInfiniteList";
 import { useAuth } from "@/contexts/AuthContext";
@@ -275,11 +276,18 @@ function AnimaisContent() {
               }}
             />
           ) : (
-            <EmptyState
-              icon={Building2}
-              title="Selecione uma fazenda"
-              description="Use o seletor no topo da página para ver e cadastrar animais do rebanho dessa exploração."
-            />
+            <div className="space-y-4">
+              <EmptyState
+                icon={Building2}
+                title="Selecione uma fazenda"
+                description="Escolha a exploração no seletor abaixo ou no menu da sua conta (topo da página) para ver e cadastrar animais do rebanho."
+              />
+              {(fazendasSemAtiva?.length ?? 0) > 1 ? (
+                <div className="max-w-sm">
+                  <FazendaSelector density="drawer" stayOnPage />
+                </div>
+              ) : null}
+            </div>
           )
         ) : (
           <div className="space-y-6">

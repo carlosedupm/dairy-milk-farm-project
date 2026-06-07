@@ -26,7 +26,6 @@ export function Header() {
   const {
     user,
     logout,
-    isAdmin,
     isProprietario,
     fazendaNomeResumo,
     fazendaAtivaNomePainel,
@@ -76,9 +75,9 @@ export function Header() {
         onClose={closeMobileMenu}
         menuTriggerRef={menuTriggerRef}
         user={user}
-        isAdmin={isAdmin}
         isProprietario={isProprietario}
         fazendaNomeResumo={fazendaNomeResumo}
+        showFazendaSelectorBlock={showFazendaSelectorBlock}
         showBuscaAnimal={showBuscaAnimal}
         showNavLinks={showNav}
         groups={groups}

@@ -15,7 +15,7 @@ export function useHeaderVisibility() {
   const isProprietario = user?.perfil === "PROPRIETARIO";
   const { fazendas, isLoading: fazendasLoading, isSingleFazenda } =
     useMinhasFazendas({
-      enabled: !!user && !isAdmin,
+      enabled: !!user,
     });
 
   const fazendaNomeResumo = fazendaAtiva?.nome?.trim() || null;
@@ -34,7 +34,6 @@ export function useHeaderVisibility() {
 
   const showFazendaSelectorBlock =
     !!user &&
-    !isAdmin &&
     (fazendasLoading || fazendas.length > 0 || isProprietario);
 
   const mobileIdentityLabel = user
@@ -42,13 +41,11 @@ export function useHeaderVisibility() {
     : "";
 
   const fazendaAtivaNomePainel =
-    isAdmin
-      ? fazendaNomeResumo
-      : fazendasLoading
-        ? null
-        : fazendas.length === 0
-          ? fazendaNomeResumo
-          : null;
+    fazendasLoading
+      ? null
+      : fazendas.length <= 1
+        ? fazendaNomeResumo
+        : null;
 
   return {
     user,

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { ListPaginationBar } from "@/components/ui/pagination";
 import { Plus, Building2, Milk } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { canRegistrarProducao } from "@/config/appAccess";
@@ -209,11 +210,18 @@ function ProducaoContent() {
               }}
             />
           ) : (
-            <EmptyState
-              icon={Building2}
-              title="Selecione uma fazenda"
-              description="Use o seletor no topo da página para ver e registar produção de leite dessa exploração."
-            />
+            <div className="space-y-4">
+              <EmptyState
+                icon={Building2}
+                title="Selecione uma fazenda"
+                description="Escolha a exploração no seletor abaixo ou no menu da sua conta (topo da página) para ver e registar produção de leite."
+              />
+              {(fazendasSemAtiva?.length ?? 0) > 1 ? (
+                <div className="max-w-sm">
+                  <FazendaSelector density="drawer" stayOnPage />
+                </div>
+              ) : null}
+            </div>
           )
         ) : (
           <div className="space-y-6">

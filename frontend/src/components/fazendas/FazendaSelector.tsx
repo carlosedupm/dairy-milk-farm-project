@@ -16,25 +16,24 @@ import { getApiErrorMessage } from '@/lib/errors'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
-const isGestaoPerfil = (perfil: string | undefined) =>
-  perfil === 'ADMIN' || perfil === 'DEVELOPER'
-
 export type FazendaSelectorProps = {
   /** `drawer`: trigger em largura total no menu mobile */
   density?: 'header' | 'drawer'
+  /** Mantém a rota actual após escolher (ex.: empty state de listagens). */
+  stayOnPage?: boolean
 }
 
-export function FazendaSelector({ density = 'header' }: FazendaSelectorProps) {
+export function FazendaSelector({ density = 'header', stayOnPage = false }: FazendaSelectorProps) {
   const { user } = useAuth()
   const { fazendas, isLoading } = useMinhasFazendas({
-    enabled: !!user && !isGestaoPerfil(user.perfil),
+    enabled: !!user,
   })
   const { fazendaAtiva, setFazendaAtiva } = useFazendaAtiva()
   const router = useRouter()
   const [error, setError] = useState('')
   const isProprietario = user?.perfil === 'PROPRIETARIO'
 
-  if (!user || isGestaoPerfil(user.perfil)) {
+  if (!user) {
     return null
   }
 
@@ -105,7 +104,9 @@ export function FazendaSelector({ density = 'header' }: FazendaSelectorProps) {
 
     try {
       await setFazendaAtiva(fazenda)
-      router.push(`/fazendas/${fazendaId}`)
+      if (!stayOnPage) {
+        router.push(`/fazendas/${fazendaId}`)
+      }
     } catch (err: unknown) {
       setError(
         getApiErrorMessage(err, 'Erro ao selecionar fazenda. Tente novamente.')

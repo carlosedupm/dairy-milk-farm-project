@@ -69,6 +69,25 @@ func RequireAdmin() gin.HandlerFunc {
 	}
 }
 
+// RequirePodeDeletarFazenda permite excluir fazendas: ADMIN, DEVELOPER, GESTAO ou PROPRIETARIO.
+func RequirePodeDeletarFazenda() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		perfil, exists := c.Get("perfil")
+		if !exists {
+			response.ErrorForbidden(c, "Acesso negado. Perfil não autorizado a excluir fazendas.")
+			c.Abort()
+			return
+		}
+		p, ok := perfil.(string)
+		if !ok || !models.PodeDeletarFazenda(p) {
+			response.ErrorForbidden(c, "Acesso negado. Perfil não autorizado a excluir fazendas.")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 // RequireGestaoFolgas permite ADMIN, DEVELOPER ou GESTAO (gestão de folgas).
 func RequireGestaoFolgas() gin.HandlerFunc {
 	return func(c *gin.Context) {

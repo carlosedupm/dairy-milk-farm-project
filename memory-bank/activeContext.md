@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Bug DELETE fazendas — 403 para ADMIN (BR-ACESSO-020)**: `DELETE /api/v1/fazendas/:id` passou a usar `ValidateFazendaAccessOrGestao` (ADMIN/DEVELOPER/GESTAO sem vínculo) e middleware `RequirePodeDeletarFazenda` (ADMIN/DEVELOPER/GESTAO/PROPRIETARIO); testes em `access_helper_test.go`, `middleware_test.go`, `perfil_test.go`.
 1. ✅ **Header — lazy render da busca**: `useAdaptiveSearch` com `panelActive` (foco/clique/`openSearch()` ou ≥2 caracteres); `HeaderBuscaTrigger` monta Popover/Dialog + `AnimalSearchPanel` só após interacção; `next/dynamic` (`ssr: false`); desmontagem completa ao fechar; `key={pathname}` mantém reset na navegação.
 1. ✅ **Busca — dados de saúde no contexto (BR-SAUDE-006)**: `GET /api/v1/animais/:id/contexto` inclui `tratamentos_ativos[]` (TRATAMENTO/CIRURGIA ATIVOS); badge de `status_saude` (`AnimalStatusSaudeBadge`) nos resultados e ficha resumida da busca; oculto para animais fora do rebanho; linhas de tratamento no card contextual.
 1. ✅ **Busca — card de resumo clicável**: `AnimalSearchPanel` — após escolher animal, card contextual navega para `/animais/:id` (mobile e desktop); hint «Abrir ficha»; remove botão «Abrir detalhes do animal».

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -47,9 +48,15 @@ func ValidateFazendaIntegracao(c *gin.Context, fazendaID int64) bool {
 	return false
 }
 
+// fazendaAccessQuerier consultas mínimas para validação de acesso à fazenda (testável via stub).
+type fazendaAccessQuerier interface {
+	GetByID(ctx context.Context, id int64) (*models.Fazenda, error)
+	GetByUsuarioID(ctx context.Context, usuarioID int64) ([]*models.Fazenda, error)
+}
+
 // ValidateFazendaAccess verifica se a fazenda informada pertence ao usuário logado.
 // Retorna true se o acesso for válido, false caso contrário (já enviando a resposta de erro).
-func ValidateFazendaAccess(c *gin.Context, fazendaSvc *service.FazendaService, fazendaID int64) bool {
+func ValidateFazendaAccess(c *gin.Context, fazendaSvc fazendaAccessQuerier, fazendaID int64) bool {
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		response.ErrorUnauthorized(c, "Usuário não identificado")
@@ -80,7 +87,7 @@ func ValidateFazendaAccess(c *gin.Context, fazendaSvc *service.FazendaService, f
 
 // ValidateFazendaAccessOrGestao permite ADMIN/DEVELOPER/GESTAO a qualquer fazenda existente;
 // PROPRIETARIO, GERENTE e demais seguem apenas o vínculo em usuarios_fazendas.
-func ValidateFazendaAccessOrGestao(c *gin.Context, fazendaSvc *service.FazendaService, fazendaID int64) bool {
+func ValidateFazendaAccessOrGestao(c *gin.Context, fazendaSvc fazendaAccessQuerier, fazendaID int64) bool {
 	perfilVal, ok := c.Get("perfil")
 	if !ok {
 		response.ErrorUnauthorized(c, "Usuário não identificado")
@@ -104,7 +111,7 @@ func ValidateFazendaAccessOrGestao(c *gin.Context, fazendaSvc *service.FazendaSe
 
 // ResolveFazendaIDsForList retorna IDs de fazenda para listagens: todas do usuário ou uma
 // via query fazenda_id (validada). ok=false se a resposta HTTP de erro já foi enviada.
-func ResolveFazendaIDsForList(c *gin.Context, fazendaSvc *service.FazendaService) ([]int64, bool) {
+func ResolveFazendaIDsForList(c *gin.Context, fazendaSvc fazendaAccessQuerier) ([]int64, bool) {
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		response.ErrorUnauthorized(c, "Usuário não identificado")
