@@ -24,6 +24,8 @@ tags:
     description: Alertas proativos por fazenda (BR-ALERTA-001)
   - name: Push
     description: Web Push e fazenda ativa do utilizador
+  - name: Usuario
+    description: Perfil do utilizador autenticado
 
 security:
   - BearerJWT: []
@@ -486,6 +488,35 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /api/v1/me:
+    get:
+      tags: [Usuario]
+      summary: Obter perfil do utilizador autenticado
+      description: |
+        Retorna `id`, `nome`, `email` e `perfil` do utilizador identificado pelo JWT.
+        Disponível para todos os perfis JWT (incl. USER e FUNCIONARIO).
+      operationId: getMe
+      responses:
+        "200":
+          description: Dados do utilizador
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessUsuarioMe"
+              examples:
+                perfil:
+                  summary: Utilizador autenticado
+                  value:
+                    data:
+                      id: 3
+                      nome: "Maria Silva"
+                      email: "maria@fazenda.example"
+                      perfil: GERENTE
+                    message: OK
+                    timestamp: "2026-06-06T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/v1/me/push/vapid-public-key:
     get:
@@ -1045,3 +1076,27 @@ components:
           properties:
             data:
               $ref: "#/components/schemas/FazendaAtivaData"
+
+    UsuarioMeData:
+      type: object
+      required: [id, nome, email, perfil]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        perfil:
+          type: string
+          description: Perfil RBAC do utilizador (ex. GERENTE, FUNCIONARIO, USER)
+
+    SuccessUsuarioMe:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/UsuarioMeData"

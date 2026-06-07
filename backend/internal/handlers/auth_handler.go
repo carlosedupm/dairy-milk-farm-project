@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"io"
 	"net/http"
 
 	"github.com/ceialmilk/api/internal/auth"
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/observability"
-	"github.com/ceialmilk/api/internal/repository"
 	"github.com/ceialmilk/api/internal/response"
 	"github.com/ceialmilk/api/internal/service"
 	"github.com/gin-gonic/gin"
@@ -15,15 +15,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type authUsuarioRepository interface {
+	ExistsByEmail(ctx context.Context, email string, excludeID int64) (bool, error)
+	Create(ctx context.Context, u *models.Usuario) error
+	GetByEmail(ctx context.Context, email string) (*models.Usuario, error)
+	GetByID(ctx context.Context, id int64) (*models.Usuario, error)
+}
+
 type AuthHandler struct {
-	userRepo        *repository.UsuarioRepository
+	userRepo        authUsuarioRepository
 	jwt             *auth.JWTService
 	refreshTokenSvc *service.RefreshTokenService
 	cookieSameSite  http.SameSite
 }
 
 func NewAuthHandler(
-	userRepo *repository.UsuarioRepository,
+	userRepo authUsuarioRepository,
 	jwt *auth.JWTService,
 	refreshTokenSvc *service.RefreshTokenService,
 	cookieSameSite http.SameSite,
@@ -288,4 +295,40 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		"refresh_token":  refreshTokenStr,
 	}
 	response.SuccessOK(c, refreshData, "Token renovado com sucesso")
+}
+
+func (h *AuthHandler) Me(c *gin.Context) {
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		response.ErrorUnauthorized(c, "Usuário não autenticado")
+		return
+	}
+	userID, ok := userIDVal.(int64)
+	if !ok || userID <= 0 {
+		response.ErrorUnauthorized(c, "Usuário não autenticado")
+		return
+	}
+
+	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			response.ErrorUnauthorized(c, "Usuário não encontrado")
+			return
+		}
+		observability.CaptureHandlerError(c, err, map[string]string{"operation": "get_user_by_id_me"})
+		response.ErrorInternal(c, "Erro ao buscar usuário", err.Error())
+		return
+	}
+	if !user.Enabled {
+		response.ErrorUnauthorized(c, "Usuário desativado")
+		return
+	}
+
+	meData := gin.H{
+		"id":     user.ID,
+		"nome":   user.Nome,
+		"email":  user.Email,
+		"perfil": user.Perfil,
+	}
+	response.SuccessOK(c, meData, "OK")
 }

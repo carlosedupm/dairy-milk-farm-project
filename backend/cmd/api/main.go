@@ -303,6 +303,7 @@ func main() {
 					// Minhas fazendas (usuário logado)
 					me := api.Group("/v1/me", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
+						me.GET("", authHandler.Me)
 						me.GET("/fazendas", fazendaHandler.GetMinhasFazendas)
 						me.POST("/fazendas", fazendaHandler.CreateMinha)
 						me.PUT("/fazenda-ativa", pushHandler.UpdateFazendaAtiva)

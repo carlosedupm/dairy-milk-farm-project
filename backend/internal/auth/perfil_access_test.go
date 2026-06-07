@@ -42,6 +42,7 @@ func TestRequestAllowedForUser(t *testing.T) {
 		path   string
 		want   bool
 	}{
+		{http.MethodGet, "/api/v1/me", true},
 		{http.MethodGet, "/api/v1/me/fazendas", true},
 		{http.MethodGet, "/api/v1/me/fazenda-ativa", true},
 		{http.MethodPost, "/api/v1/me/fazendas", false},
@@ -67,6 +68,7 @@ func TestRequestAllowedForLimitedAPI_User(t *testing.T) {
 		path   string
 		want   bool
 	}{
+		{http.MethodGet, "/api/v1/me", true},
 		{http.MethodGet, "/api/v1/me/fazendas", true},
 		{http.MethodGet, "/api/v1/me/fazenda-ativa", true},
 		{http.MethodPost, "/api/v1/me/fazendas", false},
@@ -104,6 +106,14 @@ func TestRequestAllowedForLimitedAPI_FullAccessProfilesNotWhitelisted(t *testing
 				t.Errorf("requestAllowedForLimitedAPI(%q, ...) should be false — full-access profiles bypass whitelist", perfil)
 			}
 		})
+	}
+}
+
+func TestRequestAllowedForFuncionario_MeProfile(t *testing.T) {
+	t.Parallel()
+
+	if !requestAllowedForFuncionario(http.MethodGet, "/api/v1/me") {
+		t.Error("FUNCIONARIO GET /api/v1/me should be allowed")
 	}
 }
 

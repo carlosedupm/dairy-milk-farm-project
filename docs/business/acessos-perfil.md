@@ -209,6 +209,15 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**: `backend/cmd/api/main.go`; `backend/internal/auth/middleware.go`; `backend/internal/handlers/fazenda_handler.go`; `backend/internal/handlers/access_helper.go`.
 - **Estado**: Implementado.
 
+### BR-ACESSO-021 — Perfil do utilizador autenticado (`GET /api/v1/me`)
+
+- **Enunciado**: Todo utilizador autenticado via JWT pode consultar os seus próprios dados (`id`, `nome`, `email`, `perfil`) em `GET /api/v1/me`. Sem token ou com token inválido → **401**; utilizador inexistente ou desativado → **401**.
+- **Escopo**: API JWT; tabela `usuarios`.
+- **Perfis / permissões**: Todos os perfis JWT (incl. **USER** e **FUNCIONARIO**); whitelist em `isMeProfileRoute` / `requestAllowedForUser` / `requestAllowedForFuncionario`.
+- **Efeito**: bloqueio no servidor para requisições não autenticadas; resposta não expõe `senha` nem campos internos.
+- **Implementação**: `backend/internal/handlers/auth_handler.go` (`Me`); `backend/cmd/api/main.go` (`me.GET("", ...)`); `backend/internal/auth/perfil_access.go`.
+- **Estado**: Implementado.
+
 ---
 
-**Última atualização**: 2026-06-06 (BR-ACESSO-020: exclusão de fazenda por perfil)
+**Última atualização**: 2026-06-06 (BR-ACESSO-021: GET /api/v1/me)

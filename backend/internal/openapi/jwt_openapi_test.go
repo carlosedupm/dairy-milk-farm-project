@@ -33,6 +33,7 @@ func TestEmbeddedJWTOpenAPISpec(t *testing.T) {
 		"/api/v1/fazendas/{fazendaId}/alertas",
 		"/api/v1/fazendas/{fazendaId}/alertas/{alertaId}",
 		"/api/v1/fazendas/{fazendaId}/alertas/{alertaId}/status",
+		"/api/v1/me",
 		"/api/v1/me/push/vapid-public-key",
 		"/api/v1/me/push-subscription",
 		"/api/v1/me/fazenda-ativa",

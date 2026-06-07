@@ -46,9 +46,16 @@ func PerfilTemAcessoAPICompleta(perfil string) bool {
 	return perfil != models.PerfilFuncionario && perfil != models.PerfilUser
 }
 
+func isMeProfileRoute(method, path string) bool {
+	return method == http.MethodGet && path == "/api/v1/me"
+}
+
 func requestAllowedForUser(method, path string) bool {
 	if path == "/api/v1/me/fazendas" && method == http.MethodPost {
 		return false
+	}
+	if isMeProfileRoute(method, path) {
+		return true
 	}
 	return strings.HasPrefix(path, "/api/v1/me/")
 }
@@ -73,7 +80,7 @@ func requestAllowedForFuncionario(method, path string) bool {
 		}
 		return false
 	}
-	if strings.HasPrefix(path, "/api/v1/me/") {
+	if isMeProfileRoute(method, path) || strings.HasPrefix(path, "/api/v1/me/") {
 		return true
 	}
 	if funcionarioFolgasPath.MatchString(path) {
