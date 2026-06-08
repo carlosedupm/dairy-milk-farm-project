@@ -3,6 +3,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { useMemo } from "react";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormFieldError } from "@/components/ui/form-field-error";
@@ -257,17 +258,15 @@ export function PartoFormFields({
               </div>
               <div className="space-y-2 sm:col-span-1">
                 <Label htmlFor={`parto-cria-peso-${i}`}>Peso ao nascer (kg, opcional)</Label>
-                <Input
+                <DecimalInput
                   id={`parto-cria-peso-${i}`}
-                  type="text"
-                  inputMode="decimal"
                   placeholder="Ex.: 38,5"
                   disabled={row.condicao !== "VIVO"}
                   value={row.condicao === "VIVO" ? row.peso : ""}
-                  onChange={(e) =>
+                  onValueChange={(peso) =>
                     setFormState((s) => {
                       const crias = [...s.crias];
-                      crias[i] = { ...crias[i], peso: e.target.value };
+                      crias[i] = { ...crias[i], peso };
                       return { ...s, crias };
                     })
                   }

@@ -10,6 +10,7 @@ import { invalidateAnimalTimeline } from "@/services/animais";
 import { AnimalGestaoLabel } from "@/components/gestao/AnimalGestaoLabel";
 import { useGestaoAnimaisByIdMap } from "@/components/gestao/useAnimaisMap";
 import { formatDateTimePtBr } from "@/lib/format";
+import { formatLitrosForList } from "@/lib/litros-format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -111,12 +112,6 @@ export function ProducaoTable({
     deleteMutation.mutate(id);
   };
 
-  const formatLitros = (litros: number) =>
-    litros.toLocaleString("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-
   const formatLactacao = (lactacaoId?: number | null) => {
     if (lactacaoId == null) return "—";
     const lact = lactacoesById?.get(lactacaoId);
@@ -163,7 +158,7 @@ export function ProducaoTable({
               meta={
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono">
-                    {formatLitros(p.quantidade)} L
+                    {formatLitrosForList(p.quantidade)} L
                   </span>
                   {showLactacao ? (
                     <span className="text-muted-foreground">
@@ -225,7 +220,7 @@ export function ProducaoTable({
                       {formatDateTimePtBr(p.data_hora)}
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      {formatLitros(p.quantidade)} L
+                      {formatLitrosForList(p.quantidade)} L
                     </TableCell>
                     <TableCell>
                       {getQualidadeBadge(p.qualidade) ?? "—"}

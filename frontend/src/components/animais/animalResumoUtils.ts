@@ -1,4 +1,5 @@
 import { formatDatePtBr } from "@/lib/format";
+import { formatLitrosFlexible } from "@/lib/litros-format";
 import {
   type Animal,
   type GestacaoResumoContexto,
@@ -55,12 +56,7 @@ export function formatProducaoHistoricoResumo(
   if (resumo.total_registros === 0) {
     return null;
   }
-  const fmt = (value: number) =>
-    new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(value);
-  return `${fmt(resumo.total_litros)} L total · média ${fmt(resumo.media_litros)} L · ${resumo.total_registros} reg.`;
+  return `${formatLitrosFlexible(resumo.total_litros)} L total · média ${formatLitrosFlexible(resumo.media_litros)} L · ${resumo.total_registros} reg.`;
 }
 
 /**

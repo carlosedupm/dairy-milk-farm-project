@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { create as createCria, listByParto } from "@/services/crias";
 import { Button } from "@/components/ui/button";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -316,14 +317,12 @@ export function PartoEditCriasPanel({
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-parto-nova-cria-peso">Peso ao nascer (opcional)</Label>
-              <Input
+              <DecimalInput
                 id="edit-parto-nova-cria-peso"
-                type="text"
-                inputMode="decimal"
                 placeholder="Ex.: 38,5"
                 disabled={draft.condicao !== "VIVO"}
                 value={draft.condicao === "VIVO" ? draft.peso : ""}
-                onChange={(e) => setDraft((d) => ({ ...d, peso: e.target.value }))}
+                onValueChange={(peso) => setDraft((d) => ({ ...d, peso }))}
                 className="text-foreground"
               />
             </div>

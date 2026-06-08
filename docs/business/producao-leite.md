@@ -7,7 +7,7 @@ Registro diário de **volume de leite** por animal na fazenda.
 - Backend: `backend/internal/service/producao_service.go`, `backend/internal/handlers/producao_handler.go`.
 - API: `POST /api/v1/producao` (entre outras rotas de consulta/edição para perfis autorizados).
 - Listagens globais (`GET /api/v1/producao`, `/count`, `/filter/by-date`): apenas registros de animais das fazendas do usuário; query `fazenda_id` restringe à fazenda ativa (validada em `ResolveFazendaIDsForList`).
-- Frontend: `frontend/src/app/producao/*`, `ProducaoForm.tsx`, `ProducaoTable.tsx` — listagem usa `useFazendaAtiva()` + `fazenda_id` na API; filtro de período via `PeriodFilter` + `GET .../filter/by-date` com **últimos 30 dias** por defeito quando `start`/`end` não estão na URL (`lib/period-filter.ts`).
+- Frontend: `frontend/src/app/producao/*`, `ProducaoForm.tsx`, `LitrosInput.tsx`, `lib/litros-format.ts`, `ProducaoTable.tsx` — listagem usa `useFazendaAtiva()` + `fazenda_id` na API; filtro de período via `PeriodFilter` + `GET .../filter/by-date` com **últimos 30 dias** por defeito quando `start`/`end` não estão na URL (`lib/period-filter.ts`); input de quantidade em pt-BR (vírgula), máx. 2 decimais.
 - RBAC: FUNCIONARIO com `POST` — [acessos-perfil.md](./acessos-perfil.md) BR-ACESSO-015.
 
 ---
@@ -22,6 +22,7 @@ Registro diário de **volume de leite** por animal na fazenda.
 
 - **Enunciado**: `quantidade` > 0; `qualidade` opcional entre 1 e 10.
 - **Efeito**: bloqueio no servidor.
+- **Implementação**: `LitrosInput` + `parseLitrosValue` (`lib/litros-format.ts`); exibição alinhada em listagens via `formatLitrosForList`.
 - **Estado**: implementado.
 
 ### BR-PRODUCAO-003 — Produção exige lactação ativa na data do registo
@@ -58,4 +59,4 @@ Registro diário de **volume de leite** por animal na fazenda.
 
 ---
 
-**Última atualização**: 2026-06-02 (listagem — default 30d + PeriodFilter)
+**Última atualização**: 2026-06-08 (LitrosInput — formatação pt-BR)

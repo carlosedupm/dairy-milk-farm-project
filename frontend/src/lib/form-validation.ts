@@ -15,6 +15,7 @@ import {
   isIsoDateBeforeMin,
 } from "@/lib/gestao-date-limits";
 import { todayISODate } from "@/lib/date-limits";
+import { parseLitrosValue } from "@/lib/litros-format";
 
 export type FieldErrors = Partial<Record<string, string>>;
 
@@ -74,7 +75,7 @@ export function validateProducaoForm(input: ProducaoFormInput): FormValidationRe
   if (!input.animalId || input.animalId <= 0) {
     fields.animalId = "Selecione um animal em lactação.";
   }
-  const qtd = parseFloat(input.quantidade);
+  const qtd = parseLitrosValue(input.quantidade);
   if (isNaN(qtd) || qtd <= 0) {
     fields.quantidade = "Quantidade deve ser maior que zero.";
   }

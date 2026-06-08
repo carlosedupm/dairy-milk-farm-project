@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ProducaoLactacaoGrupo } from "@/components/animais/producaoPorLactacaoUtils";
 import { formatDateTimePtBr } from "@/lib/format";
+import { formatLitrosFlexible, formatLitrosForList } from "@/lib/litros-format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,12 +21,6 @@ type Props = {
   fazendaId?: number;
 };
 
-function formatLitros(litros: number) {
-  return litros.toLocaleString("pt-BR", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-}
 
 export function AnimalProducaoPorLactacao({ grupos, fazendaId }: Props) {
   if (grupos.length === 0) {
@@ -46,14 +41,14 @@ export function AnimalProducaoPorLactacao({ grupos, fazendaId }: Props) {
               <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
                 <div>
                   <dt className="text-muted-foreground">Produção total</dt>
-                  <dd className="font-semibold">{formatLitros(grupo.totalLitros)} L</dd>
+                  <dd className="font-semibold">{formatLitrosFlexible(grupo.totalLitros)} L</dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Média diária</dt>
                   <dd className="font-semibold">
                     {grupo.lactacaoId != null
-                      ? `${formatLitros(grupo.mediaDiaria)} L/dia`
-                      : `${formatLitros(grupo.mediaDiaria)} L/registro`}
+                      ? `${formatLitrosFlexible(grupo.mediaDiaria)} L/dia`
+                      : `${formatLitrosFlexible(grupo.mediaDiaria)} L/registro`}
                   </dd>
                 </div>
                 <div>
@@ -91,7 +86,7 @@ export function AnimalProducaoPorLactacao({ grupos, fazendaId }: Props) {
                     <TableRow key={r.id}>
                       <TableCell>{formatDateTimePtBr(r.data_hora)}</TableCell>
                       <TableCell className="text-right font-mono">
-                        {formatLitros(r.quantidade)} L
+                        {formatLitrosForList(r.quantidade)} L
                       </TableCell>
                       <TableCell>
                         {r.qualidade ? (

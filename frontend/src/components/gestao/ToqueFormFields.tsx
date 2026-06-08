@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { GestaoDateMinHint } from "@/components/gestao/GestaoDateMinHint";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormFieldError } from "@/components/ui/form-field-error";
@@ -213,13 +214,12 @@ export function ToqueFormFields({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="gestacao-valor">Idade gestacional</Label>
-            <Input
+            <DecimalInput
               id="gestacao-valor"
-              inputMode="decimal"
               placeholder="Ex.: 5 ou 45"
               value={formState.gestacaoValor}
-              onChange={(e) =>
-                setFormState((s) => ({ ...s, gestacaoValor: e.target.value }))
+              onValueChange={(gestacaoValor) =>
+                setFormState((s) => ({ ...s, gestacaoValor }))
               }
               className="text-foreground"
             />
