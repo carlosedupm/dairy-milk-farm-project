@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -75,11 +75,10 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
     motivos[0] ?? "MORTE"
   );
 
-  useEffect(() => {
-    if (!motivos.includes(motivo)) {
-      setMotivo(motivos[0] ?? "MORTE");
-    }
-  }, [motivos, motivo]);
+  const motivoEfetivo = useMemo(
+    () => (motivos.includes(motivo) ? motivo : motivos[0] ?? "MORTE"),
+    [motivos, motivo]
+  );
 
   const [observacao, setObservacao] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -133,7 +132,7 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
   const handleConfirm = () => {
     mutation.mutate({
       data_saida: dataSaida.trim(),
-      motivo_saida: motivo,
+      motivo_saida: motivoEfetivo,
       observacao_saida: observacao.trim() || null,
     });
   };
@@ -194,7 +193,7 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
         <div className="space-y-2">
           <Label>Motivo *</Label>
           <Select
-            value={motivo}
+            value={motivoEfetivo}
             onValueChange={(v) => setMotivo(v as MotivoSaida)}
             disabled={motivos.length <= 1}
           >
