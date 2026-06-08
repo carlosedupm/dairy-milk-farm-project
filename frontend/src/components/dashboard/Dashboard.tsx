@@ -29,7 +29,11 @@ import { AlertasHomePanel } from "@/components/dashboard/AlertasHomePanel";
 import { DashboardKpiGrid } from "@/components/dashboard/DashboardKpiGrid";
 import { PecuarioResumoHomePanel } from "@/components/dashboard/PecuarioResumoHomePanel";
 import { ConformidadeHomePanel } from "@/components/dashboard/ConformidadeHomePanel";
-import { showConformidadePanelForPerfil, showKpiGridForPerfil } from "@/config/appAccess";
+import {
+  showConformidadePanelForPerfil,
+  showKpiGridForPerfil,
+  showPecuarioResumoPanelForPerfil,
+} from "@/config/appAccess";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
 import { cn } from "@/lib/utils";
 import {
@@ -61,6 +65,9 @@ export function Dashboard() {
   const restrictedMode = areasMode !== "full" && areasMode !== "pending";
 
   const showKpiGrid = !!user && showKpiGridForPerfil(user.perfil);
+
+  const showPecuarioResumo =
+    !!user && showPecuarioResumoPanelForPerfil(user.perfil);
 
   const showConformidade =
     !!user && showConformidadePanelForPerfil(user.perfil);
@@ -234,7 +241,7 @@ export function Dashboard() {
           </h2>
           <RestricoesLeiteHomePanel />
           <AlertasHomePanel />
-          {!restrictedMode ? <PecuarioResumoHomePanel /> : null}
+          {showPecuarioResumo ? <PecuarioResumoHomePanel /> : null}
           {showConformidade ? <ConformidadeHomePanel /> : null}
         </section>
 
