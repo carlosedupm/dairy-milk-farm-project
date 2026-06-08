@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -74,6 +74,13 @@ export function RegistrarBaixaForm({ defaultAnimalId = "" }: Props) {
   const [motivo, setMotivo] = useState<MotivoSaida>(
     motivos[0] ?? "MORTE"
   );
+
+  useEffect(() => {
+    if (!motivos.includes(motivo)) {
+      setMotivo(motivos[0] ?? "MORTE");
+    }
+  }, [motivos, motivo]);
+
   const [observacao, setObservacao] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [formError, setFormError] = useState("");
