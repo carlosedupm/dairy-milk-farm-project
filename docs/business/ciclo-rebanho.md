@@ -136,10 +136,10 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ### BR-CICLO-008 — Ficha do animal com histórico unificado
 
-- **Enunciado**: Na ficha `/animais/:id`, o utilizador vê **estado atual** (gestação, lactação, restrição de leite, próximas ações) na tab **Visão Geral** via contexto e **timeline paginada** na tab **Histórico** (eventos ciclo, saúde, alertas, baixa) com scroll infinito na UI. Layout com **sidebar de resumo** e tabs — ver [animais.md](./animais.md) BR-ANIMAIS-008.
-- **Escopo**: UI + `GET /api/v1/animais/:id/contexto` (sem timeline embutida) + `GET /api/v1/animais/:id/timeline?limit=&offset=&tipo=`.
-- **Efeito**: informativo e navegação; filtros `todos|ciclo|saude|alertas` na tab Histórico.
-- **Implementação**: `TimelineRepository` (UNION SQL paginado), `AnimalCicloService.ListTimelinePaginated`, `AnimalTimelineSection`, `AnimalFichaCiclo`, `AnimalFichaShell`; [animais.md](./animais.md) BR-ANIMAIS-004/008; [saude-animal.md](./saude-animal.md) BR-SAUDE-005; [alertas.md](./alertas.md) BR-ALERTA-013.
+- **Enunciado**: Na ficha `/animais/:id`, o utilizador vê **resumo do ciclo** na tab **Visão Geral** (mini-timeline + estado) e o **hub completo** na tab **Ciclo** (estado, timeline visual vertical, marcos previstos, próximas ações). A tab **Histórico** cobre saúde, alertas e baixa (lista simples). Layout com **sidebar de resumo** e tabs — ver [animais.md](./animais.md) BR-ANIMAIS-008.
+- **Escopo**: UI + `GET /api/v1/animais/:id/contexto` (`proximas_acoes` alimentam marcos **previstos**) + `GET /api/v1/animais/:id/timeline?tipo=ciclo|…`. Links operacionais (alertas, gestão, busca, listagens) apontam para `?tab=ciclo` quando relevante (`lib/animalFichaLinks.ts`).
+- **Efeito**: informativo e navegação; filtros `todos|ciclo|saude|alertas` na tab Histórico. Sequência reprodutiva principal: CIO → COBERTURA → TOQUE → GESTACAO → SECAGEM → PARTO → LACTACAO (→ CIO); `PRODUCAO` e `BAIXA` aparecem na timeline mas com destaque secundário (fora da sequência principal).
+- **Implementação**: `TimelineRepository`, `AnimalCicloService.ListTimelinePaginated`, `AnimalFichaTabCiclo`, `AnimalCicloTimelineSection`, `AnimalCicloMiniPreview`, `AnimalTimelineSection`, `GestaoPendenciasCicloPanel`, `AnimalFichaShell`; [animais.md](./animais.md) BR-ANIMAIS-004/008; [saude-animal.md](./saude-animal.md) BR-SAUDE-005; [alertas.md](./alertas.md) BR-ALERTA-013.
 - **Estado**: **implementado**.
 
 ### BR-CICLO-009 — Visibilidade gerencial na home
@@ -233,4 +233,4 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ---
 
-**Última atualização**: 2026-06-08 (BR-CICLO-009 — KPIs visíveis para FUNCIONARIO)
+**Última atualização**: 2026-06-08 (tab Ciclo + visibilidade do ciclo reprodutivo)

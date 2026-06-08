@@ -27,6 +27,7 @@ import {
 } from "@/lib/errors";
 import { toast } from "@/hooks/use-toast";
 import { formatDatePtBr } from "@/lib/format";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import {
   alertaSeveridadeLabel,
   alertaStatusLabel,
@@ -208,7 +209,7 @@ export function AlertasTable({
                 </>
               }
               href={
-                item.animal_id ? `/animais/${item.animal_id}` : undefined
+                item.animal_id ? animalFichaCicloHref(item.animal_id) : undefined
               }
               actions={
                 actions.length > 0 ? (
@@ -262,7 +263,7 @@ export function AlertasTable({
                       <TableCell>
                         {item.animal_id && item.animal_identificacao ? (
                           <Link
-                            href={`/animais/${item.animal_id}`}
+                            href={animalFichaCicloHref(item.animal_id)}
                             className="text-primary underline-offset-4 hover:underline"
                           >
                             {item.animal_identificacao}

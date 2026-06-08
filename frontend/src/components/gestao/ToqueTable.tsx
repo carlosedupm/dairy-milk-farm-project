@@ -22,6 +22,7 @@ import {
 import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { cn } from "@/lib/utils";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { ListEmptyState } from "@/components/layout/ListEmptyState";
 import { Stethoscope } from "lucide-react";
 
@@ -86,7 +87,7 @@ export function ToqueTable({
         return (
           <MobileListCard
             key={item.id}
-            href={`/animais/${item.animal_id}`}
+            href={animalFichaCicloHref(item.animal_id)}
             title={
               <AnimalGestaoLabel
                 animalId={item.animal_id}

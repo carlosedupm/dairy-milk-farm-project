@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDateTimePtBrOptional } from "@/lib/format";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ListRowActionsMenu } from "@/components/layout/list/ListRowActionsMenu";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
@@ -119,7 +120,7 @@ export function CoberturaTable({
               key={item.id}
               href={
                 baixado
-                  ? `/animais/${item.animal_id}`
+                  ? animalFichaCicloHref(item.animal_id)
                   : animaisResolved
                     ? `/gestao/coberturas/${item.id}/editar`
                     : undefined

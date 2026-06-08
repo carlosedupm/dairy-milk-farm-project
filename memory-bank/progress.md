@@ -45,6 +45,8 @@
 - [x] URLs `?tab=saude|producao|historico`; redirects rotas legadas
 - [x] Breadcrumb contextual; forms saúde voltam para `?tab=saude`
 - [x] BR-ANIMAIS-008; BR-CICLO-008 atualizado
+- [x] **Tab Ciclo + visibilidade (2026-06-08)**: 5 tabs; mini-timeline Visão Geral; pendências em `/gestao`; links `?tab=ciclo`; coluna reprodução em `/animais`
+- [x] **Timeline visual no filtro Ciclo (2026-06-08)**: `AnimalCicloTimelineVisual`, marcos previstos via `proximas_acoes`, empty state orientativo
 
 ### **Design System — tokens semânticos (✅ 2026-05-30)**
 
@@ -914,6 +916,6 @@
 
 ---
 
-**Última atualização**: 2026-06-03 (ordenação por relevância na busca — BR-ANIMAIS-012)
+**Última atualização**: 2026-06-08 (Tab Ciclo + visibilidade ciclo — 3 fases UX)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

@@ -7,6 +7,7 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { GestaoOrientacaoPanel } from "@/components/gestao/GestaoOrientacaoPanel";
+import { GestaoPendenciasCicloPanel } from "@/components/gestao/GestaoPendenciasCicloPanel";
 import { Layers, Heart, Stethoscope, Baby, Droplet, Milk } from "lucide-react";
 
 const links = [
@@ -48,6 +49,7 @@ function GestaoContent() {
   return (
     <PageContainer variant="default">
       <h1 className="text-2xl font-bold mb-6">Gestão Pecuária – {fazendaAtiva.nome}</h1>
+      <GestaoPendenciasCicloPanel />
       <GestaoOrientacaoPanel
         links={allowedLinks.map(({ href, label }) => ({ href, label }))}
       />

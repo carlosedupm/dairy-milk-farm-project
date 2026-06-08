@@ -15,7 +15,9 @@ import {
 import type { Animal, AnimalContexto } from "@/services/animais";
 import type { Fazenda } from "@/services/fazendas";
 import { getStatusReprodutivoLabel } from "@/components/animais/animalResumoUtils";
-import { AnimalFichaCiclo } from "@/components/animais/AnimalFichaCiclo";
+import { AnimalCicloMiniPreview } from "@/components/animais/AnimalCicloMiniPreview";
+import { takeProximasAcoes } from "@/components/animais/animalProximasAcoesUtils";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { formatDatePtBr } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +32,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Edit, LogOut, Trash2 } from "lucide-react";
+import { ChevronRight, Edit, LogOut, Trash2 } from "lucide-react";
 import type { UseMutationResult } from "@tanstack/react-query";
 
 const STATUS_VARIANT: Record<
@@ -71,14 +73,42 @@ export function AnimalFichaTabVisaoGeral({
 }: Props) {
   const statusSaude = animal.status_saude as StatusSaude | undefined;
   const sexo = animal.sexo as Sexo | undefined;
+  const proximaAcao = takeProximasAcoes(contexto?.proximas_acoes ?? [], 1)[0];
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Dados do animal</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {contextoLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando ciclo…</p>
+      ) : null}
+
+      {contexto ? (
+        <AnimalCicloMiniPreview animalId={animalId} contexto={contexto} />
+      ) : null}
+
+      {!foraDoRebanho && proximaAcao ? (
+        <div className="rounded-md border border-primary/30 bg-primary/5 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
+          <p className="text-sm break-words">
+            <span className="font-medium">Próxima ação: </span>
+            {proximaAcao.label}
+          </p>
+          <Button variant="default" size="sm" className="min-h-11 shrink-0 w-full sm:w-auto" asChild>
+            <Link href={animalFichaCicloHref(animalId)}>
+              Ir para Ciclo
+              <ChevronRight className="h-4 w-4 ml-0.5" aria-hidden />
+            </Link>
+          </Button>
+        </div>
+      ) : null}
+
+      <details className="group rounded-lg border border-border bg-card">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 min-h-11 font-medium text-base [&::-webkit-details-marker]:hidden">
+          Dados do animal
+          <ChevronRight
+            className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
+            aria-hidden
+          />
+        </summary>
+        <div className="border-t px-4 pb-4 pt-3 space-y-4">
           <dl className="grid gap-3 sm:grid-cols-2">
             <div>
               <dt className="text-sm font-medium text-muted-foreground">Raça</dt>
@@ -271,8 +301,8 @@ export function AnimalFichaTabVisaoGeral({
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </details>
 
       {fazenda && !canManageAnimal ? (
         <Card>
@@ -284,11 +314,6 @@ export function AnimalFichaTabVisaoGeral({
           </CardContent>
         </Card>
       ) : null}
-
-      {contextoLoading && (
-        <p className="text-sm text-muted-foreground">Carregando ciclo…</p>
-      )}
-      {contexto ? <AnimalFichaCiclo contexto={contexto} /> : null}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,6 +12,7 @@ import {
   isAnimalForaDoRebanho,
   type Animal,
   type AnimalContexto,
+  type TimelineFilterTipo,
 } from "@/services/animais";
 import { get as getFazenda, type Fazenda } from "@/services/fazendas";
 import {
@@ -27,8 +28,10 @@ import {
 import {
   animalFichaTabHref,
   parseAnimalFichaTab,
+  parseTimelineFilterTipo,
   type AnimalFichaTab,
 } from "@/components/animais/ficha/animalFichaTabs";
+import { animalFichaTabHrefWithParams } from "@/lib/animalFichaLinks";
 
 export type UseAnimalFichaPageResult = {
   id: number;
@@ -40,7 +43,9 @@ export type UseAnimalFichaPageResult = {
   contextoLoading: boolean;
   error: Error | null;
   activeTab: AnimalFichaTab;
+  historicoTipo: TimelineFilterTipo;
   setTab: (tab: AnimalFichaTab) => void;
+  setHistoricoTipo: (tipo: TimelineFilterTipo) => void;
   foraDoRebanho: boolean;
   canManageAnimal: boolean;
   canRegistrarProducao: boolean;
@@ -64,16 +69,46 @@ export function useAnimalFichaPage(): UseAnimalFichaPageResult {
   const id = Number(params.id);
   const idInvalid = Number.isNaN(id) || id <= 0;
 
+  const tabParam = searchParams.get("tab");
+  const tipoParam = searchParams.get("tipo");
+
   const activeTab = useMemo(
-    () => parseAnimalFichaTab(searchParams.get("tab")),
-    [searchParams]
+    () => parseAnimalFichaTab(tabParam, tipoParam),
+    [tabParam, tipoParam],
   );
+
+  const historicoTipo = useMemo(() => {
+    if (activeTab !== "historico") {
+      return "todos" as TimelineFilterTipo;
+    }
+    return parseTimelineFilterTipo(tipoParam);
+  }, [activeTab, tipoParam]);
+
+  useEffect(() => {
+    if (tabParam === "historico" && tipoParam === "ciclo") {
+      router.replace(animalFichaTabHref(id, "ciclo"), { scroll: false });
+    }
+  }, [tabParam, tipoParam, id, router]);
 
   const setTab = useCallback(
     (tab: AnimalFichaTab) => {
       router.push(animalFichaTabHref(id, tab), { scroll: false });
     },
-    [id, router]
+    [id, router],
+  );
+
+  const setHistoricoTipo = useCallback(
+    (tipo: TimelineFilterTipo) => {
+      if (tipo === "ciclo") {
+        router.push(animalFichaTabHref(id, "ciclo"), { scroll: false });
+        return;
+      }
+      router.push(
+        animalFichaTabHrefWithParams(id, "historico", { tipo }),
+        { scroll: false },
+      );
+    },
+    [id, router],
   );
 
   const {
@@ -156,7 +191,9 @@ export function useAnimalFichaPage(): UseAnimalFichaPageResult {
     contextoLoading,
     error: error as Error | null,
     activeTab,
+    historicoTipo,
     setTab,
+    setHistoricoTipo,
     foraDoRebanho,
     canManageAnimal,
     canRegistrarProducao,

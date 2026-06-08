@@ -38,6 +38,8 @@ import { ListEmptyState } from "@/components/layout/ListEmptyState";
 import { getApiErrorMessage } from "@/lib/errors";
 import { toast } from "@/hooks/use-toast";
 import { Beef } from "lucide-react";
+import { getStatusReprodutivoLabel } from "@/components/animais/animalResumoUtils";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 
 type Props = {
   items: Animal[];
@@ -180,6 +182,11 @@ export function AnimalTable({
                       a.status_saude}
                   </Badge>
                 ) : null}
+                {a.status_reprodutivo ? (
+                  <Badge variant="outline">
+                    {getStatusReprodutivoLabel(a.status_reprodutivo)}
+                  </Badge>
+                ) : null}
                 <span>Nasc.: {formatDatePtBr(a.data_nascimento)}</span>
               </div>
             }
@@ -202,6 +209,7 @@ export function AnimalTable({
                   <TableHead>Categoria</TableHead>
                   <TableHead>Origem</TableHead>
                   <TableHead>Saúde</TableHead>
+                  <TableHead>Reprodução</TableHead>
                   <TableHead>Nascimento</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -240,6 +248,18 @@ export function AnimalTable({
                             a.status_saude as StatusSaude
                           ] ?? a.status_saude}
                         </Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {a.status_reprodutivo ? (
+                        <Link
+                          href={animalFichaCicloHref(a.id)}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          {getStatusReprodutivoLabel(a.status_reprodutivo)}
+                        </Link>
                       ) : (
                         "—"
                       )}

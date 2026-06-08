@@ -15,11 +15,15 @@ import {
   listEmLactacaoByFazenda,
   type Animal,
 } from "@/services/animais";
+import {
+  LitrosInput,
+  litrosNumberToInputValue,
+} from "@/components/producao/LitrosInput";
+import { parseLitrosValue } from "@/lib/litros-format";
 import { formatDatePtBr } from "@/lib/format";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormField } from "@/components/ui/form-field";
 import { DateTimePickerPtBr } from "@/components/ui/datetime-picker-pt-br";
@@ -78,7 +82,9 @@ export function ProducaoForm({
       : nowDatetimeLocalInputValue()
   );
   const [quantidade, setQuantidade] = useState<string>(
-    initial?.quantidade?.toString() ?? ""
+    initial?.quantidade != null
+      ? litrosNumberToInputValue(initial.quantidade)
+      : ""
   );
   const [qualidade, setQualidade] = useState<Qualidade | undefined>(
     (initial?.qualidade as Qualidade) ?? undefined
@@ -170,7 +176,7 @@ export function ProducaoForm({
       return;
     }
 
-    const qtd = parseFloat(quantidade);
+    const qtd = parseLitrosValue(quantidade);
     const payload: ProducaoCreate = {
       animal_id: idEnvio,
       quantidade: qtd,
@@ -306,13 +312,10 @@ export function ProducaoForm({
               required
               error={fieldErrors.quantidade}
             >
-              <Input
-                type="number"
-                step="0.01"
-                min={0}
+              <LitrosInput
+                id="quantidade"
                 value={quantidade}
-                onChange={(e) => setQuantidade(e.target.value)}
-                placeholder="Ex.: 25.5"
+                onValueChange={setQuantidade}
               />
             </FormField>
 

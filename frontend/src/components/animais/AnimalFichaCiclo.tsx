@@ -17,9 +17,13 @@ import {
 
 type Props = {
   contexto: AnimalContexto;
+  showProximasAcoes?: boolean;
 };
 
-export function AnimalFichaCiclo({ contexto }: Props) {
+export function AnimalFichaCiclo({
+  contexto,
+  showProximasAcoes = true,
+}: Props) {
   const gestacaoLinha = formatGestacaoResumoLinha(contexto.gestacao_resumo);
   const producaoLinha = formatProducaoHistoricoResumo(contexto.resumo_producao);
 
@@ -101,7 +105,7 @@ export function AnimalFichaCiclo({ contexto }: Props) {
         </CardContent>
       </Card>
 
-      {contexto.proximas_acoes?.length ? (
+      {showProximasAcoes && contexto.proximas_acoes?.length ? (
         <AnimalProximasAcoesCta
           acoes={contexto.proximas_acoes}
           foraDoRebanho={contexto.fora_do_rebanho}

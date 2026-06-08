@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useRef } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { formatDateTimePtBr } from "@/lib/format";
 import { getApiErrorMessage } from "@/lib/errors";
 import {
   TIMELINE_PAGE_SIZE,
@@ -13,54 +11,36 @@ import {
 } from "@/services/animais";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Bell, Loader2, Pill } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { canEditarRegistroSaude } from "@/config/appAccess";
 import { cn } from "@/lib/utils";
+import {
+  AnimalTimelineList,
+  TimelineSkeletonRows,
+} from "@/components/animais/AnimalTimelineList";
 
 const FILTER_OPTIONS: { value: TimelineFilterTipo; label: string }[] = [
   { value: "todos", label: "Todos" },
-  { value: "ciclo", label: "Ciclo" },
   { value: "saude", label: "Saúde" },
   { value: "alertas", label: "Alertas" },
 ];
 
 type Props = {
   animalId: number;
+  tipoFilter: TimelineFilterTipo;
+  onTipoFilterChange: (tipo: TimelineFilterTipo) => void;
 };
 
-function timelineTipoLabel(tipo: string): string {
-  if (tipo === "SAUDE") return "Saúde";
-  if (tipo === "ALERTA") return "Alerta";
-  return tipo;
-}
-
-function TimelineSkeletonRows() {
-  return (
-    <ul className="space-y-3 min-w-0" aria-hidden>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <li
-          key={i}
-          className="border-b border-border pb-3 last:border-0 last:pb-0 animate-pulse"
-        >
-          <div className="flex gap-2 mb-2">
-            <div className="h-5 w-16 rounded bg-muted" />
-            <div className="h-4 w-28 rounded bg-muted" />
-          </div>
-          <div className="h-4 w-3/4 max-w-xs rounded bg-muted" />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-export function AnimalTimelineSection({ animalId }: Props) {
+export function AnimalTimelineSection({
+  animalId,
+  tipoFilter,
+  onTipoFilterChange,
+}: Props) {
   const { user } = useAuth();
   const canEditSaude = canEditarRegistroSaude(user?.perfil);
   const sectionRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const [tipoFilter, setTipoFilter] = useState<TimelineFilterTipo>("todos");
 
   const {
     data,
@@ -89,7 +69,10 @@ export function AnimalTimelineSection({ animalId }: Props) {
     },
   });
 
-  const items = data?.pages.flatMap((page) => page.timeline) ?? [];
+  const items = useMemo(
+    () => data?.pages.flatMap((page) => page.timeline) ?? [],
+    [data?.pages],
+  );
   const total = data?.pages[0]?.total ?? 0;
   const allLoaded = !hasNextPage && items.length > 0;
 
@@ -116,7 +99,7 @@ export function AnimalTimelineSection({ animalId }: Props) {
     if (next === tipoFilter) {
       return;
     }
-    setTipoFilter(next);
+    onTipoFilterChange(next);
     sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -124,6 +107,10 @@ export function AnimalTimelineSection({ animalId }: Props) {
     <Card ref={sectionRef}>
       <CardHeader className="pb-2 space-y-3">
         <CardTitle className="text-base">Histórico</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Eventos de saúde, alertas e baixa. O ciclo reprodutivo está na tab{" "}
+          <strong className="font-medium text-foreground">Ciclo</strong>.
+        </p>
         <div
           className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory"
           role="tablist"
@@ -164,71 +151,11 @@ export function AnimalTimelineSection({ animalId }: Props) {
           </p>
         ) : (
           <>
-            <ul className="space-y-3 min-w-0">
-              {items.map((item, idx) => {
-                const isSaude = item.tipo === "SAUDE";
-                const isAlerta = item.tipo === "ALERTA";
-                const saudeEditHref =
-                  isSaude && item.ref_id != null && canEditSaude
-                    ? `/animais/${animalId}/saude/editar/${item.ref_id}`
-                    : null;
-
-                return (
-                  <li
-                    key={`${item.tipo}-${item.ref_id ?? idx}-${item.data}-${idx}`}
-                    className="border-b border-border pb-3 last:border-0 last:pb-0 min-w-0"
-                  >
-                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                      {isSaude ? (
-                        <Pill
-                          className="h-4 w-4 shrink-0 text-muted-foreground"
-                          aria-hidden
-                        />
-                      ) : null}
-                      {isAlerta ? (
-                        <Bell
-                          className="h-4 w-4 shrink-0 text-muted-foreground"
-                          aria-hidden
-                        />
-                      ) : null}
-                      <Badge variant="outline" className="shrink-0">
-                        {timelineTipoLabel(item.tipo)}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDateTimePtBr(item.data)}
-                      </span>
-                    </div>
-                    {saudeEditHref ? (
-                      <Link
-                        href={saudeEditHref}
-                        className="font-medium break-words hover:underline block py-0.5"
-                      >
-                        {item.titulo}
-                      </Link>
-                    ) : isAlerta ? (
-                      <Link
-                        href="/alertas"
-                        className="font-medium break-words hover:underline block py-0.5"
-                      >
-                        {item.titulo}
-                      </Link>
-                    ) : (
-                      <p className="font-medium break-words">{item.titulo}</p>
-                    )}
-                    {item.detalhe ? (
-                      <p className="text-sm text-muted-foreground break-words">
-                        {item.detalhe}
-                      </p>
-                    ) : null}
-                    {item.registrado_por ? (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Registado por {item.registrado_por}
-                      </p>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
+            <AnimalTimelineList
+              items={items}
+              animalId={animalId}
+              canEditSaude={canEditSaude}
+            />
 
             <div ref={sentinelRef} className="h-1" aria-hidden />
 

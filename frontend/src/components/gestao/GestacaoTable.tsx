@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDatePtBr } from "@/lib/format";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { MobileListCard } from "@/components/layout/list/MobileListCard";
 import { ResponsiveListContainer } from "@/components/layout/list/ResponsiveListContainer";
 import { ListEmptyState } from "@/components/layout/ListEmptyState";
@@ -58,7 +59,7 @@ export function GestacaoTable({
       mobile={items.map((item) => (
         <MobileListCard
           key={item.id}
-          href={`/animais/${item.animal_id}`}
+          href={animalFichaCicloHref(item.animal_id)}
           title={
             <AnimalGestaoLabel
               animalId={item.animal_id}
@@ -88,7 +89,7 @@ export function GestacaoTable({
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
                     <Link
-                      href={`/animais/${item.animal_id}`}
+                      href={animalFichaCicloHref(item.animal_id)}
                       className="inline-flex min-h-[44px] min-w-0 items-center text-primary underline-offset-4 hover:underline"
                     >
                       <AnimalGestaoLabel

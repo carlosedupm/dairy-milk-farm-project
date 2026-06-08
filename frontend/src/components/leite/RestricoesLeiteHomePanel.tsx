@@ -9,6 +9,7 @@ import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { getApiErrorMessage, parsePrefixedConformidadeMessage } from "@/lib/errors";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
 import { formatDatePtBr } from "@/lib/format";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { listEmLactacaoByFazenda, invalidateAnimalTimeline } from "@/services/animais";
 import {
   createRestricao,
@@ -262,7 +263,7 @@ export function RestricoesLeiteHomePanel() {
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2 gap-y-3">
                         <Link
-                          href={`/animais/${row.animal_id}`}
+                          href={animalFichaCicloHref(row.animal_id)}
                           className="min-h-[44px] min-w-0 flex-1 text-base font-semibold text-primary underline-offset-4 hover:underline"
                         >
                           {row.identificacao}
@@ -335,7 +336,7 @@ export function RestricoesLeiteHomePanel() {
                         <TableRow key={row.id}>
                           <TableCell className="font-medium">
                             <Link
-                              href={`/animais/${row.animal_id}`}
+                              href={animalFichaCicloHref(row.animal_id)}
                               className="text-primary underline-offset-4 hover:underline"
                             >
                               {row.identificacao}

@@ -22,6 +22,7 @@ import {
 } from "@/components/animais/animalResumoUtils";
 import { AnimalSearchResultLabel } from "@/components/animais/AnimalSearchResultLabel";
 import { formatAnimalSearchLabel } from "@/components/animais/animalSearchUtils";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -332,10 +333,10 @@ export function AnimalSearchPanel({
 
       {contexto ? (
         <Link
-          href={`/animais/${contexto.animal.id}`}
+          href={animalFichaCicloHref(contexto.animal.id)}
           onClick={() => onAntesNavegarDetalhe?.()}
           className="block min-h-[44px] min-w-0 space-y-2 rounded-lg border p-4 text-left outline-none transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={`Abrir ficha de ${formatAnimalSearchLabel(contexto.animal)}`}
+          aria-label={`Abrir ciclo de ${formatAnimalSearchLabel(contexto.animal)}`}
         >
           {contexto.fora_do_rebanho ? (
             <div

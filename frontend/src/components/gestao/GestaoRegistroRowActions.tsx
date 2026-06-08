@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Animal } from "@/services/animais";
 import { Button } from "@/components/ui/button";
 import { isGestaoRegistroAnimalBaixado } from "@/components/gestao/gestaoRebanhoUtils";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 
 type Props = {
   animalId: number;
@@ -33,7 +34,7 @@ export function GestaoRegistroRowActions({
   if (isGestaoRegistroAnimalBaixado(animalId, animaisById)) {
     return (
       <Button variant="outline" size="default" asChild>
-        <Link href={`/animais/${animalId}`}>Ver ficha</Link>
+        <Link href={animalFichaCicloHref(animalId)}>Ver ciclo</Link>
       </Button>
     );
   }

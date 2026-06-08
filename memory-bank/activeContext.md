@@ -8,6 +8,8 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Visibilidade do ciclo reprodutivo (3 fases UX)**: nova tab **Ciclo** na ficha (`?tab=ciclo`); Visão Geral com mini-timeline + cadastro colapsável; Histórico só saúde/alertas com `&tipo=` na URL; coluna Reprodução em `/animais`; links contextuais (alertas, gestão, busca, dashboard) → `?tab=ciclo`; `GestaoPendenciasCicloPanel` no hub `/gestao`; `lib/animalFichaLinks.ts`.
+1. ✅ **Timeline visual do ciclo reprodutivo (BR-CICLO-008)**: filtro **Ciclo** na tab Histórico exibe timeline vertical (`AnimalCicloTimelineVisual`) com ícones por tipo, marcos concluídos (API) e previstos (`proximas_acoes` do contexto); filtros Todos/Saúde/Alertas mantêm lista simples (`AnimalTimelineList`); empty state com CTA «Registrar cio»; `animalCicloTimelineUtils.ts`.
 1. ✅ **Dashboard — KPIs para FUNCIONARIO (BR-CICLO-009)**: `showKpiGridForPerfil` em `appAccess.ts`; `DashboardKpiGrid` visível na home para FUNCIONARIO; `PecuarioResumoHomePanel` e `ConformidadeHomePanel` permanecem ocultos; drill-downs alternativos (Partos → `/gestao`, Leite → `/producao/novo`); whitelist `GET .../resumo-pecuario` em `perfil_access.go`; testes em `perfil_access_test.go`.
 1. ✅ **Bug GET /api/v1/me — 404 (BR-ACESSO-021)**: Rota `GET /api/v1/me` registada em `main.go`; handler `AuthHandler.Me` devolve `{ id, nome, email, perfil }`; whitelist USER/FUNCIONARIO em `perfil_access.go`; testes em `auth_handler_test.go` e `perfil_access_test.go`; OpenAPI atualizado.
 1. ✅ **Bug DELETE fazendas — 403 para ADMIN (BR-ACESSO-020)**: `DELETE /api/v1/fazendas/:id` passou a usar `ValidateFazendaAccessOrGestao` (ADMIN/DEVELOPER/GESTAO sem vínculo) e middleware `RequirePodeDeletarFazenda` (ADMIN/DEVELOPER/GESTAO/PROPRIETARIO); testes em `access_helper_test.go`, `middleware_test.go`, `perfil_test.go`.
@@ -259,5 +261,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-08 (Dashboard KPIs FUNCIONARIO — BR-CICLO-009)
+**Última atualização**: 2026-06-08 (Tab Ciclo + visibilidade ciclo — 3 fases UX)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP

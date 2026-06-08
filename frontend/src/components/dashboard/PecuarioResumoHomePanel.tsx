@@ -7,6 +7,7 @@ import { getResumoPecuario } from "@/services/resumoPecuario";
 import { formatDatePtBr } from "@/lib/format";
 import { getApiErrorMessage } from "@/lib/errors";
 import { HomeCollapsiblePanel } from "@/components/dashboard/HomeCollapsiblePanel";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { Baby, ClipboardList } from "lucide-react";
 
 export function PecuarioResumoHomePanel() {
@@ -54,7 +55,7 @@ export function PecuarioResumoHomePanel() {
               {partos.map((p) => (
                 <li key={p.gestacao_id} className="min-w-0">
                   <Link
-                    href={`/animais/${p.animal_id}`}
+                    href={animalFichaCicloHref(p.animal_id)}
                     className="text-primary hover:underline break-words"
                   >
                     {p.identificacao}

@@ -6,6 +6,7 @@ import {
   ANIMAL_FICHA_TAB_LABELS,
   type AnimalFichaTab,
 } from "@/components/animais/ficha/animalFichaTabs";
+import { AnimalFichaTabCiclo } from "@/components/animais/ficha/AnimalFichaTabCiclo";
 import { AnimalFichaTabHistorico } from "@/components/animais/ficha/AnimalFichaTabHistorico";
 import { AnimalFichaTabProducao } from "@/components/animais/ficha/AnimalFichaTabProducao";
 import { AnimalFichaTabSaude } from "@/components/animais/ficha/AnimalFichaTabSaude";
@@ -14,6 +15,7 @@ import { animalProximasAcoesPageSpacerClass } from "@/components/animais/AnimalP
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { UseAnimalFichaPageResult } from "@/hooks/useAnimalFichaPage";
+import type { TimelineFilterTipo } from "@/services/animais";
 
 type Props = Pick<
   UseAnimalFichaPageResult,
@@ -23,7 +25,9 @@ type Props = Pick<
   | "fazenda"
   | "contextoLoading"
   | "activeTab"
+  | "historicoTipo"
   | "setTab"
+  | "setHistoricoTipo"
   | "foraDoRebanho"
   | "canManageAnimal"
   | "canRegistrarProducao"
@@ -42,7 +46,9 @@ export function AnimalFichaTabs({
   fazenda,
   contextoLoading,
   activeTab,
+  historicoTipo,
   setTab,
+  setHistoricoTipo,
   foraDoRebanho,
   canManageAnimal,
   canRegistrarProducao,
@@ -55,22 +61,26 @@ export function AnimalFichaTabs({
     setTab(value as AnimalFichaTab);
   };
 
+  const handleHistoricoTipoChange = (tipo: TimelineFilterTipo) => {
+    setHistoricoTipo(tipo);
+  };
+
   return (
     <Tabs
       value={activeTab}
       onValueChange={handleTabChange}
       className={cn(
         "min-w-0",
-        activeTab === "geral" &&
+        activeTab === "ciclo" &&
           animalProximasAcoesPageSpacerClass(
             contexto?.proximas_acoes,
-            foraDoRebanho
-          )
+            foraDoRebanho,
+          ),
       )}
     >
-      <TabsList aria-label="Secções da ficha do animal">
+      <TabsList aria-label="Secções da ficha do animal" className="flex-wrap h-auto gap-1">
         {ANIMAL_FICHA_TABS.map((tab) => (
-          <TabsTrigger key={tab} value={tab}>
+          <TabsTrigger key={tab} value={tab} className="min-h-11">
             {ANIMAL_FICHA_TAB_LABELS[tab]}
           </TabsTrigger>
         ))}
@@ -89,6 +99,17 @@ export function AnimalFichaTabs({
           showReverterBaixa={showReverterBaixa}
           revertMutation={revertMutation}
           deleteMutation={deleteMutation}
+        />
+      </TabsContent>
+
+      <TabsContent value="ciclo" role="tabpanel">
+        <AnimalFichaTabCiclo
+          animalId={id}
+          contexto={contexto}
+          contextoLoading={contextoLoading}
+          proximasAcoes={contexto?.proximas_acoes}
+          foraDoRebanho={foraDoRebanho}
+          enabled={activeTab === "ciclo"}
         />
       </TabsContent>
 
@@ -112,7 +133,11 @@ export function AnimalFichaTabs({
 
       <TabsContent value="historico" role="tabpanel">
         {activeTab === "historico" ? (
-          <AnimalFichaTabHistorico animalId={id} />
+          <AnimalFichaTabHistorico
+            animalId={id}
+            tipoFilter={historicoTipo}
+            onTipoFilterChange={handleHistoricoTipoChange}
+          />
         ) : null}
       </TabsContent>
     </Tabs>

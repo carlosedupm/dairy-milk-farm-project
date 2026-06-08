@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 
 const STATUS_VARIANT: Record<
   StatusSaude,
@@ -89,9 +90,12 @@ export function AnimalFichaSidebar({
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {foraDoRebanho ? "Reprodução ao sair" : "Reprodução"}
             </p>
-            <p className="mt-0.5 break-words">
+            <Link
+              href={animalFichaCicloHref(animal.id)}
+              className="mt-0.5 block break-words text-primary hover:underline font-medium"
+            >
               {getStatusReprodutivoLabel(animal.status_reprodutivo)}
-            </p>
+            </Link>
           </div>
         ) : null}
         {resumoLinhas.map((linha) => (
