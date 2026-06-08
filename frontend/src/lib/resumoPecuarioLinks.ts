@@ -30,8 +30,22 @@ export function buildProducaoListHref(start: string, end: string): string {
   return `/producao?${params.toString()}`;
 }
 
+export function buildProducaoKpiHref(
+  perfil: string | undefined,
+  start: string,
+  end: string,
+): string {
+  if (perfil === "FUNCIONARIO") return "/producao/novo";
+  return buildProducaoListHref(start, end);
+}
+
 export function buildGestacoesPartos7dHref(): string {
   return "/gestao/gestacoes?status=CONFIRMADA&partos_dias=7";
+}
+
+export function buildPartos7dKpiHref(perfil: string | undefined): string {
+  if (perfil === "FUNCIONARIO") return "/gestao";
+  return buildGestacoesPartos7dHref();
 }
 
 export function buildAnimaisEmLactacaoHref(): string {

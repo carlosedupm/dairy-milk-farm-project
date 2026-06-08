@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Dashboard — KPIs para FUNCIONARIO (BR-CICLO-009)**: `showKpiGridForPerfil` em `appAccess.ts`; `DashboardKpiGrid` visível na home para FUNCIONARIO; `PecuarioResumoHomePanel` e `ConformidadeHomePanel` permanecem ocultos; drill-downs alternativos (Partos → `/gestao`, Leite → `/producao/novo`); whitelist `GET .../resumo-pecuario` em `perfil_access.go`; testes em `perfil_access_test.go`.
 1. ✅ **Bug GET /api/v1/me — 404 (BR-ACESSO-021)**: Rota `GET /api/v1/me` registada em `main.go`; handler `AuthHandler.Me` devolve `{ id, nome, email, perfil }`; whitelist USER/FUNCIONARIO em `perfil_access.go`; testes em `auth_handler_test.go` e `perfil_access_test.go`; OpenAPI atualizado.
 1. ✅ **Bug DELETE fazendas — 403 para ADMIN (BR-ACESSO-020)**: `DELETE /api/v1/fazendas/:id` passou a usar `ValidateFazendaAccessOrGestao` (ADMIN/DEVELOPER/GESTAO sem vínculo) e middleware `RequirePodeDeletarFazenda` (ADMIN/DEVELOPER/GESTAO/PROPRIETARIO); testes em `access_helper_test.go`, `middleware_test.go`, `perfil_test.go`.
 1. ✅ **Header — lazy render da busca**: `useAdaptiveSearch` com `panelActive` (foco/clique/`openSearch()` ou ≥2 caracteres); `HeaderBuscaTrigger` monta Popover/Dialog + `AnimalSearchPanel` só após interacção; `next/dynamic` (`ssr: false`); desmontagem completa ao fechar; `key={pathname}` mantém reset na navegação.
@@ -258,5 +259,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-06 (GET /api/v1/me — BR-ACESSO-021)
+**Última atualização**: 2026-06-08 (Dashboard KPIs FUNCIONARIO — BR-CICLO-009)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP

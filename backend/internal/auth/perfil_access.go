@@ -33,6 +33,7 @@ var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
 var funcionarioAnimaisBaixaPath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/baixa$`)
 var funcionarioAnimaisSaudePath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/saude(/[0-9]+)?$`)
 var funcionarioAlertasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/alertas(/[0-9]+(/status)?)?$`)
+var funcionarioResumoPecuarioPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/resumo-pecuario$`)
 var funcionarioAssistentePath = regexp.MustCompile(`^/api/v1/assistente(/.*)?$`)
 
 // TODO(capabilities-assistente): liberar rotas de assistente para FUNCIONARIO
@@ -121,6 +122,9 @@ func requestAllowedForFuncionario(method, path string) bool {
 			return true
 		}
 		return false
+	}
+	if method == http.MethodGet && funcionarioResumoPecuarioPath.MatchString(path) {
+		return true
 	}
 	if method == http.MethodPost && path == "/api/v1/producao" {
 		return true

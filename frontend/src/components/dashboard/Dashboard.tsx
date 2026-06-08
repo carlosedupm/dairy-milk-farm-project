@@ -29,7 +29,7 @@ import { AlertasHomePanel } from "@/components/dashboard/AlertasHomePanel";
 import { DashboardKpiGrid } from "@/components/dashboard/DashboardKpiGrid";
 import { PecuarioResumoHomePanel } from "@/components/dashboard/PecuarioResumoHomePanel";
 import { ConformidadeHomePanel } from "@/components/dashboard/ConformidadeHomePanel";
-import { showConformidadePanelForPerfil } from "@/config/appAccess";
+import { showConformidadePanelForPerfil, showKpiGridForPerfil } from "@/config/appAccess";
 import { useAnimalSearchDialog } from "@/contexts/AnimalSearchDialogContext";
 import { cn } from "@/lib/utils";
 import {
@@ -59,6 +59,8 @@ export function Dashboard() {
     !!user && isPathAllowedForPerfil(user.perfil, "/animais") && animalSearch;
 
   const restrictedMode = areasMode !== "full" && areasMode !== "pending";
+
+  const showKpiGrid = !!user && showKpiGridForPerfil(user.perfil);
 
   const showConformidade =
     !!user && showConformidadePanelForPerfil(user.perfil);
@@ -220,7 +222,7 @@ export function Dashboard() {
         </p>
       </header>
 
-      {!restrictedMode ? <DashboardKpiGrid /> : null}
+      {showKpiGrid ? <DashboardKpiGrid perfil={user?.perfil} /> : null}
 
       <div className="space-y-4">
         <section

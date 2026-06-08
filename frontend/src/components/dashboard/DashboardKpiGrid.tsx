@@ -15,15 +15,19 @@ import {
 import {
   buildAlertasCriticosHref,
   buildAnimaisEmLactacaoHref,
-  buildGestacoesPartos7dHref,
-  buildProducaoListHref,
+  buildPartos7dKpiHref,
+  buildProducaoKpiHref,
   getResumoProducaoHojeRange,
 } from "@/lib/resumoPecuarioLinks";
 import { ResumoKpiTile } from "@/components/dashboard/ResumoKpiTile";
 import { DashboardKpiSkeleton } from "@/components/dashboard/DashboardKpiSkeleton";
 import { TOUR_STEP_KPIS } from "@/components/ui/tour";
 
-export function DashboardKpiGrid() {
+export function DashboardKpiGrid({
+  perfil,
+}: {
+  perfil?: string;
+}) {
   const { fazendaAtiva } = useFazendaAtiva();
   const fazendaId = fazendaAtiva?.id ?? 0;
 
@@ -87,7 +91,7 @@ export function DashboardKpiGrid() {
             label="Partos 7 dias"
             icon={Baby}
             value={formatKpiCount(partos7d)}
-            href={buildGestacoesPartos7dHref()}
+            href={buildPartos7dKpiHref(perfil)}
             ariaLabel={kpiCountAriaLabel(
               "parto previsto nos próximos 7 dias",
               "partos previstos nos próximos 7 dias",
@@ -120,7 +124,7 @@ export function DashboardKpiGrid() {
             label="Leite hoje"
             icon={Droplets}
             value={formatKpiLitros(producaoHoje)}
-            href={buildProducaoListHref(hojeRange.start, hojeRange.end)}
+            href={buildProducaoKpiHref(perfil, hojeRange.start, hojeRange.end)}
             ariaLabel={kpiLitrosAriaLabel(
               producaoHoje,
               "produção de leite de hoje",

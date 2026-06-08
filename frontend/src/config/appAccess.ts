@@ -236,6 +236,15 @@ export function showConformidadePanelForPerfil(
   return true;
 }
 
+export function showKpiGridForPerfil(perfil: string | undefined): boolean {
+  if (!perfil) return false;
+  if (perfil === "USER") return false;
+  if (perfil === "FUNCIONARIO") return true;
+  const mode = getAreasMode(perfil);
+  if (mode === "pending") return false;
+  return true;
+}
+
 /**
  * Capacidades futuras do assistente para liberação gradual por negócio.
  * Neste momento não há capacidades liberadas para FUNCIONARIO.

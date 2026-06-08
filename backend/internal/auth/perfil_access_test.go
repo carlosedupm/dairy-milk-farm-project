@@ -193,6 +193,28 @@ func TestRequestAllowedForLimitedAPI_FuncionarioCrias(t *testing.T) {
 	}
 }
 
+func TestRequestAllowedForFuncionario_ResumoPecuario(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		method string
+		path   string
+		want   bool
+	}{
+		{http.MethodGet, "/api/v1/fazendas/1/resumo-pecuario", true},
+		{http.MethodPost, "/api/v1/fazendas/1/resumo-pecuario", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			t.Parallel()
+			if got := requestAllowedForFuncionario(tt.method, tt.path); got != tt.want {
+				t.Errorf("requestAllowedForFuncionario(%q, %q) = %v, want %v", tt.method, tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRequestAllowedForFuncionario_Alertas(t *testing.T) {
 	t.Parallel()
 

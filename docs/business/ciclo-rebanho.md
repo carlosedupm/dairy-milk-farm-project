@@ -144,10 +144,10 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ### BR-CICLO-009 — Visibilidade gerencial na home
 
-- **Enunciado**: Titular/gerente abre o Dashboard e vê **quatro KPIs acima da dobra** (sem scroll em viewport típico): partos previstos nos **próximos 7 dias**, animais **em lactação**, **alertas críticos abertos** e **produção de leite hoje** (L/dia). Valor zero exibe **«Nenhum»** (não «0»). Painéis de detalhe (restrições, alertas, rebanho/partos 30d, conformidade) são **colapsáveis** com estado inteligente: expandidos quando há itens, recolhidos quando vazios.
-- **Escopo**: Fazenda ativa; faixa de KPIs oculta para FUNCIONARIO em modo restrito na UI; painel Conformidade oculto para FUNCIONARIO/USER (`showConformidadePanelForPerfil`).
-- **Efeito**: informativo com **drill-down** — cada KPI navega para a lista/fonte: partos 7d → `/gestao/gestacoes?status=CONFIRMADA&partos_dias=7`; lactação → `/animais?em_lactacao=1`; alertas críticos → `/alertas?status=ABERTO&severidade=CRITICA`; produção hoje → `/producao?start&end` (dia civil). Lista de partos 30d permanece no painel Rebanho (colapsável).
-- **Implementação**: `GET /api/v1/fazendas/:id/resumo-pecuario` (`partos_proximos_7d_total`, `lactacao_ativa_total`, `producao_hoje_litros`, …); `DashboardKpiGrid`, `ResumoKpiTile`, `DashboardKpiSkeleton`, `lib/kpiFormat.ts`, `lib/resumoPecuarioLinks.ts`, `HomeCollapsiblePanel`; `PecuarioResumoHomePanel` (só lista 30d); [gestacoes.md](./gestacoes.md) BR-GESTACOES-005; alerta `PARTO_PREVISTO` — [alertas.md](./alertas.md) BR-ALERTA-008.
+- **Enunciado**: Titular/gerente **e FUNCIONARIO** abrem o Dashboard e vêem **quatro KPIs acima da dobra** (sem scroll em viewport típico): partos previstos nos **próximos 7 dias**, animais **em lactação**, **alertas críticos abertos** e **produção de leite hoje** (L/dia). Valor zero exibe **«Nenhum»** (não «0»). Painéis de detalhe (restrições, alertas, rebanho/partos 30d, conformidade) são **colapsáveis** com estado inteligente: expandidos quando há itens, recolhidos quando vazios.
+- **Escopo**: Fazenda ativa; faixa de KPIs visível para FUNCIONARIO (`showKpiGridForPerfil`); painel Rebanho 30d (`PecuarioResumoHomePanel`) permanece oculto em modo restrito; painel Conformidade oculto para FUNCIONARIO/USER (`showConformidadePanelForPerfil`).
+- **Efeito**: informativo com **drill-down** — cada KPI navega para a lista/fonte: partos 7d → `/gestao/gestacoes?status=CONFIRMADA&partos_dias=7` (demais perfis) ou `/gestao` (FUNCIONARIO); lactação → `/animais?em_lactacao=1`; alertas críticos → `/alertas?status=ABERTO&severidade=CRITICA`; produção hoje → `/producao?start&end` (dia civil) ou `/producao/novo` (FUNCIONARIO). Lista de partos 30d permanece no painel Rebanho (colapsável), oculto para FUNCIONARIO.
+- **Implementação**: `GET /api/v1/fazendas/:id/resumo-pecuario` (`partos_proximos_7d_total`, `lactacao_ativa_total`, `producao_hoje_litros`, …); whitelist GET em `perfil_access.go` para FUNCIONARIO; `DashboardKpiGrid`, `ResumoKpiTile`, `DashboardKpiSkeleton`, `lib/kpiFormat.ts`, `lib/resumoPecuarioLinks.ts` (`buildPartos7dKpiHref`, `buildProducaoKpiHref`), `HomeCollapsiblePanel`; `PecuarioResumoHomePanel` (só lista 30d); [gestacoes.md](./gestacoes.md) BR-GESTACOES-005; alerta `PARTO_PREVISTO` — [alertas.md](./alertas.md) BR-ALERTA-008.
 - **Estado**: **implementado**.
 
 ### BR-CICLO-011 — Saída do rebanho (baixa)
@@ -233,4 +233,4 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ---
 
-**Última atualização**: 2026-06-01 (BR-ANIMAIS-008 — ficha com tabs e sidebar)
+**Última atualização**: 2026-06-08 (BR-CICLO-009 — KPIs visíveis para FUNCIONARIO)
