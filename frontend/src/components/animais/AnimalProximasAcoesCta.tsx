@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { showAssistenteForPerfil } from "@/config/appAccess";
 import type { ProximaAcao } from "@/services/animais";
+import {
+  TOUR_STEP_FICHA_PROXIMAS_ACOES,
+  TOUR_STEP_FICHA_PROXIMAS_ACOES_MOBILE,
+} from "@/components/ui/tour";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -91,7 +95,7 @@ export function AnimalProximasAcoesCta({ acoes, foraDoRebanho }: Props) {
 
   return (
     <>
-      <Card className="hidden md:block">
+      <Card id={TOUR_STEP_FICHA_PROXIMAS_ACOES} className="hidden md:block">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Próximas ações</CardTitle>
         </CardHeader>
@@ -101,6 +105,7 @@ export function AnimalProximasAcoesCta({ acoes, foraDoRebanho }: Props) {
       </Card>
 
       <div
+        id={TOUR_STEP_FICHA_PROXIMAS_ACOES_MOBILE}
         className={cn(
           "fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden",
           assistenteVisivel && "pr-16"

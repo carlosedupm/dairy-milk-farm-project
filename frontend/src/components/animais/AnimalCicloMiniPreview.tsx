@@ -6,6 +6,7 @@ import type { AnimalContexto } from "@/services/animais";
 import { AnimalFichaCiclo } from "@/components/animais/AnimalFichaCiclo";
 import { AnimalCicloTimelineSection } from "@/components/animais/AnimalCicloTimelineSection";
 import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
+import { TOUR_STEP_FICHA_CICLO_MINI } from "@/components/ui/tour";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -20,7 +21,7 @@ export function AnimalCicloMiniPreview({ animalId, contexto }: Props) {
   return (
     <div className="space-y-4 min-w-0">
       <AnimalFichaCiclo contexto={contexto} showProximasAcoes />
-      <Card>
+      <Card id={TOUR_STEP_FICHA_CICLO_MINI}>
         <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-base">Ciclo reprodutivo</CardTitle>
           <Button variant="ghost" size="sm" className="shrink-0 min-h-11" asChild>

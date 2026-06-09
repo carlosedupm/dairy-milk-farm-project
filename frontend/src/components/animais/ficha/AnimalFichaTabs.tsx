@@ -2,7 +2,6 @@
 
 import type { Animal } from "@/services/animais";
 import {
-  ANIMAL_FICHA_TABS,
   ANIMAL_FICHA_TAB_LABELS,
   type AnimalFichaTab,
 } from "@/components/animais/ficha/animalFichaTabs";
@@ -12,6 +11,10 @@ import { AnimalFichaTabProducao } from "@/components/animais/ficha/AnimalFichaTa
 import { AnimalFichaTabSaude } from "@/components/animais/ficha/AnimalFichaTabSaude";
 import { AnimalFichaTabVisaoGeral } from "@/components/animais/ficha/AnimalFichaTabVisaoGeral";
 import { animalProximasAcoesPageSpacerClass } from "@/components/animais/AnimalProximasAcoesCta";
+import {
+  TOUR_STEP_FICHA_OUTRAS_TABS,
+  TOUR_STEP_FICHA_TAB_CICLO,
+} from "@/components/ui/tour";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { UseAnimalFichaPageResult } from "@/hooks/useAnimalFichaPage";
@@ -87,11 +90,30 @@ export function AnimalFichaTabs({
       )}
     >
       <TabsList aria-label="Secções da ficha do animal" className="flex-wrap h-auto gap-1">
-        {ANIMAL_FICHA_TABS.map((tab) => (
-          <TabsTrigger key={tab} value={tab} className="min-h-11">
-            {ANIMAL_FICHA_TAB_LABELS[tab]}
+        <TabsTrigger value="geral" className="min-h-11">
+          {ANIMAL_FICHA_TAB_LABELS.geral}
+        </TabsTrigger>
+        <TabsTrigger
+          id={TOUR_STEP_FICHA_TAB_CICLO}
+          value="ciclo"
+          className="min-h-11"
+        >
+          {ANIMAL_FICHA_TAB_LABELS.ciclo}
+        </TabsTrigger>
+        <div
+          id={TOUR_STEP_FICHA_OUTRAS_TABS}
+          className="inline-flex flex-wrap gap-1"
+        >
+          <TabsTrigger value="saude" className="min-h-11">
+            {ANIMAL_FICHA_TAB_LABELS.saude}
           </TabsTrigger>
-        ))}
+          <TabsTrigger value="producao" className="min-h-11">
+            {ANIMAL_FICHA_TAB_LABELS.producao}
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="min-h-11">
+            {ANIMAL_FICHA_TAB_LABELS.historico}
+          </TabsTrigger>
+        </div>
       </TabsList>
 
       <TabsContent value="geral" role="tabpanel">

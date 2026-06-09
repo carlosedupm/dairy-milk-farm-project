@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useState,
 } from "react";
 import { X } from "lucide-react";
@@ -15,7 +16,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  isAnimalFichaTourDone,
   isOnboardingTourDone,
+  markAnimalFichaTourCompleted,
+  markAnimalFichaTourSkipped,
   markOnboardingTourDone,
 } from "@/lib/onboardingStorage";
 import { cn } from "@/lib/utils";
@@ -24,10 +28,23 @@ export const TOUR_STEP_BUSCA = "tour-step-busca";
 export const TOUR_STEP_KPIS = "tour-step-kpis";
 export const TOUR_STEP_ACESSO_RAPIDO = "tour-step-acesso-rapido";
 
+export const TOUR_STEP_FICHA_SIDEBAR = "tour-step-ficha-sidebar";
+export const TOUR_STEP_FICHA_CICLO_MINI = "tour-step-ficha-ciclo-mini";
+export const TOUR_STEP_FICHA_TAB_CICLO = "tour-step-ficha-tab-ciclo";
+export const TOUR_STEP_FICHA_PROXIMAS_ACOES = "tour-step-ficha-proximas-acoes";
+export const TOUR_STEP_FICHA_PROXIMAS_ACOES_MOBILE =
+  "tour-step-ficha-proximas-acoes-mobile";
+export const TOUR_STEP_FICHA_OUTRAS_TABS = "tour-step-ficha-outras-tabs";
+
 export type TourStepDef = {
-  targetId: string;
+  targetId?: string;
+  targetIds?: string[];
   title: string;
   description: string;
+};
+
+export type ResolvedTourStep = TourStepDef & {
+  resolvedTargetId: string;
 };
 
 type AnchorRect = {
@@ -50,24 +67,52 @@ function getAnchorRect(targetId: string): AnchorRect | null {
   };
 }
 
-function resolveSteps(steps: TourStepDef[]): TourStepDef[] {
-  return steps.filter((s) => getAnchorRect(s.targetId) != null);
+function getStepTargetIds(step: TourStepDef): string[] {
+  if (step.targetIds?.length) return step.targetIds;
+  if (step.targetId) return [step.targetId];
+  return [];
+}
+
+function resolveStep(step: TourStepDef): ResolvedTourStep | null {
+  for (const targetId of getStepTargetIds(step)) {
+    if (getAnchorRect(targetId) != null) {
+      return { ...step, resolvedTargetId: targetId };
+    }
+  }
+  return null;
+}
+
+function resolveSteps(steps: TourStepDef[]): ResolvedTourStep[] {
+  const resolved: ResolvedTourStep[] = [];
+  for (const step of steps) {
+    const match = resolveStep(step);
+    if (match) resolved.push(match);
+  }
+  return resolved;
 }
 
 export type UseTourOptions = {
   steps: TourStepDef[];
   autoStartDelayMs?: number;
   enabled?: boolean;
+  isDone?: () => boolean;
+  markDone?: () => void;
+  markSkipped?: () => void;
 };
 
 export function useTour({
   steps,
   autoStartDelayMs = 1000,
   enabled = true,
+  isDone = isOnboardingTourDone,
+  markDone = markOnboardingTourDone,
+  markSkipped,
 }: UseTourOptions) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isActive, setIsActive] = useState(false);
-  const [resolvedSteps, setResolvedSteps] = useState<TourStepDef[]>([]);
+  const [resolvedSteps, setResolvedSteps] = useState<ResolvedTourStep[]>([]);
+
+  const skipTour = markSkipped ?? markDone;
 
   const activate = useCallback(() => {
     const available = resolveSteps(steps);
@@ -80,18 +125,18 @@ export function useTour({
   const next = useCallback(() => {
     setCurrentStep((i) => {
       if (i >= resolvedSteps.length - 1) {
-        markOnboardingTourDone();
+        markDone();
         setIsActive(false);
         return i;
       }
       return i + 1;
     });
-  }, [resolvedSteps.length]);
+  }, [resolvedSteps.length, markDone]);
 
   const skip = useCallback(() => {
-    markOnboardingTourDone();
+    skipTour();
     setIsActive(false);
-  }, []);
+  }, [skipTour]);
 
   const reset = useCallback(() => {
     setCurrentStep(0);
@@ -100,23 +145,23 @@ export function useTour({
   }, []);
 
   const finish = useCallback(() => {
-    markOnboardingTourDone();
+    markDone();
     setIsActive(false);
-  }, []);
+  }, [markDone]);
 
   useEffect(() => {
-    if (!enabled || isOnboardingTourDone()) return;
+    if (!enabled || isDone()) return;
     const t = window.setTimeout(() => {
       const available = resolveSteps(steps);
       if (available.length === 0) {
-        markOnboardingTourDone();
+        markDone();
         return;
       }
       setResolvedSteps(available);
       setIsActive(true);
     }, autoStartDelayMs);
     return () => window.clearTimeout(t);
-  }, [enabled, steps, autoStartDelayMs]);
+  }, [enabled, steps, autoStartDelayMs, isDone, markDone]);
 
   const step = resolvedSteps[currentStep];
   const isLast = currentStep >= resolvedSteps.length - 1;
@@ -152,7 +197,7 @@ export function TourOverlay({ tour }: TourOverlayProps) {
       setAnchor(null);
       return;
     }
-    setAnchor(getAnchorRect(step.targetId));
+    setAnchor(getAnchorRect(step.resolvedTargetId));
   }, [step]);
 
   useEffect(() => {
@@ -273,5 +318,78 @@ export function DashboardTourHost({
   enabled = true,
 }: DashboardTourHostProps) {
   const tour = useTour({ steps, enabled });
+  return <TourOverlay tour={tour} />;
+}
+
+const ANIMAL_FICHA_TOUR_STEPS: TourStepDef[] = [
+  {
+    targetId: TOUR_STEP_FICHA_SIDEBAR,
+    title: "Resumo do animal",
+    description:
+      "Aqui vês identificação, estado de saúde, reprodução e um resumo rápido do animal.",
+  },
+  {
+    targetId: TOUR_STEP_FICHA_CICLO_MINI,
+    title: "Visão Geral e ciclo",
+    description:
+      "Na aba Visão Geral, a mini-timeline mostra os últimos eventos e os próximos marcos do ciclo reprodutivo.",
+  },
+  {
+    targetId: TOUR_STEP_FICHA_TAB_CICLO,
+    title: "Tab Ciclo",
+    description:
+      "Abre a aba Ciclo para o hub completo: estado atual, histórico paginado e timeline visual.",
+  },
+  {
+    targetIds: [
+      TOUR_STEP_FICHA_PROXIMAS_ACOES,
+      TOUR_STEP_FICHA_PROXIMAS_ACOES_MOBILE,
+    ],
+    title: "Próximas ações",
+    description:
+      "Atalhos para a próxima tarefa recomendada — cio, cobertura, toque ou outro evento do ciclo.",
+  },
+  {
+    targetId: TOUR_STEP_FICHA_OUTRAS_TABS,
+    title: "Outras secções",
+    description:
+      "Saúde, Produção e Histórico reúnem casos clínicos, ordenhas e o registo completo do animal.",
+  },
+];
+
+export type AnimalFichaTourHostProps = {
+  userId: number;
+  enabled?: boolean;
+};
+
+/** Tour de onboarding na ficha do animal (primeira visita por utilizador). */
+export function AnimalFichaTourHost({
+  userId,
+  enabled = true,
+}: AnimalFichaTourHostProps) {
+  const isDone = useCallback(
+    () => isAnimalFichaTourDone(userId),
+    [userId],
+  );
+  const markDone = useCallback(
+    () => markAnimalFichaTourCompleted(userId),
+    [userId],
+  );
+  const markSkipped = useCallback(
+    () => markAnimalFichaTourSkipped(userId),
+    [userId],
+  );
+
+  const steps = useMemo(() => ANIMAL_FICHA_TOUR_STEPS, []);
+
+  const tour = useTour({
+    steps,
+    enabled,
+    isDone,
+    markDone,
+    markSkipped,
+    autoStartDelayMs: 1200,
+  });
+
   return <TourOverlay tour={tour} />;
 }

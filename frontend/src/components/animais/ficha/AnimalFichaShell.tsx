@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageBreadcrumb } from "@/components/layout/PageBreadcrumb";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -10,6 +11,13 @@ import {
   animalFichaTabHref,
   type AnimalFichaTab,
 } from "@/components/animais/ficha/animalFichaTabs";
+import { AnimalFichaTourHost } from "@/components/ui/tour";
+import { getAreasMode } from "@/config/appAccess";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  ANIMAL_FICHA_TOUR_RESET_EVENT,
+  isAnimalFichaTourDone,
+} from "@/lib/onboardingStorage";
 import type { UseAnimalFichaPageResult } from "@/hooks/useAnimalFichaPage";
 
 function buildBreadcrumbItems(
@@ -39,10 +47,45 @@ type Props = UseAnimalFichaPageResult & {
 };
 
 export function AnimalFichaShell(props: Props) {
-  const { animal, activeTab } = props;
+  const { user } = useAuth();
+  const { animal, activeTab, contexto, contextoLoading, setTab } = props;
+  const [tourSession, setTourSession] = useState(0);
+
+  const showAnimalFichaTour =
+    !!user?.id &&
+    getAreasMode(user.perfil) !== "pending" &&
+    !isAnimalFichaTourDone(user.id) &&
+    !!contexto &&
+    !contextoLoading;
+
+  useEffect(() => {
+    const onTourReset = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId: number }>).detail;
+      if (user?.id != null && detail?.userId === user.id) {
+        setTourSession((session) => session + 1);
+      }
+    };
+    window.addEventListener(ANIMAL_FICHA_TOUR_RESET_EVENT, onTourReset);
+    return () => {
+      window.removeEventListener(ANIMAL_FICHA_TOUR_RESET_EVENT, onTourReset);
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (showAnimalFichaTour && activeTab !== "geral") {
+      setTab("geral");
+    }
+  }, [showAnimalFichaTour, activeTab, setTab]);
 
   return (
     <PageContainer variant="wide">
+      {showAnimalFichaTour && user?.id ? (
+        <AnimalFichaTourHost
+          key={tourSession}
+          userId={user.id}
+          enabled={showAnimalFichaTour}
+        />
+      ) : null}
       <PageBreadcrumb
         items={buildBreadcrumbItems(
           props.id,

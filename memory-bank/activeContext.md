@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Tour guiado na ficha do animal (BR-CICLO-008 / BR-ACESSO-018)**: 5 passos na primeira visita (`AnimalFichaTourHost`) — sidebar, mini-timeline (Visão Geral), tab Ciclo, próximas ações (desktop/mobile), outras tabs; persistência `ceialmilk:animal-ficha-tour:v1:{userId}`; perfis operacionais (não `pending`); «Ver tour da ficha novamente» no popover da conta; `useTour` generalizado com `isDone`/`markDone`/`targetIds`.
 1. ✅ **Produção — indicador de lactação ativa no formulário (BR-PRODUCAO-003)**: `ProducaoLactacaoIndicator` em `/producao/novo` — «Lactação ativa: Sim/Não», n.º e data de início; aviso quando sem lactação ou data inválida; link «Registar lactação» condicionado ao perfil; `producaoLactacaoUtils.isLactacaoAtivaNaData`; submit não bloqueado (validação no servidor).
 1. ✅ **Validação cronológica do ciclo no frontend (TMP-003–005)**: mensagens em pt-BR com data do evento de referência (`gestao-date-limits.ts`); hooks `use*Chronology`; `validateCobertura/Toque/Parto/SecagemForm` + `validateToqueLoteForm`; badge `TMP-*` na validação client; regressão manual em `docs/tests/validacao-temporal-ciclo.md` (sec. 4.4–4.7).
 1. ✅ **Ficha — badge e feedback visual para animal baixado (BR-BAIXA-011)**: sidebar com badges «Fora do rebanho» + «Baixado» (`AnimalBaixadoBadge`); Editar/Excluir desabilitados com tooltip (não ocultos para gestores); tabs Saúde/Produção com botões bloqueados visíveis; `AnimalEditarBloqueadoGuard`; `PUT`/`DELETE` animal → 400 `ANIMAL_FORA_REBANHO`; `ButtonWithTooltip`, `animalRebanhoUtils.ts`.
@@ -264,5 +265,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-08 (BR-PRODUCAO-003 — indicador lactação no ProducaoForm)
+**Última atualização**: 2026-06-08 (tour guiado na ficha do animal — BR-CICLO-008)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP

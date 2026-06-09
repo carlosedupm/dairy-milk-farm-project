@@ -15,6 +15,7 @@ import {
 import { AnimalBaixadoBadge } from "@/components/animais/AnimalBaixadoBadge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TOUR_STEP_FICHA_SIDEBAR } from "@/components/ui/tour";
 import { cn } from "@/lib/utils";
 import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 
@@ -57,7 +58,7 @@ export function AnimalFichaSidebar({
   const statusSaude = animal.status_saude as StatusSaude | undefined;
 
   return (
-    <Card className={cn("min-w-0", className)}>
+    <Card id={TOUR_STEP_FICHA_SIDEBAR} className={cn("min-w-0", className)}>
       <CardHeader className="pb-2 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <Beef className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />

@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getAreasMode } from "@/config/appAccess";
-import { resetDashboardTour } from "@/lib/onboardingStorage";
+import {
+  resetAnimalFichaTour,
+  resetDashboardTour,
+} from "@/lib/onboardingStorage";
 import {
   Popover,
   PopoverContent,
@@ -98,18 +101,37 @@ export function HeaderAccountPopover({
             </>
           ) : null}
           {showTourReset ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-10 w-full justify-center text-muted-foreground"
-              onClick={() => {
-                resetDashboardTour(user.id);
-                router.push("/");
-              }}
-            >
-              Ver tour do início novamente
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-10 w-full justify-center text-muted-foreground"
+                onClick={() => {
+                  resetDashboardTour(user.id);
+                  router.push("/");
+                }}
+              >
+                Ver tour do início novamente
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-10 w-full justify-center text-muted-foreground"
+                onClick={() => {
+                  resetAnimalFichaTour(user.id);
+                  const onAnimalFicha = /^\/animais\/\d+/.test(
+                    window.location.pathname,
+                  );
+                  if (!onAnimalFicha) {
+                    router.push("/animais");
+                  }
+                }}
+              >
+                Ver tour da ficha novamente
+              </Button>
+            </>
           ) : null}
           <Button
             variant="outline"
