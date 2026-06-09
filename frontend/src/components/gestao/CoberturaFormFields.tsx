@@ -16,7 +16,7 @@ import { FormFieldError } from "@/components/ui/form-field-error";
 import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
 import { DateTimePickerUnificado } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
-import { minDateCoberturaFromCios } from "@/lib/gestao-date-limits";
+import { coberturaChronologyFromCios, type GestaoChronologyContext } from "@/lib/gestao-date-limits";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -43,14 +43,19 @@ type Props = {
   preserveSelected?: boolean;
 };
 
-export function useCoberturaMinDate(animalId: string): string | undefined {
+export function useCoberturaChronology(animalId: string): GestaoChronologyContext {
   const animalIdNum = Number(animalId);
   const { data: cios = [] } = useQuery({
     queryKey: ["cios", "by-animal", animalIdNum],
     queryFn: () => listCiosByAnimal(animalIdNum),
     enabled: animalIdNum > 0,
   });
-  return minDateCoberturaFromCios(cios);
+  return useMemo(() => coberturaChronologyFromCios(cios), [cios]);
+}
+
+/** @deprecated Use useCoberturaChronology — retorna apenas minDate. */
+export function useCoberturaMinDate(animalId: string): string | undefined {
+  return useCoberturaChronology(animalId).minDate;
 }
 
 export function CoberturaFormFields({
@@ -63,7 +68,7 @@ export function CoberturaFormFields({
   const animalIdError = useFormFieldError("animalId");
   const dataError = useFormFieldError("data");
   const touroError = useFormFieldError("touro");
-  const minDate = useCoberturaMinDate(formState.animalId);
+  const { minDate } = useCoberturaChronology(formState.animalId);
 
   const { data: animaisFazenda = [], isLoading: loadingAnimais } =
     useAnimaisOperacionalList(fazendaId);

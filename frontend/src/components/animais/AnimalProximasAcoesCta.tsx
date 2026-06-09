@@ -61,7 +61,9 @@ function ProximasAcoesButtons({
   return (
     <div
       className={cn(
-        isSticky ? "flex flex-col gap-2 px-4 pt-3" : "flex flex-wrap gap-2"
+        isSticky
+          ? "flex flex-col gap-2 px-4 pt-3"
+          : "flex flex-col gap-2 sm:flex-row sm:flex-wrap"
       )}
     >
       {acoes.map((a) => (
@@ -109,7 +111,7 @@ export function AnimalProximasAcoesCta({ acoes, foraDoRebanho }: Props) {
         role="region"
         aria-label="Próximas ações"
       >
-        <p className="px-4 pt-3 text-sm font-medium">Próxima ação</p>
+        <p className="px-4 pt-3 text-sm font-medium">Próximas ações</p>
         <ProximasAcoesButtons
           acoes={visible}
           perfil={perfil}
@@ -126,5 +128,7 @@ export function animalProximasAcoesPageSpacerClass(
   foraDoRebanho?: boolean
 ): string | undefined {
   if (foraDoRebanho || !acoes?.length) return undefined;
+  const count = takeProximasAcoes(acoes).length;
+  if (count >= 3) return "pb-56 md:pb-0";
   return "pb-32 md:pb-0";
 }

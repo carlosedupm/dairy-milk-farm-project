@@ -48,7 +48,13 @@ export type UseAnimalFichaPageResult = {
   setHistoricoTipo: (tipo: TimelineFilterTipo) => void;
   foraDoRebanho: boolean;
   canManageAnimal: boolean;
+  edicaoCadastroBloqueada: boolean;
+  canEditarCadastroAnimal: boolean;
+  canExcluirCadastroAnimal: boolean;
+  showEditarCadastroAnimal: boolean;
   canRegistrarProducao: boolean;
+  canRegistrarProducaoPerfil: boolean;
+  showRegistrarProducaoBloqueado: boolean;
   showRegistrarBaixa: boolean;
   showReverterBaixa: boolean;
   revertMutation: ReturnType<
@@ -137,10 +143,17 @@ export function useAnimalFichaPage(): UseAnimalFichaPageResult {
     contexto?.fora_do_rebanho ?? (animal ? isAnimalForaDoRebanho(animal) : false);
 
   const canManageAnimal = user?.perfil !== "FUNCIONARIO";
-  const canRegistrarProducao =
+  const edicaoCadastroBloqueada = foraDoRebanho;
+  const canEditarCadastroAnimal = canManageAnimal && !foraDoRebanho;
+  const canExcluirCadastroAnimal = canManageAnimal && !foraDoRebanho;
+  const showEditarCadastroAnimal = canManageAnimal;
+  const canRegistrarProducaoPerfil =
     !!user?.perfil &&
-    isPathAllowedForPerfil(user.perfil, "/producao/novo") &&
-    !foraDoRebanho;
+    isPathAllowedForPerfil(user.perfil, "/producao/novo");
+  const canRegistrarProducao =
+    canRegistrarProducaoPerfil && !foraDoRebanho;
+  const showRegistrarProducaoBloqueado =
+    canRegistrarProducaoPerfil && foraDoRebanho;
   const showRegistrarBaixa =
     canRegistrarBaixa(user?.perfil) && !foraDoRebanho;
   const showReverterBaixa =
@@ -196,7 +209,13 @@ export function useAnimalFichaPage(): UseAnimalFichaPageResult {
     setHistoricoTipo,
     foraDoRebanho,
     canManageAnimal,
+    edicaoCadastroBloqueada,
+    canEditarCadastroAnimal,
+    canExcluirCadastroAnimal,
+    showEditarCadastroAnimal,
     canRegistrarProducao,
+    canRegistrarProducaoPerfil,
+    showRegistrarProducaoBloqueado,
     showRegistrarBaixa,
     showReverterBaixa,
     revertMutation,

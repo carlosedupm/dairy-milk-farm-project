@@ -13,8 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DateTimePickerUnificado } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
 import {
-  minDatePartoFromGestacao,
-  resolveGestacaoForPartoMinDate,
+  partoChronologyFromGestacoes,
+  type GestaoChronologyContext,
 } from "@/lib/gestao-date-limits";
 import { GestaoDateMinHint } from "@/components/gestao/GestaoDateMinHint";
 import {
@@ -64,19 +64,24 @@ type Props = {
   preserveSelected?: boolean;
 };
 
+export function usePartoChronology(
+  gestacoes: Gestacao[],
+  gestacaoId: string,
+  animalId: string
+): GestaoChronologyContext {
+  return useMemo(
+    () => partoChronologyFromGestacoes(gestacoes, gestacaoId, animalId),
+    [gestacoes, gestacaoId, animalId]
+  );
+}
+
+/** @deprecated Use usePartoChronology — retorna apenas minDate. */
 export function usePartoMinDate(
   gestacoes: Gestacao[],
   gestacaoId: string,
   animalId: string
 ): string | undefined {
-  return useMemo(() => {
-    const gestacao = resolveGestacaoForPartoMinDate(
-      gestacoes,
-      gestacaoId,
-      animalId
-    );
-    return minDatePartoFromGestacao(gestacao);
-  }, [gestacoes, gestacaoId, animalId]);
+  return usePartoChronology(gestacoes, gestacaoId, animalId).minDate;
 }
 
 export function PartoFormFields({
@@ -125,7 +130,7 @@ export function PartoFormFields({
   const dataError = useFormFieldError("data");
   const numeroCriasError = useFormFieldError("numeroCrias");
   const allFieldErrors = useFormFieldErrors();
-  const minDate = usePartoMinDate(
+  const { minDate } = usePartoChronology(
     gestacoesSafe,
     formState.gestacaoId,
     formState.animalId

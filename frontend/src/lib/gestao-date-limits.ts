@@ -1,7 +1,22 @@
 import { parseISODateLocal } from "@/lib/date-limits";
+import { formatDatePtBr } from "@/lib/format";
 import type { Cobertura } from "@/services/coberturas";
 import type { Cio } from "@/services/cios";
 import type { Gestacao } from "@/services/gestacoes";
+
+export type GestaoChronologyContext = {
+  minDate?: string;
+  referenceDateIso?: string;
+  /** Só toque: data civil da cobertura vinculada (distinta de minDate = +15d). */
+  coberturaDateIso?: string;
+};
+
+export const GESTAO_CONFORMIDADE = {
+  coberturaAfterCio: "TMP-003",
+  toqueAfterCobertura: "TMP-003",
+  partoAfterGestacao: "TMP-004",
+  secagemAfterLactacao: "TMP-005",
+} as const;
 
 /** Espelha backend/internal/service/animal_service.go DiasMinimosToque */
 export const DIAS_MINIMOS_TOQUE = 15;
@@ -44,9 +59,62 @@ export function minDateCoberturaFromCios(cios: Cio[]): string | undefined {
   return iso || undefined;
 }
 
-export function minDateToqueFromCobertura(cobertura: Cobertura | undefined): string | undefined {
+export function coberturaDateIsoFromCobertura(
+  cobertura: Cobertura | undefined
+): string | undefined {
   if (!cobertura?.data) return undefined;
-  return addDaysToISODate(isoDateFromDatetime(cobertura.data), DIAS_MINIMOS_TOQUE);
+  const iso = isoDateFromDatetime(cobertura.data);
+  return iso || undefined;
+}
+
+export function minDateToqueFromCobertura(cobertura: Cobertura | undefined): string | undefined {
+  const coberturaIso = coberturaDateIsoFromCobertura(cobertura);
+  if (!coberturaIso) return undefined;
+  return addDaysToISODate(coberturaIso, DIAS_MINIMOS_TOQUE);
+}
+
+export function toqueChronologyFromCoberturas(
+  coberturas: Cobertura[],
+  coberturaId: string,
+  coberturaSelectValue: string
+): GestaoChronologyContext {
+  const cobertura = resolveCoberturaForToque(
+    coberturas,
+    coberturaId,
+    coberturaSelectValue
+  );
+  const coberturaDateIso = coberturaDateIsoFromCobertura(cobertura);
+  const minDate = minDateToqueFromCobertura(cobertura);
+  return { minDate, coberturaDateIso, referenceDateIso: coberturaDateIso };
+}
+
+/** Cobertura mais recente do animal (ex.: toque em lote). */
+export function toqueChronologyForAnimalCoberturas(
+  coberturas: Cobertura[],
+  animalId: number
+): GestaoChronologyContext {
+  const sorted = coberturas
+    .filter((c) => c.animal_id === animalId)
+    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+  const cobertura = sorted[0];
+  const coberturaDateIso = coberturaDateIsoFromCobertura(cobertura);
+  const minDate = minDateToqueFromCobertura(cobertura);
+  return { minDate, coberturaDateIso, referenceDateIso: coberturaDateIso };
+}
+
+export function coberturaChronologyFromCios(cios: Cio[]): GestaoChronologyContext {
+  const referenceDateIso = minDateCoberturaFromCios(cios);
+  return { minDate: referenceDateIso, referenceDateIso };
+}
+
+export function partoChronologyFromGestacoes(
+  gestacoes: Gestacao[],
+  gestacaoId: string,
+  animalId: string
+): GestaoChronologyContext {
+  const gestacao = resolveGestacaoForPartoMinDate(gestacoes, gestacaoId, animalId);
+  const referenceDateIso = minDatePartoFromGestacao(gestacao);
+  return { minDate: referenceDateIso, referenceDateIso };
 }
 
 export function minDatePartoFromGestacao(gestacao: Gestacao | undefined): string | undefined {
@@ -102,17 +170,56 @@ export function resolveGestacaoForPartoMinDate(
   );
 }
 
+function formatReferenceDate(referenceDateIso: string): string {
+  return formatDatePtBr(referenceDateIso);
+}
+
+export function gestaoMessageCoberturaAfterCio(referenceDateIso: string): string {
+  return `A data da cobertura não pode ser anterior ao cio detectado em ${formatReferenceDate(referenceDateIso)}.`;
+}
+
+export function gestaoMessageToqueBeforeCobertura(referenceDateIso: string): string {
+  return `A data do toque não pode ser anterior à cobertura de ${formatReferenceDate(referenceDateIso)}.`;
+}
+
+export function gestaoMessageToqueMinDaysAfterCobertura(
+  referenceDateIso: string
+): string {
+  return `O toque deve ser pelo menos ${DIAS_MINIMOS_TOQUE} dias após a cobertura de ${formatReferenceDate(referenceDateIso)}.`;
+}
+
+export function gestaoMessagePartoAfterGestacao(referenceDateIso: string): string {
+  return `A data do parto não pode ser anterior à confirmação da gestação em ${formatReferenceDate(referenceDateIso)}.`;
+}
+
+export function gestaoMessageSecagemAfterLactacao(referenceDateIso: string): string {
+  return `A data da secagem não pode ser anterior ao início da lactação em ${formatReferenceDate(referenceDateIso)}.`;
+}
+
 export const GESTAO_DATE_MESSAGES = {
-  coberturaAfterCio: "A cobertura deve ser posterior ao cio registrado.",
-  toqueAfterCobertura:
-    "O toque deve ser pelo menos 15 dias após a cobertura.",
-  partoAfterGestacao:
-    "O parto deve ser posterior à confirmação da gestação.",
-  secagemAfterLactacao:
-    "A secagem deve ser posterior ao início da lactação.",
   dateFuture: "Não é permitido registrar data no futuro.",
   datetimeFuture: "Não é permitido registrar data e hora no futuro.",
 } as const;
+
+/** Resolve mensagem de cronologia do toque (ordem: antes da cobertura, depois janela de 15 dias). */
+export function resolveToqueChronologyError(
+  data: string,
+  ctx: Pick<GestaoChronologyContext, "minDate" | "coberturaDateIso">
+): string | undefined {
+  if (!data.trim()) return undefined;
+  const coberturaDateIso = ctx.coberturaDateIso;
+  if (
+    coberturaDateIso &&
+    isIsoDateBeforeMin(data, coberturaDateIso)
+  ) {
+    return gestaoMessageToqueBeforeCobertura(coberturaDateIso);
+  }
+  if (ctx.minDate && isIsoDateBeforeMin(data, ctx.minDate)) {
+    const ref = coberturaDateIso ?? ctx.minDate;
+    return gestaoMessageToqueMinDaysAfterCobertura(ref);
+  }
+  return undefined;
+}
 
 export function isIsoDateBeforeMin(value: string, minDate?: string): boolean {
   if (!minDate || !value.trim()) return false;

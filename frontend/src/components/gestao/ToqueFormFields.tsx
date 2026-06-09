@@ -15,8 +15,8 @@ import { Button } from "@/components/ui/button";
 import { DateTimePickerUnificado } from "@/components/ui/datetime-picker-pt-br";
 import { todayISODate } from "@/lib/date-limits";
 import {
-  minDateToqueFromCobertura,
-  resolveCoberturaForToque,
+  toqueChronologyFromCoberturas,
+  type GestaoChronologyContext,
 } from "@/lib/gestao-date-limits";
 import {
   Select,
@@ -59,19 +59,33 @@ type Props = {
   preserveSelected?: boolean;
 };
 
+export function useToqueChronology(
+  coberturasDoAnimal: Cobertura[],
+  coberturaId: string,
+  coberturaSelectValue: string
+): GestaoChronologyContext {
+  return useMemo(
+    () =>
+      toqueChronologyFromCoberturas(
+        coberturasDoAnimal,
+        coberturaId,
+        coberturaSelectValue
+      ),
+    [coberturasDoAnimal, coberturaId, coberturaSelectValue]
+  );
+}
+
+/** @deprecated Use useToqueChronology — retorna apenas minDate. */
 export function useToqueMinDate(
   coberturasDoAnimal: Cobertura[],
   coberturaId: string,
   coberturaSelectValue: string
 ): string | undefined {
-  return useMemo(() => {
-    const cobertura = resolveCoberturaForToque(
-      coberturasDoAnimal,
-      coberturaId,
-      coberturaSelectValue
-    );
-    return minDateToqueFromCobertura(cobertura);
-  }, [coberturasDoAnimal, coberturaId, coberturaSelectValue]);
+  return useToqueChronology(
+    coberturasDoAnimal,
+    coberturaId,
+    coberturaSelectValue
+  ).minDate;
 }
 
 function obsSugestoesFor(classificacao: ClassificacaoOperacional): readonly string[] {
@@ -102,7 +116,7 @@ export function ToqueFormFields({
   const dataError = useFormFieldError("data");
   const classificacaoError = useFormFieldError("classificacao");
   const coberturaIdError = useFormFieldError("coberturaId");
-  const minDate = useToqueMinDate(
+  const { minDate } = useToqueChronology(
     coberturasDoAnimal,
     formState.coberturaId,
     coberturaSelectValue

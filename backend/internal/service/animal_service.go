@@ -201,12 +201,15 @@ func (s *AnimalService) Update(ctx context.Context, animal *models.Animal) error
 		return errors.New("fazenda_id é obrigatório")
 	}
 
-	// Verificar se o animal existe
-	_, err := s.repo.GetByID(ctx, animal.ID)
+	// Verificar se o animal existe e está no rebanho (BR-BAIXA-011)
+	existing, err := s.repo.GetByID(ctx, animal.ID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrAnimalNotFound
 		}
+		return err
+	}
+	if err := EnsureAnimalNoRebanho(existing); err != nil {
 		return err
 	}
 
@@ -249,12 +252,15 @@ func (s *AnimalService) Update(ctx context.Context, animal *models.Animal) error
 }
 
 func (s *AnimalService) Delete(ctx context.Context, id int64) error {
-	// Verificar se existe
-	_, err := s.repo.GetByID(ctx, id)
+	// Verificar se existe e está no rebanho (BR-BAIXA-011)
+	existing, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrAnimalNotFound
 		}
+		return err
+	}
+	if err := EnsureAnimalNoRebanho(existing); err != nil {
 		return err
 	}
 

@@ -7,6 +7,7 @@ import type { AnimalUpdate } from '@/services/animais'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { BackLink } from '@/components/layout/BackLink'
+import { AnimalEditarBloqueadoGuard } from '@/components/animais/AnimalEditarBloqueadoGuard'
 import { AnimalForm } from '@/components/animais/AnimalForm'
 import { toast } from '@/hooks/use-toast'
 
@@ -58,18 +59,23 @@ function EditarAnimalContent() {
   }
 
   return (
-    <PageContainer variant="narrow">
-      <div className="mb-4">
-        <BackLink href="/animais" />
-      </div>
-      <AnimalForm
-        initial={initial}
-        onSubmit={async (p) => {
-          await mutation.mutateAsync(p)
-        }}
-        isPending={mutation.isPending}
-      />
-    </PageContainer>
+    <AnimalEditarBloqueadoGuard
+      animal={initial}
+      backHref={`/animais/${id}`}
+    >
+      <PageContainer variant="narrow">
+        <div className="mb-4">
+          <BackLink href={`/animais/${id}`} />
+        </div>
+        <AnimalForm
+          initial={initial}
+          onSubmit={async (p) => {
+            await mutation.mutateAsync(p)
+          }}
+          isPending={mutation.isPending}
+        />
+      </PageContainer>
+    </AnimalEditarBloqueadoGuard>
   )
 }
 

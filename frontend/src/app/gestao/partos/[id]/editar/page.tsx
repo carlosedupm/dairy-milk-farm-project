@@ -13,7 +13,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   PartoFormFields,
-  usePartoMinDate,
+  usePartoChronology,
   type PartoFormState,
 } from "@/components/gestao/PartoFormFields";
 import {
@@ -70,7 +70,7 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
   });
 
   const racaMae = (animalMatriz?.raca ?? "").trim();
-  const minDate = usePartoMinDate(
+  const chronology = usePartoChronology(
     gestacoes,
     formState.gestacaoId,
     formState.animalId
@@ -106,12 +106,13 @@ function PartoEditForm({ parto, fazendaId }: PartoEditFormProps) {
     setConformidadeCode(undefined);
     const validation = validatePartoForm(formState, {
       skipCrias: true,
-      minDate,
+      ...chronology,
       maxDate: todayISODate(),
     });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setConformidadeCode(validation.conformidadeCode);
       setIsValidationError(true);
       return;
     }

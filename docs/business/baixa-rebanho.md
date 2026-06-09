@@ -94,6 +94,15 @@ Registo formal de **saída do animal** da exploração (morte, venda, doação, 
 - **Implementação**: `useGestaoAnimaisByIdMap` (lista `todos` + GET por ID) e `useGestaoAnimaisCacheRefresh` em `useAnimaisMap.ts`; `isAnimalForaDoRebanho` / `dataSaidaCivilISO` em `services/animais.ts` (data civil local, inclui baixa no dia corrente); `AnimalGestaoLabel.tsx`; tabelas em `components/gestao/*Table.tsx` e `ProducaoTable.tsx`; invalidação após baixa/reversão em `RegistrarBaixaForm.tsx` e ficha do animal.
 - **Estado**: implementado.
 
+### BR-BAIXA-011 — Cadastro de animal baixado (só consulta na ficha)
+
+- **Enunciado**: Animal com `data_saida` efetiva permanece consultável na ficha (`/animais/:id`), mas **não** pode ser editado nem excluído pelo cadastro genérico. A sidebar exibe badges **«Fora do rebanho»** e **«Baixado»**; ações de gestão (Editar, Excluir, novo registo de saúde/produção) aparecem **desabilitadas** com tooltip explicativo. **Reverter baixa** permanece disponível para perfis autorizados. Para corrigir dados após erro de baixa, usar reversão (BR-BAIXA-005) e depois editar o necessário.
+- **Escopo**: Ficha do animal + `PUT`/`DELETE` `/api/v1/animais/:id` + rota `/animais/:id/editar`.
+- **Perfis**: gestores com permissão de cadastro (bloqueio uniforme por baixa); FUNCIONARIO continua sem ver Editar/Excluir (perfil).
+- **Efeito**: bloqueio 400 (`ANIMAL_FORA_REBANHO`) no servidor; UI com feedback visual (badge + botões disabled + tooltip).
+- **Implementação**: `AnimalBaixadoBadge`, `animalRebanhoUtils.ts`, `ButtonWithTooltip`, `useAnimalFichaPage` (flags `canEditarCadastroAnimal`, etc.), `AnimalFichaSidebar`, `AnimalFichaTabVisaoGeral`, tabs Saúde/Produção, `AnimalEditarBloqueadoGuard`; `AnimalService.Update`/`Delete` + `RespondIfAnimalForaRebanho` em `animal_handler.go`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-25 (BR-BAIXA-001/002 — data_saida não futura; legado com saída futura)
+**Última atualização**: 2026-06-08 (BR-BAIXA-011 — feedback visual e bloqueio de cadastro na ficha)

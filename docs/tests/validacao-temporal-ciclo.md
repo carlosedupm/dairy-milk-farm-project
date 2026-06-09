@@ -41,6 +41,10 @@ Regressão manual após alterações em `ciclo_integridade_temporal.go`, service
 | 4.1 | Calendário em formulário de evento (ex.: secagem novo) | Dias após hoje desativados |
 | 4.2 | DateTimePicker em cio/cobertura com dia = hoje | Hora/minuto não permitem instante futuro |
 | 4.3 | Filtro de listagem de coberturas (intervalo de datas) | **Sem** limite `maxDate=hoje` (pode escolher datas futuras no filtro) |
+| 4.4 | Nova cobertura: data **antes** do cio do animal | Bloqueio **antes** do POST; mensagem com data do cio (ex.: «…cio detectado em DD/MM/AAAA»); badge `TMP-003` no alerta |
+| 4.5 | Novo toque PRENHA: data **antes** da cobertura ou **&lt; 15 dias** após cobertura | Mensagens distintas (cronologia vs janela mínima); data da cobertura na mensagem |
+| 4.6 | Novo parto / secagem: data anterior ao marco de referência | Mensagem com data de confirmação da gestação ou início da lactação |
+| 4.7 | Toque em lote: data inválida para animal PRENHA identificado | Bloqueio antes do POST; erro em `fields.linhas` com identificação + mensagem |
 
 ## 5. Legado baixa agendada
 
@@ -63,4 +67,4 @@ Verificar corpo com `error.details.conformidade` = `TMP-001`.
 
 ---
 
-**Última atualização**: 2026-05-25
+**Última atualização**: 2026-06-08

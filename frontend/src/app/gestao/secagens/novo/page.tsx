@@ -11,7 +11,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   SecagemFormFields,
-  useSecagemMinDate,
+  useSecagemChronology,
   type SecagemFormState,
 } from "@/components/gestao/SecagemFormFields";
 import {
@@ -46,7 +46,7 @@ function NovoContent() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
-  const minDate = useSecagemMinDate(formState.animalId);
+  const chronology = useSecagemChronology(formState.animalId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -84,11 +84,12 @@ function NovoContent() {
     setConformidadeCode(undefined);
     const validation = validateSecagemForm(
       { animalId: formState.animalId, data: formState.data },
-      { minDate, maxDate: todayISODate() }
+      { ...chronology, maxDate: todayISODate() }
     );
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setConformidadeCode(validation.conformidadeCode);
       setIsValidationError(true);
       return;
     }

@@ -552,6 +552,9 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 		if RespondIfIntegridadeCiclo(c, err) {
 			return
 		}
+		if RespondIfAnimalForaRebanho(c, err) {
+			return
+		}
 		if errors.Is(err, service.ErrAnimalNotFound) {
 			response.ErrorNotFound(c, "Animal não encontrado")
 			return
@@ -587,6 +590,9 @@ func (h *AnimalHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.service.Delete(c.Request.Context(), id); err != nil {
+		if RespondIfAnimalForaRebanho(c, err) {
+			return
+		}
 		if errors.Is(err, service.ErrAnimalNotFound) {
 			response.ErrorNotFound(c, "Animal não encontrado")
 			return

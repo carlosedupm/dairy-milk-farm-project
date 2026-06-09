@@ -1,7 +1,7 @@
 "use client";
 
 import { isAnimalForaDoRebanho, type Animal, type StatusSaude } from "@/services/animais";
-import { Badge } from "@/components/ui/badge";
+import { AnimalBaixadoBadge } from "@/components/animais/AnimalBaixadoBadge";
 import { AnimalStatusSaudeBadge } from "@/components/animais/AnimalStatusSaudeBadge";
 import { cn } from "@/lib/utils";
 import { formatAnimalSearchLabel } from "@/components/animais/animalSearchUtils";
@@ -25,11 +25,7 @@ export function AnimalSearchResultLabel({ animal, className }: Props) {
       {!baixado && animal.status_saude ? (
         <AnimalStatusSaudeBadge status={animal.status_saude as StatusSaude} />
       ) : null}
-      {baixado ? (
-        <Badge variant="secondary" className="shrink-0 text-xs">
-          Baixado
-        </Badge>
-      ) : null}
+      {baixado ? <AnimalBaixadoBadge /> : null}
     </span>
   );
 }

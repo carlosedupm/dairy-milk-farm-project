@@ -1,7 +1,7 @@
 import { isPathAllowedForPerfil } from "@/config/appAccess";
 import type { ProximaAcao } from "@/services/animais";
 
-export const PROXIMA_ACAO_MAX_VISIBLE = 2;
+export const PROXIMA_ACAO_MAX_VISIBLE = 4;
 
 const PROXIMA_ACAO_PRIORITY: string[] = [
   "REGISTRAR_PARTO",
@@ -11,7 +11,7 @@ const PROXIMA_ACAO_PRIORITY: string[] = [
   "REGISTRAR_PRODUCAO",
 ];
 
-/** Ordena e limita (defensivo; o backend já devolve no máximo 2). */
+/** Ordena e limita (defensivo; o backend já devolve no máximo 4). */
 export function takeProximasAcoes(
   acoes: ProximaAcao[],
   max = PROXIMA_ACAO_MAX_VISIBLE

@@ -12,7 +12,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   CoberturaFormFields,
-  useCoberturaMinDate,
+  useCoberturaChronology,
   type CoberturaFormState,
 } from "@/components/gestao/CoberturaFormFields";
 import {
@@ -52,7 +52,7 @@ function NovoContent() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
-  const minDate = useCoberturaMinDate(formState.animalId);
+  const chronology = useCoberturaChronology(formState.animalId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -106,12 +106,13 @@ function NovoContent() {
     setFormError("");
     setConformidadeCode(undefined);
     const validation = validateCoberturaForm(formState, {
-      minDate,
+      ...chronology,
       maxDate: todayISODate(),
     });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setConformidadeCode(validation.conformidadeCode);
       setIsValidationError(true);
       return;
     }

@@ -16,10 +16,11 @@ import type { Animal, AnimalContexto } from "@/services/animais";
 import type { Fazenda } from "@/services/fazendas";
 import { getStatusReprodutivoLabel } from "@/components/animais/animalResumoUtils";
 import { AnimalCicloMiniPreview } from "@/components/animais/AnimalCicloMiniPreview";
-import { takeProximasAcoes } from "@/components/animais/animalProximasAcoesUtils";
-import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { formatDatePtBr } from "@/lib/format";
+import { ANIMAL_BAIXADO_ACAO_BLOQUEADA_MSG } from "@/components/animais/animalRebanhoUtils";
 import { Button } from "@/components/ui/button";
+import { ButtonWithTooltip } from "@/components/ui/button-with-tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,6 +53,9 @@ type Props = {
   fazenda: Fazenda | undefined;
   foraDoRebanho: boolean;
   canManageAnimal: boolean;
+  canEditarCadastroAnimal: boolean;
+  canExcluirCadastroAnimal: boolean;
+  showEditarCadastroAnimal: boolean;
   showRegistrarBaixa: boolean;
   showReverterBaixa: boolean;
   revertMutation: UseMutationResult<Animal, Error, void, unknown>;
@@ -66,6 +70,9 @@ export function AnimalFichaTabVisaoGeral({
   fazenda,
   foraDoRebanho,
   canManageAnimal,
+  canEditarCadastroAnimal,
+  canExcluirCadastroAnimal,
+  showEditarCadastroAnimal,
   showRegistrarBaixa,
   showReverterBaixa,
   revertMutation,
@@ -73,7 +80,6 @@ export function AnimalFichaTabVisaoGeral({
 }: Props) {
   const statusSaude = animal.status_saude as StatusSaude | undefined;
   const sexo = animal.sexo as Sexo | undefined;
-  const proximaAcao = takeProximasAcoes(contexto?.proximas_acoes ?? [], 1)[0];
 
   return (
     <div className="space-y-6">
@@ -83,21 +89,6 @@ export function AnimalFichaTabVisaoGeral({
 
       {contexto ? (
         <AnimalCicloMiniPreview animalId={animalId} contexto={contexto} />
-      ) : null}
-
-      {!foraDoRebanho && proximaAcao ? (
-        <div className="rounded-md border border-primary/30 bg-primary/5 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
-          <p className="text-sm break-words">
-            <span className="font-medium">Próxima ação: </span>
-            {proximaAcao.label}
-          </p>
-          <Button variant="default" size="sm" className="min-h-11 shrink-0 w-full sm:w-auto" asChild>
-            <Link href={animalFichaCicloHref(animalId)}>
-              Ir para Ciclo
-              <ChevronRight className="h-4 w-4 ml-0.5" aria-hidden />
-            </Link>
-          </Button>
-        </div>
       ) : null}
 
       <details className="group rounded-lg border border-border bg-card">
@@ -216,90 +207,119 @@ export function AnimalFichaTabVisaoGeral({
             </div>
           </dl>
 
-          {(canManageAnimal || showRegistrarBaixa || showReverterBaixa) && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              {showRegistrarBaixa && (
-                <Button variant="default" size="default" asChild>
-                  <Link href={`/animais/baixa?animal_id=${animalId}`}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Registrar baixa
-                  </Link>
-                </Button>
-              )}
-              {showReverterBaixa && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="default">
-                      Reverter baixa
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Reverter baixa</DialogTitle>
-                      <DialogDescription>
-                        Remove a data e o motivo de saída deste animal. Não
-                        reabre automaticamente lactação, gestação ou restrição de
-                        leite — corrija manualmente se necessário. O painel de
-                        conformidade pode sinalizar inconsistências (INT-007).
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button variant="outline">Cancelar</Button>
-                      </DialogClose>
-                      <Button
-                        onClick={() => revertMutation.mutate()}
-                        disabled={revertMutation.isPending}
-                      >
-                        {revertMutation.isPending
-                          ? "A reverter…"
-                          : "Confirmar reversão"}
+          {(showEditarCadastroAnimal ||
+            showRegistrarBaixa ||
+            showReverterBaixa) && (
+            <TooltipProvider delayDuration={300}>
+              <div className="flex flex-wrap gap-2 pt-2">
+                {showRegistrarBaixa && (
+                  <Button variant="default" size="default" asChild>
+                    <Link href={`/animais/baixa?animal_id=${animalId}`}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Registrar baixa
+                    </Link>
+                  </Button>
+                )}
+                {showReverterBaixa && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="default">
+                        Reverter baixa
                       </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              )}
-              {canManageAnimal && (
-                <Button variant="outline" size="default" asChild>
-                  <Link href={`/animais/${animalId}/editar`}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar
-                  </Link>
-                </Button>
-              )}
-              {canManageAnimal && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="destructive" size="default">
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Reverter baixa</DialogTitle>
+                        <DialogDescription>
+                          Remove a data e o motivo de saída deste animal. Não
+                          reabre automaticamente lactação, gestação ou restrição
+                          de leite — corrija manualmente se necessário. O painel
+                          de conformidade pode sinalizar inconsistências
+                          (INT-007).
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <Button variant="outline">Cancelar</Button>
+                        </DialogClose>
+                        <Button
+                          onClick={() => revertMutation.mutate()}
+                          disabled={revertMutation.isPending}
+                        >
+                          {revertMutation.isPending
+                            ? "A reverter…"
+                            : "Confirmar reversão"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                {showEditarCadastroAnimal &&
+                  (canEditarCadastroAnimal ? (
+                    <Button variant="outline" size="default" asChild>
+                      <Link href={`/animais/${animalId}/editar`}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar
+                      </Link>
+                    </Button>
+                  ) : (
+                    <ButtonWithTooltip
+                      variant="outline"
+                      size="default"
+                      disabled
+                      tooltip={ANIMAL_BAIXADO_ACAO_BLOQUEADA_MSG}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Editar
+                    </ButtonWithTooltip>
+                  ))}
+                {showEditarCadastroAnimal &&
+                  (canExcluirCadastroAnimal ? (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive" size="default">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Excluir animal</DialogTitle>
+                          <DialogDescription>
+                            Tem certeza que deseja excluir &quot;
+                            {animal.identificacao}&quot;? Esta ação não pode ser
+                            desfeita.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <DialogClose asChild>
+                            <Button variant="outline">Cancelar</Button>
+                          </DialogClose>
+                          <Button
+                            variant="destructive"
+                            onClick={() => deleteMutation.mutate()}
+                            disabled={deleteMutation.isPending}
+                          >
+                            {deleteMutation.isPending
+                              ? "Excluindo…"
+                              : "Excluir"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  ) : (
+                    <ButtonWithTooltip
+                      variant="destructive"
+                      size="default"
+                      disabled
+                      tooltip={ANIMAL_BAIXADO_ACAO_BLOQUEADA_MSG}
+                    >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Excluir
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Excluir animal</DialogTitle>
-                      <DialogDescription>
-                        Tem certeza que deseja excluir &quot;
-                        {animal.identificacao}&quot;? Esta ação não pode ser
-                        desfeita.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button variant="outline">Cancelar</Button>
-                      </DialogClose>
-                      <Button
-                        variant="destructive"
-                        onClick={() => deleteMutation.mutate()}
-                        disabled={deleteMutation.isPending}
-                      >
-                        {deleteMutation.isPending ? "Excluindo…" : "Excluir"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </div>
+                    </ButtonWithTooltip>
+                  ))}
+              </div>
+            </TooltipProvider>
           )}
         </div>
       </details>

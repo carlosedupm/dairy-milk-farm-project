@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLote, type ToqueLoteItem } from "@/services/toques";
+import { listByFazenda as listCoberturasByFazenda } from "@/services/coberturas";
+import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -22,6 +24,7 @@ import {
   getApiErrorConformidadeCode,
   getApiErrorMessage,
 } from "@/lib/errors";
+import { validateToqueLoteForm, type FieldErrors } from "@/lib/form-validation";
 import { toast } from "@/hooks/use-toast";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
 import { gestacaoToDias } from "@/lib/toquesUtils";
@@ -39,9 +42,31 @@ function Content() {
     falhas: { linha: number; identificacao: string; message: string }[];
   } | null>(null);
   const [formError, setFormError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+
+  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
+  const { data: coberturas = [] } = useQuery({
+    queryKey: ["coberturas", fazendaId],
+    queryFn: () => listCoberturasByFazenda(fazendaId),
+    enabled: fazendaId > 0,
+  });
+
+  const animalIdByIdentificacao = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const a of animais) {
+      const key = a.identificacao.trim().toLowerCase();
+      if (key) map.set(key, a.id);
+    }
+    return map;
+  }, [animais]);
+
+  const resolveAnimalId = useMemo(
+    () => (identificacao: string) =>
+      animalIdByIdentificacao.get(identificacao.trim().toLowerCase()),
+    [animalIdByIdentificacao]
+  );
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -107,16 +132,24 @@ function Content() {
     setFormError("");
     setFieldErrors({});
     setConformidadeCode(undefined);
-    const fields: Record<string, string> = {};
-    if (!data.trim()) {
-      fields.data = "Informe a data e hora da palpação.";
-    }
-    if (!linhas.some((l) => l.identificacao.trim())) {
-      fields.linhas = "Informe pelo menos uma identificação de animal.";
-    }
-    if (Object.keys(fields).length > 0) {
-      setFieldErrors(fields);
-      setFormError("Corrija os campos assinalados.");
+    const validation = validateToqueLoteForm(
+      {
+        data,
+        linhas: linhas.map((l) => ({
+          identificacao: l.identificacao,
+          classificacao: l.classificacao,
+        })),
+      },
+      {
+        maxDate: todayISODate(),
+        coberturas,
+        resolveAnimalId,
+      }
+    );
+    if (!validation.valid) {
+      setFieldErrors(validation.fields);
+      setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setConformidadeCode(validation.conformidadeCode);
       setIsValidationError(true);
       return;
     }

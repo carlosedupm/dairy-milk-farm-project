@@ -44,7 +44,7 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 
 - **Enunciado**: `data` não futura; ≥ entrada/nascimento; se `cio_id`, ≥ data do cio — [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-012–014 (TMP-001 a TMP-003).
 - **Efeito**: bloqueio no servidor (400).
-- **Implementação**: `CoberturaService` + `ciclo_integridade_temporal.go`; `CoberturaFormFields` com `DateTimePickerUnificado` (`maxDate=hoje`, `minDate` após cio do animal via `lib/gestao-date-limits.ts`); validação client em `validateCoberturaForm`.
+- **Implementação**: `CoberturaService` + `ciclo_integridade_temporal.go`; `CoberturaFormFields` com `DateTimePickerUnificado` (`maxDate=hoje`, `minDate` após cio do animal via `lib/gestao-date-limits.ts`); validação client em `validateCoberturaForm` com mensagens datadas (ex.: «cio detectado em DD/MM/AAAA») e badge `TMP-003` no submit.
 - **Estado**: implementado.
 
 ### BR-COBERTURAS-006 — Lista elegível no formulário

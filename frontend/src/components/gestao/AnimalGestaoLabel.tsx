@@ -1,7 +1,7 @@
 "use client";
 
 import { isAnimalForaDoRebanho, type Animal } from "@/services/animais";
-import { Badge } from "@/components/ui/badge";
+import { AnimalBaixadoBadge } from "@/components/animais/AnimalBaixadoBadge";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -27,11 +27,7 @@ export function AnimalGestaoLabel({
       )}
     >
       <span className="break-words">{ident}</span>
-      {baixado ? (
-        <Badge variant="secondary" className="shrink-0 text-xs">
-          Baixado
-        </Badge>
-      ) : null}
+      {baixado ? <AnimalBaixadoBadge /> : null}
     </span>
   );
 }

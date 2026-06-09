@@ -9,7 +9,7 @@ import { DatePickerUnificado } from "@/components/ui/date-picker";
 import { FormFieldError } from "@/components/ui/form-field-error";
 import { useFormFieldError } from "@/contexts/FormFieldErrorsContext";
 import { Label } from "@/components/ui/label";
-import { isoDateFromDatetime } from "@/lib/gestao-date-limits";
+import { isoDateFromDatetime, type GestaoChronologyContext } from "@/lib/gestao-date-limits";
 import { todayISODate } from "@/lib/date-limits";
 import { getContexto } from "@/services/animais";
 
@@ -25,15 +25,22 @@ type Props = {
   preserveSelected?: boolean;
 };
 
-export function useSecagemMinDate(animalId: string): string | undefined {
+export function useSecagemChronology(animalId: string): GestaoChronologyContext {
   const animalIdNum = Number(animalId);
   const { data: contexto } = useQuery({
     queryKey: ["animais", animalIdNum, "contexto"],
     queryFn: () => getContexto(animalIdNum),
     enabled: animalIdNum > 0,
   });
-  if (!contexto?.lactacao_ativa?.data_inicio) return undefined;
-  return isoDateFromDatetime(contexto.lactacao_ativa.data_inicio) || undefined;
+  const referenceDateIso = contexto?.lactacao_ativa?.data_inicio
+    ? isoDateFromDatetime(contexto.lactacao_ativa.data_inicio) || undefined
+    : undefined;
+  return { minDate: referenceDateIso, referenceDateIso };
+}
+
+/** @deprecated Use useSecagemChronology — retorna apenas minDate. */
+export function useSecagemMinDate(animalId: string): string | undefined {
+  return useSecagemChronology(animalId).minDate;
 }
 
 export function SecagemFormFields({
@@ -44,7 +51,7 @@ export function SecagemFormFields({
 }: Props) {
   const animalIdError = useFormFieldError("animalId");
   const dataError = useFormFieldError("data");
-  const minDate = useSecagemMinDate(formState.animalId);
+  const { minDate } = useSecagemChronology(formState.animalId);
 
   useEffect(() => {
     if (!minDate || !formState.data) return;

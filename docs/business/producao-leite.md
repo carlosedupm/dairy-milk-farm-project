@@ -30,7 +30,7 @@ Registro diário de **volume de leite** por animal na fazenda.
 - **Enunciado**: Não é permitido registrar ou editar produção sem lactação ativa na **data** do registo (`data_inicio` da lactação ≤ data da produção; lactação com `data_fim` nula e status nulo ou `EM_ANDAMENTO`). Alinhado a INT-002 / BR-AUDIT-010.
 - **Escopo**: `POST` e `PUT` produção; alinhado a [leite-restricoes.md](./leite-restricoes.md) BR-LEITE-005.
 - **Efeito**: bloqueio no servidor (400, `details.conformidade`: `INT-002`); aviso na UI antes do envio.
-- **Implementação**: `ValidateLactacaoAtivaParaProducao`, `LactacaoRepository.ExistsAtivaNaFazendaNaData`; `ProducaoForm` lista apenas animais de `GET .../animais/em-lactacao`; [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-007.
+- **Implementação**: `ValidateLactacaoAtivaParaProducao`, `LactacaoRepository.ExistsAtivaNaFazendaNaData`; `ProducaoForm` lista apenas animais de `GET .../animais/em-lactacao`; indicador proativo `ProducaoLactacaoIndicator` (Sim/Não, n.º e data de início, aviso e link para `/gestao/lactacoes/novo` quando permitido pelo perfil; validação client na `data_hora` via `producaoLactacaoUtils.ts`; submit não bloqueado — validação definitiva no servidor); [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-007.
 - **Estado**: implementado.
 
 ### BR-PRODUCAO-005 — Data/hora da produção (temporal)
@@ -59,4 +59,4 @@ Registro diário de **volume de leite** por animal na fazenda.
 
 ---
 
-**Última atualização**: 2026-06-08 (LitrosInput — formatação pt-BR)
+**Última atualização**: 2026-06-08 (BR-PRODUCAO-003 — indicador de lactação no ProducaoForm)

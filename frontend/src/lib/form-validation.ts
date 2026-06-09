@@ -10,10 +10,18 @@ import {
   type SafraCulturaDateRange,
 } from "@/lib/agricultura-date-limits";
 import {
+  GESTAO_CONFORMIDADE,
   GESTAO_DATE_MESSAGES,
+  gestaoMessageCoberturaAfterCio,
+  gestaoMessagePartoAfterGestacao,
+  gestaoMessageSecagemAfterLactacao,
   isIsoDateAfterMax,
   isIsoDateBeforeMin,
+  resolveToqueChronologyError,
+  toqueChronologyForAnimalCoberturas,
+  type GestaoChronologyContext,
 } from "@/lib/gestao-date-limits";
+import type { Cobertura } from "@/services/coberturas";
 import { todayISODate } from "@/lib/date-limits";
 import { parseLitrosValue } from "@/lib/litros-format";
 
@@ -23,6 +31,7 @@ export type FormValidationResult = {
   valid: boolean;
   fields: FieldErrors;
   summary?: string;
+  conformidadeCode?: string;
 };
 
 export function mergeFormErrors(...parts: FieldErrors[]): FieldErrors {
@@ -31,13 +40,97 @@ export function mergeFormErrors(...parts: FieldErrors[]): FieldErrors {
 
 function invalid(
   fields: FieldErrors,
-  summary = "Corrija os campos assinalados."
+  summary = "Corrija os campos assinalados.",
+  conformidadeCode?: string
 ): FormValidationResult {
-  return { valid: false, fields, summary };
+  return { valid: false, fields, summary, conformidadeCode };
 }
 
 function valid(): FormValidationResult {
   return { valid: true, fields: {} };
+}
+
+export type GestaoChronologyOptions = GestaoChronologyContext & {
+  maxDate?: string;
+};
+
+type GestaoChronologyValidation = {
+  message: string;
+  conformidadeCode?: string;
+};
+
+function gestaoChronologyError(
+  value: string,
+  minDate: string | undefined,
+  referenceDateIso: string | undefined,
+  buildMessage: (ref: string) => string,
+  conformidadeCode: string
+): GestaoChronologyValidation | undefined {
+  if (!minDate || !value.trim()) return undefined;
+  if (!isIsoDateBeforeMin(value, minDate)) return undefined;
+  const ref = referenceDateIso ?? minDate;
+  return { message: buildMessage(ref), conformidadeCode };
+}
+
+function gestaoFutureDateError(
+  value: string,
+  maxDate: string,
+  message: string
+): string | undefined {
+  if (isIsoDateAfterMax(value, maxDate)) return message;
+  return undefined;
+}
+
+function resolveGestaoDateFieldValidation(
+  value: string,
+  options: GestaoChronologyOptions | undefined,
+  buildMessage: (ref: string) => string,
+  conformidadeCode: string,
+  futureMessage: string
+): GestaoChronologyValidation | undefined {
+  if (!value.trim()) return undefined;
+  const maxDate = options?.maxDate ?? todayISODate();
+  const future = gestaoFutureDateError(value, maxDate, futureMessage);
+  if (future) return { message: future };
+  return gestaoChronologyError(
+    value,
+    options?.minDate,
+    options?.referenceDateIso,
+    buildMessage,
+    conformidadeCode
+  );
+}
+
+function resolveToqueDateFieldValidation(
+  value: string,
+  options: GestaoChronologyOptions | undefined,
+  requiresCobertura: boolean
+): GestaoChronologyValidation | undefined {
+  if (!value.trim()) return undefined;
+  const maxDate = options?.maxDate ?? todayISODate();
+  const future = gestaoFutureDateError(
+    value,
+    maxDate,
+    GESTAO_DATE_MESSAGES.datetimeFuture
+  );
+  if (future) return { message: future };
+  if (!requiresCobertura) return undefined;
+  const chronology = resolveToqueChronologyError(value, {
+    minDate: options?.minDate,
+    coberturaDateIso: options?.coberturaDateIso,
+  });
+  if (chronology) {
+    const isBeforeCobertura =
+      options?.coberturaDateIso &&
+      isIsoDateBeforeMin(value, options.coberturaDateIso);
+    return {
+      message: chronology,
+      conformidadeCode: isBeforeCobertura
+        ? GESTAO_CONFORMIDADE.toqueAfterCobertura
+        : undefined,
+    };
+  }
+  return undefined;
 }
 
 export type AnimalFormInput = {
@@ -85,20 +178,26 @@ export function validateProducaoForm(input: ProducaoFormInput): FormValidationRe
 
 export function validateCoberturaForm(
   formState: CoberturaFormState,
-  options?: { minDate?: string; maxDate?: string }
+  options?: GestaoChronologyOptions
 ): FormValidationResult {
   const fields: FieldErrors = {};
-  const maxDate = options?.maxDate ?? todayISODate();
+  let conformidadeCode: string | undefined;
   if (!formState.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!formState.data.trim()) {
     fields.data = "Informe a data e hora da cobertura.";
   } else {
-    if (isIsoDateBeforeMin(formState.data, options?.minDate)) {
-      fields.data = GESTAO_DATE_MESSAGES.coberturaAfterCio;
-    } else if (isIsoDateAfterMax(formState.data, maxDate)) {
-      fields.data = GESTAO_DATE_MESSAGES.datetimeFuture;
+    const dateError = resolveGestaoDateFieldValidation(
+      formState.data,
+      options,
+      gestaoMessageCoberturaAfterCio,
+      GESTAO_CONFORMIDADE.coberturaAfterCio,
+      GESTAO_DATE_MESSAGES.datetimeFuture
+    );
+    if (dateError) {
+      fields.data = dateError.message;
+      conformidadeCode = dateError.conformidadeCode;
     }
   }
   if (formState.tipo === "MONTA_NATURAL") {
@@ -109,7 +208,7 @@ export function validateCoberturaForm(
         "Para monta natural, selecione um reprodutor ou informe dados do touro.";
     }
   }
-  if (Object.keys(fields).length > 0) return invalid(fields);
+  if (Object.keys(fields).length > 0) return invalid(fields, undefined, conformidadeCode);
   return valid();
 }
 
@@ -133,24 +232,32 @@ export function validateCioForm(
 
 export function validatePartoForm(
   formState: PartoFormState,
-  options?: { skipCrias?: boolean; minDate?: string; maxDate?: string }
+  options?: { skipCrias?: boolean } & GestaoChronologyOptions
 ): FormValidationResult {
   const fields: FieldErrors = {};
-  const maxDate = options?.maxDate ?? todayISODate();
+  let conformidadeCode: string | undefined;
   if (!formState.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!formState.data.trim()) {
     fields.data = "Informe a data e hora do parto.";
   } else {
-    if (isIsoDateBeforeMin(formState.data, options?.minDate)) {
-      fields.data = GESTAO_DATE_MESSAGES.partoAfterGestacao;
-    } else if (isIsoDateAfterMax(formState.data, maxDate)) {
-      fields.data = GESTAO_DATE_MESSAGES.datetimeFuture;
+    const dateError = resolveGestaoDateFieldValidation(
+      formState.data,
+      options,
+      gestaoMessagePartoAfterGestacao,
+      GESTAO_CONFORMIDADE.partoAfterGestacao,
+      GESTAO_DATE_MESSAGES.datetimeFuture
+    );
+    if (dateError) {
+      fields.data = dateError.message;
+      conformidadeCode = dateError.conformidadeCode;
     }
   }
   if (options?.skipCrias) {
-    if (Object.keys(fields).length > 0) return invalid(fields);
+    if (Object.keys(fields).length > 0) {
+      return invalid(fields, undefined, conformidadeCode);
+    }
     return valid();
   }
   const n = Math.max(1, parseInt(formState.numeroCrias, 10) || 1);
@@ -168,7 +275,7 @@ export function validatePartoForm(
       }
     }
   }
-  if (Object.keys(fields).length > 0) return invalid(fields);
+  if (Object.keys(fields).length > 0) return invalid(fields, undefined, conformidadeCode);
   return valid();
 }
 
@@ -181,20 +288,25 @@ export type ToqueFormInput = {
 
 export function validateToqueForm(
   input: ToqueFormInput,
-  options?: { minDate?: string; maxDate?: string }
+  options?: GestaoChronologyOptions
 ): FormValidationResult {
   const fields: FieldErrors = {};
-  const maxDate = options?.maxDate ?? todayISODate();
+  let conformidadeCode: string | undefined;
+  const requiresCobertura = input.classificacao === "PRENHA";
   if (!input.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!input.data.trim()) {
     fields.data = "Informe a data e hora do toque.";
   } else {
-    if (isIsoDateBeforeMin(input.data, options?.minDate)) {
-      fields.data = GESTAO_DATE_MESSAGES.toqueAfterCobertura;
-    } else if (isIsoDateAfterMax(input.data, maxDate)) {
-      fields.data = GESTAO_DATE_MESSAGES.datetimeFuture;
+    const dateError = resolveToqueDateFieldValidation(
+      input.data,
+      options,
+      requiresCobertura && !!input.coberturaId
+    );
+    if (dateError) {
+      fields.data = dateError.message;
+      conformidadeCode = dateError.conformidadeCode;
     }
   }
   if (!input.classificacao.trim()) {
@@ -203,7 +315,70 @@ export function validateToqueForm(
   if (input.classificacao === "PRENHA" && !input.coberturaId) {
     fields.coberturaId = "Selecione a cobertura associada ao diagnóstico prenha.";
   }
-  if (Object.keys(fields).length > 0) return invalid(fields);
+  if (Object.keys(fields).length > 0) return invalid(fields, undefined, conformidadeCode);
+  return valid();
+}
+
+export type ToqueLoteLinhaInput = {
+  identificacao: string;
+  classificacao: string;
+};
+
+export function validateToqueLoteForm(
+  input: {
+    data: string;
+    linhas: ToqueLoteLinhaInput[];
+  },
+  options: {
+    maxDate?: string;
+    coberturas: Cobertura[];
+    resolveAnimalId: (identificacao: string) => number | undefined;
+  }
+): FormValidationResult {
+  const fields: FieldErrors = {};
+  let conformidadeCode: string | undefined;
+  const maxDate = options.maxDate ?? todayISODate();
+
+  if (!input.data.trim()) {
+    fields.data = "Informe a data e hora da palpação.";
+  } else if (isIsoDateAfterMax(input.data, maxDate)) {
+    fields.data = GESTAO_DATE_MESSAGES.datetimeFuture;
+  }
+
+  const linhasPreenchidas = input.linhas.filter((l) => l.identificacao.trim());
+  if (linhasPreenchidas.length === 0) {
+    fields.linhas = "Informe pelo menos uma identificação de animal.";
+  }
+
+  if (input.data.trim() && linhasPreenchidas.length > 0) {
+    for (let i = 0; i < input.linhas.length; i++) {
+      const linha = input.linhas[i];
+      if (!linha?.identificacao.trim()) continue;
+      if (linha.classificacao !== "PRENHA") continue;
+
+      const animalId = options.resolveAnimalId(linha.identificacao.trim());
+      if (!animalId) continue;
+
+      const chronology = toqueChronologyForAnimalCoberturas(
+        options.coberturas,
+        animalId
+      );
+      if (!chronology.coberturaDateIso && !chronology.minDate) continue;
+
+      const dateError = resolveToqueDateFieldValidation(
+        input.data,
+        { ...chronology, maxDate },
+        true
+      );
+      if (dateError) {
+        fields.linhas = `${linha.identificacao.trim()}: ${dateError.message}`;
+        conformidadeCode = dateError.conformidadeCode;
+        break;
+      }
+    }
+  }
+
+  if (Object.keys(fields).length > 0) return invalid(fields, undefined, conformidadeCode);
   return valid();
 }
 
@@ -233,23 +408,29 @@ export function validateSecagemForm(
     animalId: string;
     data: string;
   },
-  options?: { minDate?: string; maxDate?: string }
+  options?: GestaoChronologyOptions
 ): FormValidationResult {
   const fields: FieldErrors = {};
-  const maxDate = options?.maxDate ?? todayISODate();
+  let conformidadeCode: string | undefined;
   if (!input.animalId) {
     fields.animalId = "Selecione um animal.";
   }
   if (!input.data.trim()) {
     fields.data = "Informe a data da secagem.";
   } else {
-    if (isIsoDateBeforeMin(input.data, options?.minDate)) {
-      fields.data = GESTAO_DATE_MESSAGES.secagemAfterLactacao;
-    } else if (isIsoDateAfterMax(input.data, maxDate)) {
-      fields.data = GESTAO_DATE_MESSAGES.dateFuture;
+    const dateError = resolveGestaoDateFieldValidation(
+      input.data,
+      options,
+      gestaoMessageSecagemAfterLactacao,
+      GESTAO_CONFORMIDADE.secagemAfterLactacao,
+      GESTAO_DATE_MESSAGES.dateFuture
+    );
+    if (dateError) {
+      fields.data = dateError.message;
+      conformidadeCode = dateError.conformidadeCode;
     }
   }
-  if (Object.keys(fields).length > 0) return invalid(fields);
+  if (Object.keys(fields).length > 0) return invalid(fields, undefined, conformidadeCode);
   return valid();
 }
 

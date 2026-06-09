@@ -5,7 +5,10 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimalSaudeList } from "@/components/animais/AnimalSaudeList";
 import { QueryListContent } from "@/components/layout/QueryListContent";
+import { ANIMAL_BAIXADO_ACAO_BLOQUEADA_MSG } from "@/components/animais/animalRebanhoUtils";
 import { Button } from "@/components/ui/button";
+import { ButtonWithTooltip } from "@/components/ui/button-with-tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ListPaginationBar } from "@/components/ui/pagination";
 import { canCriarRegistroSaude } from "@/config/appAccess";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,7 +49,9 @@ export function AnimalFichaTabSaude({
     [allItems, offset]
   );
 
-  const showNovo = canCriarRegistroSaude(user?.perfil) && !foraDoRebanho;
+  const canCriar = canCriarRegistroSaude(user?.perfil);
+  const showNovo = canCriar && !foraDoRebanho;
+  const showNovoBloqueado = canCriar && foraDoRebanho;
 
   return (
     <div className="space-y-4">
@@ -68,6 +73,17 @@ export function AnimalFichaTabSaude({
               Novo registro
             </Link>
           </Button>
+        ) : showNovoBloqueado ? (
+          <TooltipProvider delayDuration={300}>
+            <ButtonWithTooltip
+              className="min-h-[44px] shrink-0"
+              disabled
+              tooltip={ANIMAL_BAIXADO_ACAO_BLOQUEADA_MSG}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Novo registro
+            </ButtonWithTooltip>
+          </TooltipProvider>
         ) : null}
       </div>
 

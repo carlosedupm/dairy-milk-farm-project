@@ -25,9 +25,14 @@ Referência: `docs/business/baixa-rebanho.md` (BR-BAIXA-001 a BR-BAIXA-009); con
 
 ## Ficha e reversão
 
-- [ ] Ficha mostra badge «Fora do rebanho» + motivo/data + «Baixa registada por» (timeline e `saida_resumo`)
+- [ ] Ficha mostra badge «Fora do rebanho» + badge proeminente «Baixado» na sidebar (BR-BAIXA-011)
+- [ ] Ficha mostra motivo/data + «Baixa registada por» (timeline e `saida_resumo`)
+- [ ] Gestor: Editar e Excluir **visíveis mas desabilitados** com tooltip «Animal baixado — edição não permitida»; Reverter baixa **habilitado**
+- [ ] Tabs Saúde e Produção: botões «Novo registro» / «Registrar produção» desabilitados com tooltip (não ocultos)
+- [ ] URL `/animais/:id/editar` em animal baixado → aviso com badge (sem formulário)
+- [ ] `PUT`/`DELETE` `/api/v1/animais/:id` em animal baixado → 400 `ANIMAL_FORA_REBANHO`
 - [ ] Reversão (gestão) limpa saída; INT-007 aparece se lactação ainda aberta
-- [ ] FUNCIONARIO não vê botão «Reverter baixa»
+- [ ] FUNCIONARIO não vê botão «Reverter baixa» nem Editar/Excluir
 
 ## Gestão e produção (rótulos pós-baixa — BR-BAIXA-009)
 
@@ -43,4 +48,4 @@ Referência: `docs/business/baixa-rebanho.md` (BR-BAIXA-001 a BR-BAIXA-009); con
 - [ ] `GET` busca animal exclui baixados por defeito
 - [ ] OpenAPI schema `Animal` inclui `data_saida`, `motivo_saida`, `observacao_saida`
 
-**Última atualização**: 2026-05-24 (BR-BAIXA-009)
+**Última atualização**: 2026-06-08 (BR-BAIXA-011 — checklist ficha)

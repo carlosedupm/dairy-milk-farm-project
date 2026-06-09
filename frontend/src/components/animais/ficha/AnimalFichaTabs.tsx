@@ -30,7 +30,11 @@ type Props = Pick<
   | "setHistoricoTipo"
   | "foraDoRebanho"
   | "canManageAnimal"
+  | "canEditarCadastroAnimal"
+  | "canExcluirCadastroAnimal"
+  | "showEditarCadastroAnimal"
   | "canRegistrarProducao"
+  | "showRegistrarProducaoBloqueado"
   | "showRegistrarBaixa"
   | "showReverterBaixa"
   | "revertMutation"
@@ -51,7 +55,11 @@ export function AnimalFichaTabs({
   setHistoricoTipo,
   foraDoRebanho,
   canManageAnimal,
+  canEditarCadastroAnimal,
+  canExcluirCadastroAnimal,
+  showEditarCadastroAnimal,
   canRegistrarProducao,
+  showRegistrarProducaoBloqueado,
   showRegistrarBaixa,
   showReverterBaixa,
   revertMutation,
@@ -71,7 +79,7 @@ export function AnimalFichaTabs({
       onValueChange={handleTabChange}
       className={cn(
         "min-w-0",
-        activeTab === "ciclo" &&
+        (activeTab === "ciclo" || activeTab === "geral") &&
           animalProximasAcoesPageSpacerClass(
             contexto?.proximas_acoes,
             foraDoRebanho,
@@ -95,6 +103,9 @@ export function AnimalFichaTabs({
           fazenda={fazenda}
           foraDoRebanho={foraDoRebanho}
           canManageAnimal={canManageAnimal}
+          canEditarCadastroAnimal={canEditarCadastroAnimal}
+          canExcluirCadastroAnimal={canExcluirCadastroAnimal}
+          showEditarCadastroAnimal={showEditarCadastroAnimal}
           showRegistrarBaixa={showRegistrarBaixa}
           showReverterBaixa={showReverterBaixa}
           revertMutation={revertMutation}
@@ -126,6 +137,7 @@ export function AnimalFichaTabs({
           animalId={id}
           fazendaId={animal.fazenda_id}
           canRegistrarProducao={canRegistrarProducao}
+          showRegistrarProducaoBloqueado={showRegistrarProducaoBloqueado}
           animalLabel={animal.identificacao ?? `#${animal.id}`}
           enabled={activeTab === "producao"}
         />

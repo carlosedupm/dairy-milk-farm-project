@@ -220,7 +220,7 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 | Dashboard pecuário | Implementado | `DashboardKpiGrid` + painéis colapsáveis (BR-CICLO-009, BR-GESTACOES-005) |
 | Ficha animal (tabs + sidebar) | Implementado | BR-ANIMAIS-008 |
 | Ficha animal (timeline) | Implementado | BR-CICLO-008; tab Histórico; paginação `GET .../timeline` |
-| Ficha animal (próximas ações CTA) | Implementado | BR-ANIMAIS-007; tab Visão Geral; máx. 2; sticky mobile |
+| Ficha animal (próximas ações CTA) | Implementado | BR-ANIMAIS-007; tabs Visão Geral e Ciclo; máx. 4; sticky mobile |
 | Saída do rebanho (baixa) | Implementado | [baixa-rebanho.md](./baixa-rebanho.md) BR-CICLO-011; rótulos Gestão BR-BAIXA-009 |
 | Validação temporal (escrita) | Implementado | BR-CICLO-012–014; TMP-001–006; ver [auditoria.md](./auditoria.md) BR-AUDIT-010 |
 
@@ -233,4 +233,4 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ---
 
-**Última atualização**: 2026-06-08 (tab Ciclo + visibilidade do ciclo reprodutivo)
+**Última atualização**: 2026-06-08 (próximas ações CTA — máx. 4)

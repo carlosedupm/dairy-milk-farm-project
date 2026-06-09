@@ -56,7 +56,7 @@ Registro de **toque** (diagnóstico de gestação) após cobertura, com resultad
 
 - **Enunciado**: `data` não futura; ≥ entrada/nascimento; se `cobertura_id`, ≥ data da cobertura — [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-012–014 (TMP-001 a TMP-003). Aplica-se a toque unitário, lote JWT e M2M.
 - **Efeito**: bloqueio no servidor (400).
-- **Implementação**: `DiagnosticoGestacaoService` + `ciclo_integridade_temporal.go`; `ToqueFormFields` com `DateTimePickerUnificado` (`maxDate=hoje`, `minDate` = cobertura + 15 dias alinhado a BR-CICLO-015); validação client em `validateToqueForm`; `/gestao/toques/lote` com `maxDate` agora.
+- **Implementação**: `DiagnosticoGestacaoService` + `ciclo_integridade_temporal.go`; `ToqueFormFields` com `DateTimePickerUnificado` (`maxDate=hoje`, `minDate` = cobertura + 15 dias alinhado a BR-CICLO-015); validação client em `validateToqueForm` (cronologia vs janela de 15 dias, mensagens com data da cobertura); `/gestao/toques/lote` com validação client equivalente para linhas PRENHA.
 - **Estado**: implementado.
 
 ### BR-TOQUES-008 — Lista elegível no formulário

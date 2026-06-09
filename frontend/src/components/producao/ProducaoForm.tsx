@@ -20,8 +20,8 @@ import {
   litrosNumberToInputValue,
 } from "@/components/producao/LitrosInput";
 import { parseLitrosValue } from "@/lib/litros-format";
-import { formatDatePtBr } from "@/lib/format";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
+import { ProducaoLactacaoIndicator } from "@/components/producao/ProducaoLactacaoIndicator";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -115,7 +115,7 @@ export function ProducaoForm({
   const contextoAnimalId =
     animalId > 0 ? animalId : defaultAnimalId && defaultAnimalId > 0 ? defaultAnimalId : 0;
 
-  const { data: contextoAnimal } = useQuery({
+  const { data: contextoAnimal, isLoading: loadingContexto } = useQuery({
     queryKey: ["animais", contextoAnimalId, "contexto"],
     queryFn: () => getContexto(contextoAnimalId),
     enabled: contextoAnimalId > 0 && !initial,
@@ -277,22 +277,14 @@ export function ProducaoForm({
             </p>
           ) : null}
 
-          {linkAnimalIndisponivel ? (
-            <p
-              className="text-sm text-feedback-warning border border-feedback-warning/30 rounded-lg p-3 break-words"
-              role="alert"
-            >
-              O animal indicado no link não está em lactação ativa. Escolha uma
-              matriz na lista acima.
-            </p>
-          ) : null}
-
-          {contextoAnimal?.lactacao_ativa && !initial ? (
-            <p className="text-sm text-muted-foreground break-words">
-              Lactação ativa: #{contextoAnimal.lactacao_ativa.numero_lactacao}{" "}
-              desde {formatDatePtBr(contextoAnimal.lactacao_ativa.data_inicio)}.
-              O vínculo é preenchido automaticamente ao salvar.
-            </p>
+          {!initial && contextoAnimalId > 0 ? (
+            <ProducaoLactacaoIndicator
+              animalId={contextoAnimalId}
+              dataHora={dataHora}
+              lactacaoAtiva={contextoAnimal?.lactacao_ativa}
+              isLoading={loadingContexto}
+              deepLinkAnimalIndisponivel={linkAnimalIndisponivel}
+            />
           ) : null}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

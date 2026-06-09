@@ -19,7 +19,7 @@ type Props = {
 export function AnimalCicloMiniPreview({ animalId, contexto }: Props) {
   return (
     <div className="space-y-4 min-w-0">
-      <AnimalFichaCiclo contexto={contexto} showProximasAcoes={false} />
+      <AnimalFichaCiclo contexto={contexto} showProximasAcoes />
       <Card>
         <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-base">Ciclo reprodutivo</CardTitle>

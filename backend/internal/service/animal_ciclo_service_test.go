@@ -70,19 +70,33 @@ func TestPrioritizeProximasAcoes(t *testing.T) {
 	if got[0].Codigo != models.AcaoRegistrarParto || got[1].Codigo != models.AcaoRegistrarSecagem {
 		t.Fatalf("unexpected order: %s, %s", got[0].Codigo, got[1].Codigo)
 	}
+
+	got4 := prioritizeProximasAcoes(acoes, 4)
+	if len(got4) != 4 {
+		t.Fatalf("expected 4 actions, got %d", len(got4))
+	}
+	if got4[0].Codigo != models.AcaoRegistrarParto ||
+		got4[1].Codigo != models.AcaoRegistrarSecagem ||
+		got4[2].Codigo != models.AcaoRegistrarToque ||
+		got4[3].Codigo != models.AcaoRegistrarProducao {
+		t.Fatalf("unexpected order: %s, %s, %s, %s",
+			got4[0].Codigo, got4[1].Codigo, got4[2].Codigo, got4[3].Codigo)
+	}
 }
 
 func TestBuildProximasAcoesCandidates(t *testing.T) {
 	gest := &models.Gestacao{ID: 9}
 	lact := &models.Lactacao{ID: 3}
 
-	t.Run("gestacao prioriza parto e secagem", func(t *testing.T) {
+	t.Run("gestacao e lactacao prioriza parto secagem e producao", func(t *testing.T) {
 		got := buildProximasAcoesCandidates(1, lact, gest, false, models.StatusReprodutivoPrenhe)
-		if len(got) != 2 {
-			t.Fatalf("expected 2, got %d", len(got))
+		if len(got) != 3 {
+			t.Fatalf("expected 3, got %d", len(got))
 		}
-		if got[0].Codigo != models.AcaoRegistrarParto || got[1].Codigo != models.AcaoRegistrarSecagem {
-			t.Fatalf("got %s, %s", got[0].Codigo, got[1].Codigo)
+		if got[0].Codigo != models.AcaoRegistrarParto ||
+			got[1].Codigo != models.AcaoRegistrarSecagem ||
+			got[2].Codigo != models.AcaoRegistrarProducao {
+			t.Fatalf("got %s, %s, %s", got[0].Codigo, got[1].Codigo, got[2].Codigo)
 		}
 	})
 

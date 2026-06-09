@@ -11,7 +11,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   CoberturaFormFields,
-  useCoberturaMinDate,
+  useCoberturaChronology,
   type CoberturaFormState,
 } from "@/components/gestao/CoberturaFormFields";
 import { GestaoEditarBloqueadoGuard } from "@/components/gestao/GestaoEditarBloqueadoGuard";
@@ -49,7 +49,7 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const minDate = useCoberturaMinDate(formState.animalId);
+  const chronology = useCoberturaChronology(formState.animalId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -81,12 +81,13 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
     setFormError("");
     setConformidadeCode(undefined);
     const validation = validateCoberturaForm(formState, {
-      minDate,
+      ...chronology,
       maxDate: todayISODate(),
     });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setConformidadeCode(validation.conformidadeCode);
       setIsValidationError(true);
       return;
     }

@@ -12,6 +12,7 @@ import {
   formatAnimalContextoStatusLinha,
   getStatusReprodutivoLabel,
 } from "@/components/animais/animalResumoUtils";
+import { AnimalBaixadoBadge } from "@/components/animais/AnimalBaixadoBadge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -62,9 +63,17 @@ export function AnimalFichaSidebar({
           <Beef className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
           <CardTitle className="text-lg break-words">{animal.identificacao}</CardTitle>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div
+          className="flex flex-wrap gap-2"
+          aria-label={
+            foraDoRebanho ? "Animal fora do rebanho, baixado" : undefined
+          }
+        >
           {foraDoRebanho ? (
-            <Badge variant="secondary">Fora do rebanho</Badge>
+            <>
+              <Badge variant="secondary">Fora do rebanho</Badge>
+              <AnimalBaixadoBadge variant="prominent" />
+            </>
           ) : null}
           {statusSaude ? (
             <Badge variant={STATUS_VARIANT[statusSaude] ?? "default"}>

@@ -6,7 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { AnimalProducaoPorLactacao } from "@/components/animais/AnimalProducaoPorLactacao";
 import { buildProducaoGruposPorLactacao } from "@/components/animais/producaoPorLactacaoUtils";
 import { QueryListContent } from "@/components/layout/QueryListContent";
+import { ANIMAL_BAIXADO_ACAO_BLOQUEADA_MSG } from "@/components/animais/animalRebanhoUtils";
 import { Button } from "@/components/ui/button";
+import { ButtonWithTooltip } from "@/components/ui/button-with-tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { listByAnimal } from "@/services/producao";
 import { listByFazenda } from "@/services/lactacoes";
 import { Plus } from "lucide-react";
@@ -15,6 +18,7 @@ type Props = {
   animalId: number;
   fazendaId: number | undefined;
   canRegistrarProducao: boolean;
+  showRegistrarProducaoBloqueado: boolean;
   animalLabel: string;
   enabled: boolean;
 };
@@ -23,6 +27,7 @@ export function AnimalFichaTabProducao({
   animalId,
   fazendaId,
   canRegistrarProducao,
+  showRegistrarProducaoBloqueado,
   animalLabel,
   enabled,
 }: Props) {
@@ -68,6 +73,17 @@ export function AnimalFichaTabProducao({
               Registrar produção
             </Link>
           </Button>
+        ) : showRegistrarProducaoBloqueado ? (
+          <TooltipProvider delayDuration={300}>
+            <ButtonWithTooltip
+              className="min-h-[44px] shrink-0"
+              disabled
+              tooltip={ANIMAL_BAIXADO_ACAO_BLOQUEADA_MSG}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Registrar produção
+            </ButtonWithTooltip>
+          </TooltipProvider>
         ) : null}
       </div>
 

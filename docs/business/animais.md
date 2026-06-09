@@ -63,12 +63,12 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 ### BR-ANIMAIS-007 — Próximas ações na ficha (CTA de ciclo)
 
-- **Enunciado**: `proximas_acoes[]` sugere até **duas** ações operacionais de ciclo, ordenadas por prioridade: **Parto > Secagem > Cobertura > Toque > Produção**. «Registrar baixa» **não** entra nas sugestões (fluxo dedicado na ficha). **Toque** só quando existir cobertura há ≥15 dias sem diagnóstico (alinhado a BR-CICLO-015). Animal fora do rebanho ou macho → array vazio.
-- **Escopo**: `GET /api/v1/animais/:id/contexto`; UI na tab **Visão Geral** de `/animais/:id`.
+- **Enunciado**: `proximas_acoes[]` sugere até **quatro** ações operacionais de ciclo, ordenadas por prioridade: **Parto > Secagem > Cobertura > Toque > Produção**. «Registrar baixa» **não** entra nas sugestões (fluxo dedicado na ficha). **Toque** só quando existir cobertura há ≥15 dias sem diagnóstico (alinhado a BR-CICLO-015). Animal fora do rebanho ou macho → array vazio.
+- **Escopo**: `GET /api/v1/animais/:id/contexto`; UI nas tabs **Visão Geral** e **Ciclo** de `/animais/:id`.
 - **Perfis / permissões**: CTAs visíveis conforme `proximas_acoes[]`; botão **desabilitado** na UI se `href_path` não permitido para o perfil (`appAccess` / `perfil_access.go`).
 - **Efeito**: orientação no curral; bloqueio de escrita mantido na API ao submeter formulários.
 - **Implementação**: `AnimalCicloService.BuildProximasAcoes`, `CoberturaRepository.HasPendenteToqueByAnimalID`; `AnimalProximasAcoesCta.tsx`, `animalProximasAcoesUtils.ts`, `AnimalFichaCiclo.tsx`.
-- **UI**: botões primários (`variant="default"`, `size="touch"`); desktop = card «Próximas ações»; mobile = barra fixa inferior com `env(safe-area-inset-bottom)` e `pb-32` no conteúdo da tab Visão Geral para não tapar o scroll.
+- **UI**: botões primários (`variant="default"`, `size="touch"`); desktop = card «Próximas ações» em linha (wrap); mobile = barra fixa inferior com botões empilhados, `env(safe-area-inset-bottom)` e spacer dinâmico (`pb-32` ou `pb-56` conforme quantidade) nas tabs Visão Geral e Ciclo para não tapar o scroll.
 - **Estado**: implementado.
 
 ### BR-ANIMAIS-008 — Ficha com tabs e sidebar
@@ -164,4 +164,4 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 ---
 
-**Última atualização**: 2026-06-08 (tab Ciclo + visibilidade ciclo — BR-ANIMAIS-008)
+**Última atualização**: 2026-06-08 (próximas ações — máx. 4 — BR-ANIMAIS-007)

@@ -12,7 +12,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { GestaoFormLayout } from "@/components/gestao/GestaoFormLayout";
 import {
   ToqueFormFields,
-  useToqueMinDate,
+  useToqueChronology,
   type ToqueFormState,
 } from "@/components/gestao/ToqueFormFields";
 import {
@@ -94,7 +94,7 @@ function NovoContent() {
       : "";
   }, [formState.coberturaId, coberturasDoAnimal]);
 
-  const minDate = useToqueMinDate(
+  const chronology = useToqueChronology(
     coberturasDoAnimal,
     formState.coberturaId,
     coberturaSelectValue
@@ -166,11 +166,12 @@ function NovoContent() {
         classificacao: formState.classificacao,
         coberturaId: coberturaSelectValue,
       },
-      { minDate, maxDate: todayISODate() }
+      { ...chronology, maxDate: todayISODate() }
     );
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setConformidadeCode(validation.conformidadeCode);
       setIsValidationError(true);
       return;
     }

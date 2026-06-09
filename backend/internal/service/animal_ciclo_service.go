@@ -296,7 +296,7 @@ func (s *AnimalCicloService) PrependBaixaTimeline(ctx context.Context, animal *m
 	return items, nil
 }
 
-const maxProximasAcoes = 2
+const maxProximasAcoes = 4
 
 var proximaAcaoPriority = []string{
 	models.AcaoRegistrarParto,
