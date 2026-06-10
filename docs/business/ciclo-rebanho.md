@@ -229,7 +229,7 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ## Backlog de requisitos (próximos)
 
-1. Bloqueio edição manual `status_saude` com casos ATIVOS — [saude-animal.md](./saude-animal.md) backlog (opcional)
+1. ~~Bloqueio `status_saude` manual com casos ATIVOS — [`BRF-003`](../briefings/BRF-003-status-saude-derivado.md)~~ ✅ implementado (G3, 2026-06-09)
 
 ---
 

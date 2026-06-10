@@ -73,6 +73,9 @@ func (h *AssistenteHandler) Executar(c *gin.Context) {
 			response.ErrorConflict(c, "Já existe um animal com essa identificação", nil)
 			return
 		}
+		if RespondIfStatusSaudeDerivado(c, err) {
+			return
+		}
 		response.ErrorInternal(c, "Erro ao executar ação", err.Error())
 		return
 	}

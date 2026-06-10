@@ -23,6 +23,13 @@
 
 ## ✅ O que foi concluído
 
+### **BRF-003 — status_saude derivado (✅ 2026-06-09)**
+
+- [x] Backend: `ErrStatusSaudeDerivado` / `STATUS_SAUDE_DERIVADO`; `AnimalService` strip `SAUDAVEL` no create + bloqueio no update com casos ATIVOS; `resolveStatusSaudeCriaViva` no parto (BR-PARTOS-008)
+- [x] Assistente Live + legado: strip cadastro; erro orientativo em `editar_animal`
+- [x] Frontend: `AnimalForm` (create sem picker; edit disabled + badge + link Saúde); parto/cria tardia com checkbox «não saudável»
+- [x] Testes unitários `animal_service_test.go`, `cria_service_test.go`; validação manual G3 confirmada; briefing → **implementado** (G3 fechado)
+
 ### **BRF-001 — Vacinas / calendário preventivo (✅ 2026-06-09)**
 
 - [x] Migration 36: `animal_vacinas` (tipo, dose, prevista/aplicada, `validade_dias`, `data_proximo_reforco`, RLS, índices) + `animal_saude.vacina_id` + tipos `VACINA_VENCIDA`/`VACINA_REFORCO_VENCIDA` no CHECK de `alertas`

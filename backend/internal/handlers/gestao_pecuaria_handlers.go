@@ -386,6 +386,8 @@ func (h *PartoHandler) Create(c *gin.Context) {
 			Observacoes         *string  `json:"observacoes"`
 			AnimalIdentificacao *string  `json:"animal_identificacao"`
 			AnimalRaca          *string  `json:"animal_raca"`
+			NaoSaudavel         *bool    `json:"nao_saudavel"`
+			StatusSaudeInicial  *string  `json:"status_saude_inicial"`
 		} `json:"crias"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -418,6 +420,7 @@ func (h *PartoHandler) Create(c *gin.Context) {
 			crias[i] = &models.Cria{
 				Sexo: row.Sexo, Condicao: row.Condicao, Peso: row.Peso, Observacoes: row.Observacoes,
 				AnimalIdentificacao: row.AnimalIdentificacao, AnimalRaca: row.AnimalRaca,
+				NaoSaudavel: row.NaoSaudavel, StatusSaudeInicial: row.StatusSaudeInicial,
 			}
 		}
 		if err := h.svc.CreateWithCrias(c.Request.Context(), p, crias); err != nil {
@@ -569,6 +572,8 @@ func (h *CriaHandler) Create(c *gin.Context) {
 		Observacoes         *string  `json:"observacoes"`
 		AnimalIdentificacao *string  `json:"animal_identificacao"`
 		AnimalRaca          *string  `json:"animal_raca"`
+		NaoSaudavel         *bool    `json:"nao_saudavel"`
+		StatusSaudeInicial  *string  `json:"status_saude_inicial"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorValidation(c, "Dados invalidos", err.Error())
@@ -582,6 +587,8 @@ func (h *CriaHandler) Create(c *gin.Context) {
 		Observacoes:         req.Observacoes,
 		AnimalIdentificacao: req.AnimalIdentificacao,
 		AnimalRaca:          req.AnimalRaca,
+		NaoSaudavel:         req.NaoSaudavel,
+		StatusSaudeInicial:  req.StatusSaudeInicial,
 	}
 	if err := h.svc.Create(c.Request.Context(), cria); err != nil {
 		if errors.Is(err, service.ErrAnimalIdentificacaoDuplicada) {

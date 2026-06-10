@@ -9,8 +9,15 @@ export const CRIA_CONDICAO_OPTIONS = [
   { value: "NATIMORTO", label: "Natimorto" },
 ] as const;
 
+export const CRIA_STATUS_SAUDE_INICIAL_OPTIONS = [
+  { value: "DOENTE", label: "Doente" },
+  { value: "EM_TRATAMENTO", label: "Em tratamento" },
+] as const;
+
 export type CriaSexo = (typeof CRIA_SEXO_OPTIONS)[number]["value"];
 export type CriaCondicao = (typeof CRIA_CONDICAO_OPTIONS)[number]["value"];
+export type CriaStatusSaudeInicial =
+  (typeof CRIA_STATUS_SAUDE_INICIAL_OPTIONS)[number]["value"];
 
 /** Uma linha do formulário de parto (antes do POST em `/api/v1/crias`). */
 export type CriaLinhaFormState = {
@@ -21,8 +28,34 @@ export type CriaLinhaFormState = {
   identificacao: string;
   /** Opcional; enviada como `animal_raca` na API. */
   raca: string;
+  /** Cria viva nasceu não saudável (BR-PARTOS-008). */
+  naoSaudavel: boolean;
+  /** Quando `naoSaudavel`; default DOENTE. */
+  statusSaudeInicial: CriaStatusSaudeInicial;
 };
 
 export function defaultCriaLinha(): CriaLinhaFormState {
-  return { sexo: "F", condicao: "VIVO", peso: "", identificacao: "", raca: "" };
+  return {
+    sexo: "F",
+    condicao: "VIVO",
+    peso: "",
+    identificacao: "",
+    raca: "",
+    naoSaudavel: false,
+    statusSaudeInicial: "DOENTE",
+  };
+}
+
+/** Campos de saúde inicial para POST parto/cria (transitórios no backend). */
+export function criaSaudeInicialPayload(row: CriaLinhaFormState): {
+  nao_saudavel?: boolean;
+  status_saude_inicial?: CriaStatusSaudeInicial;
+} {
+  if (row.condicao !== "VIVO" || !row.naoSaudavel) {
+    return {};
+  }
+  return {
+    nao_saudavel: true,
+    status_saude_inicial: row.statusSaudeInicial,
+  };
 }

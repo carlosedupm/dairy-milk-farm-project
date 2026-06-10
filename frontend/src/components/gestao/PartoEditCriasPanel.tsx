@@ -26,6 +26,8 @@ import {
 import {
   CRIA_CONDICAO_OPTIONS,
   CRIA_SEXO_OPTIONS,
+  CRIA_STATUS_SAUDE_INICIAL_OPTIONS,
+  criaSaudeInicialPayload,
   defaultCriaLinha,
   type CriaLinhaFormState,
 } from "@/components/gestao/cria-constants";
@@ -157,6 +159,7 @@ export function PartoEditCriasPanel({
         peso,
         ...(ident ? { animal_identificacao: ident } : {}),
         ...(raca ? { animal_raca: raca } : {}),
+        ...criaSaudeInicialPayload(draft),
       });
     },
     onMutate: () => setLocalError(null),
@@ -300,6 +303,7 @@ export function PartoEditCriasPanel({
                     ...d,
                     condicao: value as CriaLinhaFormState["condicao"],
                     peso: value === "VIVO" ? d.peso : "",
+                    naoSaudavel: value === "VIVO" ? d.naoSaudavel : false,
                   }))
                 }
               >
@@ -351,6 +355,50 @@ export function PartoEditCriasPanel({
               />
             </div>
           </div>
+          {draft.condicao === "VIVO" ? (
+            <div className="space-y-3 rounded-md border border-border/60 bg-background/50 p-3">
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 rounded border-input"
+                  checked={draft.naoSaudavel}
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, naoSaudavel: e.target.checked }))
+                  }
+                />
+                <span>Cria nasceu não saudável</span>
+              </label>
+              {draft.naoSaudavel ? (
+                <div className="space-y-2 max-w-xs">
+                  <Label htmlFor="edit-parto-nova-cria-saude">Status inicial</Label>
+                  <Select
+                    value={draft.statusSaudeInicial}
+                    onValueChange={(value) =>
+                      setDraft((d) => ({
+                        ...d,
+                        statusSaudeInicial:
+                          value as CriaLinhaFormState["statusSaudeInicial"],
+                      }))
+                    }
+                  >
+                    <SelectTrigger
+                      id="edit-parto-nova-cria-saude"
+                      className="text-foreground"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CRIA_STATUS_SAUDE_INICIAL_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {submitError ? (
             <FormValidationAlert
               {...parsePrefixedConformidadeMessage(submitError)}

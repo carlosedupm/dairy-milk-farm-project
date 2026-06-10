@@ -86,7 +86,7 @@ UpdateStatusSaude → animais.status_saude
 - **Disparadores**: `Create`, `Update` e `Delete` em `AnimalSaudeService` chamam `syncAnimalStatusSaude` após persistir o caso.
 - **Input**: apenas casos com `status = ATIVO`; casos `CONCLUIDO` ou `CANCELADO` **não** entram no cálculo.
 - **Output**: `animais.status_saude` atualizado via `AnimalRepository.UpdateStatusSaude`.
-- **Nuance — cadastro manual**: `status_saude` pode ser definido no cadastro/edição do animal (`AnimalService`, assistente virtual). Esse valor permanece até o **próximo** CRUD de caso de saúde, que **recalcula e sobrescreve** o campo. Não há sync bidirecional hoje.
+- **Edição manual**: ver **BR-SAUDE-013** — com casos ATIVOS o status é somente derivado; cadastro genérico inicia em `SAUDAVEL`; exceção no parto (BR-PARTOS-008).
 
 ### BR-SAUDE-005 — Casos de saúde na timeline da ficha
 
@@ -144,7 +144,7 @@ UpdateStatusSaude → animais.status_saude
 
 | Item | Estado | Notas |
 |------|--------|-------|
-| Bloqueio de edição manual de `status_saude` com casos ATIVOS | planejado | Gap opcional; hoje cadastro manual pode divergir até próximo CRUD de caso |
+| Bloqueio de edição manual de `status_saude` com casos ATIVOS | implementado | **BR-SAUDE-013** — briefing [`BRF-003`](../briefings/BRF-003-status-saude-derivado.md) |
 
 ---
 
@@ -238,5 +238,18 @@ UpdateStatusSaude → animais.status_saude
   - Frontend: `frontend/src/lib/saude-date-limits.ts`; `AnimalSaudeFormFields` (`minDate` animal, `maxDate` só em início); `validateAnimalSaudeForm` com TMP-*; testes `form-validation.saude.test.ts` (vitest).
 - **Estado**: implementado (briefing **BRF-002**, G3 2026-06-09).
 
+### BR-SAUDE-013 — status_saude derivado; bloqueio de edição manual
+
+- **Enunciado**: Quando o animal possui ≥1 caso em `animal_saude` com `status=ATIVO`, `animais.status_saude` é **somente derivado** conforme BR-SAUDE-004. Tentativa de alterar `status_saude` via `PUT /api/v1/animais/:id`, assistente `editar_animal` ou UI de edição → bloqueio **400** `STATUS_SAUDE_DERIVADO`. Edição de outros campos do animal permanece permitida. Sem casos ATIVOS, alteração manual de `status_saude` continua permitida.
+- **Cadastro genérico**: `POST /api/v1/animais` **ignora** `status_saude` no body e persiste **`SAUDAVEL`** (decisão G1 BRF-003). UI de cadastro não exibe picker de status.
+- **Exceção parto**: cria viva no parto pode nascer não saudável — ver **BR-PARTOS-008**.
+- **Escopo**: `AnimalService.Create`/`Update`; assistente; `AnimalForm` (criar/editar).
+- **Perfis / permissões**: quem já pode editar animal; bloqueio no servidor.
+- **Efeito**: 400 `STATUS_SAUDE_DERIVADO` quando aplicável.
+- **Implementação**:
+  - Backend: `AnimalService.Update` (`validateStatusSaudeUpdate` + `ListAtivosByAnimalID`); strip em `Create`; `ErrStatusSaudeDerivado` / `STATUS_SAUDE_DERIVADO`; assistente Live + legado.
+  - Frontend: `AnimalForm` — sem picker no create; edit disabled + badge + tooltip + link tab Saúde quando ATIVOS.
+- **Estado**: implementado (briefing **BRF-003**, G3 2026-06-09).
+
 ---
-**Última atualização**: 2026-06-09 (BR-SAUDE-012 implementado — BRF-002 G3)
+**Última atualização**: 2026-06-09 (BR-SAUDE-013 implementado — BRF-003)

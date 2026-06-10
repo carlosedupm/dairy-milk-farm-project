@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type {
@@ -38,11 +39,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  getApiErrorCode,
   getApiErrorConformidadeCode,
   getApiErrorMessage,
   parsePrefixedConformidadeMessage,
 } from "@/lib/errors";
 import { FormValidationAlert } from "@/components/ui/form-validation-alert";
+import { AnimalStatusSaudeBadge } from "@/components/animais/AnimalStatusSaudeBadge";
+import { ButtonWithTooltip } from "@/components/ui/button-with-tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  animalSaudeListQueryKey,
+  listByAnimal,
+} from "@/services/animalSaude";
 import {
   validateAnimalForm,
   type FieldErrors,
@@ -100,6 +109,18 @@ export function AnimalForm({
   const [isValidationError, setIsValidationError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
+  const isEdit = Boolean(initial?.id);
+  const animalId = initial?.id ?? 0;
+
+  const { data: casosSaude = [] } = useQuery({
+    queryKey: animalSaudeListQueryKey(animalId),
+    queryFn: () => listByAnimal(animalId),
+    enabled: isEdit && animalId > 0,
+  });
+  const temCasosAtivos = casosSaude.some((c) => c.status === "ATIVO");
+  const statusSaudeAtual =
+    (initial?.status_saude as StatusSaude | undefined) ?? statusSaude;
+
   const { data: fazendas = [] } = useQuery<Fazenda[]>({
     queryKey: ["me", "fazendas"],
     queryFn: getMinhasFazendas,
@@ -134,10 +155,13 @@ export function AnimalForm({
       fazenda_id: fazendaUnicaId ?? fazendaId,
       identificacao: identificacao.trim(),
       sexo,
-      status_saude: statusSaude,
       categoria: categoria || null,
       origem_aquisicao: origemAquisicao,
     };
+
+    if (isEdit) {
+      payload.status_saude = statusSaude;
+    }
 
     if (raca.trim()) payload.raca = raca.trim();
     if (origemAquisicao === "NASCIDO" && dataNascimento.trim()) {
@@ -151,7 +175,9 @@ export function AnimalForm({
       await onSubmit(payload);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Erro ao salvar. Tente novamente."));
-      setConformidadeCode(getApiErrorConformidadeCode(err));
+      setConformidadeCode(
+        getApiErrorConformidadeCode(err) ?? getApiErrorCode(err)
+      );
       setIsValidationError(false);
     }
   };
@@ -310,25 +336,6 @@ export function AnimalForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="statusSaude">Status de Saúde</Label>
-              <Select
-                value={statusSaude}
-                onValueChange={(v) => setStatusSaude(v as StatusSaude)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_SAUDE_OPTIONS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {STATUS_SAUDE_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="categoria">Categoria</Label>
               <Select
                 value={categoria || "_"}
@@ -350,6 +357,62 @@ export function AnimalForm({
               </Select>
             </div>
           </div>
+
+          {isEdit ? (
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Label htmlFor="statusSaude">Status de saúde</Label>
+                {statusSaudeAtual ? (
+                  <AnimalStatusSaudeBadge status={statusSaudeAtual} />
+                ) : null}
+              </div>
+              {temCasosAtivos ? (
+                <TooltipProvider delayDuration={300}>
+                  <div className="space-y-2">
+                    <ButtonWithTooltip
+                      tooltip="Status derivado dos casos clínicos ativos. Conclua ou cancele os casos na tab Saúde para alterar manualmente."
+                      className="w-full justify-start h-auto min-h-10 px-3 py-2 font-normal text-muted-foreground bg-muted/50 border border-input rounded-md cursor-not-allowed"
+                      type="button"
+                      disabled
+                    >
+                      {STATUS_SAUDE_LABELS[statusSaude]}
+                    </ButtonWithTooltip>
+                    <p className="text-sm text-muted-foreground">
+                      Registe ou encerre casos na{" "}
+                      <Link
+                        href={`/animais/${animalId}?tab=saude`}
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
+                        tab Saúde
+                      </Link>
+                      .
+                    </p>
+                  </div>
+                </TooltipProvider>
+              ) : (
+                <Select
+                  value={statusSaude}
+                  onValueChange={(v) => setStatusSaude(v as StatusSaude)}
+                >
+                  <SelectTrigger id="statusSaude">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_SAUDE_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {STATUS_SAUDE_LABELS[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Novos animais iniciam como saudáveis. Registe casos na tab Saúde
+              após o cadastro, se necessário.
+            </p>
+          )}
 
           <Button type="submit" size="lg" disabled={isPending}>
             {isPending ? "Salvando…" : submitLabel}

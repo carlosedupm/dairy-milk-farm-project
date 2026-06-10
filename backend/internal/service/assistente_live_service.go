@@ -128,7 +128,7 @@ DIRETRIZ CRÍTICA: Você não tem acesso direto ao banco de dados, exceto atrav�
 Sempre que o usuário perguntar sobre fazendas, animais, produção, saúde ou alertas, você DEVE OBRIGATORIAMENTE chamar a função correspondente antes de responder.
 NUNCA diga que o usuário não tem dados sem antes tentar listar_fazendas().
 A função listar_animais retorna, para cada animal, identificação, raça e data de nascimento (Nascimento: YYYY-MM-DD ou "não informada"). Use esses dados para responder perguntas como "qual o animal mais novo", "qual o mais velho" ou "idade dos animais".
-Para saúde animal use consultar_saude e registrar_saude (casos clínicos com tipo_caso TRATAMENTO, PREVENTIVO, CIRURGIA ou OUTRO). Não altere status_saude via editar_animal quando o usuário quiser registrar um tratamento — use registrar_saude.
+Para saúde animal use consultar_saude e registrar_saude (casos clínicos com tipo_caso TRATAMENTO, PREVENTIVO, CIRURGIA ou OUTRO). Não altere status_saude via editar_animal quando o usuário quiser registrar um tratamento — use registrar_saude. Com casos clínicos ATIVOS, status_saude é derivado e não pode ser alterado manualmente via editar_animal; oriente o usuário a concluir ou cancelar casos na tab Saúde.
 Para alertas use listar_alertas (filtros severidade e status) e resolver_alerta. Status RESOLVIDO encerra o alerta (GERENTE+). Datas no formato YYYY-MM-DD; use duracao_dias para calcular data_fim a partir de data_inicio.
 
 Contexto do Usuário:
@@ -315,7 +315,6 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 					"data_nascimento":   {Type: genai.TypeString, Description: "Data de nascimento no formato YYYY-MM-DD ou apenas YYYY (obrigatória se origem_aquisicao for NASCIDO)"},
 					"data_entrada":      {Type: genai.TypeString, Description: "Data de entrada na fazenda (útil para animais COMPRADOS, indica data de aquisição)"},
 					"sexo":              {Type: genai.TypeString, Description: "Sexo (M ou F)"},
-					"status_saude":      {Type: genai.TypeString, Description: "Status de saúde: SAUDAVEL, DOENTE ou EM_TRATAMENTO"},
 				},
 				Required: []string{"identificacao"},
 			},
@@ -371,7 +370,7 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 		},
 		{
 			Name:        "editar_animal",
-			Description: "Altera dados de um animal existente: identificação/nome, raça, data de nascimento, sexo, status de saúde ou transferir para outra fazenda.",
+			Description: "Altera dados de um animal existente: identificação/nome, raça, data de nascimento, sexo ou transferir para outra fazenda. status_saude só pode ser alterado manualmente se não houver casos clínicos ATIVOS; com casos ativos use registrar_saude ou conclua/cancele casos na tab Saúde.",
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
@@ -718,16 +717,6 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 				a.Sexo = &norm
 			}
 		}
-		if v, ok := call.Args["status_saude"].(string); ok && strings.TrimSpace(v) != "" {
-			s := strings.TrimSpace(strings.ToUpper(v))
-			if models.IsValidStatusSaude(s) {
-				a.StatusSaude = &s
-			}
-		}
-		if a.StatusSaude == nil {
-			defaultStatus := models.StatusSaudavel
-			a.StatusSaude = &defaultStatus
-		}
 		if userID > 0 {
 			a.CreatedBy = &userID
 		}
@@ -866,7 +855,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if v, ok := call.Args["status_saude"].(string); ok {
 			s := strings.TrimSpace(strings.ToUpper(v))
 			if s == "" {
-				a.StatusSaude = nil
+				// omitido ou vazio: preservar valor existente
 			} else if models.IsValidStatusSaude(s) {
 				a.StatusSaude = &s
 			}
@@ -877,6 +866,9 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 
 		errUpdateAnimal := s.animalSvc.Update(ctx, a)
 		if errUpdateAnimal != nil {
+			if m := s.mapAssistenteAnimalError(errUpdateAnimal); m != nil {
+				return m, nil
+			}
 			return nil, errUpdateAnimal
 		}
 		return map[string]any{"status": "sucesso", "mensagem": "Animal atualizado com sucesso", "animal": a.Identificacao, "redirect_path": fmt.Sprintf("/animais/%d", a.ID)}, nil
@@ -1494,6 +1486,19 @@ func parseAssistenteDateOnly(s string) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+}
+
+func (s *AssistenteLiveService) mapAssistenteAnimalError(err error) map[string]any {
+	switch {
+	case errors.Is(err, ErrStatusSaudeDerivado):
+		return map[string]any{"erro": err.Error()}
+	case errors.Is(err, ErrAnimalNotFound):
+		return map[string]any{"erro": "animal não encontrado"}
+	case errors.Is(err, ErrAnimalForaDoRebanho):
+		return map[string]any{"erro": err.Error()}
+	default:
+		return nil
+	}
 }
 
 func (s *AssistenteLiveService) mapAssistenteSaudeError(err error) map[string]any {

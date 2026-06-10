@@ -13,8 +13,10 @@ type Cria struct {
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 
 	// Somente entrada em POST /crias (não persistidos na tabela crias); limpos na resposta após processamento.
-	AnimalIdentificacao *string `json:"animal_identificacao,omitempty" db:"-"`
-	AnimalRaca          *string `json:"animal_raca,omitempty" db:"-"`
+	AnimalIdentificacao  *string `json:"animal_identificacao,omitempty" db:"-"`
+	AnimalRaca           *string `json:"animal_raca,omitempty" db:"-"`
+	NaoSaudavel          *bool   `json:"nao_saudavel,omitempty" db:"-"`
+	StatusSaudeInicial   *string `json:"status_saude_inicial,omitempty" db:"-"`
 }
 
 const (

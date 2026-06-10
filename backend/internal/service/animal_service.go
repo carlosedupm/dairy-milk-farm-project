@@ -28,15 +28,50 @@ func init() {
 
 var ErrAnimalNotFound = errors.New("animal não encontrado")
 var ErrAnimalIdentificacaoDuplicada = errors.New("identificação já existe")
+var ErrStatusSaudeDerivado = errors.New("status de saúde é derivado dos casos clínicos ativos: conclua ou cancele os casos na tab Saúde ou aguarde a sincronização")
 
-type AnimalService struct {
-	repo         *repository.AnimalRepository
-	fazendaRepo  *repository.FazendaRepository
-	gestacaoRepo *repository.GestacaoRepository
+type animalSaudeAtivosLister interface {
+	ListAtivosByAnimalID(ctx context.Context, animalID int64) ([]*models.AnimalSaude, error)
 }
 
-func NewAnimalService(repo *repository.AnimalRepository, fazendaRepo *repository.FazendaRepository, gestacaoRepo *repository.GestacaoRepository) *AnimalService {
-	return &AnimalService{repo: repo, fazendaRepo: fazendaRepo, gestacaoRepo: gestacaoRepo}
+type AnimalService struct {
+	repo              *repository.AnimalRepository
+	fazendaRepo       *repository.FazendaRepository
+	gestacaoRepo      *repository.GestacaoRepository
+	animalSaudeAtivos animalSaudeAtivosLister
+}
+
+func NewAnimalService(repo *repository.AnimalRepository, fazendaRepo *repository.FazendaRepository, gestacaoRepo *repository.GestacaoRepository, animalSaudeAtivos animalSaudeAtivosLister) *AnimalService {
+	return &AnimalService{repo: repo, fazendaRepo: fazendaRepo, gestacaoRepo: gestacaoRepo, animalSaudeAtivos: animalSaudeAtivos}
+}
+
+func effectiveStatusSaude(s *string) string {
+	if s == nil || strings.TrimSpace(*s) == "" {
+		return models.StatusSaudavel
+	}
+	return strings.TrimSpace(*s)
+}
+
+func (s *AnimalService) validateStatusSaudeUpdate(ctx context.Context, existing, incoming *models.Animal) error {
+	if s.animalSaudeAtivos == nil {
+		return nil
+	}
+	oldStatus := effectiveStatusSaude(existing.StatusSaude)
+	newStatus := effectiveStatusSaude(incoming.StatusSaude)
+	if newStatus == oldStatus {
+		return nil
+	}
+	ativos, err := s.animalSaudeAtivos.ListAtivosByAnimalID(ctx, incoming.ID)
+	if err != nil {
+		return err
+	}
+	if len(ativos) == 0 {
+		return nil
+	}
+	if newStatus == deriveAnimalStatusSaudeFromCasosAtivos(ativos) {
+		return nil
+	}
+	return ErrStatusSaudeDerivado
 }
 
 func (s *AnimalService) Create(ctx context.Context, animal *models.Animal) error {
@@ -81,11 +116,9 @@ func (s *AnimalService) Create(ctx context.Context, animal *models.Animal) error
 		return errors.New("data de nascimento é obrigatória para animais nascidos na propriedade")
 	}
 
-	// Definir status de saúde padrão se não fornecido
-	if animal.StatusSaude == nil {
-		defaultStatus := models.StatusSaudavel
-		animal.StatusSaude = &defaultStatus
-	}
+	// Cadastro genérico: sempre SAUDAVEL (BR-SAUDE-013); ignora body
+	defaultStatus := models.StatusSaudavel
+	animal.StatusSaude = &defaultStatus
 	// Validar categoria, status reprodutivo e motivo saída se fornecidos
 	if animal.Categoria != nil && *animal.Categoria != "" && !models.IsValidCategoria(*animal.Categoria) {
 		return errors.New("categoria inválida")
@@ -245,6 +278,9 @@ func (s *AnimalService) Update(ctx context.Context, animal *models.Animal) error
 		return err
 	}
 	if err := ValidateStatusReprodutivoPrenhe(ctx, s.gestacaoRepo, animal.FazendaID, animal.ID, animal.StatusReprodutivo); err != nil {
+		return err
+	}
+	if err := s.validateStatusSaudeUpdate(ctx, existing, animal); err != nil {
 		return err
 	}
 

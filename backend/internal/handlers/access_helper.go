@@ -157,6 +157,21 @@ func ResolveFazendaIDsForList(c *gin.Context, fazendaSvc fazendaAccessQuerier) (
 	return fazendaIDs, true
 }
 
+// RespondIfStatusSaudeDerivado mapeia ErrStatusSaudeDerivado para 400 STATUS_SAUDE_DERIVADO (BR-SAUDE-013).
+func RespondIfStatusSaudeDerivado(c *gin.Context, err error) bool {
+	if errors.Is(err, service.ErrStatusSaudeDerivado) {
+		response.Error(
+			c,
+			http.StatusBadRequest,
+			response.CodeStatusSaudeDerivado,
+			err.Error(),
+			nil,
+		)
+		return true
+	}
+	return false
+}
+
 // RespondIfAnimalForaRebanho mapeia ErrAnimalForaDoRebanho para 400 ANIMAL_FORA_REBANHO (BR-BAIXA-007/010).
 func RespondIfAnimalForaRebanho(c *gin.Context, err error) bool {
 	if errors.Is(err, service.ErrAnimalForaDoRebanho) {
@@ -172,9 +187,12 @@ func RespondIfAnimalForaRebanho(c *gin.Context, err error) bool {
 	return false
 }
 
-// RespondIfDomainWriteError trata erros de integridade (INT/TMP) e animal fora do rebanho.
+// RespondIfDomainWriteError trata erros de integridade (INT/TMP), status derivado e animal fora do rebanho.
 func RespondIfDomainWriteError(c *gin.Context, err error) bool {
 	if RespondIfIntegridadeCiclo(c, err) {
+		return true
+	}
+	if RespondIfStatusSaudeDerivado(c, err) {
 		return true
 	}
 	return RespondIfAnimalForaRebanho(c, err)

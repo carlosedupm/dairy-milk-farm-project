@@ -58,6 +58,18 @@ Registro de **parto** da matriz, opcionalmente com **crias** no mesmo POST, aber
 - **Implementação**: `AnimalRepository.ListParaPartoByFazendaID`; `PartoFormFields`.
 - **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
 
+### BR-PARTOS-008 — Cria viva não saudável no parto
+
+- **Enunciado**: No registo de parto com cria **VIVA**, o operador pode marcar «cria nasceu não saudável». Quando marcado, o animal gerado (bezerra/bezerro) recebe `status_saude` **`DOENTE`** ou **`EM_TRATAMENTO`** (escolha no formulário; default `DOENTE`). Cria saudável (checkbox desmarcado) → `SAUDAVEL`. Única exceção ao default SAUDAVEL do cadastro genérico (BR-SAUDE-013).
+- **Escopo**: `POST /api/v1/partos` com `crias[]`; registro tardio de cria no painel de edição do parto; cria viva com geração automática de animal (`CriaService.insertCriaVivaComAnimalGeradoTx`).
+- **Perfis / permissões**: quem pode registar parto (incl. FUNCIONARIO POST — BR-ACESSO-015).
+- **Efeito**: valor inicial em `animals.status_saude`; **não** cria caso automático em `animal_saude` nesta entrega (operador pode registar tratamento depois na tab Saúde).
+- **Implementação**:
+  - Payload `crias[]`: `nao_saudavel` (bool) e `status_saude_inicial` opcional (`DOENTE`|`EM_TRATAMENTO`).
+  - Backend: `resolveStatusSaudeCriaViva` em `cria_service.go` → `insertCriaVivaComAnimalGeradoTx`.
+  - Frontend: `PartoFormFields.tsx`, `PartoEditCriasPanel.tsx`, `cria-constants.ts`.
+- **Estado**: implementado (briefing **BRF-003**, G3 2026-06-09).
+
 ---
 
-**Última atualização**: 2026-06-02 (BR-PARTOS-006 — minDate UI gestão)
+**Última atualização**: 2026-06-09 (BR-PARTOS-008 implementado — BRF-003)

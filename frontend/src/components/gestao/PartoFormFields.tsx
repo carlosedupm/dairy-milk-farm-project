@@ -29,6 +29,7 @@ import { useAnimaisCicloContext } from "@/components/animais/useAnimaisCicloCont
 import {
   CRIA_CONDICAO_OPTIONS,
   CRIA_SEXO_OPTIONS,
+  CRIA_STATUS_SAUDE_INICIAL_OPTIONS,
   type CriaLinhaFormState,
   defaultCriaLinha,
 } from "@/components/gestao/cria-constants";
@@ -244,6 +245,7 @@ export function PartoFormFields({
                         ...crias[i],
                         condicao,
                         peso: condicao === "VIVO" ? crias[i].peso : "",
+                        naoSaudavel: condicao === "VIVO" ? crias[i].naoSaudavel : false,
                       };
                       return { ...s, crias };
                     })
@@ -324,6 +326,61 @@ export function PartoFormFields({
                   />
                 </div>
               </div>
+              {row.condicao === "VIVO" ? (
+                <div className="space-y-3 rounded-md border border-border/60 bg-background/50 p-3">
+                  <label className="flex items-start gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-input"
+                      checked={row.naoSaudavel}
+                      onChange={(e) =>
+                        setFormState((s) => {
+                          const crias = [...s.crias];
+                          crias[i] = {
+                            ...crias[i],
+                            naoSaudavel: e.target.checked,
+                          };
+                          return { ...s, crias };
+                        })
+                      }
+                    />
+                    <span>Cria nasceu não saudável</span>
+                  </label>
+                  {row.naoSaudavel ? (
+                    <div className="space-y-2 max-w-xs">
+                      <Label htmlFor={`parto-cria-saude-${i}`}>Status inicial</Label>
+                      <Select
+                        value={row.statusSaudeInicial}
+                        onValueChange={(value) =>
+                          setFormState((s) => {
+                            const crias = [...s.crias];
+                            crias[i] = {
+                              ...crias[i],
+                              statusSaudeInicial:
+                                value as CriaLinhaFormState["statusSaudeInicial"],
+                            };
+                            return { ...s, crias };
+                          })
+                        }
+                      >
+                        <SelectTrigger
+                          id={`parto-cria-saude-${i}`}
+                          className="text-foreground"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CRIA_STATUS_SAUDE_INICIAL_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
             );
           })}

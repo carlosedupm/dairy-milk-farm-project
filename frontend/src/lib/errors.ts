@@ -10,6 +10,7 @@ type AxiosErrorShape = {
     status?: number
     data?: {
       error?: string | {
+        code?: string
         message?: string
         details?: string | { conformidade?: string } | unknown
       }
@@ -44,6 +45,19 @@ export function parsePrefixedConformidadeMessage(message: string): {
     conformidadeCode: match[1],
     message: body || trimmed,
   }
+}
+
+/** Lê `error.code` de respostas da API (ex.: STATUS_SAUDE_DERIVADO). */
+export function getApiErrorCode(err: unknown): string | undefined {
+  if (!err || typeof err !== 'object' || !('response' in err)) {
+    return undefined
+  }
+  const res = (err as AxiosErrorShape).response
+  if (!res) return undefined
+  const errorPayload = res.data?.error
+  if (!errorPayload || typeof errorPayload !== 'object') return undefined
+  const code = errorPayload.code
+  return typeof code === 'string' && code.trim() ? code.trim() : undefined
 }
 
 /** Lê `error.details.conformidade` de respostas da API (INT-xxx / TMP-xxx). */

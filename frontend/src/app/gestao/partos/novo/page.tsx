@@ -26,7 +26,7 @@ import { toast } from "@/hooks/use-toast";
 import { useGestaoNovoUrlParams } from "@/hooks/useGestaoNovoUrlParams";
 import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
 import { nowDatetimeLocalInputValue } from "@/lib/format";
-import { defaultCriaLinha } from "@/components/gestao/cria-constants";
+import { criaSaudeInicialPayload, defaultCriaLinha } from "@/components/gestao/cria-constants";
 
 function emptyFormState(animalId = "", gestacaoId = ""): PartoFormState {
   return {
@@ -88,6 +88,7 @@ function NovoContent() {
           ...(peso !== undefined ? { peso } : {}),
           ...(ident ? { animal_identificacao: ident } : {}),
           ...(raca ? { animal_raca: raca } : {}),
+          ...criaSaudeInicialPayload(row),
         });
       }
       return createParto({

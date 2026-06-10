@@ -30,7 +30,8 @@ type ErrorResponse struct {
 // Códigos de erro padronizados
 const (
 	CodeValidationError    = "VALIDATION_ERROR"
-	CodeAnimalForaRebanho  = "ANIMAL_FORA_REBANHO"
+	CodeAnimalForaRebanho     = "ANIMAL_FORA_REBANHO"
+	CodeStatusSaudeDerivado = "STATUS_SAUDE_DERIVADO"
 	CodeUnauthorized    = "UNAUTHORIZED"
 	CodeForbidden       = "FORBIDDEN"
 	CodeNotFound        = "NOT_FOUND"

@@ -508,6 +508,9 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 	if req.StatusReprodutivo == nil {
 		animal.StatusReprodutivo = animalExistente.StatusReprodutivo
 	}
+	if req.StatusSaude == nil {
+		animal.StatusSaude = animalExistente.StatusSaude
+	}
 	if req.MaeID == nil {
 		animal.MaeID = animalExistente.MaeID
 	}
@@ -550,6 +553,9 @@ func (h *AnimalHandler) Update(c *gin.Context) {
 
 	if err := h.service.Update(c.Request.Context(), animal); err != nil {
 		if RespondIfIntegridadeCiclo(c, err) {
+			return
+		}
+		if RespondIfStatusSaudeDerivado(c, err) {
 			return
 		}
 		if RespondIfAnimalForaRebanho(c, err) {

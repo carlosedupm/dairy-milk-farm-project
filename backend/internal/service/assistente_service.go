@@ -720,16 +720,6 @@ func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload
 			animal.Sexo = &s
 		}
 	}
-	if v, ok := payload["status_saude"].(string); ok && strings.TrimSpace(v) != "" {
-		s := strings.TrimSpace(strings.ToUpper(v))
-		if models.IsValidStatusSaude(s) {
-			animal.StatusSaude = &s
-		}
-	}
-	if animal.StatusSaude == nil {
-		defaultStatus := models.StatusSaudavel
-		animal.StatusSaude = &defaultStatus
-	}
 	if userID > 0 {
 		animal.CreatedBy = &userID
 	}
@@ -779,15 +769,9 @@ func (s *AssistenteService) executarEditarAnimal(ctx context.Context, payload ma
 	}
 	if v, ok := payload["status_saude"].(string); ok {
 		s := strings.TrimSpace(strings.ToUpper(v))
-		if s == "" {
-			animal.StatusSaude = nil
-		} else if models.IsValidStatusSaude(s) {
+		if s != "" && models.IsValidStatusSaude(s) {
 			animal.StatusSaude = &s
 		}
-	}
-	if animal.StatusSaude == nil {
-		defaultStatus := models.StatusSaudavel
-		animal.StatusSaude = &defaultStatus
 	}
 	if idNum, ok := payload["fazenda_id"].(float64); ok && idNum > 0 {
 		animal.FazendaID = int64(idNum)

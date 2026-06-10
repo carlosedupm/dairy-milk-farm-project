@@ -19,6 +19,8 @@ export type CriaCreatePayload = {
   observacoes?: string | null;
   animal_identificacao?: string | null;
   animal_raca?: string | null;
+  nao_saudavel?: boolean;
+  status_saude_inicial?: "DOENTE" | "EM_TRATAMENTO";
 };
 
 export async function listByParto(partoId: number): Promise<Cria[]> {

@@ -142,6 +142,7 @@ func (s *CriaService) insertCriaVivaComAnimalGeradoTx(ctx context.Context, tx pg
 	}
 	dn := parto.Data
 	origem := models.OrigemNascido
+	statusSaude := resolveStatusSaudeCriaViva(c)
 	animal := &models.Animal{
 		Identificacao:   ident,
 		Sexo:            &c.Sexo,
@@ -152,6 +153,7 @@ func (s *CriaService) insertCriaVivaComAnimalGeradoTx(ctx context.Context, tx pg
 		DataNascimento:  &dn,
 		OrigemAquisicao: &origem,
 		Raca:            racaPtr,
+		StatusSaude:     &statusSaude,
 		CreatedBy:       parto.CreatedBy,
 	}
 	if err := s.repo.CreateTx(ctx, tx, c); err != nil {
@@ -216,6 +218,23 @@ func ptrStr(p *string) string {
 		return ""
 	}
 	return *p
+}
+
+// resolveStatusSaudeCriaViva define status_saude inicial do animal gerado (BR-PARTOS-008).
+func resolveStatusSaudeCriaViva(c *models.Cria) string {
+	if c.Condicao != models.CriaCondicaoVivo {
+		return models.StatusSaudavel
+	}
+	if c.NaoSaudavel == nil || !*c.NaoSaudavel {
+		return models.StatusSaudavel
+	}
+	if c.StatusSaudeInicial != nil {
+		s := strings.TrimSpace(*c.StatusSaudeInicial)
+		if models.IsValidStatusSaude(s) && s != models.StatusSaudavel {
+			return s
+		}
+	}
+	return models.StatusDoente
 }
 
 func clearCriaTransientAnimalFields(c *models.Cria) {
