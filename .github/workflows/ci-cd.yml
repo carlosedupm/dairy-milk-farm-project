@@ -80,7 +80,7 @@ jobs:
         cache-dependency-path: frontend/package-lock.json
 
     - name: Cache ESLint
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: frontend/.eslintcache
         key: eslint-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json', 'frontend/eslint.config.mjs') }}
