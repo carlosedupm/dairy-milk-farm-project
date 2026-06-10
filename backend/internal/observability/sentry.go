@@ -42,9 +42,9 @@ func CaptureError(err error, tags map[string]string, extra map[string]interface{
 		hub.Scope().SetTag(k, v)
 	}
 
-	// Adicionar contexto extra
-	for k, v := range extra {
-		hub.Scope().SetExtra(k, v)
+	// Contexto estruturado no evento (SetExtra removido no sentry-go 0.46+).
+	if len(extra) > 0 {
+		hub.Scope().SetContext("extra", sentry.Context(extra))
 	}
 
 	hub.CaptureException(err)
