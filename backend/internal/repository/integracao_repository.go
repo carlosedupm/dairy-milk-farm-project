@@ -130,7 +130,7 @@ func (r *IntegracaoRepository) SetFazendas(ctx context.Context, clienteID int64,
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 	if _, err := tx.Exec(ctx, `DELETE FROM integracao_cliente_fazendas WHERE cliente_id = $1`, clienteID); err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (r *IntegracaoRepository) SetScopes(ctx context.Context, clienteID int64, s
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 	if _, err := tx.Exec(ctx, `DELETE FROM integracao_cliente_scopes WHERE cliente_id = $1`, clienteID); err != nil {
 		return err
 	}

@@ -17,6 +17,8 @@ func NewRefreshTokenRepository(db *pgxpool.Pool) *RefreshTokenRepository {
 	return &RefreshTokenRepository{db: db}
 }
 
+// Create persiste o refresh token. A coluna `token` armazena o SHA-256 (hex) do valor
+// em claro — o hashing é responsabilidade do RefreshTokenService.
 func (r *RefreshTokenRepository) Create(ctx context.Context, token *models.RefreshToken) error {
 	query := `
 		INSERT INTO refresh_tokens (token, user_id, expires_at)
@@ -35,6 +37,7 @@ func (r *RefreshTokenRepository) Create(ctx context.Context, token *models.Refre
 	return err
 }
 
+// GetByToken busca pelo hash do token (SHA-256 hex), não pelo valor em claro.
 func (r *RefreshTokenRepository) GetByToken(ctx context.Context, token string) (*models.RefreshToken, error) {
 	query := `
 		SELECT id, token, user_id, expires_at, created_at, revoked

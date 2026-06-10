@@ -394,27 +394,27 @@ func (s *AnimalService) SearchByIdentificacaoPaginatedForFazendas(ctx context.Co
 	return s.repo.SearchByIdentificacaoPaginated(ctx, f, limit, offset)
 }
 
-func (s *AnimalService) GetByStatusSaude(ctx context.Context, statusSaude string) ([]*models.Animal, error) {
-	return s.repo.GetByStatusSaude(ctx, statusSaude)
+func (s *AnimalService) GetByStatusSaude(ctx context.Context, statusSaude string, fazendaIDs []int64) ([]*models.Animal, error) {
+	return s.repo.GetByStatusSaude(ctx, statusSaude, fazendaIDs)
 }
 
-func (s *AnimalService) GetBySexo(ctx context.Context, sexo string) ([]*models.Animal, error) {
+func (s *AnimalService) GetBySexo(ctx context.Context, sexo string, fazendaIDs []int64) ([]*models.Animal, error) {
 	if !models.IsValidSexo(sexo) {
 		return nil, errors.New("sexo inválido (deve ser 'M' ou 'F')")
 	}
-	return s.repo.GetBySexo(ctx, sexo)
+	return s.repo.GetBySexo(ctx, sexo, fazendaIDs)
 }
 
-func (s *AnimalService) Count(ctx context.Context) (int64, error) {
-	return s.repo.Count(ctx)
+func (s *AnimalService) Count(ctx context.Context, fazendaIDs []int64) (int64, error) {
+	return s.repo.Count(ctx, fazendaIDs)
 }
 
 func (s *AnimalService) CountByFazenda(ctx context.Context, fazendaID int64) (int64, error) {
 	return s.repo.CountByFazenda(ctx, fazendaID)
 }
 
-func (s *AnimalService) GetByLoteID(ctx context.Context, loteID int64) ([]*models.Animal, error) {
-	return s.repo.GetByLoteID(ctx, loteID)
+func (s *AnimalService) GetByLoteID(ctx context.Context, loteID int64, fazendaIDs []int64) ([]*models.Animal, error) {
+	return s.repo.GetByLoteID(ctx, loteID, fazendaIDs)
 }
 
 func (s *AnimalService) GetByCategoria(ctx context.Context, fazendaID int64, categoria string) ([]*models.Animal, error) {

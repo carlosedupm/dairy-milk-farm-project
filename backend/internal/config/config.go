@@ -9,31 +9,33 @@ import (
 )
 
 type Config struct {
-	Port                  string
-	Env                   string
-	LogLevel              string
-	DatabaseURL           string
-	JWTPrivateKey         string
-	JWTPublicKey          string
-	CORSOrigin            string
-	SentryDSN             string
-	GeminiAPIKey          string
-	GeminiModel           string // modelo para Dev Studio (default: gemini-2.0-flash)
-	GeminiModelAssistente string // modelo para Assistente; se vazio usa GeminiModel (ex.: gemini-2.5-flash-lite)
-	GitHubToken           string
-	GitHubRepo            string
-	GitHubContextBranch              string // branch de produção para contexto Dev Studio (default: main)
-	IntegrationRateLimitPerHour      int    // rate limit M2M por cliente (default: 300)
-	AuthLoginRateLimit               int    // tentativas de login por IP por janela (default: 10)
-	AuthLoginRateWindowMinutes       int    // janela do login em minutos (default: 15)
-	AuthRegisterRateLimit            int    // registos por IP por hora (default: 5)
-	AuthRefreshRateLimit             int    // refresh por IP por hora (default: 30)
-	AlertasCronEnabled               bool   // geração diária de alertas (default: true)
-	AlertasCronHour                  int    // hora local do disparo (default: 6)
-	AlertasTZ                        string // timezone do cron (default: America/Sao_Paulo)
-	VAPIDPublicKey                   string // chave pública Web Push (VAPID)
-	VAPIDPrivateKey                  string // chave privada Web Push (VAPID)
-	VAPIDSubject                     string // contact URI (ex.: mailto:suporte@ceialmilk.com)
+	Port                        string
+	Env                         string
+	LogLevel                    string
+	DatabaseURL                 string
+	JWTPrivateKey               string
+	JWTPublicKey                string
+	CORSOrigin                  string
+	SentryDSN                   string
+	GeminiAPIKey                string
+	GeminiModel                 string // modelo para Dev Studio (default: gemini-2.0-flash)
+	GeminiModelAssistente       string // modelo para Assistente; se vazio usa GeminiModel (ex.: gemini-2.5-flash-lite)
+	GitHubToken                 string
+	GitHubRepo                  string
+	GitHubContextBranch         string // branch de produção para contexto Dev Studio (default: main)
+	IntegrationRateLimitPerHour int    // rate limit M2M por cliente (default: 300)
+	AuthLoginRateLimit          int    // tentativas de login por IP por janela (default: 10)
+	AuthLoginRateWindowMinutes  int    // janela do login em minutos (default: 15)
+	AuthRegisterRateLimit       int    // registos por IP por hora (default: 5)
+	AuthRefreshRateLimit        int    // refresh por IP por hora (default: 30)
+	AlertasCronEnabled          bool   // geração diária de alertas (default: true)
+	AlertasCronHour             int    // hora local do disparo (default: 6)
+	AlertasTZ                   string // timezone do cron (default: America/Sao_Paulo)
+	VAPIDPublicKey              string // chave pública Web Push (VAPID)
+	VAPIDPrivateKey             string // chave privada Web Push (VAPID)
+	VAPIDSubject                string // contact URI (ex.: mailto:suporte@ceialmilk.com)
+	MetricsToken                string // token Bearer para proteger /metrics (obrigatório em produção)
+	TrustedProxies              string // CSV de CIDRs confiáveis para X-Forwarded-For (default: ranges privados)
 }
 
 func Load() *Config {
@@ -72,19 +74,19 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Port:                  getEnv("PORT", "8080"),
-		Env:                   getEnv("ENV", "development"),
-		LogLevel:              getEnv("LOG_LEVEL", "INFO"),
-		DatabaseURL:           getEnv("DATABASE_URL", ""),
-		JWTPrivateKey:         getEnv("JWT_PRIVATE_KEY", ""),
-		JWTPublicKey:          getEnv("JWT_PUBLIC_KEY", ""),
-		CORSOrigin:            getEnv("CORS_ORIGIN", "http://localhost:3000"),
-		SentryDSN:             getEnv("SENTRY_DSN", ""),
-		GeminiAPIKey:          getEnv("GEMINI_API_KEY", ""),
-		GeminiModel:           getEnv("GEMINI_MODEL", "gemini-2.0-flash"),
-		GeminiModelAssistente: getEnv("GEMINI_MODEL_ASSISTENTE", ""),
-		GitHubToken:           getEnv("GITHUB_TOKEN", ""),
-		GitHubRepo:            getEnv("GITHUB_REPO", ""),
+		Port:                        getEnv("PORT", "8080"),
+		Env:                         getEnv("ENV", "development"),
+		LogLevel:                    getEnv("LOG_LEVEL", "INFO"),
+		DatabaseURL:                 getEnv("DATABASE_URL", ""),
+		JWTPrivateKey:               getEnv("JWT_PRIVATE_KEY", ""),
+		JWTPublicKey:                getEnv("JWT_PUBLIC_KEY", ""),
+		CORSOrigin:                  getEnv("CORS_ORIGIN", "http://localhost:3000"),
+		SentryDSN:                   getEnv("SENTRY_DSN", ""),
+		GeminiAPIKey:                getEnv("GEMINI_API_KEY", ""),
+		GeminiModel:                 getEnv("GEMINI_MODEL", "gemini-2.0-flash"),
+		GeminiModelAssistente:       getEnv("GEMINI_MODEL_ASSISTENTE", ""),
+		GitHubToken:                 getEnv("GITHUB_TOKEN", ""),
+		GitHubRepo:                  getEnv("GITHUB_REPO", ""),
 		GitHubContextBranch:         getEnv("GITHUB_CONTEXT_BRANCH", "main"),
 		IntegrationRateLimitPerHour: getEnvInt("INTEGRATION_RATE_LIMIT_PER_HOUR", 300),
 		AuthLoginRateLimit:          getEnvInt("AUTH_LOGIN_RATE_LIMIT", 10),
@@ -97,6 +99,8 @@ func Load() *Config {
 		VAPIDPublicKey:              getEnv("VAPID_PUBLIC_KEY", ""),
 		VAPIDPrivateKey:             getEnv("VAPID_PRIVATE_KEY", ""),
 		VAPIDSubject:                getEnv("VAPID_SUBJECT", "mailto:suporte@ceialmilk.com"),
+		MetricsToken:                getEnv("METRICS_TOKEN", ""),
+		TrustedProxies:              getEnv("TRUSTED_PROXIES", ""),
 	}
 }
 

@@ -227,6 +227,24 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**: `backend/internal/handlers/auth_handler.go` (`Me`); `backend/cmd/api/main.go` (`me.GET("", ...)`); `backend/internal/auth/perfil_access.go`.
 - **Estado**: Implementado.
 
+### BR-ACESSO-023 — Isolamento multi-tenant em listagens, crias e Assistente
+
+- **Enunciado**: Toda consulta ou ação sobre dados de fazenda valida o vínculo do utilizador (`usuarios_fazendas`) no servidor. Listagens de animais por status de saúde, sexo, lote e contagem filtram pelas fazendas do utilizador; consultas/criação de crias validam a fazenda do parto; todas as funções do Assistente (texto e Live) resolvem animal/fazenda apenas dentro das fazendas vinculadas, e `cadastrar_fazenda`/`editar_fazenda` no Assistente seguem a mesma matriz do REST (ADMIN/DEVELOPER). Acesso fora do escopo → **403** (REST) ou resposta genérica "não encontrado" (Assistente, sem revelar existência).
+- **Escopo**: `GET /api/v1/animais/by-status-saude|by-sexo|count|by-lote`; `GET|POST /api/v1/crias`; todas as funções do Assistente texto e WebSocket Live (incl. `fazenda_id` da query de `StartSession`).
+- **Perfis / permissões**: Todos os perfis operacionais; ADMIN/DEVELOPER mantêm acesso global conforme regras existentes.
+- **Efeito**: bloqueio no servidor (correção de IDOR).
+- **Implementação**: `backend/internal/handlers/animal_handler.go` (`ResolveFazendaIDsForList`); `backend/internal/handlers/gestao_pecuaria_handlers.go` (`validatePartoAccess`); `backend/internal/service/assistente_service.go` (`ensureAnimalAccess`, `userOwnsFazenda`); `backend/internal/service/assistente_live_service.go` (`resolveAnimalForAssistente`, `resolveFazendaIDForUser`); testes em `access_helper_test.go` e `assistente_live_tenant_test.go`.
+- **Estado**: Implementado (2026-06-10).
+
+### BR-ACESSO-024 — Política de senha mínima (8 caracteres)
+
+- **Enunciado**: Senhas de registro público e de criação/edição de utilizadores por admin exigem no mínimo **8 caracteres**. Validação alinhada no servidor (binding `min=8`) e no frontend (mensagem no formulário).
+- **Escopo**: `POST /api/auth/register`; `POST|PUT /api/v1/admin/usuarios`.
+- **Perfis / permissões**: Todos.
+- **Efeito**: bloqueio no servidor (400 validação); feedback imediato na UI.
+- **Implementação**: `backend/internal/handlers/auth_handler.go`; `backend/internal/handlers/admin_handler.go`; `frontend/src/lib/form-validation.ts` (`validateRegistroForm`, `validateUsuarioForm`).
+- **Estado**: Implementado (2026-06-10).
+
 ---
 
-**Última atualização**: 2026-06-09 (BR-ACESSO-022: vacinas — FUNCIONARIO regista aplicada, não agenda)
+**Última atualização**: 2026-06-10 (BR-ACESSO-023 isolamento multi-tenant; BR-ACESSO-024 política de senha 8+)

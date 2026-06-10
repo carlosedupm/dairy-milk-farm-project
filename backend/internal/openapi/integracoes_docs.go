@@ -33,6 +33,18 @@ func serveOpenAPISpec(c *gin.Context) {
 
 func serveSwaggerUI(c *gin.Context) {
 	c.Header("Content-Type", "text/html; charset=utf-8")
+	// CSP restrita ao necessário pelo Swagger UI (assets via unpkg + script/estilos inline próprios)
+	c.Header("Content-Security-Policy",
+		"default-src 'self'; "+
+			"script-src 'self' 'unsafe-inline' https://unpkg.com; "+
+			"style-src 'self' 'unsafe-inline' https://unpkg.com; "+
+			"img-src 'self' data:; "+
+			"connect-src 'self'; "+
+			"object-src 'none'; "+
+			"base-uri 'self'; "+
+			"frame-ancestors 'none'")
+	c.Header("X-Content-Type-Options", "nosniff")
+	c.Header("X-Frame-Options", "DENY")
 	c.String(http.StatusOK, swaggerUIHTML)
 }
 

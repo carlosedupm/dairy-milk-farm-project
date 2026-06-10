@@ -224,7 +224,7 @@ func (s *DevStudioService) selectRelevantContext(prompt string, files map[string
 
 	for _, name := range base {
 		if c, ok := files[name]; ok {
-			b.WriteString(fmt.Sprintf("\n## %s\n\n%s\n", name, c))
+			fmt.Fprintf(&b, "\n## %s\n\n%s\n", name, c)
 			included = append(included, name)
 		}
 	}
@@ -251,7 +251,7 @@ func (s *DevStudioService) selectRelevantContext(prompt string, files map[string
 		}
 		if sv.score > 0 {
 			c := files[sv.name]
-			b.WriteString(fmt.Sprintf("\n## %s\n\n%s\n", sv.name, c))
+			fmt.Fprintf(&b, "\n## %s\n\n%s\n", sv.name, c)
 			included = append(included, sv.name)
 			added++
 		}
@@ -259,7 +259,7 @@ func (s *DevStudioService) selectRelevantContext(prompt string, files map[string
 	if added == 0 {
 		fallback := "activeContext.md"
 		if c, ok := files[fallback]; ok {
-			b.WriteString(fmt.Sprintf("\n## %s\n\n%s\n", fallback, c))
+			fmt.Fprintf(&b, "\n## %s\n\n%s\n", fallback, c)
 			included = append(included, fallback)
 		}
 	}
@@ -309,7 +309,7 @@ func (s *DevStudioService) loadCodeExamples(ctx context.Context) string {
 		if trimmed == "" {
 			continue
 		}
-		b.WriteString(fmt.Sprintf("### %s\n```go\n%s\n```\n\n", rel, trimmed))
+		fmt.Fprintf(&b, "### %s\n```go\n%s\n```\n\n", rel, trimmed)
 	}
 
 	if s.githubService != nil {
@@ -383,15 +383,15 @@ func (s *DevStudioService) loadTargetFilesForPrompt(ctx context.Context, prompt 
 		}
 		ext := filepath.Ext(rel)
 		lang := "text"
-		if ext == ".tsx" || ext == ".ts" {
+		switch ext {
+		case ".tsx":
 			lang = "tsx"
-			if ext == ".ts" && !strings.Contains(rel, ".tsx") {
-				lang = "ts"
-			}
-		} else if ext == ".go" {
+		case ".ts":
+			lang = "ts"
+		case ".go":
 			lang = "go"
 		}
-		b.WriteString(fmt.Sprintf("### %s\n```%s\n%s\n```\n\n", rel, lang, trimmed))
+		fmt.Fprintf(&b, "### %s\n```%s\n%s\n```\n\n", rel, lang, trimmed)
 	}
 
 	out := b.String()
@@ -467,7 +467,7 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown, sem código blocks, sem explica
 	if err != nil {
 		return nil, fmt.Errorf("erro ao fazer request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -527,15 +527,9 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown, sem código blocks, sem explica
 
 	// Limpar markdown code blocks se existirem
 	codeText = strings.TrimSpace(codeText)
-	if strings.HasPrefix(codeText, "```json") {
-		codeText = strings.TrimPrefix(codeText, "```json")
-	}
-	if strings.HasPrefix(codeText, "```") {
-		codeText = strings.TrimPrefix(codeText, "```")
-	}
-	if strings.HasSuffix(codeText, "```") {
-		codeText = strings.TrimSuffix(codeText, "```")
-	}
+	codeText = strings.TrimPrefix(codeText, "```json")
+	codeText = strings.TrimPrefix(codeText, "```")
+	codeText = strings.TrimSuffix(codeText, "```")
 	codeText = strings.TrimSpace(codeText)
 
 	// Parsear JSON
@@ -587,7 +581,7 @@ func (s *DevStudioService) RefineCode(ctx context.Context, requestID int64, user
 	// Montar descrição do código atual (paths + trechos)
 	var b strings.Builder
 	for path, content := range files {
-		b.WriteString(fmt.Sprintf("\n--- %s ---\n%s\n", path, content))
+		fmt.Fprintf(&b, "\n--- %s ---\n%s\n", path, content)
 	}
 	currentCode := b.String()
 
@@ -720,14 +714,12 @@ func (s *DevStudioService) ValidateCode(ctx context.Context, requestID int64) (*
 	// Validar sintaxe e executar linter para cada arquivo
 	for path, content := range files {
 		ext := filepath.Ext(path)
-		syntaxValid := true
 
-		// Validação sintática básica
+		// Validação sintática básica; arquivos com erro de sintaxe pulam o linter
 		switch ext {
 		case ".go":
 			if err := s.validateSyntaxGo(content); err != nil {
 				result.SyntaxValid = false
-				syntaxValid = false
 				result.LinterResults[path] = &LinterResult{
 					File:    path,
 					Errors:  []string{fmt.Sprintf("Erro de sintaxe: %v", err)},
@@ -740,7 +732,6 @@ func (s *DevStudioService) ValidateCode(ctx context.Context, requestID int64) (*
 			// Validação básica de TypeScript/JavaScript
 			if len(content) == 0 {
 				result.SyntaxValid = false
-				syntaxValid = false
 				result.LinterResults[path] = &LinterResult{
 					File:    path,
 					Errors:  []string{"Arquivo está vazio"},
@@ -751,27 +742,24 @@ func (s *DevStudioService) ValidateCode(ctx context.Context, requestID int64) (*
 			}
 		}
 
-		// Se sintaxe válida, executar linter
-		if syntaxValid {
-			linterResult, err := s.linterService.RunLinter(ctx, path, content)
-			if err != nil {
-				slog.Warn("Erro ao executar linter", "path", path, "error", err)
-				// Continuar mesmo se linter falhar
-				linterResult = &LinterResult{
-					File:    path,
-					Errors:  []string{fmt.Sprintf("Erro ao executar linter: %v", err)},
-					Success: false,
-				}
+		linterResult, err := s.linterService.RunLinter(ctx, path, content)
+		if err != nil {
+			slog.Warn("Erro ao executar linter", "path", path, "error", err)
+			// Continuar mesmo se linter falhar
+			linterResult = &LinterResult{
+				File:    path,
+				Errors:  []string{fmt.Sprintf("Erro ao executar linter: %v", err)},
+				Success: false,
 			}
+		}
 
-			result.LinterResults[path] = linterResult
+		result.LinterResults[path] = linterResult
 
-			if len(linterResult.Errors) > 0 {
-				result.HasErrors = true
-			}
-			if len(linterResult.Warnings) > 0 {
-				result.HasWarnings = true
-			}
+		if len(linterResult.Errors) > 0 {
+			result.HasErrors = true
+		}
+		if len(linterResult.Warnings) > 0 {
+			result.HasWarnings = true
 		}
 	}
 

@@ -148,5 +148,5 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 
 ---
 
-**Última atualização**: 2026-05-21  
-**Versão do Brief**: 3.2 (integrações M2M v1 entregue; Fase 3 saúde/alertas)
+**Última atualização**: 2026-06-10  
+**Versão do Brief**: 3.3 (hardening de segurança e processo concluído; objetivos e fases inalterados)

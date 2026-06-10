@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	ErrPushNotConfigured     = errors.New("web push não configurado")
+	ErrPushNotConfigured      = errors.New("web push não configurado")
 	ErrFazendaAtivaSemVinculo = errors.New("fazenda não vinculada ao utilizador")
 )
 
@@ -41,11 +41,11 @@ type pushPayload struct {
 }
 
 type PushNotificationService struct {
-	cfg        *config.Config
-	subRepo    *repository.PushSubscriptionRepository
+	cfg         *config.Config
+	subRepo     *repository.PushSubscriptionRepository
 	fazendaRepo *repository.FazendaRepository
-	alertaRepo *repository.AlertaRepository
-	enabled    bool
+	alertaRepo  *repository.AlertaRepository
+	enabled     bool
 }
 
 func NewPushNotificationService(
@@ -202,7 +202,7 @@ func (s *PushNotificationService) sendOne(ctx context.Context, sub models.PushSu
 		slog.Warn("push: envio falhou", "error", err, "endpoint", sub.Endpoint)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
 		if err := s.subRepo.DeleteByEndpointOnly(ctx, sub.Endpoint); err != nil {

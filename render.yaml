@@ -24,7 +24,9 @@ services:
         sync: false
       - key: JWT_PUBLIC_KEY
         sync: false
-    autoDeployTrigger: commit
+    # Deploy automático só depois que os checks do GitHub (CI) passarem na main.
+    # Complementa a branch protection (ver memory-bank/deploy-notes.md).
+    autoDeployTrigger: checksPass
 
 databases:
   - name: ceialmilk-db

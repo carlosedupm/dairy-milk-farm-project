@@ -350,7 +350,7 @@ func (r *FazendaRepository) SetFazendasForUsuario(ctx context.Context, usuarioID
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	if _, err := tx.Exec(ctx, `DELETE FROM usuarios_fazendas WHERE usuario_id = $1`, usuarioID); err != nil {
 		return err
@@ -372,7 +372,7 @@ func (r *FazendaRepository) CreateFazendaAndLinkUsuario(ctx context.Context, faz
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	q := `
 		INSERT INTO fazendas (nome, localizacao, quantidade_vacas, fundacao)

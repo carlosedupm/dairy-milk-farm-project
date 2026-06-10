@@ -20,7 +20,7 @@ var (
 	ErrFolgasPerfilNaoPermitido = errors.New("apenas usuários com perfil FUNCIONARIO, GERENTE, PROPRIETARIO (ou GESTAO) podem ser usados na escala de folgas")
 	ErrFolgasConflitoFolgaDupla = errors.New("mais de um funcionário de folga neste dia: registre exceção do dia (motivo) ou justifique")
 	ErrFolgasNaoEFolga          = errors.New("você não está de folga nesta data")
-	ErrFolgasUsuarioJaFolgaDia = errors.New("já existe folga registrada para este usuário nesta data")
+	ErrFolgasUsuarioJaFolgaDia  = errors.New("já existe folga registrada para este usuário nesta data")
 )
 
 type FolgasService struct {
@@ -258,7 +258,8 @@ func (s *FolgasService) AlterarDia(ctx context.Context, fazendaID int64, d time.
 	}
 	d = truncateDateUTC(d)
 
-	if modo == AlterarDiaSubstituir || modo == "" {
+	switch modo {
+	case AlterarDiaSubstituir, "":
 		if err := s.repo.DeleteAllForDate(ctx, fazendaID, d); err != nil {
 			return err
 		}
@@ -276,7 +277,7 @@ func (s *FolgasService) AlterarDia(ctx context.Context, fazendaID int64, d time.
 			}
 			return err
 		}
-	} else if modo == AlterarDiaAdicionar {
+	case AlterarDiaAdicionar:
 		e := &models.EscalaFolga{
 			FazendaID: fazendaID,
 			Data:      d,
@@ -312,7 +313,7 @@ func (s *FolgasService) AlterarDia(ctx context.Context, fazendaID int64, d time.
 				}
 			}
 		}
-	} else {
+	default:
 		return fmt.Errorf("modo inválido")
 	}
 

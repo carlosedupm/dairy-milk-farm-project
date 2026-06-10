@@ -16,7 +16,7 @@ Este projeto utiliza uma arquitetura **monorepo** com separação clara entre ba
 ## 🚀 Stack Tecnológica
 
 ### Backend
-- **Linguagem**: Go 1.21+
+- **Linguagem**: Go 1.25
 - **Framework**: Gin (HTTP router)
 - **Banco de Dados**: PostgreSQL 15
 - **Acesso a Dados**: pgx (driver PostgreSQL)
@@ -24,7 +24,7 @@ Este projeto utiliza uma arquitetura **monorepo** com separação clara entre ba
 - **Logging**: slog (logs estruturados JSON)
 
 ### Frontend
-- **Framework**: Next.js 14+ (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Linguagem**: TypeScript
 - **Estilização**: Tailwind CSS
 - **Componentes**: Shadcn/UI
@@ -37,8 +37,8 @@ Este projeto utiliza uma arquitetura **monorepo** com separação clara entre ba
 
 ## 📋 Pré-requisitos
 
-- Go 1.21 ou superior
-- Node.js 18+ e npm
+- Go 1.25 ou superior
+- Node.js 20+ e npm
 - Docker e Docker Compose
 - PostgreSQL 15 (ou usar Docker Compose)
 

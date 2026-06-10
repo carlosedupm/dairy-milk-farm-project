@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -75,10 +74,10 @@ func DevStudioRateLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Endpoints de consulta não consomem rate limit
 		path := c.Request.URL.Path
-		if c.Request.Method == "GET" && 
-			(path == "/api/v1/dev-studio/usage" || 
-			 path == "/api/v1/dev-studio/history" ||
-			 strings.HasPrefix(path, "/api/v1/dev-studio/status/")) {
+		if c.Request.Method == "GET" &&
+			(path == "/api/v1/dev-studio/usage" ||
+				path == "/api/v1/dev-studio/history" ||
+				strings.HasPrefix(path, "/api/v1/dev-studio/status/")) {
 			c.Next()
 			return
 		}
@@ -100,7 +99,7 @@ func DevStudioRateLimit() gin.HandlerFunc {
 		userLimiter := limiter.GetLimiter(userIDInt64)
 
 		if !userLimiter.Allow() {
-			response.ErrorTooManyRequests(c, fmt.Sprintf("Limite de requisições excedido. Máximo 5 requisições por hora."))
+			response.ErrorTooManyRequests(c, "Limite de requisições excedido. Máximo 5 requisições por hora.")
 			c.Abort()
 			return
 		}

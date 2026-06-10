@@ -100,7 +100,6 @@ func buildAlertaListWhere(fazendaID int64, f AlertaListFilters) (string, []inter
 		)`, idx, idx+1, idx, idx+1)
 		conds = append(conds, periodCond)
 		args = append(args, *f.PeriodStart, *f.PeriodEnd)
-		idx += 2
 	}
 
 	return strings.Join(conds, " AND "), args

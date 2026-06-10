@@ -281,6 +281,18 @@ func (s *CriaService) GetByPartoID(ctx context.Context, partoID int64) ([]*model
 	return s.repo.GetByPartoID(ctx, partoID)
 }
 
+// GetPartoFazendaID resolve a fazenda dona do parto para validação de acesso multi-tenant.
+func (s *CriaService) GetPartoFazendaID(ctx context.Context, partoID int64) (int64, error) {
+	parto, err := s.partoRepo.GetByID(ctx, partoID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrPartoNotFound
+		}
+		return 0, err
+	}
+	return parto.FazendaID, nil
+}
+
 func origemAnimalExplicitamenteComprado(a *models.Animal) bool {
 	if a == nil || a.OrigemAquisicao == nil {
 		return false

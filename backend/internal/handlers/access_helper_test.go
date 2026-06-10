@@ -98,6 +98,71 @@ func TestValidateFazendaAccessOrGestao_FuncionarioSemVinculo_Forbidden(t *testin
 	}
 }
 
+func newListTestContext(userID int64, query string) (*gin.Context, *httptest.ResponseRecorder) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/animais/count"+query, nil)
+	if userID > 0 {
+		c.Set("user_id", userID)
+	}
+	return c, w
+}
+
+// Cross-tenant: fazenda_id na query fora do vínculo do usuário deve retornar 403.
+func TestResolveFazendaIDsForList_FazendaNaoVinculada_Forbidden(t *testing.T) {
+	c, w := newListTestContext(10, "?fazenda_id=99")
+	stub := &stubFazendaAccessQuerier{
+		getByUsuarioID: func(ctx context.Context, usuarioID int64) ([]*models.Fazenda, error) {
+			return []*models.Fazenda{{ID: 1}, {ID: 2}}, nil
+		},
+	}
+
+	ids, ok := ResolveFazendaIDsForList(c, stub)
+	if ok || ids != nil {
+		t.Fatal("esperava acesso negado para fazenda fora do vínculo")
+	}
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("esperava 403, recebeu %d", w.Code)
+	}
+}
+
+// Sem query fazenda_id: retorna apenas as fazendas vinculadas ao usuário (isolamento de listagens).
+func TestResolveFazendaIDsForList_SemQuery_RetornaFazendasDoUsuario(t *testing.T) {
+	c, _ := newListTestContext(10, "")
+	stub := &stubFazendaAccessQuerier{
+		getByUsuarioID: func(ctx context.Context, usuarioID int64) ([]*models.Fazenda, error) {
+			return []*models.Fazenda{{ID: 1}, {ID: 2}}, nil
+		},
+	}
+
+	ids, ok := ResolveFazendaIDsForList(c, stub)
+	if !ok {
+		t.Fatal("esperava sucesso ao resolver fazendas do usuário")
+	}
+	if len(ids) != 2 || ids[0] != 1 || ids[1] != 2 {
+		t.Fatalf("esperava [1 2], recebeu %v", ids)
+	}
+}
+
+// Cross-tenant: usuário sem fazendas vinculadas recebe lista vazia (nenhum dado de outras fazendas).
+func TestResolveFazendaIDsForList_UsuarioSemFazendas_ListaVazia(t *testing.T) {
+	c, _ := newListTestContext(10, "")
+	stub := &stubFazendaAccessQuerier{
+		getByUsuarioID: func(ctx context.Context, usuarioID int64) ([]*models.Fazenda, error) {
+			return nil, nil
+		},
+	}
+
+	ids, ok := ResolveFazendaIDsForList(c, stub)
+	if !ok {
+		t.Fatal("esperava sucesso (lista vazia) para usuário sem fazendas")
+	}
+	if len(ids) != 0 {
+		t.Fatalf("esperava lista vazia, recebeu %v", ids)
+	}
+}
+
 func TestValidateFazendaAccessOrGestao_ProprietarioComVinculo_Allows(t *testing.T) {
 	c, w := newAccessTestContext(models.PerfilProprietario, 5)
 	stub := &stubFazendaAccessQuerier{

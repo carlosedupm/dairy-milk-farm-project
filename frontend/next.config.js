@@ -1,7 +1,28 @@
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === 'production'
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+const apiWsUrl = apiUrl.replace(/^http/, 'ws')
+
+// CSP em Report-Only: observar violações no console/relatórios antes de tornar bloqueante.
+// 'unsafe-inline'/'unsafe-eval' em script-src são exigidos pelo runtime do Next (inline bootstrap
+// scripts); ao migrar para enforce, avaliar nonces via proxy/headers dinâmicos.
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  `connect-src 'self' ${apiUrl} ${apiWsUrl}`,
+  "media-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ')
+
 const basicSecurityHeaders = [
+  { key: 'Content-Security-Policy-Report-Only', value: contentSecurityPolicy },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

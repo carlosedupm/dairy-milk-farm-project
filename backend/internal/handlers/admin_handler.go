@@ -22,14 +22,14 @@ func NewAdminHandler(usuarioSvc *service.UsuarioService, fazendaSvc *service.Faz
 type CreateUsuarioRequest struct {
 	Nome   string `json:"nome" binding:"required"`
 	Email  string `json:"email" binding:"required"`
-	Senha  string `json:"senha" binding:"required"`
+	Senha  string `json:"senha" binding:"required,min=8"`
 	Perfil string `json:"perfil"`
 }
 
 type UpdateUsuarioRequest struct {
 	Nome    string `json:"nome" binding:"required"`
 	Email   string `json:"email" binding:"required"`
-	Senha   string `json:"senha"` // opcional; se vazia, não altera
+	Senha   string `json:"senha" binding:"omitempty,min=8"` // opcional; se vazia, não altera
 	Perfil  string `json:"perfil"`
 	Enabled *bool  `json:"enabled"`
 }

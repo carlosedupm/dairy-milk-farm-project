@@ -227,7 +227,7 @@ Frase do usuário:
 	if err != nil {
 		return nil, fmt.Errorf("erro ao chamar Gemini: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -307,19 +307,19 @@ func (s *AssistenteService) Executar(ctx context.Context, intent string, payload
 	case intentListarAnimaisFazenda:
 		return s.executarListarAnimaisFazenda(ctx, payload, fazendaAtivaID, userID)
 	case intentDetalharAnimal:
-		return s.executarDetalharAnimal(ctx, payload)
+		return s.executarDetalharAnimal(ctx, payload, userID)
 	case intentCadastrarAnimal:
 		return s.executarCadastrarAnimal(ctx, payload, fazendaAtivaID, userID)
 	case intentEditarAnimal:
-		return s.executarEditarAnimal(ctx, payload)
+		return s.executarEditarAnimal(ctx, payload, userID)
 	case intentExcluirAnimal:
-		return s.executarExcluirAnimal(ctx, payload)
+		return s.executarExcluirAnimal(ctx, payload, userID)
 	case intentRegistrarProducaoAnimal:
 		return s.executarRegistrarProducaoAnimal(ctx, payload, userID)
 	case intentEditarFazenda:
-		return s.executarEditarFazenda(ctx, payload)
+		return s.executarEditarFazenda(ctx, payload, userID)
 	case intentExcluirFazenda:
-		return s.executarExcluirFazenda(ctx, payload)
+		return s.executarExcluirFazenda(ctx, payload, userID)
 	default:
 		return nil, fmt.Errorf("intent não suportado: %s", intent)
 	}
@@ -584,44 +584,11 @@ func buildResumoEditarFazenda(payload map[string]interface{}) string {
 	return fmt.Sprintf("Atualizar %s: %s.", alvo, strings.Join(partes, "; "))
 }
 
-func (s *AssistenteService) executarDetalharAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
-	if idNum, ok := payload["id"].(float64); ok && idNum > 0 {
-		id := int64(idNum)
-		animal, err := s.animalSvc.GetByID(ctx, id)
-		if err != nil {
-			// Fallback: usuário pode ter dito "animal 30" referindo-se à identificação "30", não ao ID de banco
-			list, searchErr := s.animalSvc.SearchByIdentificacao(ctx, fmt.Sprintf("%d", id))
-			if searchErr == nil && len(list) == 1 {
-				animal = list[0]
-			} else if searchErr == nil && len(list) > 1 {
-				return nil, fmt.Errorf("mais de um animal encontrado com a identificação \"%d\"; use o ID para identificar", id)
-			} else {
-				return nil, fmt.Errorf("animal com ID %d não encontrado", id)
-			}
-		}
-		msg := formatAnimalMessage(animal)
-		slog.Info("Animal detalhado via assistente", "animal_id", animal.ID, "identificacao", animal.Identificacao)
-		return map[string]interface{}{
-			"message": msg,
-			"animal":  animal,
-		}, nil
-	}
-	identificacao, ok := payload["identificacao"].(string)
-	if !ok || strings.TrimSpace(identificacao) == "" {
-		return nil, fmt.Errorf("informe o id ou a identificação do animal")
-	}
-	list, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(identificacao))
+func (s *AssistenteService) executarDetalharAnimal(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
+	animal, err := s.resolveAnimalByPayload(ctx, payload, userID)
 	if err != nil {
-		observability.CaptureError(err, map[string]string{"action": "assistente_executar_detalhar_animal"}, nil)
-		return nil, fmt.Errorf("erro ao buscar animal: %w", err)
+		return nil, err
 	}
-	if len(list) == 0 {
-		return nil, fmt.Errorf("nenhum animal encontrado com a identificação \"%s\"", identificacao)
-	}
-	if len(list) > 1 {
-		return nil, fmt.Errorf("mais de um animal encontrado com \"%s\"; use o ID para identificar", identificacao)
-	}
-	animal := list[0]
 	msg := formatAnimalMessage(animal)
 	slog.Info("Animal detalhado via assistente", "animal_id", animal.ID, "identificacao", animal.Identificacao)
 	return map[string]interface{}{
@@ -639,8 +606,47 @@ func formatAnimalMessage(a *models.Animal) string {
 		a.Identificacao, strOrEmpty(a.Raca), nasc, sexoParaExibicao(a.Sexo), strOrEmpty(a.StatusSaude))
 }
 
-// resolveAnimalByPayload retorna o animal identificado por id ou identificacao no payload.
-func (s *AssistenteService) resolveAnimalByPayload(ctx context.Context, payload map[string]interface{}) (*models.Animal, error) {
+// userOwnsFazenda verifica o vínculo do usuário com a fazenda (isolamento multi-tenant).
+func (s *AssistenteService) userOwnsFazenda(ctx context.Context, userID, fazendaID int64) (bool, error) {
+	fazendas, err := s.fazendaSvc.GetByUsuarioID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	for _, f := range fazendas {
+		if f.ID == fazendaID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// ensureAnimalAccess garante que o animal pertence a uma fazenda do usuário.
+// Resposta genérica ("não encontrado") para não revelar a existência de animais de outras fazendas.
+func (s *AssistenteService) ensureAnimalAccess(ctx context.Context, userID int64, animal *models.Animal) error {
+	ok, err := s.userOwnsFazenda(ctx, userID, animal.FazendaID)
+	if err != nil {
+		return fmt.Errorf("erro ao validar acesso ao animal: %w", err)
+	}
+	if !ok {
+		return fmt.Errorf("animal não encontrado nas suas fazendas")
+	}
+	return nil
+}
+
+// resolveAnimalByPayload retorna o animal identificado por id ou identificacao no payload,
+// validando que pertence a uma fazenda vinculada ao usuário.
+func (s *AssistenteService) resolveAnimalByPayload(ctx context.Context, payload map[string]interface{}, userID int64) (*models.Animal, error) {
+	animal, err := s.resolveAnimalByPayloadUnchecked(ctx, payload)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.ensureAnimalAccess(ctx, userID, animal); err != nil {
+		return nil, err
+	}
+	return animal, nil
+}
+
+func (s *AssistenteService) resolveAnimalByPayloadUnchecked(ctx context.Context, payload map[string]interface{}) (*models.Animal, error) {
 	if idNum, ok := payload["id"].(float64); ok && idNum > 0 {
 		id := int64(idNum)
 		a, err := s.animalSvc.GetByID(ctx, id)
@@ -732,8 +738,8 @@ func (s *AssistenteService) executarCadastrarAnimal(ctx context.Context, payload
 	return map[string]interface{}{"message": msg, "animal": animal}, nil
 }
 
-func (s *AssistenteService) executarEditarAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
-	animal, err := s.resolveAnimalByPayload(ctx, payload)
+func (s *AssistenteService) executarEditarAnimal(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
+	animal, err := s.resolveAnimalByPayload(ctx, payload, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -774,7 +780,15 @@ func (s *AssistenteService) executarEditarAnimal(ctx context.Context, payload ma
 		}
 	}
 	if idNum, ok := payload["fazenda_id"].(float64); ok && idNum > 0 {
-		animal.FazendaID = int64(idNum)
+		destinoID := int64(idNum)
+		owns, err := s.userOwnsFazenda(ctx, userID, destinoID)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao validar fazenda de destino: %w", err)
+		}
+		if !owns {
+			return nil, fmt.Errorf("você não tem acesso à fazenda de destino")
+		}
+		animal.FazendaID = destinoID
 	}
 	if err := s.animalSvc.Update(ctx, animal); err != nil {
 		observability.CaptureError(err, map[string]string{"action": "assistente_executar_editar_animal"}, nil)
@@ -785,8 +799,8 @@ func (s *AssistenteService) executarEditarAnimal(ctx context.Context, payload ma
 	return map[string]interface{}{"message": msg, "animal": animal}, nil
 }
 
-func (s *AssistenteService) executarExcluirAnimal(ctx context.Context, payload map[string]interface{}) (map[string]interface{}, error) {
-	animal, err := s.resolveAnimalByPayload(ctx, payload)
+func (s *AssistenteService) executarExcluirAnimal(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
+	animal, err := s.resolveAnimalByPayload(ctx, payload, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -802,7 +816,7 @@ func (s *AssistenteService) executarExcluirAnimal(ctx context.Context, payload m
 }
 
 func (s *AssistenteService) executarRegistrarProducaoAnimal(ctx context.Context, payload map[string]interface{}, userID int64) (map[string]interface{}, error) {
-	animal, err := s.resolveAnimalByPayload(ctx, payload)
+	animal, err := s.resolveAnimalByPayload(ctx, payload, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -915,34 +929,9 @@ func (s *AssistenteService) resolveFazendaForUser(ctx context.Context, payload m
 	return nil, fmt.Errorf("informe o id ou o nome da fazenda")
 }
 
-// resolveFazendaByPayload retorna a fazenda identificada por id ou nome no payload.
-func (s *AssistenteService) resolveFazendaByPayload(ctx context.Context, payload map[string]interface{}) (*models.Fazenda, error) {
-	if idNum, ok := payload["id"].(float64); ok && idNum > 0 {
-		id := int64(idNum)
-		f, err := s.fazendaSvc.GetByID(ctx, id)
-		if err != nil {
-			return nil, fmt.Errorf("fazenda com ID %d não encontrada", id)
-		}
-		return f, nil
-	}
-	if nome, ok := payload["nome"].(string); ok && strings.TrimSpace(nome) != "" {
-		list, err := s.fazendaSvc.SearchByNome(ctx, strings.TrimSpace(nome))
-		if err != nil {
-			return nil, fmt.Errorf("erro ao buscar fazenda por nome: %w", err)
-		}
-		if len(list) == 0 {
-			return nil, fmt.Errorf("nenhuma fazenda encontrada com o nome \"%s\"", nome)
-		}
-		if len(list) > 1 {
-			return nil, fmt.Errorf("mais de uma fazenda com nome parecido; use o ID para identificar")
-		}
-		return list[0], nil
-	}
-	return nil, fmt.Errorf("informe o id ou o nome da fazenda")
-}
-
-func (s *AssistenteService) executarEditarFazenda(ctx context.Context, payload map[string]interface{}) (*models.Fazenda, error) {
-	fazenda, err := s.resolveFazendaByPayload(ctx, payload)
+func (s *AssistenteService) executarEditarFazenda(ctx context.Context, payload map[string]interface{}, userID int64) (*models.Fazenda, error) {
+	// Resolve apenas entre as fazendas vinculadas ao usuário (isolamento multi-tenant).
+	fazenda, err := s.resolveFazendaForUser(ctx, payload, 0, userID, "id", "nome")
 	if err != nil {
 		return nil, err
 	}
@@ -997,8 +986,9 @@ func (s *AssistenteService) executarEditarFazenda(ctx context.Context, payload m
 	return fazenda, nil
 }
 
-func (s *AssistenteService) executarExcluirFazenda(ctx context.Context, payload map[string]interface{}) (interface{}, error) {
-	fazenda, err := s.resolveFazendaByPayload(ctx, payload)
+func (s *AssistenteService) executarExcluirFazenda(ctx context.Context, payload map[string]interface{}, userID int64) (interface{}, error) {
+	// Resolve apenas entre as fazendas vinculadas ao usuário (isolamento multi-tenant).
+	fazenda, err := s.resolveFazendaForUser(ctx, payload, 0, userID, "id", "nome")
 	if err != nil {
 		return nil, err
 	}
@@ -1035,14 +1025,8 @@ func parseFundacaoAssistente(s string) (*time.Time, error) {
 
 func cleanJSONResponse(text string) string {
 	text = strings.TrimSpace(text)
-	if strings.HasPrefix(text, "```json") {
-		text = strings.TrimPrefix(text, "```json")
-	}
-	if strings.HasPrefix(text, "```") {
-		text = strings.TrimPrefix(text, "```")
-	}
-	if strings.HasSuffix(text, "```") {
-		text = strings.TrimSuffix(text, "```")
-	}
+	text = strings.TrimPrefix(text, "```json")
+	text = strings.TrimPrefix(text, "```")
+	text = strings.TrimSuffix(text, "```")
 	return strings.TrimSpace(text)
 }

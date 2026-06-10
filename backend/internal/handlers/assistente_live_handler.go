@@ -66,12 +66,12 @@ func (h *AssistenteLiveHandler) LiveSession(c *gin.Context) {
 		slog.Error("Erro ao fazer upgrade para WebSocket", "error", err)
 		return
 	}
-	defer ws.Close()
+	defer func() { _ = ws.Close() }()
 
 	// Obter fazenda_id da query string
 	var fazendaID int64
 	if fid := c.Query("fazenda_id"); fid != "" {
-		fmt.Sscanf(fid, "%d", &fazendaID)
+		_, _ = fmt.Sscanf(fid, "%d", &fazendaID)
 	}
 
 	// Iniciar sessão no Gemini
@@ -79,7 +79,7 @@ func (h *AssistenteLiveHandler) LiveSession(c *gin.Context) {
 	session, err := h.svc.StartSession(c.Request.Context(), userID, perfil, nomeUsuario, fazendaID)
 	if err != nil {
 		slog.Error("Erro ao iniciar sessão Gemini Live", "error", err)
-		ws.WriteJSON(gin.H{"type": "error", "content": "Erro ao iniciar sessão com a IA: " + err.Error()})
+		_ = ws.WriteJSON(gin.H{"type": "error", "content": "Erro ao iniciar sessão com a IA"})
 		return
 	}
 	defer session.Close()
@@ -262,7 +262,7 @@ func (h *AssistenteLiveHandler) processFunctionResponse(ctx context.Context, ses
 		// Se não for um mapa, envolver em um mapa "result"
 		// Isso lida com arrays, structs ou tipos primitivos
 		data, _ := json.Marshal(result)
-		json.Unmarshal(data, &responseMap)
+		_ = json.Unmarshal(data, &responseMap)
 	}
 
 	slog.Info("Assistente Live: enviando resposta de função para Gemini", "name", name)

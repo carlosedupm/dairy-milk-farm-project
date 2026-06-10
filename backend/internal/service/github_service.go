@@ -117,7 +117,7 @@ func (s *GitHubService) getBranchSHA(ctx context.Context, branch string) (string
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -164,7 +164,7 @@ func (s *GitHubService) createBranch(ctx context.Context, branchName, sha string
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusUnprocessableEntity {
 		// 422 pode significar que a branch já existe, o que é OK
@@ -214,7 +214,7 @@ func (s *GitHubService) createOrUpdateFile(ctx context.Context, branch, path, co
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -240,7 +240,7 @@ func (s *GitHubService) getFileSHA(ctx context.Context, branch, path string) (st
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("arquivo não encontrado")
@@ -283,7 +283,7 @@ func (s *GitHubService) GetFileContent(ctx context.Context, branch, path string)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -340,7 +340,7 @@ func (s *GitHubService) openPullRequest(ctx context.Context, branchName, title, 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -379,7 +379,7 @@ func (s *GitHubService) GetPRStatus(ctx context.Context, prNumber int64) (*PRSta
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)

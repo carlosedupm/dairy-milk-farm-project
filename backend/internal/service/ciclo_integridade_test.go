@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 )
@@ -17,7 +18,7 @@ func TestAsIntegridadeCiclo(t *testing.T) {
 }
 
 func TestValidateStatusReprodutivoPrenhe_nilStatus(t *testing.T) {
-	if err := ValidateStatusReprodutivoPrenhe(nil, nil, 1, 1, nil); err != nil {
+	if err := ValidateStatusReprodutivoPrenhe(context.TODO(), nil, 1, 1, nil); err != nil {
 		t.Fatalf("nil status should pass: %v", err)
 	}
 }

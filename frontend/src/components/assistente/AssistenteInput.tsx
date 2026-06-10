@@ -20,6 +20,7 @@ import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import { useGeminiLive } from "@/hooks/useGeminiLive";
 import { VoiceWaveform } from "./VoiceWaveform";
 import { getApiErrorMessage } from "@/lib/errors";
+import { isSafeInternalPath } from "@/config/appAccess";
 import {
   cancelSpeech,
   isSpeechSynthesisSupported,
@@ -359,7 +360,8 @@ export function AssistenteInput({
         onRequestClose?.();
         const path = closeRedirectRef.current;
         closeRedirectRef.current = null;
-        if (path) router.push(path);
+        // Whitelist: só navegar para paths internos (defesa contra redirect malicioso via WS)
+        if (path && isSafeInternalPath(path)) router.push(path);
       };
       if (isSpeechSynthesisSupported()) {
         speakWithMicPause(message, {

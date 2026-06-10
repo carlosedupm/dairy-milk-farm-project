@@ -57,9 +57,10 @@ func (s *LinterService) lintGo(ctx context.Context, path string, content string)
 	// Validação básica: verificar chaves balanceadas
 	openBraces := 0
 	for _, char := range content {
-		if char == '{' {
+		switch char {
+		case '{':
 			openBraces++
-		} else if char == '}' {
+		case '}':
 			openBraces--
 		}
 	}

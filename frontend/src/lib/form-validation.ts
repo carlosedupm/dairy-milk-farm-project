@@ -543,6 +543,8 @@ export function validateUsuarioForm(input: {
   }
   if (input.isCreate && !input.senha.trim()) {
     fields.senha = "Senha é obrigatória ao criar usuário.";
+  } else if (input.senha.trim() && input.senha.length < 8) {
+    fields.senha = "A senha deve ter pelo menos 8 caracteres.";
   }
   if (Object.keys(fields).length > 0) return invalid(fields);
   return valid();
@@ -587,8 +589,8 @@ export function validateRegistroForm(input: {
   }
   if (!input.password.trim()) {
     fields.senha = "Senha é obrigatória.";
-  } else if (input.password.length < 6) {
-    fields.senha = "A senha deve ter pelo menos 6 caracteres.";
+  } else if (input.password.length < 8) {
+    fields.senha = "A senha deve ter pelo menos 8 caracteres.";
   }
   if (input.password !== input.confirmPassword) {
     fields.confirmPassword = "As senhas não coincidem.";

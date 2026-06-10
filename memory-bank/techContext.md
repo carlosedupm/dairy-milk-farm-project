@@ -4,7 +4,7 @@
 
 ### Backend
 
-- **Linguagem**: Go 1.24+
+- **Linguagem**: Go 1.25 (toolchain go1.25.11 — atualizado em 2026-06-10 para zerar o govulncheck: vulnerabilidades da stdlib 1.24.x corrigidas a partir de 1.25.8–1.25.11)
 - **Framework Web**: Gin (HTTP router e middleware)
 - **Banco de Dados**: PostgreSQL 15
 - **Acesso a Dados**: pgx/v5 (driver PostgreSQL nativo com type safety)
@@ -18,8 +18,8 @@
 
 ### Frontend
 
-- **Framework**: Next.js 16.2.2 (App Router, Turbopack como bundler padrão)
-- **React**: 19.2.3 (compatível com Next.js 16)
+- **Framework**: Next.js 16.2.9 (App Router, Turbopack como bundler padrão) — atualizado em 2026-06-10 por causa do security release de maio/2026 (13 advisories corrigidos a partir do 16.2.6: bypass de middleware/proxy, DoS RSC CVE-2026-23870, SSRF WebSocket, cache poisoning, XSS)
+- **React**: 19.2.7 (compatível com Next.js 16)
 - **Linguagem**: TypeScript 5.7.2
 - **Estilização**: Tailwind CSS 3.4.17
 - **Tailwind `content`**: `frontend/tailwind.config.ts` inclui `src/app`, `src/components`, `src/pages` e **`src/contexts`** — ficheiros em `contexts/` com `className` (ex.: `AnimalSearchDialogContext`) devem estar no scan; caso contrário utilitários arbitrários não entram no CSS e `tailwind-merge` pode deixar o DOM sem `width`/`max-height` efetivos (diálogo “invisível” por cima do overlay).
@@ -57,7 +57,9 @@
   - **Scopes M2M** (por cliente): `animais:read`, `toques:write`, `coberturas:read`, `coberturas:write`, `saude:read`, `saude:write`, `alertas:read` — ver `docs/business/integracoes.md` (BR-INTEG-009–011)
   - `AUTH_LOGIN_RATE_LIMIT` (default: 10), `AUTH_LOGIN_RATE_WINDOW_MINUTES` (default: 15): rate limit por IP em `POST /api/auth/login`
   - `AUTH_REGISTER_RATE_LIMIT` (default: 5): rate limit por IP/hora em `POST /api/auth/register`
-  - `AUTH_REFRESH_RATE_LIMIT` (default: 30): rate limit por IP/hora em `POST /api/auth/refresh`
+  - `AUTH_REFRESH_RATE_LIMIT` (default: 30): rate limit por IP/hora em `POST /api/auth/refresh`; `logout` usa 2× e `validate` 20× esse valor
+  - `METRICS_TOKEN`: token Bearer para `GET /metrics` em produção (sem ele, o endpoint responde 404 em produção; livre em dev)
+  - `TRUSTED_PROXIES`: CSV de CIDRs confiáveis para X-Forwarded-For (default: ranges privados RFC1918 + loopback — LB do Render)
   - **Web Push (alertas)**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (ex.: `mailto:suporte@ceialmilk.com`) — ver `deploy-notes.md`; lib `github.com/SherClockHolmes/webpush-go`
   - **Docs OpenAPI integrações** (públicas): `GET /api/v1/integracoes/openapi.yaml`, `GET /api/v1/integracoes/docs` (Swagger UI); spec embed em `backend/internal/openapi/`
   - **Dev Studio e Assistente** (opcional): `GEMINI_API_KEY`; `GEMINI_MODEL` (default `gemini-2.0-flash`) para Dev Studio; `GEMINI_MODEL_ASSISTENTE` (opcional, se vazio usa `GEMINI_MODEL`; recomendado `gemini-2.5-flash-lite` para custo menor). GitHub: `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_CONTEXT_BRANCH` (default `main`). Ver `docs/dev-studio/SETUP.md`.
@@ -82,21 +84,23 @@
 ```go
 module github.com/ceialmilk/api
 
-go 1.24.0
+go 1.25.11
 
 require (
     github.com/getsentry/sentry-go v0.41.0
     github.com/gin-gonic/gin v1.10.0
-    github.com/golang-jwt/jwt/v5 v5.2.0
+    github.com/golang-jwt/jwt/v5 v5.3.1
     github.com/golang-migrate/migrate/v4 v4.19.1
     github.com/google/uuid v1.6.0
     github.com/google/generative-ai-go v0.20.1
     github.com/gorilla/websocket v1.5.3
     github.com/jackc/pgx/v5 v5.5.4
-    github.com/SherClockHolmes/webpush-go v1.3.0
-    golang.org/x/crypto v0.45.0
+    github.com/SherClockHolmes/webpush-go v1.4.0
+    golang.org/x/crypto v0.51.0
 )
 ```
+
+Atualizações de segurança (2026-06-10): `golang-jwt/jwt/v5` 5.2.0→5.3.1, `webpush-go` 1.3.0→1.4.0 (remove jwt v3 vulnerável), `x/net` 0.49→0.55 — govulncheck sem achados alcançáveis. Lint: `backend/.golangci.yml` (golangci-lint v2, preset standard).
 
 ## Estratégia de Deploy
 
@@ -288,5 +292,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-06-09 (vitest + BRF-002 validação temporal saúde)
-**Stack**: Go + Next.js 16 — Fase 2 concluída; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)
+**Última atualização**: 2026-06-10 (Go 1.25.11 + deps de segurança; METRICS_TOKEN/TRUSTED_PROXIES; CI com golangci-lint/govulncheck/CodeQL/Dependabot; proxy.ts + CSP no frontend)
+**Stack**: Go 1.25 + Next.js 16.2.9 — Fase 2 concluída; hardening de segurança 2026-06-10; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)

@@ -850,7 +850,11 @@ func (h *AnimalHandler) GetByStatusSaude(c *gin.Context) {
 		response.ErrorBadRequest(c, "parâmetro status_saude é obrigatório", nil)
 		return
 	}
-	list, err := h.service.GetByStatusSaude(c.Request.Context(), statusSaude)
+	fazendaIDs, ok := ResolveFazendaIDsForList(c, h.fazendaSvc)
+	if !ok {
+		return
+	}
+	list, err := h.service.GetByStatusSaude(c.Request.Context(), statusSaude, fazendaIDs)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao buscar", err.Error())
 		return
@@ -864,7 +868,11 @@ func (h *AnimalHandler) GetBySexo(c *gin.Context) {
 		response.ErrorBadRequest(c, "parâmetro sexo é obrigatório", nil)
 		return
 	}
-	list, err := h.service.GetBySexo(c.Request.Context(), sexo)
+	fazendaIDs, ok := ResolveFazendaIDsForList(c, h.fazendaSvc)
+	if !ok {
+		return
+	}
+	list, err := h.service.GetBySexo(c.Request.Context(), sexo, fazendaIDs)
 	if err != nil {
 		response.ErrorValidation(c, err.Error(), nil)
 		return
@@ -873,7 +881,11 @@ func (h *AnimalHandler) GetBySexo(c *gin.Context) {
 }
 
 func (h *AnimalHandler) Count(c *gin.Context) {
-	n, err := h.service.Count(c.Request.Context())
+	fazendaIDs, ok := ResolveFazendaIDsForList(c, h.fazendaSvc)
+	if !ok {
+		return
+	}
+	n, err := h.service.Count(c.Request.Context(), fazendaIDs)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao contar", err.Error())
 		return
@@ -909,7 +921,11 @@ func (h *AnimalHandler) GetByLoteID(c *gin.Context) {
 		response.ErrorBadRequest(c, "lote_id obrigatorio e deve ser maior que zero", nil)
 		return
 	}
-	list, err := h.service.GetByLoteID(c.Request.Context(), loteID)
+	fazendaIDs, ok := ResolveFazendaIDsForList(c, h.fazendaSvc)
+	if !ok {
+		return
+	}
+	list, err := h.service.GetByLoteID(c.Request.Context(), loteID, fazendaIDs)
 	if err != nil {
 		response.ErrorInternal(c, "Erro ao buscar animais do lote", err.Error())
 		return

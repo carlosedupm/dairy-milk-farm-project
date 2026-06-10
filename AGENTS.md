@@ -31,6 +31,7 @@ Consulte [`memory-bank/projectbrief.md`](memory-bank/projectbrief.md) e [`docs/b
 - **API M2M**: [`docs/integracoes/README.md`](docs/integracoes/README.md) · [`docs/business/integracoes.md`](docs/business/integracoes.md) · OpenAPI em `docs/openapi/integracoes-v1.openapi.yaml`
 - **API JWT (Postman)**: [`docs/postman/`](docs/postman/)
 - **Baixa do rebanho**: [`docs/business/baixa-rebanho.md`](docs/business/baixa-rebanho.md)
+- **Operações e segurança**: [`docs/ops/README.md`](docs/ops/README.md) — runbook (rollback, dirty migration, incidentes), checklist de segurança pré-deploy, estratégia de testes e guia de code review (G2)
 
 ## Comandos Essenciais
 
@@ -96,4 +97,4 @@ OpenAPI da API JWT completa; admin de integrações no OpenAPI; upload PDF; webh
 - Integrações Swagger: `GET /api/v1/integracoes/docs`
 - Regressão ciclo: `docs/tests/regressao-ciclo-fase2.md`
 
-**Última atualização**: 2026-06-09
+**Última atualização**: 2026-06-10

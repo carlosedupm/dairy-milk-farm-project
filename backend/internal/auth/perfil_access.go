@@ -27,6 +27,7 @@ var funcionarioFolgasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/folgas/
 var funcionarioRestricoesLeitePath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/restricoes-leite(/ativas)?$`)
 var funcionarioFazendaAnimaisPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/animais(/count|/em-lactacao|/para-cio|/para-cobertura|/para-toque|/para-parto|/para-abertura-lactacao)?$`)
 var funcionarioGestaoPath = regexp.MustCompile(`^/api/v1/(cios|coberturas|partos|secagens|toques)(/.*)?$`)
+
 // Crias: sub-recurso operacional de partos (listar/complementar na edição de parto).
 var funcionarioCriasPath = regexp.MustCompile(`^/api/v1/crias(/.*)?$`)
 var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
@@ -77,10 +78,7 @@ func requestAllowedForFuncionario(method, path string) bool {
 	// Bloqueio explícito: a liberação do assistente para FUNCIONARIO
 	// será feita futuramente por capacidades específicas de negócio.
 	if funcionarioAssistentePath.MatchString(path) {
-		if funcionarioAssistenteCapabilityEnabled(method, path) {
-			return true
-		}
-		return false
+		return funcionarioAssistenteCapabilityEnabled(method, path)
 	}
 	if isMeProfileRoute(method, path) || strings.HasPrefix(path, "/api/v1/me/") {
 		return true

@@ -361,8 +361,10 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 
 - **JWT RS256**: Tokens assinados com chave privada, verificados com chave pública
 - **Access Tokens**: Vida curta (15 minutos), armazenados em cookies HttpOnly
-- **Refresh Tokens**: Armazenados no banco de dados, vida longa (7 dias), em cookies HttpOnly
-- **Password Hashing**: BCrypt com custo 10
+- **Refresh Tokens**: Vida longa (7 dias), em cookies HttpOnly; no banco fica apenas o **hash SHA-256** (`refresh_token_service.go`), nunca o token em claro
+- **Rotação de refresh token**: cada `POST /api/auth/refresh` revoga o token usado e emite um novo (`RefreshTokenService.Rotate`) — token roubado expira no primeiro uso legítimo
+- **Tokens fora do JSON**: login/refresh **não** retornam `access_token`/`refresh_token` no corpo; somente cookies HttpOnly (reduz superfície XSS)
+- **Password Hashing**: BCrypt com custo 10; senha mínima **8 caracteres** validada front+back (BR-ACESSO-024)
 - **Token Refresh**: Endpoint `/api/auth/refresh` para renovar access tokens usando refresh tokens
 
 ### **Autorização**
@@ -402,13 +404,18 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 
 - **CORS**: Configurado estritamente para domínio da Vercel
 - **Rate limiting**:
-  - **Auth (público, por IP)**: `middleware/auth_rate_limit.go` em `POST /api/auth/login`, `/register`, `/refresh`. Defaults: login 10/15 min, registo 5/h, refresh 30/h. Env: `AUTH_LOGIN_RATE_LIMIT`, `AUTH_LOGIN_RATE_WINDOW_MINUTES`, `AUTH_REGISTER_RATE_LIMIT`, `AUTH_REFRESH_RATE_LIMIT`. Resposta **429** + header `Retry-After`; frontend trata em `frontend/src/lib/errors.ts`.
+  - **Auth (público, por IP)**: `middleware/auth_rate_limit.go` em `POST /api/auth/login`, `/register`, `/refresh`, `/logout` (2× refresh) e `/validate` (20× refresh — chamado em cada carga de página). Defaults: login 10/15 min, registo 5/h, refresh 30/h. Env: `AUTH_LOGIN_RATE_LIMIT`, `AUTH_LOGIN_RATE_WINDOW_MINUTES`, `AUTH_REGISTER_RATE_LIMIT`, `AUTH_REFRESH_RATE_LIMIT`. Resposta **429** + header `Retry-After`; frontend trata em `frontend/src/lib/errors.ts`.
   - **Dev Studio**: 5 req/h por `user_id` — `middleware/rate_limit.go` (`DevStudioRateLimit`).
   - **Integrações M2M**: por `client_id` — `middleware/integration_rate_limit.go` + `INTEGRATION_RATE_LIMIT_PER_HOUR`.
-  - **Produção (Render)**: `SetTrustedProxies` em `cmd/api/main.go` para `c.ClientIP()` refletir o IP real via `X-Forwarded-For`.
+  - **Produção (Render)**: `SetTrustedProxies` restrito a **ranges privados** (RFC1918 + loopback; LB do Render) — confiar em `0.0.0.0/0` permitiria spoof de IP no rate limit. Override via env `TRUSTED_PROXIES` (CSV de CIDRs).
 - **Security headers HTTP**:
-  - **Backend**: `middleware/security_headers.go` global — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`; **HSTS** só com `ENV=production`.
-  - **Frontend**: `frontend/next.config.js` — mesmos headers básicos em `/:path*` (sem CSP nesta fase).
+  - **Backend**: `middleware/security_headers.go` global — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`; **HSTS** só com `ENV=production`. Swagger `/api/v1/integracoes/docs` com **CSP própria** (restrita a unpkg + inline) em `integracoes_docs.go`.
+  - **Frontend**: `frontend/next.config.js` — headers básicos em `/:path*` + **CSP em `Content-Security-Policy-Report-Only`** (observar violações antes de tornar bloqueante; `connect-src` inclui API http/ws via `NEXT_PUBLIC_API_URL`).
+- **Erros 500 sanitizados**: `response.ErrorInternal` **loga** os detalhes (slog com método/path) e responde apenas mensagem genérica — nunca enviar `err.Error()` ao cliente.
+- **Redirects seguros**: destino de redirect só é honrado se `isSafeInternalPath` (path interno, sem `//`, sem `\`, sem URL absoluta) — login (`?redirect=`) e redirect do assistente Live (`appAccess.ts`).
+- **Proxy Next 16**: `frontend/src/proxy.ts` checa presença do cookie `ceialmilk_token`/refresh em rotas protegidas e redireciona para `/login`. **Sem validação de JWT** (camada leve; validação real no backend). Só atua quando o cookie é visível ao frontend (same-site, ex.: dev localhost); em produção cross-domain (Vercel+Render) passa direto e a proteção fica no client + backend.
+- **`/metrics` protegido**: em produção exige `Authorization: Bearer <METRICS_TOKEN>`; sem token configurado → 404 (`metricsAuthMiddleware` em `cmd/api/main.go`).
+- **Isolamento multi-tenant (BR-ACESSO-023)**: toda listagem/ação valida vínculo via `ResolveFazendaIDsForList`/`ValidateFazendaAccess`; Assistente (texto e Live) usa resolvers com validação de tenant (`ensureAnimalAccess`, `resolveFazendaIDForUser`) e responde "não encontrado" genérico para recursos de outras fazendas.
 - **Graceful shutdown**: `SIGINT`/`SIGTERM` → `http.Server.Shutdown` (timeout 5s) + flush Sentry + `defer pool.Close()` — `cmd/api/main.go`.
 - **Input Validation**: Validação em todas as entradas (struct tags)
 - **SQL Injection**: Prevenido com prepared statements
@@ -727,6 +734,6 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Versão dos Padrões**: 2.28 (Go + Next.js) — RBAC saúde animal (FUNCIONARIO GET+POST; PUT/DELETE restritos).
+**Versão dos Padrões**: 2.29 (Go + Next.js) — hardening de segurança: refresh tokens hash+rotação, erros sanitizados, CSP report-only, proxy.ts, redirects seguros, multi-tenant BR-ACESSO-023.
 
-**Última atualização**: 2026-06-09 (BRF-001 — vacinas: sub-recurso `/vacinas`, tab Vacinas, timeline `tipo=vacinas`, RBAC BR-ACESSO-022)
+**Última atualização**: 2026-06-10 (hardening de segurança e processo — ver `docs/ops/` para runbook, checklist e guia de code review)

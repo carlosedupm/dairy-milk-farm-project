@@ -5,11 +5,12 @@
 ### **Completude Geral**: 99% — **Fase 2 (ciclo + auditoria UI)**: 100% em código; **baixa do rebanho** entregue (2026-05-24); checklist de regressão documentado (execução em staging pendente)
 
 ```bash
-🏗️  Infraestrutura: 95% ✅
-📚  Documentação: 97% ✅ (memory bank + OpenAPI integrações M2M)
+🏗️  Infraestrutura: 97% ✅ (CI com lint/scan de segurança, CodeQL, Dependabot, gate de deploy checksPass)
+📚  Documentação: 98% ✅ (memory bank + OpenAPI integrações M2M + docs/ops: runbook, checklist segurança, testes, code review)
 💻  Implementação: 95% ✅ (CRUD Animais, Produção, Gestão Pecuária e Módulo Agrícola em consolidação)
-🧪  Testes: 78% ✅ (unitários backend service saúde/alertas + E2E frontend + scripts TestSprite TC001–TC009 API)
-🚀  Deploy: 90% ✅ (backend Render + frontend Vercel em produção)
+🔐  Segurança: hardening 2026-06-10 ✅ (IDOR corrigido, refresh tokens hash+rotação, CSP, Go 1.25, deps atualizadas)
+🧪  Testes: 80% ✅ (unitários backend + testes cross-tenant + vitest no CI + E2E frontend + TestSprite TC001–TC009)
+🚀  Deploy: 92% ✅ (backend Render + frontend Vercel em produção; deploy gated por CI)
 ```
 
 ### **Velocidade e Métricas**
@@ -409,6 +410,15 @@
 ```
 
 ## 🔄 Histórico de Progresso
+
+### **2026-06-10 - Hardening de segurança e processo**
+
+- ✅ **Críticos**: secret TestSprite removido do repo (+gitignore); IDOR corrigido em animais/crias/Assistente (BR-ACESSO-023) com testes cross-tenant; Next 16.2.2→16.2.9 + React 19.2.7 (security release maio/2026); gate de deploy `checksPass` no Render.
+- ✅ **Altos**: refresh tokens com hash SHA-256 + rotação; tokens fora do JSON; `ErrorInternal` sanitizado; open redirect corrigido (`isSafeInternalPath`); CSP report-only + `proxy.ts` (Next 16); CSP no Swagger `/docs`.
+- ✅ **CI de segurança**: golangci-lint (32 issues pré-existentes corrigidos), govulncheck zerado (Go 1.25.11 + jwt 5.3.1 + x/net 0.55 + webpush-go 1.4.0), `npm audit --audit-level=high` (axios+ atualizados), vitest no CI, smoke `docker build`, Dependabot, CodeQL.
+- ✅ **Médios**: senha mínima 8 (BR-ACESSO-024); `/metrics` com `METRICS_TOKEN`; trusted proxies restritos; rate limit validate/logout; `alpine:3.22` pinado; devcontainer Go 1.25.
+- ✅ **Processo**: `docs/ops/` (runbook, checklist de segurança pré-deploy, estratégia de testes, guia de code review G2); higiene de docs (README raiz Go 1.25/Next 16, memory-bank atualizado).
+- ⚠️ **Ações manuais pendentes (usuário)**: rotacionar a API key TestSprite no provedor; ativar branch protection no GitHub; definir `METRICS_TOKEN` no Render.
 
 ### **2026-05-07 - Restrições de leite: combo só com lactação ativa**
 
@@ -935,6 +945,6 @@
 
 ---
 
-**Última atualização**: 2026-06-09 (BRF-001 — vacinas / calendário preventivo implementado)
-**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
-**Próxima revisão**: após validação integrações em staging + execução checklist Fase 2
+**Última atualização**: 2026-06-10 (hardening de segurança e processo concluído)
+**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Hardening de segurança 2026-06-10** ✅ | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Senha aguarda SMTP
+**Próxima revisão**: após ações manuais de segurança (rotação TestSprite, branch protection, METRICS_TOKEN) + validação staging

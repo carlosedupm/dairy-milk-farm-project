@@ -8,6 +8,17 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Hardening de segurança e processo (2026-06-10)** — plano completo executado:
+   - **Secret TestSprite removido**: `.cursor/mcp.json` usa `${env:TESTSPRITE_API_KEY}`; `testsprite_tests/tmp/` e `.cursor/mcp.json` no `.gitignore` (rotação da chave no provedor é ação manual pendente do usuário).
+   - **IDOR corrigido (BR-ACESSO-023)**: `animal_handler` (by-status-saude, by-sexo, count, by-lote) com `ResolveFazendaIDsForList`; `CriaHandler` valida fazenda do parto (`validatePartoAccess`); Assistente texto e Live com validação de tenant em todos os resolvers (`ensureAnimalAccess`, `resolveFazendaIDForUser`, perfil ADMIN/DEVELOPER para cadastrar/editar fazenda); testes cross-tenant novos.
+   - **Next.js 16.2.9 + React 19.2.7**: patch do security release de maio/2026 (13 advisories).
+   - **Gate de deploy**: `render.yaml` com `autoDeployTrigger: checksPass`; branch protection documentada em `deploy-notes.md` (ação manual no GitHub).
+   - **Refresh tokens**: SHA-256 no banco + rotação no `/refresh`; tokens removidos do JSON de login/refresh (só cookies HttpOnly).
+   - **Erros sanitizados**: `ErrorInternal` loga detalhes via slog e responde mensagem genérica (sem `err.Error()` ao cliente).
+   - **Open redirect + CSP + proxy**: `isSafeInternalPath` no login e no redirect do assistente Live; CSP Report-Only no `next.config.js`; CSP no Swagger `/docs` do backend; `frontend/src/proxy.ts` (Next 16) com checagem de cookie em rotas protegidas (ativo quando cookie é visível — same-site/dev).
+   - **CI de segurança**: golangci-lint (config `backend/.golangci.yml`, 32 issues pré-existentes corrigidos), govulncheck (zerado — exigiu Go 1.25.11 + jwt v5.3.1 + x/net 0.55 + webpush-go 1.4.0), `npm audit --audit-level=high` (axios e outros atualizados via `npm audit fix`), `npm run test:unit` no CI, smoke test `docker build`, `.github/dependabot.yml`, workflow CodeQL.
+   - **Hardening médio**: senha mínima 8 (BR-ACESSO-024, front+back); `/metrics` protegido por `METRICS_TOKEN` em produção; trusted proxies restritos a ranges privados (override `TRUSTED_PROXIES`); rate limit em `validate`/`logout`; `alpine:3.22` pinado; devcontainer Go 1.25.11.
+   - **Processo**: `docs/ops/` novo (runbook, checklist de segurança, estratégia de testes, guia de code review G2).
 1. ✅ **BRF-004 — Elegibilidade reprodutiva (BR-CICLO-016–018, INT-008)**: `ValidateElegibilidadeReprodutiva` em `ciclo_elegibilidade.go`; bloqueio INT-008 em cio/cobertura/toque/parto/secagem/produção; `GET .../animais/para-cio`; listagens `para-cobertura|toque|parto` com `SQLElegivelReproducao`; conformidade `checkMarcoReprodutivoAnimalImaturo`; frontend `CioFormFields` com `cicloContext="cio"`; testes `ciclo_elegibilidade_test.go`; briefing → **implementado** (G3, 2026-06-09).
 1. ✅ **BRF-003 — status_saude derivado (BR-SAUDE-013, BR-PARTOS-008)**: `AnimalService` bloqueia alteração manual com casos ATIVOS (`400 STATUS_SAUDE_DERIVADO`); cadastro genérico força `SAUDAVEL`; parto/cria tardia com `nao_saudavel` + `status_saude_inicial`; UI `AnimalForm` + parto; assistente Live/legado; testes `animal_service_test.go` + `cria_service_test.go`; validação manual G3 confirmada; briefing → **implementado** (G3 fechado, 2026-06-09).
 1. ✅ **BRF-002 — Validação temporal em casos de saúde (BR-SAUDE-012)**: `validateAnimalSaudeTemporal` em `animal_saude_service.go` (TMP-001 em `data_inicio`, TMP-002 em ambas, `data_fim` futura permitida); skip temporal no Update quando `vacina_id`; frontend `saude-date-limits.ts`, `AnimalSaudeFormFields`/`AnimalSaudeForm`, `validateAnimalSaudeForm` com badge TMP-*; vitest `form-validation.saude.test.ts`; testes service + RBAC DELETE; briefing → **implementado** (G3, 2026-06-09).
@@ -215,8 +226,8 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 ### **Arquitetura e Stack**
 
 - ✅ **Decidido**: Backend em **Go** usando framework **Gin**
-- ✅ **Decidido**: Frontend em **Next.js 16.2.2** com App Router e Turbopack
-- ✅ **Decidido**: **React 19.2.3** para melhor performance e novas features
+- ✅ **Decidido**: Frontend em **Next.js 16.2.9** com App Router e Turbopack (patch de segurança maio/2026)
+- ✅ **Decidido**: **React 19.2.7** para melhor performance e novas features
 - ✅ **Decidido**: Banco de dados **PostgreSQL** mantido (schema existente)
 - ✅ **Decidido**: Estrutura **Monorepo** com `/backend` e `/frontend`
 - ✅ **Documentado**: Padrão de frontend **DRY + composition (React) + abstração de lógica** (`services/`, `lib/`, `hooks/`, layouts compartilhados, Shadcn em `ui/`) — ver `memory-bank/systemPatterns.md` (subseção após a árvore do frontend).
@@ -225,10 +236,13 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 ### **Segurança**
 
 - ✅ **Decidido**: JWT com algoritmo **RS256** (chaves pública/privada)
-- ✅ **Decidido**: **Refresh Tokens** armazenados no banco de dados
-- ✅ **Decidido**: Cookies **HttpOnly** e **Secure** para armazenamento de tokens
-- ✅ **Decidido**: **Bcrypt** para hashing de senhas
+- ✅ **Decidido**: **Refresh Tokens** armazenados no banco como **hash SHA-256** com **rotação** a cada refresh (2026-06-10)
+- ✅ **Decidido**: Cookies **HttpOnly** e **Secure** para armazenamento de tokens; tokens **nunca** no corpo JSON
+- ✅ **Decidido**: **Bcrypt** para hashing de senhas; senha mínima **8 caracteres** (BR-ACESSO-024)
 - ✅ **Decidido**: **CORS estrito** configurado para domínio da Vercel
+- ✅ **Decidido**: Erros 500 com mensagem genérica ao cliente; detalhes só em log estruturado (`ErrorInternal`)
+- ✅ **Decidido**: **CSP Report-Only** no frontend antes de tornar bloqueante; `/metrics` protegido por `METRICS_TOKEN` em produção
+- ✅ **Decidido**: CI com **golangci-lint + govulncheck + npm audit + CodeQL + Dependabot**; deploy do Render só com checks verdes (`checksPass`)
 
 ### **Observabilidade**
 
@@ -270,5 +284,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-09 (BRF-004 implementado G3 — elegibilidade reprodutiva INT-008)
-**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push + **vacinas (BRF-001)** | **BRF-002 implementado** | **BRF-003 implementado** (status_saude derivado) | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Recuperação senha aguarda SMTP
+**Última atualização**: 2026-06-10 (hardening de segurança: IDOR, refresh tokens, CSP/proxy, CI de segurança, Go 1.25)
+**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 fechada** | **Hardening de segurança concluído** (BR-ACESSO-023/024) | **Fase 3** saúde + alertas + Web Push + **vacinas (BRF-001)** | **BRF-002/003/004 implementados** | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Recuperação senha aguarda SMTP | **Ações manuais pendentes**: rotacionar key TestSprite, branch protection GitHub, `METRICS_TOKEN` no Render

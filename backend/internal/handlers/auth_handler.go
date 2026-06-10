@@ -51,7 +51,7 @@ type LoginRequest struct {
 type RegisterRequest struct {
 	Nome     string `json:"nome" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=8"`
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -154,12 +154,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// Configurar cookie HttpOnly para o refresh token (7 dias)
 	auth.SetSecureCookie(c, "ceialmilk_refresh_token", refreshToken.Token, 7*24*60*60, h.cookieSameSite)
 
+	// Tokens viajam apenas nos cookies HttpOnly — nunca no corpo JSON (reduz superfície de XSS).
 	loginData := gin.H{
-		"email":          user.Email,
-		"perfil":         user.Perfil,
-		"nome":           user.Nome,
-		"access_token":   accessToken,
-		"refresh_token":  refreshToken.Token,
+		"email":  user.Email,
+		"perfil": user.Perfil,
+		"nome":   user.Nome,
 	}
 	response.SuccessOK(c, loginData, "Login realizado com sucesso")
 }
@@ -284,15 +283,23 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	// Configurar cookie HttpOnly para o novo access token
-	auth.SetSecureCookie(c, "ceialmilk_token", accessToken, 15*60, h.cookieSameSite) // 15 minutos
+	// Rotação: revogar o refresh token usado e emitir um novo (limita janela de reuso em caso de roubo)
+	newRefreshToken, err := h.refreshTokenSvc.Rotate(c.Request.Context(), refreshTokenStr, user.ID)
+	if err != nil {
+		observability.CaptureHandlerError(c, err, map[string]string{"operation": "rotate_refresh_token"})
+		response.ErrorInternal(c, "Erro ao renovar sessão", err.Error())
+		return
+	}
 
+	// Configurar cookies HttpOnly para os novos tokens
+	auth.SetSecureCookie(c, "ceialmilk_token", accessToken, 15*60, h.cookieSameSite) // 15 minutos
+	auth.SetSecureCookie(c, "ceialmilk_refresh_token", newRefreshToken.Token, 7*24*60*60, h.cookieSameSite)
+
+	// Tokens viajam apenas nos cookies HttpOnly — nunca no corpo JSON.
 	refreshData := gin.H{
-		"email":          user.Email,
-		"perfil":         user.Perfil,
-		"nome":           user.Nome,
-		"access_token":   accessToken,
-		"refresh_token":  refreshTokenStr,
+		"email":  user.Email,
+		"perfil": user.Perfil,
+		"nome":   user.Nome,
 	}
 	response.SuccessOK(c, refreshData, "Token renovado com sucesso")
 }

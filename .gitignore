@@ -206,3 +206,6 @@ test-output/
 # TestSprite runtime artifacts
 testsprite_tests/tmp/
 backend/api
+
+# MCP local config (pode conter API keys)
+.cursor/mcp.json

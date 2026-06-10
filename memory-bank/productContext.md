@@ -116,5 +116,5 @@ Detalhe transversal: **[docs/business/ciclo-rebanho.md](../docs/business/ciclo-r
 
 ---
 
-**Última atualização**: 2026-05-21  
-**Versão do Contexto**: 3.1 (integrações M2M documentadas no roadmap de crescimento)
+**Última atualização**: 2026-06-10  
+**Versão do Contexto**: 3.2 (revisão de higiene pós-hardening de segurança; visão de produto inalterada)

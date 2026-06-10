@@ -17,7 +17,19 @@ O arquivo `render.yaml` define:
 - **Serviço Web**: Aplicação Docker na branch `main` (`buildFilter: backend/**` — build só em mudanças em `backend/`)
 - **Banco de Dados**: PostgreSQL gerenciado (`ceialmilk-db`)
 - **Health Check**: `/health` endpoint
-- **Auto Deploy**: `autoDeployTrigger: commit` (deploy a cada push na `main`)
+- **Auto Deploy**: `autoDeployTrigger: checksPass` (deploy só após os checks do GitHub passarem na `main`)
+
+### Gate de deploy (CI → produção)
+
+Duas camadas impedem que código sem CI verde chegue à produção:
+
+1. **`autoDeployTrigger: checksPass`** no `render.yaml`: o Render aguarda os checks do GitHub (workflow `ci-cd.yml`) concluírem com sucesso no commit da `main` antes de iniciar o deploy. Se o CI falhar, não há deploy.
+2. **Branch protection na `main`** (ação manual no GitHub — Settings → Branches → Add branch ruleset):
+   - Exigir pull request antes de merge
+   - Exigir status checks: `Docs - Validate BR references`, `Backend - Lint and Build`, `Frontend - Lint`, `Frontend - Build`, `Backend - Docker build (smoke test)` (os 5 jobs do `ci-cd.yml`) + jobs `Analyze (go)` e `Analyze (javascript-typescript)` do CodeQL
+   - Bloquear push direto na `main`
+
+> ⚠️ A branch protection precisa ser ativada **manualmente** no dashboard do GitHub (requer admin do repo). Enquanto não estiver ativa, o `checksPass` do Render é a única barreira.
 
 ### Variáveis de Ambiente
 
@@ -40,6 +52,11 @@ O arquivo `render.yaml` define:
 #### Recuperação de senha (planejado — SMTP não definido)
 
 Fluxo `forgot-password` / `reset-password` **não implementado** até escolha do provedor de e-mail transacional (ex.: Resend, SendGrid, Amazon SES, SMTP do Render). Quando definido, documentar aqui: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, e URL base do frontend para links de reset.
+
+#### Segurança (recomendadas em produção)
+
+- `METRICS_TOKEN` - Token Bearer para `GET /metrics`. **Em produção, sem esse token o endpoint responde 404** (não expõe métricas). Scraping: `Authorization: Bearer <token>`.
+- `TRUSTED_PROXIES` - CSV de CIDRs confiáveis para `X-Forwarded-For` (default: ranges privados RFC1918 + loopback, cobrindo o LB do Render). Só alterar se a infra de proxy mudar.
 
 #### Opcionais (auth — rate limit por IP)
 
@@ -425,7 +442,9 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 ---
 
-**Última atualização**: 2026-06-03 (nota numeração migrations V28→V30)
+Runbook de operações (rollback, dirty migration, incidentes): **`docs/ops/runbook.md`**; checklist pré-deploy: **`docs/ops/security-checklist.md`**.
+
+**Última atualização**: 2026-06-10 (gate de deploy `checksPass` + branch protection com 5 jobs + CodeQL; `METRICS_TOKEN`/`TRUSTED_PROXIES`; link para `docs/ops/`)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

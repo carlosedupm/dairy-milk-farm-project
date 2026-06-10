@@ -243,7 +243,7 @@ WHERE a.id = $1 AND a.data_saida IS NOT NULL
 func timelineFilterClause(filter TimelineFilterTipo, paramIdx int) string {
 	switch filter {
 	case TimelineFilterCiclo:
-		return fmt.Sprintf(` AND ev.tipo IN ('CIO','COBERTURA','TOQUE','GESTACAO','SECAGEM','PARTO','LACTACAO','PRODUCAO','BAIXA')`)
+		return ` AND ev.tipo IN ('CIO','COBERTURA','TOQUE','GESTACAO','SECAGEM','PARTO','LACTACAO','PRODUCAO','BAIXA')`
 	case TimelineFilterSaude:
 		return ` AND ev.tipo = 'SAUDE'`
 	case TimelineFilterAlertas:

@@ -1,13 +1,13 @@
 # CeialMilk Dev Container - Go + Next.js (conforme techContext.md)
-# Stack: Go 1.21+, Node 20 LTS, PostgreSQL client
+# Stack: Go 1.25, Node 20 LTS, PostgreSQL client
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-22.04
 
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 
-# Go 1.21
-ARG GO_VERSION=1.21.13
+# Go (alinhado ao toolchain em backend/go.mod)
+ARG GO_VERSION=1.25.11
 RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o /tmp/go.tar.gz \
     && tar -C /usr/local -xzf /tmp/go.tar.gz \
     && rm /tmp/go.tar.gz

@@ -547,13 +547,37 @@ func (h *PartoHandler) Delete(c *gin.Context) {
 }
 
 // CriaHandler
-type CriaHandler struct{ svc *service.CriaService }
+type CriaHandler struct {
+	svc        *service.CriaService
+	fazendaSvc *service.FazendaService
+}
 
-func NewCriaHandler(svc *service.CriaService) *CriaHandler { return &CriaHandler{svc: svc} }
+func NewCriaHandler(svc *service.CriaService, fazendaSvc *service.FazendaService) *CriaHandler {
+	return &CriaHandler{svc: svc, fazendaSvc: fazendaSvc}
+}
+
+// validatePartoAccess garante que o parto existe e pertence a uma fazenda do usuário.
+// Retorna false se a resposta HTTP de erro já foi enviada.
+func (h *CriaHandler) validatePartoAccess(c *gin.Context, partoID int64) bool {
+	fazendaID, err := h.svc.GetPartoFazendaID(c.Request.Context(), partoID)
+	if err != nil {
+		if errors.Is(err, service.ErrPartoNotFound) {
+			response.ErrorNotFound(c, "Parto nao encontrado")
+			return false
+		}
+		response.ErrorInternal(c, "Erro ao validar parto", err.Error())
+		return false
+	}
+	return ValidateFazendaAccess(c, h.fazendaSvc, fazendaID)
+}
+
 func (h *CriaHandler) GetByPartoID(c *gin.Context) {
 	partoID, _ := strconv.ParseInt(c.Query("parto_id"), 10, 64)
 	if partoID <= 0 {
 		response.ErrorBadRequest(c, "parto_id obrigatorio", nil)
+		return
+	}
+	if !h.validatePartoAccess(c, partoID) {
 		return
 	}
 	list, err := h.svc.GetByPartoID(c.Request.Context(), partoID)
@@ -577,6 +601,9 @@ func (h *CriaHandler) Create(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorValidation(c, "Dados invalidos", err.Error())
+		return
+	}
+	if !h.validatePartoAccess(c, req.PartoID) {
 		return
 	}
 	cria := &models.Cria{

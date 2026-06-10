@@ -1,6 +1,7 @@
 package response
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -29,17 +30,17 @@ type ErrorResponse struct {
 
 // Códigos de erro padronizados
 const (
-	CodeValidationError    = "VALIDATION_ERROR"
-	CodeAnimalForaRebanho     = "ANIMAL_FORA_REBANHO"
+	CodeValidationError     = "VALIDATION_ERROR"
+	CodeAnimalForaRebanho   = "ANIMAL_FORA_REBANHO"
 	CodeStatusSaudeDerivado = "STATUS_SAUDE_DERIVADO"
-	CodeUnauthorized    = "UNAUTHORIZED"
-	CodeForbidden       = "FORBIDDEN"
-	CodeNotFound        = "NOT_FOUND"
-	CodeConflict        = "CONFLICT"
-	CodeInternalError   = "INTERNAL_ERROR"
-	CodeBadRequest      = "BAD_REQUEST"
-	CodeQuotaExceeded   = "QUOTA_EXCEEDED"
-	CodeServiceUnavailable = "SERVICE_UNAVAILABLE"
+	CodeUnauthorized        = "UNAUTHORIZED"
+	CodeForbidden           = "FORBIDDEN"
+	CodeNotFound            = "NOT_FOUND"
+	CodeConflict            = "CONFLICT"
+	CodeInternalError       = "INTERNAL_ERROR"
+	CodeBadRequest          = "BAD_REQUEST"
+	CodeQuotaExceeded       = "QUOTA_EXCEEDED"
+	CodeServiceUnavailable  = "SERVICE_UNAVAILABLE"
 )
 
 // Success retorna uma resposta de sucesso padronizada
@@ -103,9 +104,19 @@ func ErrorValidation(c *gin.Context, message string, details interface{}) {
 	Error(c, http.StatusBadRequest, CodeValidationError, message, details)
 }
 
-// ErrorInternal retorna uma resposta 500 Internal Server Error padronizada
+// ErrorInternal retorna uma resposta 500 Internal Server Error padronizada.
+// Os detalhes (ex.: err.Error()) são apenas LOGADOS — nunca enviados ao cliente,
+// para não vazar SQL, paths ou internals da aplicação.
 func ErrorInternal(c *gin.Context, message string, details interface{}) {
-	Error(c, http.StatusInternalServerError, CodeInternalError, message, details)
+	if details != nil {
+		slog.Error("erro interno",
+			"message", message,
+			"details", details,
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+		)
+	}
+	Error(c, http.StatusInternalServerError, CodeInternalError, message, nil)
 }
 
 // ErrorTooManyRequests retorna uma resposta 429 Too Many Requests padronizada

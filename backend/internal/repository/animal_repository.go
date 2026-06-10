@@ -319,9 +319,12 @@ func (r *AnimalRepository) ListParaAberturaLactacaoByFazendaID(ctx context.Conte
 	return r.queryList(ctx, query, fazendaID, models.SexoFemea)
 }
 
-func (r *AnimalRepository) GetByLoteID(ctx context.Context, loteID int64) ([]*models.Animal, error) {
-	query := fmt.Sprintf(`SELECT %s FROM animais WHERE lote_id = $1 ORDER BY identificacao ASC`, animalSelectColumns)
-	return r.queryList(ctx, query, loteID)
+func (r *AnimalRepository) GetByLoteID(ctx context.Context, loteID int64, fazendaIDs []int64) ([]*models.Animal, error) {
+	if len(fazendaIDs) == 0 {
+		return []*models.Animal{}, nil
+	}
+	query := fmt.Sprintf(`SELECT %s FROM animais WHERE lote_id = $1 AND fazenda_id = ANY($2::bigint[]) ORDER BY identificacao ASC`, animalSelectColumns)
+	return r.queryList(ctx, query, loteID, fazendaIDs)
 }
 
 func (r *AnimalRepository) GetByCategoria(ctx context.Context, fazendaID int64, categoria string) ([]*models.Animal, error) {
@@ -393,14 +396,20 @@ func (r *AnimalRepository) SearchByIdentificacao(ctx context.Context, identifica
 	return r.queryList(ctx, query, identificacao)
 }
 
-func (r *AnimalRepository) GetByStatusSaude(ctx context.Context, statusSaude string) ([]*models.Animal, error) {
-	query := fmt.Sprintf(`SELECT %s FROM animais WHERE status_saude = $1 ORDER BY created_at DESC`, animalSelectColumns)
-	return r.queryList(ctx, query, statusSaude)
+func (r *AnimalRepository) GetByStatusSaude(ctx context.Context, statusSaude string, fazendaIDs []int64) ([]*models.Animal, error) {
+	if len(fazendaIDs) == 0 {
+		return []*models.Animal{}, nil
+	}
+	query := fmt.Sprintf(`SELECT %s FROM animais WHERE status_saude = $1 AND fazenda_id = ANY($2::bigint[]) ORDER BY created_at DESC`, animalSelectColumns)
+	return r.queryList(ctx, query, statusSaude, fazendaIDs)
 }
 
-func (r *AnimalRepository) GetBySexo(ctx context.Context, sexo string) ([]*models.Animal, error) {
-	query := fmt.Sprintf(`SELECT %s FROM animais WHERE sexo = $1 ORDER BY created_at DESC`, animalSelectColumns)
-	return r.queryList(ctx, query, sexo)
+func (r *AnimalRepository) GetBySexo(ctx context.Context, sexo string, fazendaIDs []int64) ([]*models.Animal, error) {
+	if len(fazendaIDs) == 0 {
+		return []*models.Animal{}, nil
+	}
+	query := fmt.Sprintf(`SELECT %s FROM animais WHERE sexo = $1 AND fazenda_id = ANY($2::bigint[]) ORDER BY created_at DESC`, animalSelectColumns)
+	return r.queryList(ctx, query, sexo, fazendaIDs)
 }
 
 func (r *AnimalRepository) UpdateLoteID(ctx context.Context, animalID int64, loteID *int64) error {
@@ -453,9 +462,12 @@ func (r *AnimalRepository) ListBezerrasParaReclassificarPorIdade(ctx context.Con
 	return r.queryList(ctx, query, models.CategoriaBezerra, limite)
 }
 
-func (r *AnimalRepository) Count(ctx context.Context) (int64, error) {
+func (r *AnimalRepository) Count(ctx context.Context, fazendaIDs []int64) (int64, error) {
+	if len(fazendaIDs) == 0 {
+		return 0, nil
+	}
 	var n int64
-	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM animais`).Scan(&n)
+	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM animais WHERE fazenda_id = ANY($1::bigint[])`, fazendaIDs).Scan(&n)
 	return n, err
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/subtle"
 	"log/slog"
 	"net/http"
 	"os"
@@ -61,8 +62,19 @@ func main() {
 	router := gin.New()
 
 	if cfg.Env == "production" {
-		// Render e outros LB enviam X-Forwarded-For; necessário para rate limit por IP real.
-		if err := router.SetTrustedProxies([]string{"0.0.0.0/0", "::/0"}); err != nil {
+		// Confiar apenas no LB do Render (rede privada) para X-Forwarded-For;
+		// confiar em 0.0.0.0/0 permitiria spoof do IP usado no rate limit.
+		// Override via TRUSTED_PROXIES (CSV de CIDRs) se a infra mudar.
+		trusted := []string{"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.1/32", "::1/128", "fd00::/8"}
+		if cfg.TrustedProxies != "" {
+			trusted = nil
+			for _, cidr := range strings.Split(cfg.TrustedProxies, ",") {
+				if c := strings.TrimSpace(cidr); c != "" {
+					trusted = append(trusted, c)
+				}
+			}
+		}
+		if err := router.SetTrustedProxies(trusted); err != nil {
 			slog.Warn("Falha ao configurar trusted proxies", "error", err)
 		}
 	} else {
@@ -79,9 +91,10 @@ func main() {
 	router.Use(corsMiddleware(cfg.CORSOrigin))
 	router.Use(middleware.SecurityHeadersMiddleware(cfg.Env == "production"))
 
-	// Endpoint de métricas Prometheus
-	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	slog.Info("Endpoint de métricas Prometheus registrado em /metrics")
+	// Endpoint de métricas Prometheus.
+	// Em produção exige METRICS_TOKEN (Authorization: Bearer <token>); sem token configurado, o endpoint é bloqueado.
+	router.GET("/metrics", metricsAuthMiddleware(cfg), gin.WrapH(promhttp.Handler()))
+	slog.Info("Endpoint de métricas Prometheus registrado em /metrics", "protegido", cfg.Env == "production")
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -251,7 +264,7 @@ func main() {
 					integracaoAdminHandler := handlers.NewIntegracaoAdminHandler(integracaoSvc)
 					gestacaoHandler := handlers.NewGestacaoHandler(gestacaoSvc, fazendaSvc)
 					partoHandler := handlers.NewPartoHandler(partoSvc, fazendaSvc)
-					criaHandler := handlers.NewCriaHandler(criaSvc)
+					criaHandler := handlers.NewCriaHandler(criaSvc, fazendaSvc)
 					secagemHandler := handlers.NewSecagemHandler(secagemSvc, fazendaSvc)
 					lactacaoHandler := handlers.NewLactacaoHandler(lactacaoSvc, fazendaSvc)
 					protocoloIatfHandler := handlers.NewProtocoloIATFHandler(protocoloIatfSvc, fazendaSvc)
@@ -298,12 +311,19 @@ func main() {
 						middleware.AuthRateLimit(middleware.AuthRateLimitConfig{Limit: loginLimit, Window: loginWindow}),
 						authHandler.Login,
 					)
-					authPublic.POST("/logout", authHandler.Logout)
+					authPublic.POST("/logout",
+						middleware.AuthRateLimit(middleware.AuthRateLimitConfig{Limit: refreshLimit * 2, Window: time.Hour}),
+						authHandler.Logout,
+					)
 					authPublic.POST("/refresh",
 						middleware.AuthRateLimit(middleware.AuthRateLimitConfig{Limit: refreshLimit, Window: time.Hour}),
 						authHandler.Refresh,
 					)
-					authPublic.POST("/validate", authHandler.Validate)
+					// validate é chamado em cada carga de página; limite generoso só para conter abuso
+					authPublic.POST("/validate",
+						middleware.AuthRateLimit(middleware.AuthRateLimitConfig{Limit: refreshLimit * 20, Window: time.Hour}),
+						authHandler.Validate,
+					)
 
 					// Minhas fazendas (usuário logado)
 					me := api.Group("/v1/me", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
@@ -586,10 +606,7 @@ func main() {
 						// wd pode ser /workspace/backend ou /workspace/backend/cmd/api
 						// Normalizar para /workspace primeiro
 						workspaceRoot := wd
-						for {
-							if filepath.Base(workspaceRoot) == "workspace" {
-								break
-							}
+						for filepath.Base(workspaceRoot) != "workspace" {
 							parent := filepath.Dir(workspaceRoot)
 							if parent == workspaceRoot {
 								// Chegou na raiz, usar caminho relativo
@@ -737,6 +754,29 @@ func main() {
 	slog.Info("Servidor encerrado com sucesso")
 }
 
+// metricsAuthMiddleware protege /metrics em produção: exige `Authorization: Bearer <METRICS_TOKEN>`.
+// Sem METRICS_TOKEN configurado em produção, o endpoint responde 404 (não expor internals).
+// Em desenvolvimento o acesso é livre.
+func metricsAuthMiddleware(cfg *config.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if cfg.Env != "production" {
+			c.Next()
+			return
+		}
+		if cfg.MetricsToken == "" {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		authHeader := c.GetHeader("Authorization")
+		token, ok := strings.CutPrefix(authHeader, "Bearer ")
+		if !ok || subtle.ConstantTimeCompare([]byte(token), []byte(cfg.MetricsToken)) != 1 {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		c.Next()
+	}
+}
+
 func corsMiddleware(origin string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
@@ -768,7 +808,7 @@ func runMigrations(databaseURL string) error {
 	if err != nil {
 		return err
 	}
-	defer m.Close()
+	defer func() { _, _ = m.Close() }()
 
 	if err := m.Up(); err != nil {
 		if err == migrate.ErrNoChange {

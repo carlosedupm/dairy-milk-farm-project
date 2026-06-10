@@ -23,6 +23,7 @@ import {
   getAreasMode,
   getDefaultLandingPath,
   isPathAllowedForPerfil,
+  isSafeInternalPath,
 } from '@/config/appAccess'
 import { getMinhasFazendas } from '@/services/fazendas'
 
@@ -33,6 +34,7 @@ function resolvePostLoginTarget(
   if (
     explicitRedirect &&
     explicitRedirect !== '/login' &&
+    isSafeInternalPath(explicitRedirect) &&
     isPathAllowedForPerfil(perfil, explicitRedirect)
   ) {
     return explicitRedirect
@@ -61,6 +63,7 @@ async function maybeRedirectToOnboarding(
   if (
     explicitRedirect &&
     explicitRedirect !== '/login' &&
+    isSafeInternalPath(explicitRedirect) &&
     isPathAllowedForPerfil(perfil, explicitRedirect)
   ) {
     return null

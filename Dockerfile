@@ -1,7 +1,7 @@
 # Dockerfile na raiz do monorepo — usado pelo Render (dockerfilePath: ./Dockerfile, dockerContext: .)
 # Build do backend CeialMilk API
 
-FROM golang:1.24-alpine AS build
+FROM golang:1.25-alpine AS build
 
 WORKDIR /app
 
@@ -12,7 +12,8 @@ COPY backend/ .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/api ./cmd/api
 
-FROM alpine:latest
+# Pinado em minor para builds reprodutíveis (atualizar conscientemente)
+FROM alpine:3.22
 
 RUN apk --no-cache add ca-certificates tzdata
 

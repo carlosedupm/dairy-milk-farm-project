@@ -112,6 +112,12 @@ func (s *AssistenteLiveService) StartSession(ctx context.Context, userID int64, 
 		},
 	}
 
+	// Validar vínculo do usuário com a fazenda informada na query (isolamento multi-tenant)
+	if fazendaAtiva > 0 && !s.userCanAccessFazenda(ctx, userID, fazendaAtiva) {
+		slog.Warn("Assistente Live: fazenda_id sem vínculo com o usuário; ignorando", "user_id", userID, "fazenda_id", fazendaAtiva)
+		fazendaAtiva = 0
+	}
+
 	// Buscar nome da fazenda ativa se houver
 	fazendaAtivaMsg := "Nenhuma fazenda selecionada no momento."
 	if fazendaAtiva > 0 {
@@ -308,13 +314,13 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
-					"identificacao":     {Type: genai.TypeString, Description: "Identificação única do animal (brinco, nome)"},
-					"fazenda_id":        {Type: genai.TypeInteger, Description: "ID da fazenda (se não informado, usa a ativa)"},
-					"raca":              {Type: genai.TypeString, Description: "Raça do animal"},
-					"origem_aquisicao":  {Type: genai.TypeString, Description: "NASCIDO (nascido na propriedade, exige data_nascimento) ou COMPRADO (comprado, data_nascimento não necessária)"},
-					"data_nascimento":   {Type: genai.TypeString, Description: "Data de nascimento no formato YYYY-MM-DD ou apenas YYYY (obrigatória se origem_aquisicao for NASCIDO)"},
-					"data_entrada":      {Type: genai.TypeString, Description: "Data de entrada na fazenda (útil para animais COMPRADOS, indica data de aquisição)"},
-					"sexo":              {Type: genai.TypeString, Description: "Sexo (M ou F)"},
+					"identificacao":    {Type: genai.TypeString, Description: "Identificação única do animal (brinco, nome)"},
+					"fazenda_id":       {Type: genai.TypeInteger, Description: "ID da fazenda (se não informado, usa a ativa)"},
+					"raca":             {Type: genai.TypeString, Description: "Raça do animal"},
+					"origem_aquisicao": {Type: genai.TypeString, Description: "NASCIDO (nascido na propriedade, exige data_nascimento) ou COMPRADO (comprado, data_nascimento não necessária)"},
+					"data_nascimento":  {Type: genai.TypeString, Description: "Data de nascimento no formato YYYY-MM-DD ou apenas YYYY (obrigatória se origem_aquisicao for NASCIDO)"},
+					"data_entrada":     {Type: genai.TypeString, Description: "Data de entrada na fazenda (útil para animais COMPRADOS, indica data de aquisição)"},
+					"sexo":             {Type: genai.TypeString, Description: "Sexo (M ou F)"},
 				},
 				Required: []string{"identificacao"},
 			},
@@ -414,8 +420,8 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
-					"nome":      {Type: genai.TypeString, Description: "Nome do lote"},
-					"tipo":      {Type: genai.TypeString, Description: "Tipo: LACTACAO, SECAS, MATERNIDADE, etc."},
+					"nome":       {Type: genai.TypeString, Description: "Nome do lote"},
+					"tipo":       {Type: genai.TypeString, Description: "Tipo: LACTACAO, SECAS, MATERNIDADE, etc."},
 					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
 				},
 				Required: []string{"nome"},
@@ -427,9 +433,9 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
-					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal (fêmea)"},
+					"identificacao":  {Type: genai.TypeString, Description: "Identificação do animal (fêmea)"},
 					"data_detectado": {Type: genai.TypeString, Description: "Data/hora em ISO (ex: 2025-02-13T08:00:00)"},
-					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+					"fazenda_id":     {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
 				},
 				Required: []string{"identificacao", "data_detectado"},
 			},
@@ -458,9 +464,9 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
 					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
-					"data": {Type: genai.TypeString, Description: "Data/hora em ISO"},
-					"resultado": {Type: genai.TypeString, Description: "POSITIVO, NEGATIVO ou INCONCLUSIVO"},
-					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+					"data":          {Type: genai.TypeString, Description: "Data/hora em ISO"},
+					"resultado":     {Type: genai.TypeString, Description: "POSITIVO, NEGATIVO ou INCONCLUSIVO"},
+					"fazenda_id":    {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
 				},
 				Required: []string{"identificacao", "data", "resultado"},
 			},
@@ -482,9 +488,9 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
 					"identificacao": {Type: genai.TypeString, Description: "Identificação da mãe"},
-					"data": {Type: genai.TypeString, Description: "Data/hora do parto em ISO"},
-					"numero_crias": {Type: genai.TypeInteger, Description: "Número de crias (default 1)"},
-					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+					"data":          {Type: genai.TypeString, Description: "Data/hora do parto em ISO"},
+					"numero_crias":  {Type: genai.TypeInteger, Description: "Número de crias (default 1)"},
+					"fazenda_id":    {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
 				},
 				Required: []string{"identificacao", "data"},
 			},
@@ -496,8 +502,8 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
 					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
-					"data_secagem": {Type: genai.TypeString, Description: "Data da secagem (YYYY-MM-DD)"},
-					"fazenda_id": {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
+					"data_secagem":  {Type: genai.TypeString, Description: "Data da secagem (YYYY-MM-DD)"},
+					"fazenda_id":    {Type: genai.TypeInteger, Description: "ID da fazenda (usa a ativa se omitido)"},
 				},
 				Required: []string{"identificacao", "data_secagem"},
 			},
@@ -518,9 +524,9 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 			Parameters: &genai.Schema{
 				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
-					"identificacao": {Type: genai.TypeString, Description: "Identificação do animal"},
+					"identificacao":   {Type: genai.TypeString, Description: "Identificação do animal"},
 					"lote_destino_id": {Type: genai.TypeInteger, Description: "ID do lote de destino"},
-					"motivo": {Type: genai.TypeString, Description: "Motivo da movimentação (opcional)"},
+					"motivo":          {Type: genai.TypeString, Description: "Motivo da movimentação (opcional)"},
 				},
 				Required: []string{"identificacao", "lote_destino_id"},
 			},
@@ -609,37 +615,26 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			if i > 0 {
 				resumo.WriteString(", ")
 			}
-			resumo.WriteString(fmt.Sprintf("%s (ID: %d)", f.Nome, f.ID))
+			fmt.Fprintf(&resumo, "%s (ID: %d)", f.Nome, f.ID)
 		}
 
 		return map[string]any{"lista_fazendas": resumo.String(), "redirect_path": "/fazendas"}, nil
 
 	case "cadastrar_fazenda":
+		// Mesma regra do REST (POST /api/v1/fazendas exige RequireAdmin)
+		if perfil != models.PerfilAdmin && perfil != models.PerfilDeveloper {
+			return assistenteLiveDomainErr("seu perfil não permite cadastrar fazendas")
+		}
 		var f models.Fazenda
 		data, _ := json.Marshal(call.Args)
-		json.Unmarshal(data, &f)
+		_ = json.Unmarshal(data, &f)
 		err := s.fazendaSvc.Create(ctx, &f)
 		return f, err
 
 	case "listar_animais":
-		// Lógica simplificada de resolução de fazenda
-		fID := fazendaAtivaID
-		if v, ok := call.Args["fazenda_id"].(float64); ok && v > 0 {
-			fID = int64(v)
-		}
-
-		// Se ainda não tem fID, tentar buscar pelo nome se fornecido
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			if nome, ok := call.Args["nome_fazenda"].(string); ok && nome != "" {
-				fazendas, _ := s.fazendaSvc.SearchByNome(ctx, nome)
-				if len(fazendas) > 0 {
-					fID = fazendas[0].ID
-				}
-			}
-		}
-
-		if fID <= 0 {
-			return map[string]any{"erro": "Por favor, especifique a fazenda ou selecione uma no sistema."}, nil
+			return map[string]any{"erro": "Por favor, especifique uma fazenda à qual você tenha acesso ou selecione uma no sistema."}, nil
 		}
 
 		animais, err := s.animalSvc.GetByFazendaID(ctx, fID)
@@ -652,7 +647,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		}
 
 		var resumo strings.Builder
-		resumo.WriteString(fmt.Sprintf("Animais encontrados (%d): ", len(animais)))
+		fmt.Fprintf(&resumo, "Animais encontrados (%d): ", len(animais))
 		for i, a := range animais {
 			if i > 0 {
 				resumo.WriteString("; ")
@@ -661,7 +656,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			if a.DataNascimento != nil {
 				nasc = a.DataNascimento.Format("2006-01-02")
 			}
-			resumo.WriteString(fmt.Sprintf("%s (Raça: %s, Nascimento: %s)", a.Identificacao, strOrEmpty(a.Raca), nasc))
+			fmt.Fprintf(&resumo, "%s (Raça: %s, Nascimento: %s)", a.Identificacao, strOrEmpty(a.Raca), nasc)
 		}
 		return map[string]any{"lista_animais": resumo.String(), "redirect_path": fmt.Sprintf("/fazendas/%d/animais", fID)}, nil
 
@@ -672,12 +667,9 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			return map[string]any{"erro": "Identificação do animal é obrigatória."}, nil
 		}
 
-		fazendaID := fazendaAtivaID
-		if v, ok := call.Args["fazenda_id"].(float64); ok && v > 0 {
-			fazendaID = int64(v)
-		}
+		fazendaID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fazendaID <= 0 {
-			return map[string]any{"erro": "Por favor, especifique em qual fazenda cadastrar o animal."}, nil
+			return map[string]any{"erro": "Por favor, especifique em qual fazenda cadastrar o animal (você precisa ter acesso a ela)."}, nil
 		}
 
 		a := &models.Animal{
@@ -736,14 +728,16 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		ident, _ := call.Args["identificacao"].(string)
 		quant, _ := call.Args["quantidade"].(float64)
 
-		// Buscar animal por identificação
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, ident)
-		if err != nil || len(animais) == 0 {
-			return map[string]any{"erro": "animal não encontrado"}, nil
+		animal, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
+		}
+		if errMap != nil {
+			return errMap, nil
 		}
 
 		producao := &models.ProducaoLeite{
-			AnimalID:   animais[0].ID,
+			AnimalID:   animal.ID,
 			Quantidade: quant,
 			DataHora:   time.Now(),
 		}
@@ -759,7 +753,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			"mensagem":      "Produção registrada com sucesso",
 			"animal":        ident,
 			"quantidade":    quant,
-			"redirect_path": fmt.Sprintf("/animais/%d", animais[0].ID),
+			"redirect_path": fmt.Sprintf("/animais/%d", animal.ID),
 		}, nil
 
 	case "buscar_fazenda":
@@ -768,29 +762,35 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if err != nil {
 			return nil, err
 		}
-		if len(fazendas) == 0 {
+		// Restringir resultados às fazendas vinculadas ao usuário (isolamento multi-tenant)
+		acessiveis := make([]*models.Fazenda, 0, len(fazendas))
+		for _, f := range fazendas {
+			if s.userCanAccessFazenda(ctx, userID, f.ID) {
+				acessiveis = append(acessiveis, f)
+			}
+		}
+		if len(acessiveis) == 0 {
 			return map[string]any{"status": "nenhuma fazenda encontrada"}, nil
 		}
 		var resumo strings.Builder
-		for i, f := range fazendas {
+		for i, f := range acessiveis {
 			if i > 0 {
 				resumo.WriteString("; ")
 			}
-			resumo.WriteString(fmt.Sprintf("%s (ID: %d, Local: %s)", f.Nome, f.ID, strOrEmpty(f.Localizacao)))
+			fmt.Fprintf(&resumo, "%s (ID: %d, Local: %s)", f.Nome, f.ID, strOrEmpty(f.Localizacao))
 		}
-		redirect := ""
-		if len(fazendas) > 0 {
-			redirect = fmt.Sprintf("/fazendas/%d", fazendas[0].ID)
-		}
+		redirect := fmt.Sprintf("/fazendas/%d", acessiveis[0].ID)
 		return map[string]any{"resultado_busca": resumo.String(), "redirect_path": redirect}, nil
 
 	case "detalhar_animal":
 		ident, _ := call.Args["identificacao"].(string)
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, ident)
-		if err != nil || len(animais) == 0 {
-			return map[string]any{"erro": "animal não encontrado"}, nil
+		a, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
 		}
-		a := animais[0]
+		if errMap != nil {
+			return errMap, nil
+		}
 		return map[string]any{
 			"identificacao":   a.Identificacao,
 			"raca":            strOrEmpty(a.Raca),
@@ -802,12 +802,15 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 
 	case "excluir_animal":
 		ident, _ := call.Args["identificacao"].(string)
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, ident)
-		if err != nil || len(animais) == 0 {
-			return assistenteLiveDomainErr("animal não encontrado")
+		animal, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
 		}
-		animalID := animais[0].ID
-		fazendaID := animais[0].FazendaID
+		if errMap != nil {
+			return errMap, nil
+		}
+		animalID := animal.ID
+		fazendaID := animal.FazendaID
 		err = s.animalSvc.Delete(ctx, animalID)
 		if err != nil {
 			return nil, err
@@ -819,11 +822,13 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 
 	case "editar_animal":
 		ident, _ := call.Args["identificacao"].(string)
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, ident)
-		if err != nil || len(animais) == 0 {
-			return assistenteLiveDomainErr("animal não encontrado")
+		a, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
 		}
-		a := animais[0]
+		if errMap != nil {
+			return errMap, nil
+		}
 
 		if v, ok := call.Args["identificacaoNovo"].(string); ok && strings.TrimSpace(v) != "" {
 			a.Identificacao = strings.TrimSpace(v)
@@ -861,7 +866,11 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			}
 		}
 		if idNum, ok := call.Args["fazenda_id"].(float64); ok && idNum > 0 {
-			a.FazendaID = int64(idNum)
+			destinoID := int64(idNum)
+			if !s.userCanAccessFazenda(ctx, userID, destinoID) {
+				return assistenteLiveDomainErr("sem acesso à fazenda de destino")
+			}
+			a.FazendaID = destinoID
 		}
 
 		errUpdateAnimal := s.animalSvc.Update(ctx, a)
@@ -874,6 +883,10 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		return map[string]any{"status": "sucesso", "mensagem": "Animal atualizado com sucesso", "animal": a.Identificacao, "redirect_path": fmt.Sprintf("/animais/%d", a.ID)}, nil
 
 	case "editar_fazenda":
+		// Mesma regra do REST (PUT /api/v1/fazendas/:id exige RequireAdmin + vínculo com a fazenda)
+		if perfil != models.PerfilAdmin && perfil != models.PerfilDeveloper {
+			return assistenteLiveDomainErr("seu perfil não permite editar fazendas")
+		}
 		var f *models.Fazenda
 		if id, ok := call.Args["id"].(float64); ok && id > 0 {
 			f, _ = s.fazendaSvc.GetByID(ctx, int64(id))
@@ -889,6 +902,9 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 
 		if f == nil {
 			return assistenteLiveDomainErr("fazenda não encontrada")
+		}
+		if !s.userCanAccessFazenda(ctx, userID, f.ID) {
+			return assistenteLiveDomainErr("sem acesso à fazenda informada")
 		}
 
 		if v, ok := call.Args["nome"].(string); ok && v != "" {
@@ -908,9 +924,9 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if s.loteSvc == nil {
 			return map[string]any{"erro": "Serviço de lotes não disponível"}, nil
 		}
-		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			return map[string]any{"erro": "Especifique a fazenda ou selecione uma no sistema."}, nil
+			return map[string]any{"erro": "Especifique uma fazenda à qual você tenha acesso ou selecione uma no sistema."}, nil
 		}
 		lotes, err := s.loteSvc.GetByFazendaID(ctx, fID)
 		if err != nil {
@@ -920,14 +936,14 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			return map[string]any{"status": "nenhum lote cadastrado"}, nil
 		}
 		var sb strings.Builder
-		sb.WriteString(fmt.Sprintf("Lotes (%d): ", len(lotes)))
+		fmt.Fprintf(&sb, "Lotes (%d): ", len(lotes))
 		for i, l := range lotes {
 			if i > 0 {
 				sb.WriteString("; ")
 			}
-			sb.WriteString(fmt.Sprintf("%s (ID: %d)", l.Nome, l.ID))
+			fmt.Fprintf(&sb, "%s (ID: %d)", l.Nome, l.ID)
 			if l.Tipo != nil && *l.Tipo != "" {
-				sb.WriteString(fmt.Sprintf(" tipo=%s", *l.Tipo))
+				fmt.Fprintf(&sb, " tipo=%s", *l.Tipo)
 			}
 		}
 		return map[string]any{"lista_lotes": sb.String(), "redirect_path": "/lotes"}, nil
@@ -941,9 +957,9 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if nome == "" {
 			return map[string]any{"erro": "Nome do lote é obrigatório."}, nil
 		}
-		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			return map[string]any{"erro": "Especifique a fazenda."}, nil
+			return map[string]any{"erro": "Especifique uma fazenda à qual você tenha acesso."}, nil
 		}
 		lote := &models.Lote{FazendaID: fID, Nome: nome}
 		if v, ok := call.Args["tipo"].(string); ok && strings.TrimSpace(v) != "" {
@@ -961,13 +977,16 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		}
 		ident, _ := call.Args["identificacao"].(string)
 		dataStr, _ := call.Args["data_detectado"].(string)
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
-		if err != nil || len(animais) == 0 {
-			return map[string]any{"erro": "animal não encontrado"}, nil
+		animal, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
 		}
-		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if errMap != nil {
+			return errMap, nil
+		}
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			fID = animais[0].FazendaID
+			fID = animal.FazendaID
 		}
 		t, errParse := time.Parse(time.RFC3339, dataStr)
 		if errParse != nil {
@@ -976,7 +995,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if errParse != nil {
 			t = time.Now()
 		}
-		cio := &models.Cio{AnimalID: animais[0].ID, DataDetectado: t, FazendaID: fID}
+		cio := &models.Cio{AnimalID: animal.ID, DataDetectado: t, FazendaID: fID}
 		err = s.cioSvc.Create(ctx, cio)
 		if err != nil {
 			return nil, err
@@ -993,13 +1012,16 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		touroIdent, _ := call.Args["touro_identificacao"].(string)
 		touroIdent = strings.TrimSpace(touroIdent)
 
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
-		if err != nil || len(animais) == 0 {
-			return map[string]any{"erro": "animal (fêmea) não encontrado"}, nil
+		femea, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
 		}
-		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if errMap != nil {
+			return errMap, nil
+		}
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			fID = animais[0].FazendaID
+			fID = femea.FazendaID
 		}
 
 		// Se usuário informou identificação do boi/touro: monta natural, buscar animal e vincular
@@ -1041,7 +1063,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 				t = time.Now()
 			}
 			cob := &models.Cobertura{
-				AnimalID:      animais[0].ID,
+				AnimalID:      femea.ID,
 				Tipo:          tipoCob,
 				Data:          t,
 				FazendaID:     fID,
@@ -1059,7 +1081,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			if errParse != nil {
 				t = time.Now()
 			}
-			cob := &models.Cobertura{AnimalID: animais[0].ID, Tipo: tipoCob, Data: t, FazendaID: fID}
+			cob := &models.Cobertura{AnimalID: femea.ID, Tipo: tipoCob, Data: t, FazendaID: fID}
 			if v, ok := call.Args["touro_animal_id"].(float64); ok && v > 0 {
 				id := int64(v)
 				cob.TouroAnimalID = &id
@@ -1081,13 +1103,16 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		ident, _ := call.Args["identificacao"].(string)
 		dataStr, _ := call.Args["data"].(string)
 		resultado, _ := call.Args["resultado"].(string)
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
-		if err != nil || len(animais) == 0 {
-			return map[string]any{"erro": "animal não encontrado"}, nil
+		animal, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
 		}
-		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if errMap != nil {
+			return errMap, nil
+		}
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			fID = animais[0].FazendaID
+			fID = animal.FazendaID
 		}
 		t, errParse := time.Parse(time.RFC3339, dataStr)
 		if errParse != nil {
@@ -1096,7 +1121,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if errParse != nil {
 			t = time.Now()
 		}
-		dg := &models.DiagnosticoGestacao{AnimalID: animais[0].ID, Data: t, Resultado: resultado, FazendaID: fID}
+		dg := &models.DiagnosticoGestacao{AnimalID: animal.ID, Data: t, Resultado: resultado, FazendaID: fID}
 		err = s.diagnosticoGestSvc.Create(ctx, dg)
 		if err != nil {
 			return nil, err
@@ -1107,9 +1132,9 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if s.gestacaoSvc == nil {
 			return map[string]any{"erro": "Serviço de gestações não disponível"}, nil
 		}
-		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			return map[string]any{"erro": "Especifique a fazenda."}, nil
+			return map[string]any{"erro": "Especifique uma fazenda à qual você tenha acesso."}, nil
 		}
 		gestacoes, err := s.gestacaoSvc.GetByFazendaID(ctx, fID)
 		if err != nil {
@@ -1119,12 +1144,12 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			return map[string]any{"status": "nenhuma gestação encontrada"}, nil
 		}
 		var sb2 strings.Builder
-		sb2.WriteString(fmt.Sprintf("Gestações (%d): ", len(gestacoes)))
+		fmt.Fprintf(&sb2, "Gestações (%d): ", len(gestacoes))
 		for i, g := range gestacoes {
 			if i > 0 {
 				sb2.WriteString("; ")
 			}
-			sb2.WriteString(fmt.Sprintf("Animal %d - %s (confirmada em %s)", g.AnimalID, g.Status, g.DataConfirmacao.Format("02/01/2006")))
+			fmt.Fprintf(&sb2, "Animal %d - %s (confirmada em %s)", g.AnimalID, g.Status, g.DataConfirmacao.Format("02/01/2006"))
 		}
 		return map[string]any{"lista_gestacoes": sb2.String(), "redirect_path": "/gestao/gestacoes"}, nil
 
@@ -1134,13 +1159,16 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		}
 		ident, _ := call.Args["identificacao"].(string)
 		dataStr, _ := call.Args["data"].(string)
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
-		if err != nil || len(animais) == 0 {
-			return map[string]any{"erro": "animal não encontrado"}, nil
+		animal, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
 		}
-		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if errMap != nil {
+			return errMap, nil
+		}
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			fID = animais[0].FazendaID
+			fID = animal.FazendaID
 		}
 		t, errParse := time.Parse(time.RFC3339, dataStr)
 		if errParse != nil {
@@ -1153,7 +1181,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if v, ok := call.Args["numero_crias"].(float64); ok && v > 0 {
 			numCrias = int(v)
 		}
-		parto := &models.Parto{AnimalID: animais[0].ID, Data: t, FazendaID: fID, NumeroCrias: numCrias}
+		parto := &models.Parto{AnimalID: animal.ID, Data: t, FazendaID: fID, NumeroCrias: numCrias}
 		err = s.partoSvc.Create(ctx, parto)
 		if err != nil {
 			return nil, err
@@ -1166,19 +1194,22 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		}
 		ident, _ := call.Args["identificacao"].(string)
 		dataSec, _ := call.Args["data_secagem"].(string)
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
-		if err != nil || len(animais) == 0 {
-			return map[string]any{"erro": "animal não encontrado"}, nil
+		animal, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
 		}
-		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		if errMap != nil {
+			return errMap, nil
+		}
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			fID = animais[0].FazendaID
+			fID = animal.FazendaID
 		}
 		dt, errParse := time.Parse("2006-01-02", dataSec)
 		if errParse != nil {
 			return map[string]any{"erro": "data_secagem inválida (use YYYY-MM-DD)"}, nil
 		}
-		sec := &models.Secagem{AnimalID: animais[0].ID, DataSecagem: dt, FazendaID: fID}
+		sec := &models.Secagem{AnimalID: animal.ID, DataSecagem: dt, FazendaID: fID}
 		err = s.secagemSvc.Create(ctx, sec)
 		if err != nil {
 			return nil, err
@@ -1189,9 +1220,9 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if s.lactacaoSvc == nil {
 			return map[string]any{"erro": "Serviço de lactações não disponível"}, nil
 		}
-		fID := resolveFazendaID(call.Args, fazendaAtivaID, s.fazendaSvc, ctx)
+		fID := s.resolveFazendaIDForUser(ctx, call.Args, fazendaAtivaID, userID)
 		if fID <= 0 {
-			return map[string]any{"erro": "Especifique a fazenda."}, nil
+			return map[string]any{"erro": "Especifique uma fazenda à qual você tenha acesso."}, nil
 		}
 		lactacoes, err := s.lactacaoSvc.GetByFazendaID(ctx, fID)
 		if err != nil {
@@ -1201,12 +1232,12 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			return map[string]any{"status": "nenhuma lactação encontrada"}, nil
 		}
 		var sb3 strings.Builder
-		sb3.WriteString(fmt.Sprintf("Lactações (%d): ", len(lactacoes)))
+		fmt.Fprintf(&sb3, "Lactações (%d): ", len(lactacoes))
 		for i, lact := range lactacoes {
 			if i > 0 {
 				sb3.WriteString("; ")
 			}
-			sb3.WriteString(fmt.Sprintf("Animal %d - #%d (início %s)", lact.AnimalID, lact.NumeroLactacao, lact.DataInicio.Format("02/01/2006")))
+			fmt.Fprintf(&sb3, "Animal %d - #%d (início %s)", lact.AnimalID, lact.NumeroLactacao, lact.DataInicio.Format("02/01/2006"))
 		}
 		return map[string]any{"lista_lactacoes": sb3.String(), "redirect_path": "/gestao/lactacoes"}, nil
 
@@ -1219,20 +1250,23 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 		if !ok || int64(loteDestID) <= 0 {
 			return map[string]any{"erro": "lote_destino_id é obrigatório"}, nil
 		}
-		animais, err := s.animalSvc.SearchByIdentificacao(ctx, strings.TrimSpace(ident))
-		if err != nil || len(animais) == 0 {
-			return map[string]any{"erro": "animal não encontrado"}, nil
+		animal, errMap, err := s.resolveAnimalForAssistente(ctx, userID, ident)
+		if err != nil {
+			return nil, err
+		}
+		if errMap != nil {
+			return errMap, nil
 		}
 		motivo := ""
 		if v, ok := call.Args["motivo"].(string); ok {
 			motivo = v
 		}
-		m := &models.MovimentacaoLote{AnimalID: animais[0].ID, LoteDestinoID: int64(loteDestID), Motivo: &motivo}
+		m := &models.MovimentacaoLote{AnimalID: animal.ID, LoteDestinoID: int64(loteDestID), Motivo: &motivo}
 		err = s.movimentacaoLoteSvc.Create(ctx, m)
 		if err != nil {
 			return nil, err
 		}
-		return map[string]any{"status": "sucesso", "mensagem": "Animal movimentado", "redirect_path": fmt.Sprintf("/animais/%d", animais[0].ID)}, nil
+		return map[string]any{"status": "sucesso", "mensagem": "Animal movimentado", "redirect_path": fmt.Sprintf("/animais/%d", animal.ID)}, nil
 
 	case "consultar_saude":
 		if s.animalSaudeSvc == nil {
@@ -1251,7 +1285,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			return s.mapAssistenteSaudeError(err), nil
 		}
 		var sb strings.Builder
-		sb.WriteString(fmt.Sprintf("Animal %s — status_saude: %s. ", animal.Identificacao, strOrEmpty(animal.StatusSaude)))
+		fmt.Fprintf(&sb, "Animal %s — status_saude: %s. ", animal.Identificacao, strOrEmpty(animal.StatusSaude))
 		if len(casos) == 0 {
 			sb.WriteString("Nenhum caso de saúde registrado.")
 		} else {
@@ -1268,7 +1302,7 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 				if c.Observacoes != nil && strings.TrimSpace(*c.Observacoes) != "" {
 					obs = ", obs: " + strings.TrimSpace(*c.Observacoes)
 				}
-				sb.WriteString(fmt.Sprintf("#%d %s %s (%s a %s)%s", c.ID, c.TipoCaso, c.Status, c.DataInicio.Format("2006-01-02"), fim, obs))
+				fmt.Fprintf(&sb, "#%d %s %s (%s a %s)%s", c.ID, c.TipoCaso, c.Status, c.DataInicio.Format("2006-01-02"), fim, obs)
 			}
 		}
 		return map[string]any{
@@ -1342,12 +1376,12 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 			}, nil
 		}
 		var sb strings.Builder
-		sb.WriteString(fmt.Sprintf("Alertas (%d): ", total))
+		fmt.Fprintf(&sb, "Alertas (%d): ", total)
 		for i, a := range list {
 			if i > 0 {
 				sb.WriteString("; ")
 			}
-			sb.WriteString(fmt.Sprintf("#%d [%s/%s] %s", a.ID, a.Severidade, a.Status, a.Titulo))
+			fmt.Fprintf(&sb, "#%d [%s/%s] %s", a.ID, a.Severidade, a.Status, a.Titulo)
 		}
 		return map[string]any{
 			"status":        "sucesso",
@@ -1390,6 +1424,16 @@ func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.
 	default:
 		return assistenteLiveDomainErr(fmt.Sprintf("função não implementada: %s", call.Name))
 	}
+}
+
+// resolveFazendaIDForUser resolve fazenda_id (args, nome ou fazenda ativa) e valida o vínculo do usuário.
+// Retorna 0 se não houver fazenda resolvível ou se o usuário não tiver acesso a ela.
+func (s *AssistenteLiveService) resolveFazendaIDForUser(ctx context.Context, args map[string]interface{}, fazendaAtivaID, userID int64) int64 {
+	fID := resolveFazendaID(args, fazendaAtivaID, s.fazendaSvc, ctx)
+	if fID <= 0 || !s.userCanAccessFazenda(ctx, userID, fID) {
+		return 0
+	}
+	return fID
 }
 
 func (s *AssistenteLiveService) userCanAccessFazenda(ctx context.Context, userID, fazendaID int64) bool {
@@ -1547,6 +1591,7 @@ func resolveFazendaID(args map[string]interface{}, fazendaAtivaID int64, fazenda
 	}
 	return fID
 }
+
 // timeToStr converte *time.Time em valor serializável para o Gemini (proto Struct não aceita time.Time).
 func timeToStr(t *time.Time) interface{} {
 	if t == nil {

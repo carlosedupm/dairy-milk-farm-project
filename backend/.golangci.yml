@@ -1,0 +1,9 @@
+version: "2"
+
+linters:
+  default: standard
+  settings:
+    errcheck:
+      # http.SetCookie/json encode em handlers já tratam erro via framework
+      exclude-functions:
+        - (*github.com/gin-gonic/gin.Context).Error

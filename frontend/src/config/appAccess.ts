@@ -118,6 +118,19 @@ function isFuncionarioAllowedPath(path: string): boolean {
   );
 }
 
+/**
+ * Aceita apenas paths internos da aplicação como destino de redirect.
+ * Bloqueia open redirect: URLs absolutas ("https://..."), protocol-relative ("//evil.com")
+ * e truques com backslash ("/\evil.com").
+ */
+export function isSafeInternalPath(path: string | null | undefined): boolean {
+  if (!path) return false;
+  if (!path.startsWith("/")) return false;
+  if (path.startsWith("//")) return false;
+  if (path.includes("\\")) return false;
+  return true;
+}
+
 const PUBLIC_PATHS = new Set(["/login", "/registro"]);
 
 function isPublicPath(pathname: string): boolean {
