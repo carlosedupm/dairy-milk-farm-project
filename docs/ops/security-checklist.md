@@ -26,7 +26,8 @@ Passar por este checklist antes de promover mudanças significativas para produ�
 ## Infra
 
 - [ ] `render.yaml` com `autoDeployTrigger: checksPass`
-- [ ] Branch protection na `main` exigindo os jobs do CI
+- [ ] Ruleset `Protect main` ativo (mínimo: block force push + restrict deletions) — ver `memory-bank/deploy-notes.md`
+- [ ] *(Opcional / fase posterior)* Ruleset completo: PR obrigatório + status checks do CI — só quando sair do push direto frequente na `main`
 - [ ] `METRICS_TOKEN` configurado em produção
 - [ ] Migrações testadas localmente (up e down) antes do deploy
 

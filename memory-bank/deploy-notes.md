@@ -21,15 +21,37 @@ O arquivo `render.yaml` define:
 
 ### Gate de deploy (CI → produção)
 
-Duas camadas impedem que código sem CI verde chegue à produção:
+#### Camada principal (ativa)
 
-1. **`autoDeployTrigger: checksPass`** no `render.yaml`: o Render aguarda os checks do GitHub (workflow `ci-cd.yml`) concluírem com sucesso no commit da `main` antes de iniciar o deploy. Se o CI falhar, não há deploy.
-2. **Branch protection na `main`** (ação manual no GitHub — Settings → Branches → Add branch ruleset):
-   - Exigir pull request antes de merge
-   - Exigir status checks: `Docs - Validate BR references`, `Backend - Lint and Build`, `Frontend - Lint`, `Frontend - Build`, `Backend - Docker build (smoke test)` (os 5 jobs do `ci-cd.yml`) + jobs `Analyze (go)` e `Analyze (javascript-typescript)` do CodeQL
-   - Bloquear push direto na `main`
+**`autoDeployTrigger: checksPass`** no `render.yaml`: o Render aguarda os checks do GitHub (workflow `ci-cd.yml`) concluírem com sucesso no commit da `main` antes de iniciar o deploy do backend. Se o CI falhar, **não há deploy** — mesmo com push direto na `main`.
 
-> ⚠️ A branch protection precisa ser ativada **manualmente** no dashboard do GitHub (requer admin do repo). Enquanto não estiver ativa, o `checksPass` do Render é a única barreira.
+Fluxo atual (dev solo, projeto em desenvolvimento ativo):
+
+- Push direto na `main` é **permitido** e intencional (velocidade de iteração).
+- O CI roda a cada push; falhas geram notificações do GitHub Actions, mas **não bloqueiam** o push.
+- Produção no Render só sobe quando o CI daquele commit estiver verde.
+
+#### Ruleset GitHub — `Protect main` (ativa, mínima)
+
+Configurado em **Settings → Rules → Rulesets** (UI atual do GitHub; o caminho antigo “Settings → Branches” pode não aparecer).
+
+| Regra | Estado | Motivo |
+|-------|--------|--------|
+| Target: **Include default branch** | ✅ Ativo | Cobre a `main` |
+| **Block force pushes** | ✅ Ativo | Evita `git push --force` acidental |
+| **Restrict deletions** | ✅ Ativo | Evita apagar a branch `main` |
+| Require pull request | ❌ Desligado | Push direto na `main` mantido em dev |
+| Require status checks | ❌ Desligado | Gate de CI fica no Render (`checksPass`), não no merge |
+
+**Decisão (2026-06-10):** ruleset **completo** (PR obrigatório + todos os status checks) **adiado** até o projeto sair do ritmo de push direto frequente ou entrar mais gente no repo — evita atrito e excesso de e-mails de CI falho sem ganho proporcional nesta fase.
+
+#### Ruleset completo (futuro — opcional)
+
+Quando fizer sentido (time maior, `main` sempre estável, fluxo branch → PR), acrescentar ao ruleset:
+
+- Exigir pull request antes de merge
+- Exigir status checks: `Docs - Validate BR references`, `Backend - Lint and Build`, `Frontend - Lint`, `Frontend - Build`, `Backend - Docker build (smoke test)` + `Analyze (go)` e `Analyze (javascript-typescript)` (CodeQL)
+- Bypass list com admin do repo para hotfixes de emergência
 
 ### Variáveis de Ambiente
 
@@ -444,7 +466,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 Runbook de operações (rollback, dirty migration, incidentes): **`docs/ops/runbook.md`**; checklist pré-deploy: **`docs/ops/security-checklist.md`**.
 
-**Última atualização**: 2026-06-10 (gate de deploy `checksPass` + branch protection com 5 jobs + CodeQL; `METRICS_TOKEN`/`TRUSTED_PROXIES`; link para `docs/ops/`)
+**Última atualização**: 2026-06-10 (ruleset mínimo `Protect main` ativo; PR/checks obrigatórios adiados; gate Render `checksPass`; `METRICS_TOKEN`/`TRUSTED_PROXIES`; link para `docs/ops/`)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

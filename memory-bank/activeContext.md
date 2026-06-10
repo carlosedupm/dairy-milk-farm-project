@@ -12,7 +12,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
    - **Secret TestSprite removido**: `.cursor/mcp.json` usa `${env:TESTSPRITE_API_KEY}`; `testsprite_tests/tmp/` e `.cursor/mcp.json` no `.gitignore` (rotação da chave no provedor é ação manual pendente do usuário).
    - **IDOR corrigido (BR-ACESSO-023)**: `animal_handler` (by-status-saude, by-sexo, count, by-lote) com `ResolveFazendaIDsForList`; `CriaHandler` valida fazenda do parto (`validatePartoAccess`); Assistente texto e Live com validação de tenant em todos os resolvers (`ensureAnimalAccess`, `resolveFazendaIDForUser`, perfil ADMIN/DEVELOPER para cadastrar/editar fazenda); testes cross-tenant novos.
    - **Next.js 16.2.9 + React 19.2.7**: patch do security release de maio/2026 (13 advisories).
-   - **Gate de deploy**: `render.yaml` com `autoDeployTrigger: checksPass`; branch protection documentada em `deploy-notes.md` (ação manual no GitHub).
+   - **Gate de deploy**: `render.yaml` com `autoDeployTrigger: checksPass`; ruleset GitHub **`Protect main`** (mínimo: block force push + restrict deletions; PR/checks obrigatórios adiados em dev solo) — ver `deploy-notes.md`.
    - **Refresh tokens**: SHA-256 no banco + rotação no `/refresh`; tokens removidos do JSON de login/refresh (só cookies HttpOnly).
    - **Erros sanitizados**: `ErrorInternal` loga detalhes via slog e responde mensagem genérica (sem `err.Error()` ao cliente).
    - **Open redirect + CSP + proxy**: `isSafeInternalPath` no login e no redirect do assistente Live; CSP Report-Only no `next.config.js`; CSP no Swagger `/docs` do backend; `frontend/src/proxy.ts` (Next 16) com checagem de cookie em rotas protegidas (ativo quando cookie é visível — same-site/dev).
@@ -285,4 +285,4 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 ---
 
 **Última atualização**: 2026-06-10 (hardening de segurança: IDOR, refresh tokens, CSP/proxy, CI de segurança, Go 1.25)
-**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 fechada** | **Hardening de segurança concluído** (BR-ACESSO-023/024) | **Fase 3** saúde + alertas + Web Push + **vacinas (BRF-001)** | **BRF-002/003/004 implementados** | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Recuperação senha aguarda SMTP | **Ações manuais pendentes**: rotacionar key TestSprite, branch protection GitHub, `METRICS_TOKEN` no Render
+**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 fechada** | **Hardening de segurança concluído** (BR-ACESSO-023/024) | **Fase 3** saúde + alertas + Web Push + **vacinas (BRF-001)** | **BRF-002/003/004 implementados** | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Recuperação senha aguarda SMTP | **Ações manuais pendentes**: rotacionar key TestSprite, `METRICS_TOKEN` no Render

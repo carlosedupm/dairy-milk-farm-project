@@ -418,7 +418,8 @@
 - ✅ **CI de segurança**: golangci-lint (32 issues pré-existentes corrigidos), govulncheck zerado (Go 1.25.11 + jwt 5.3.1 + x/net 0.55 + webpush-go 1.4.0), `npm audit --audit-level=high` (axios+ atualizados), vitest no CI, smoke `docker build`, Dependabot, CodeQL.
 - ✅ **Médios**: senha mínima 8 (BR-ACESSO-024); `/metrics` com `METRICS_TOKEN`; trusted proxies restritos; rate limit validate/logout; `alpine:3.22` pinado; devcontainer Go 1.25.
 - ✅ **Processo**: `docs/ops/` (runbook, checklist de segurança pré-deploy, estratégia de testes, guia de code review G2); higiene de docs (README raiz Go 1.25/Next 16, memory-bank atualizado).
-- ⚠️ **Ações manuais pendentes (usuário)**: rotacionar a API key TestSprite no provedor; ativar branch protection no GitHub; definir `METRICS_TOKEN` no Render.
+- ✅ **Ruleset GitHub `Protect main` (mínimo)**: block force push + restrict deletions; push direto na `main` mantido; PR/checks obrigatórios adiados (decisão dev solo).
+- ⚠️ **Ações manuais pendentes (usuário)**: rotacionar a API key TestSprite no provedor; definir `METRICS_TOKEN` no Render.
 
 ### **2026-05-07 - Restrições de leite: combo só com lactação ativa**
 
@@ -947,4 +948,4 @@
 
 **Última atualização**: 2026-06-10 (hardening de segurança e processo concluído)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Hardening de segurança 2026-06-10** ✅ | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Senha aguarda SMTP
-**Próxima revisão**: após ações manuais de segurança (rotação TestSprite, branch protection, METRICS_TOKEN) + validação staging
+**Próxima revisão**: após ações manuais de segurança (rotação TestSprite, METRICS_TOKEN) + validação staging; reavaliar ruleset completo (PR + status checks) quando o fluxo migrar para branch/PR
