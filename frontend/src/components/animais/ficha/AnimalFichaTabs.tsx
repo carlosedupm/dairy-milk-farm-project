@@ -9,6 +9,7 @@ import { AnimalFichaTabCiclo } from "@/components/animais/ficha/AnimalFichaTabCi
 import { AnimalFichaTabHistorico } from "@/components/animais/ficha/AnimalFichaTabHistorico";
 import { AnimalFichaTabProducao } from "@/components/animais/ficha/AnimalFichaTabProducao";
 import { AnimalFichaTabSaude } from "@/components/animais/ficha/AnimalFichaTabSaude";
+import { AnimalFichaTabVacinas } from "@/components/animais/ficha/AnimalFichaTabVacinas";
 import { AnimalFichaTabVisaoGeral } from "@/components/animais/ficha/AnimalFichaTabVisaoGeral";
 import { animalProximasAcoesPageSpacerClass } from "@/components/animais/AnimalProximasAcoesCta";
 import {
@@ -107,6 +108,9 @@ export function AnimalFichaTabs({
           <TabsTrigger value="saude" className="min-h-11">
             {ANIMAL_FICHA_TAB_LABELS.saude}
           </TabsTrigger>
+          <TabsTrigger value="vacinas" className="min-h-11">
+            {ANIMAL_FICHA_TAB_LABELS.vacinas}
+          </TabsTrigger>
           <TabsTrigger value="producao" className="min-h-11">
             {ANIMAL_FICHA_TAB_LABELS.producao}
           </TabsTrigger>
@@ -151,6 +155,14 @@ export function AnimalFichaTabs({
           animalId={id}
           foraDoRebanho={foraDoRebanho}
           enabled={activeTab === "saude"}
+        />
+      </TabsContent>
+
+      <TabsContent value="vacinas" role="tabpanel">
+        <AnimalFichaTabVacinas
+          animalId={id}
+          foraDoRebanho={foraDoRebanho}
+          enabled={activeTab === "vacinas"}
         />
       </TabsContent>
 

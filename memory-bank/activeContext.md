@@ -8,6 +8,8 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **BRF-001 — Vacinas / calendário preventivo (BR-SAUDE-007–011, BR-ALERTA-016/017, BR-ACESSO-022)**: migration 36 (`animal_vacinas`, `animal_saude.vacina_id`, tipos `VACINA_VENCIDA`/`VACINA_REFORCO_VENCIDA` no CHECK de `alertas`); backend completo (model com status derivado `PREVISTA|APLICADA|ATRASADA|REFORCO_VENCIDO`, repository, `AnimalVacinaService` com Create/Aplicar/CRUD, handler, rotas `GET|POST /api/v1/animais/:id/vacinas` + `GET|PUT|DELETE .../:vacinaId` + `PATCH .../aplicar`); regras 7 e 8 no `AlertaGeracaoService` (alerta de vacina prevista atrasada e reforço vencido, limiar 7 dias, ALTA + Web Push) com auto-resolve ao aplicar; aplicar cria caso `PREVENTIVO` em `animal_saude` (BR-SAUDE-010); validade/reforço (`validade_dias` → `data_proximo_reforco`, manual prevalece — BR-SAUDE-011); timeline `tipo=vacinas`; RBAC FUNCIONARIO regista aplicada + PATCH aplicar, não agenda/edita/exclui (403 `VACINA_AGENDAMENTO_NAO_PERMITIDO`); frontend com tab **Vacinas** na ficha, `AnimalVacinaForm`/`AnimalVacinaList`/`AnimalVacinaAplicarDialog`/`VacinaStatusBadge`, helpers em `appAccess.ts`; testes unitários service + RBAC verdes; Postman com pasta Vacinas; briefing `BRF-001` → **implementado** (primeiro ciclo completo G1→G3 do fluxo de briefings).
+1. ✅ **Fluxo de briefings com gates de aprovação (analista funcional → implementador)**: `docs/briefings/README.md` (papéis agnósticos de agente, gates G1–G3, ciclo `rascunho → aprovado → implementado → arquivado`, separação de papéis: implementador não cria regra de negócio); template enxuto `docs/briefings/briefing-template.md` (ordem de serviço com metadados `BRF-NNN`, perguntas em aberto obrigatórias, casos de teste exigidos); convenção nova em `docs/business/README.md` (regra nasce `planejado` na análise funcional); validador `scripts/validate-br-refs.mjs` no CI (referências `BR-*`/`TMP-*`/`INT-*` em código e briefings devem existir no catálogo).
 1. ✅ **Tour guiado na ficha do animal (BR-CICLO-008 / BR-ACESSO-018)**: 5 passos na primeira visita (`AnimalFichaTourHost`) — sidebar, mini-timeline (Visão Geral), tab Ciclo, próximas ações (desktop/mobile), outras tabs; persistência `ceialmilk:animal-ficha-tour:v1:{userId}`; perfis operacionais (não `pending`); «Ver tour da ficha novamente» no popover da conta; `useTour` generalizado com `isDone`/`markDone`/`targetIds`.
 1. ✅ **Produção — indicador de lactação ativa no formulário (BR-PRODUCAO-003)**: `ProducaoLactacaoIndicator` em `/producao/novo` — «Lactação ativa: Sim/Não», n.º e data de início; aviso quando sem lactação ou data inválida; link «Registar lactação» condicionado ao perfil; `producaoLactacaoUtils.isLactacaoAtivaNaData`; submit não bloqueado (validação no servidor).
 1. ✅ **Validação cronológica do ciclo no frontend (TMP-003–005)**: mensagens em pt-BR com data do evento de referência (`gestao-date-limits.ts`); hooks `use*Chronology`; `validateCobertura/Toque/Parto/SecagemForm` + `validateToqueLoteForm`; badge `TMP-*` na validação client; regressão manual em `docs/tests/validacao-temporal-ciclo.md` (sec. 4.4–4.7).
@@ -101,7 +103,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### 🚧 Em andamento:
 
-- **Fase 3 — validação operacional**: checklist staging pós alertas automáticos e Web Push
+- **Fase 3 — validação operacional**: checklist staging pós alertas automáticos e Web Push; validar migration 36 + fluxo de vacinas em staging (Docker indisponível no devcontainer atual — migration não validada localmente)
 
 ### ✅ Fase 3 — entregas consolidadas (2026-05-27 a 2026-05-29):
 
@@ -265,5 +267,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-08 (tour guiado na ficha do animal — BR-CICLO-008)
-**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP
+**Última atualização**: 2026-06-09 (BRF-001 vacinas implementado — primeiro ciclo G1→G3 do fluxo de briefings)
+**Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push + **vacinas (BRF-001)** em código | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas `*Table` | Checklist staging pendente | Recuperação senha aguarda SMTP

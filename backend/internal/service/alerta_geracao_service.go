@@ -19,6 +19,8 @@ const (
 	diasPartoPrevistoJanela      = 14
 	diasRestricaoLeiteAlerta      = 7
 	diasGestacaoSemSecagemAlerta = 250
+	diasVacinaVencidaAlerta      = 7
+	diasVacinaReforcoAlerta      = 7
 )
 
 type GerarAlertasResultado struct {
@@ -39,6 +41,7 @@ type AlertaGeracaoService struct {
 	alertaRepo       alertaGeracaoStore
 	fazendaRepo      *repository.FazendaRepository
 	animalSaudeRepo  *repository.AnimalSaudeRepository
+	animalVacinaRepo *repository.AnimalVacinaRepository
 	gestacaoRepo     *repository.GestacaoRepository
 	restricaoRepo    *repository.RestricaoLeiteRepository
 	cioRepo          *repository.CioRepository
@@ -101,6 +104,11 @@ func (s *AlertaGeracaoService) SetPushNotificationService(pushSvc *PushNotificat
 	s.pushSvc = pushSvc
 }
 
+// SetAnimalVacinaRepo habilita as regras 7 e 8 (BR-ALERTA-016/017).
+func (s *AlertaGeracaoService) SetAnimalVacinaRepo(repo *repository.AnimalVacinaRepository) {
+	s.animalVacinaRepo = repo
+}
+
 func (s *AlertaGeracaoService) GerarAlertasDiarios(ctx context.Context, refDate time.Time) (GerarAlertasResultado, error) {
 	refLocal := truncateToDateInTZ(refDate, s.tz)
 	var total GerarAlertasResultado
@@ -132,6 +140,8 @@ func (s *AlertaGeracaoService) gerarPorFazenda(ctx context.Context, fazendaID in
 		s.regraNaoConformidade,
 		s.regraGestacaoSemSecagem,
 		s.regraCioDetectado,
+		s.regraVacinaVencida,
+		s.regraVacinaReforcoVencido,
 	}
 	for _, fn := range regras {
 		c, ig, err := fn(ctx, fazendaID, refDate)
@@ -212,6 +222,36 @@ func (s *AlertaGeracaoService) regraCioDetectado(ctx context.Context, fazendaID 
 	}
 	return s.criarAlertasAnimais(ctx, fazendaID, models.AlertaTipoCioDetectado, itens, func(ident string) string {
 		return fmt.Sprintf("Cio detectado — Animal %s", ident)
+	}, nil)
+}
+
+// regraVacinaVencida (regra 7 — BR-ALERTA-016): vacina prevista com data_prevista há mais de 7 dias.
+func (s *AlertaGeracaoService) regraVacinaVencida(ctx context.Context, fazendaID int64, refDate time.Time) (int, int, error) {
+	if s.animalVacinaRepo == nil {
+		return 0, 0, nil
+	}
+	limite := refDate.AddDate(0, 0, -diasVacinaVencidaAlerta)
+	itens, err := s.animalVacinaRepo.ListPrevistasVencidasByFazendaID(ctx, fazendaID, limite)
+	if err != nil {
+		return 0, 0, err
+	}
+	return s.criarAlertasAnimais(ctx, fazendaID, models.AlertaTipoVacinaVencida, itens, func(ident string) string {
+		return fmt.Sprintf("Vacina atrasada — Animal %s", ident)
+	}, nil)
+}
+
+// regraVacinaReforcoVencido (regra 8 — BR-ALERTA-017): reforço vencido há mais de 7 dias sem nova dose.
+func (s *AlertaGeracaoService) regraVacinaReforcoVencido(ctx context.Context, fazendaID int64, refDate time.Time) (int, int, error) {
+	if s.animalVacinaRepo == nil {
+		return 0, 0, nil
+	}
+	limite := refDate.AddDate(0, 0, -diasVacinaReforcoAlerta)
+	itens, err := s.animalVacinaRepo.ListReforcosVencidosByFazendaID(ctx, fazendaID, limite)
+	if err != nil {
+		return 0, 0, err
+	}
+	return s.criarAlertasAnimais(ctx, fazendaID, models.AlertaTipoVacinaReforcoVencido, itens, func(ident string) string {
+		return fmt.Sprintf("Reforço de vacina vencido — Animal %s", ident)
 	}, nil)
 }
 

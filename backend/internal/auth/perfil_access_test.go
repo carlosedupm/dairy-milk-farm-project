@@ -168,6 +168,34 @@ func TestRequestAllowedForFuncionario_AnimaisSaude(t *testing.T) {
 	}
 }
 
+func TestRequestAllowedForFuncionario_AnimaisVacinas(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		method string
+		path   string
+		want   bool
+	}{
+		{http.MethodGet, "/api/v1/animais/1/vacinas", true},
+		{http.MethodGet, "/api/v1/animais/1/vacinas/42", true},
+		{http.MethodPost, "/api/v1/animais/1/vacinas", true},
+		{http.MethodPatch, "/api/v1/animais/1/vacinas/42/aplicar", true},
+		{http.MethodPut, "/api/v1/animais/1/vacinas/42", false},
+		{http.MethodDelete, "/api/v1/animais/1/vacinas/42", false},
+		{http.MethodPost, "/api/v1/animais/1/vacinas/42", false},
+		{http.MethodPatch, "/api/v1/animais/1/vacinas/42", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			t.Parallel()
+			if got := requestAllowedForFuncionario(tt.method, tt.path); got != tt.want {
+				t.Errorf("requestAllowedForFuncionario(%q, %q) = %v, want %v", tt.method, tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRequestAllowedForLimitedAPI_FuncionarioAnimaisSaude(t *testing.T) {
 	t.Parallel()
 

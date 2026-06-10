@@ -3,13 +3,15 @@ package models
 import "time"
 
 const (
-	AlertaTipoTratamentoVencido   = "TRATAMENTO_VENCIDO"
-	AlertaTipoPartoPrevisto       = "PARTO_PREVISTO"
-	AlertaTipoRestricaoLeiteAtiva = "RESTRICAO_LEITE_ATIVA"
-	AlertaTipoNaoConformidade     = "NAO_CONFORMIDADE"
-	AlertaTipoGestacaoSemSecagem  = "GESTACAO_SEM_SECAGEM"
-	AlertaTipoCioDetectado        = "CIO_DETECTADO"
-	AlertaTipoManual              = "MANUAL"
+	AlertaTipoTratamentoVencido    = "TRATAMENTO_VENCIDO"
+	AlertaTipoPartoPrevisto        = "PARTO_PREVISTO"
+	AlertaTipoRestricaoLeiteAtiva  = "RESTRICAO_LEITE_ATIVA"
+	AlertaTipoNaoConformidade      = "NAO_CONFORMIDADE"
+	AlertaTipoGestacaoSemSecagem   = "GESTACAO_SEM_SECAGEM"
+	AlertaTipoCioDetectado         = "CIO_DETECTADO"
+	AlertaTipoVacinaVencida        = "VACINA_VENCIDA"
+	AlertaTipoVacinaReforcoVencido = "VACINA_REFORCO_VENCIDA"
+	AlertaTipoManual               = "MANUAL"
 )
 
 const (
@@ -58,6 +60,8 @@ func ValidAlertaTipos() []string {
 		AlertaTipoNaoConformidade,
 		AlertaTipoGestacaoSemSecagem,
 		AlertaTipoCioDetectado,
+		AlertaTipoVacinaVencida,
+		AlertaTipoVacinaReforcoVencido,
 		AlertaTipoManual,
 	}
 }
@@ -109,7 +113,8 @@ func IsValidAlertaStatus(v string) bool {
 
 func SeveridadePadraoPorTipo(tipo string) (string, bool) {
 	switch tipo {
-	case AlertaTipoTratamentoVencido, AlertaTipoPartoPrevisto, AlertaTipoGestacaoSemSecagem:
+	case AlertaTipoTratamentoVencido, AlertaTipoPartoPrevisto, AlertaTipoGestacaoSemSecagem,
+		AlertaTipoVacinaVencida, AlertaTipoVacinaReforcoVencido:
 		return AlertaSeveridadeAlta, true
 	case AlertaTipoRestricaoLeiteAtiva:
 		return AlertaSeveridadeMedia, true
@@ -178,6 +183,10 @@ func LabelTipoAlerta(tipo string) string {
 		return "Gestação sem secagem"
 	case AlertaTipoCioDetectado:
 		return "Cio detectado"
+	case AlertaTipoVacinaVencida:
+		return "Vacina atrasada"
+	case AlertaTipoVacinaReforcoVencido:
+		return "Reforço de vacina vencido"
 	case AlertaTipoManual:
 		return "Manual"
 	default:

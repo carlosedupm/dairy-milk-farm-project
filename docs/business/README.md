@@ -27,6 +27,8 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 - **ID de regra**: `BR-<DOMINIO>-NNN` (ex.: `BR-FOLGAS-003`, `BR-CICLO-006`). Não renumerar IDs; criar novo ID para regra nova.
 - **Campos por regra**: enunciado; escopo; perfis; bloqueio no servidor vs informativo na UI; ponteiros ao código; migration/constraint quando aplicável.
 - **Estado**: `implementado` | `parcial` | `planejado`.
+- **Regra nova nasce na análise funcional**: requisitos novos entram aqui com estado `planejado` **antes** da implementação, junto com o briefing correspondente — ver fluxo em [`docs/briefings/README.md`](../briefings/README.md). A implementação só muda o estado para `implementado` e adiciona os ponteiros ao código.
+- **Verificação automatizada**: `node scripts/validate-br-refs.mjs` (CI) garante que todo `BR-*`/`TMP-*`/`INT-*` citado em código ou briefing existe neste catálogo.
 
 ## Índice de módulos
 
@@ -72,4 +74,4 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 
 ---
 
-**Última atualização**: 2026-06-02 (catálogo agricultura — limites de data nos formulários)
+**Última atualização**: 2026-06-09 (fluxo de briefings: regra nova nasce `planejado` na análise funcional; validador `validate-br-refs`)

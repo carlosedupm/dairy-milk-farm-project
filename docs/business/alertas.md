@@ -160,6 +160,8 @@ Notificações automáticas e manuais para a equipe da fazenda (tratamentos, par
 | `RESTRICAO_LEITE_ATIVA` | MEDIA | Não | idem |
 | `NAO_CONFORMIDADE` | CRITICA | Sim | idem |
 | `CIO_DETECTADO` | BAIXA | Não | idem |
+| `VACINA_VENCIDA` | ALTA | Sim | idem (BR-ALERTA-016) |
+| `VACINA_REFORCO_VENCIDA` | ALTA | Sim | idem (BR-ALERTA-017) |
 | `MANUAL` | Informada no POST | Conforme severidade escolhida | BR-ALERTA-002 |
 
 Fonte: `backend/internal/models/alerta.go` — `SeveridadePadraoPorTipo`, `ShouldNotifyPushForSeveridade`.
@@ -176,6 +178,8 @@ Executadas por fazenda, em sequência, em `AlertaGeracaoService.gerarPorFazenda`
 | 4 | `NAO_CONFORMIDADE` | Nova chave `{codigo}:{animal_id}` no snapshot vs execução anterior | ver tabela INT abaixo |
 | 5 | `GESTACAO_SEM_SECAGEM` | Gestação confirmada sem secagem registada | confirmação ≤ ref − **250** dias |
 | 6 | `CIO_DETECTADO` | Cio registado na data de referência | dia civil **America/Sao_Paulo** |
+| 7 | `VACINA_VENCIDA` | `animal_vacinas`: prevista (`data_aplicacao IS NULL`), animal no rebanho | `data_prevista` ≤ ref − **7** dias |
+| 8 | `VACINA_REFORCO_VENCIDA` | `animal_vacinas`: aplicada com reforço vencido, sem dose posterior do mesmo tipo, animal no rebanho | `data_proximo_reforco` ≤ ref − **7** dias |
 
 **Triggers**: cron in-process (`RunAlertasCron`); admin `POST /api/v1/admin/alertas/gerar`. `created_by` = utilizador sistema (migration 32).
 
@@ -235,7 +239,7 @@ Implementação: `models.IsTransicaoAlertaStatusValida`, `AlertaService.UpdateSt
 
 | Módulo | Relação |
 |--------|---------|
-| [saude-animal.md](./saude-animal.md) | BR-SAUDE-004 (sync status); BR-ALERTA-010 resolve `TRATAMENTO_VENCIDO` ao concluir tratamento |
+| [saude-animal.md](./saude-animal.md) | BR-SAUDE-004 (sync status); BR-ALERTA-010 resolve `TRATAMENTO_VENCIDO` ao concluir tratamento; BR-SAUDE-008/011 ↔ BR-ALERTA-016/017 (vacinas) |
 | [ciclo-rebanho.md](./ciclo-rebanho.md) | Alertas ligados a marcos do ciclo (parto, secagem, cio, restrição leite) — BR-CICLO-006, BR-CICLO-009 |
 | [auditoria.md](./auditoria.md) | INT-001–007 alimentam alertas `NAO_CONFORMIDADE` (BR-AUDIT-003) |
 | [leite-restricoes.md](./leite-restricoes.md) | Alerta e auto-resolve de `RESTRICAO_LEITE_ATIVA` |
@@ -244,4 +248,31 @@ Implementação: `models.IsTransicaoAlertaStatusValida`, `AlertaService.UpdateSt
 
 ---
 
-**Última atualização**: 2026-06-02 (BR-ALERTA-014 default 30d UI + PeriodFilter)
+### BR-ALERTA-016 — Geração automática de alerta VACINA_VENCIDA
+
+- **Enunciado**: Na geração automática diária (BR-ALERTA-008), o sistema verifica vacinas previstas (data_aplicacao IS NULL) com data_prevista há mais de 7 dias e gera alerta VACINA_VENCIDA (severidade ALTA) por animal.
+- **Escopo**: Todas as fazendas; created_by = utilizador técnico sistema@interno.ceialmilk.
+- **Efeito**: alerta persistido; não bloqueia a operação principal.
+- **Regra de deduplicação**: se já existir alerta ABERTO ou EM_ANDAMENTO com tipo VACINA_VENCIDA para o mesmo animal, não cria novo.
+- **Implementação**:
+  - Regra 7 (`regraVacinaVencida`) em `backend/internal/service/alerta_geracao_service.go` + `AnimalVacinaRepository.ListPrevistasVencidasByFazendaID`.
+  - Modelo: `VACINA_VENCIDA` em `SeveridadePadraoPorTipo` (ALTA, Web Push = Sim) — `backend/internal/models/alerta.go`.
+  - Deduplicação via BR-ALERTA-009 (verificação por tipo + animal na geração).
+- **Auto-resolve**: ao registrar aplicação da vacina (data_aplicacao preenchida em animal_vacinas), alerta correspondente → RESOLVIDO (`AnimalVacinaService.afterAplicacao`; BR-SAUDE-008).
+- **Estado**: implementado.
+
+### BR-ALERTA-017 — Geração automática de alerta VACINA_REFORCO_VENCIDA
+
+- **Enunciado**: Na geração automática diária (BR-ALERTA-008), o sistema verifica vacinas aplicadas com `data_proximo_reforco` ultrapassada há mais de 7 dias e sem nova dose do mesmo `tipo_vacina` aplicada após essa data, gerando alerta `VACINA_REFORCO_VENCIDA` (severidade ALTA) por animal.
+- **Escopo**: Todas as fazendas; animal no rebanho ativo (INT-007 — animal baixado não gera); `created_by` = utilizador técnico `sistema@interno.ceialmilk`.
+- **Efeito**: alerta persistido; não bloqueia a operação principal.
+- **Regra de deduplicação**: BR-ALERTA-009 (mesmo tipo + animal com alerta ABERTO/EM_ANDAMENTO → skip).
+- **Auto-resolve**: ao registrar nova vacina aplicada do mesmo tipo para o animal, alerta `VACINA_REFORCO_VENCIDA` → RESOLVIDO (BR-ALERTA-010 estendido; ver BR-SAUDE-011).
+- **Implementação**:
+  - Regra 8 (`regraVacinaReforcoVencido`) em `backend/internal/service/alerta_geracao_service.go` + `AnimalVacinaRepository.ListReforcosVencidosByFazendaID`.
+  - Modelo: `VACINA_REFORCO_VENCIDA` em `SeveridadePadraoPorTipo` (ALTA, Web Push = Sim).
+  - Tipos novos no CHECK de `alertas.tipo` (migration 36).
+- **Estado**: implementado.
+
+---
+**Última atualização**: 2026-06-09 (BR-ALERTA-016/017 — vacinas)

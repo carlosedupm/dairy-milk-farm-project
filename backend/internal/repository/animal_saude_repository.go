@@ -19,7 +19,7 @@ func NewAnimalSaudeRepository(db *pgxpool.Pool) *AnimalSaudeRepository {
 
 func (r *AnimalSaudeRepository) ListByAnimalID(ctx context.Context, animalID int64) ([]*models.AnimalSaude, error) {
 	const q = `
-		SELECT id, animal_id, tipo_caso, data_inicio, data_fim, status, observacoes, created_by, created_at, updated_at
+		SELECT id, animal_id, tipo_caso, data_inicio, data_fim, status, observacoes, vacina_id, created_by, created_at, updated_at
 		FROM animal_saude
 		WHERE animal_id = $1
 		ORDER BY data_inicio DESC, id DESC
@@ -41,6 +41,7 @@ func (r *AnimalSaudeRepository) ListByAnimalID(ctx context.Context, animalID int
 			&item.DataFim,
 			&item.Status,
 			&item.Observacoes,
+			&item.VacinaID,
 			&item.CreatedBy,
 			&item.CreatedAt,
 			&item.UpdatedAt,
@@ -55,7 +56,7 @@ func (r *AnimalSaudeRepository) ListByAnimalID(ctx context.Context, animalID int
 
 func (r *AnimalSaudeRepository) ListAtivosByAnimalID(ctx context.Context, animalID int64) ([]*models.AnimalSaude, error) {
 	const q = `
-		SELECT id, animal_id, tipo_caso, data_inicio, data_fim, status, observacoes, created_by, created_at, updated_at
+		SELECT id, animal_id, tipo_caso, data_inicio, data_fim, status, observacoes, vacina_id, created_by, created_at, updated_at
 		FROM animal_saude
 		WHERE animal_id = $1 AND status = 'ATIVO'
 		ORDER BY data_inicio DESC, id DESC
@@ -77,6 +78,7 @@ func (r *AnimalSaudeRepository) ListAtivosByAnimalID(ctx context.Context, animal
 			&item.DataFim,
 			&item.Status,
 			&item.Observacoes,
+			&item.VacinaID,
 			&item.CreatedBy,
 			&item.CreatedAt,
 			&item.UpdatedAt,
@@ -91,7 +93,7 @@ func (r *AnimalSaudeRepository) ListAtivosByAnimalID(ctx context.Context, animal
 
 func (r *AnimalSaudeRepository) GetByID(ctx context.Context, animalID, saudeID int64) (*models.AnimalSaude, error) {
 	const q = `
-		SELECT id, animal_id, tipo_caso, data_inicio, data_fim, status, observacoes, created_by, created_at, updated_at
+		SELECT id, animal_id, tipo_caso, data_inicio, data_fim, status, observacoes, vacina_id, created_by, created_at, updated_at
 		FROM animal_saude
 		WHERE id = $1 AND animal_id = $2
 	`
@@ -104,6 +106,7 @@ func (r *AnimalSaudeRepository) GetByID(ctx context.Context, animalID, saudeID i
 		&item.DataFim,
 		&item.Status,
 		&item.Observacoes,
+		&item.VacinaID,
 		&item.CreatedBy,
 		&item.CreatedAt,
 		&item.UpdatedAt,
@@ -116,8 +119,8 @@ func (r *AnimalSaudeRepository) GetByID(ctx context.Context, animalID, saudeID i
 
 func (r *AnimalSaudeRepository) Create(ctx context.Context, row *models.AnimalSaude) error {
 	const q = `
-		INSERT INTO animal_saude (animal_id, tipo_caso, data_inicio, data_fim, status, observacoes, created_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO animal_saude (animal_id, tipo_caso, data_inicio, data_fim, status, observacoes, vacina_id, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, created_at, updated_at
 	`
 	return r.db.QueryRow(
@@ -129,6 +132,7 @@ func (r *AnimalSaudeRepository) Create(ctx context.Context, row *models.AnimalSa
 		row.DataFim,
 		row.Status,
 		row.Observacoes,
+		row.VacinaID,
 		row.CreatedBy,
 	).Scan(&row.ID, &row.CreatedAt, &row.UpdatedAt)
 }

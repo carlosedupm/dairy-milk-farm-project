@@ -4,6 +4,7 @@ export const ANIMAL_FICHA_TABS = [
   "geral",
   "ciclo",
   "saude",
+  "vacinas",
   "producao",
   "historico",
 ] as const;
@@ -14,6 +15,7 @@ export const ANIMAL_FICHA_TAB_LABELS: Record<AnimalFichaTab, string> = {
   geral: "Visão Geral",
   ciclo: "Ciclo",
   saude: "Saúde",
+  vacinas: "Vacinas",
   producao: "Produção",
   historico: "Histórico",
 };
@@ -22,6 +24,7 @@ const TIMELINE_FILTER_VALUES: TimelineFilterTipo[] = [
   "todos",
   "saude",
   "alertas",
+  "vacinas",
 ];
 
 export function parseTimelineFilterTipo(
@@ -60,6 +63,10 @@ export function animalFichaTabHref(
 
 export function animalFichaSaudeTabHref(animalId: number | string): string {
   return animalFichaTabHref(animalId, "saude");
+}
+
+export function animalFichaVacinasTabHref(animalId: number | string): string {
+  return animalFichaTabHref(animalId, "vacinas");
 }
 
 export function animalFichaCicloTabHref(animalId: number | string): string {

@@ -197,6 +197,34 @@ export function canExcluirRegistroSaude(perfil: string | undefined): boolean {
   return canEditarRegistroSaude(perfil);
 }
 
+/** POST /api/v1/animais/:id/vacinas — FUNCIONARIO e perfis operacionais (BR-SAUDE-007). */
+export function canCriarVacina(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER") return false;
+  return true;
+}
+
+/** Agendar vacina prevista (POST sem data_aplicacao) — GERENTE+ (decisão G1 #4 do BRF-001). */
+export function canAgendarVacina(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER" || perfil === "FUNCIONARIO") return false;
+  return true;
+}
+
+/** PATCH /api/v1/animais/:id/vacinas/:vacinaId/aplicar — FUNCIONARIO e perfis operacionais. */
+export function canAplicarVacina(perfil: string | undefined): boolean {
+  return canCriarVacina(perfil);
+}
+
+/** PUT /api/v1/animais/:id/vacinas/:vacinaId — exceto FUNCIONARIO e USER. */
+export function canEditarVacina(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER" || perfil === "FUNCIONARIO") return false;
+  return true;
+}
+
+/** DELETE /api/v1/animais/:id/vacinas/:vacinaId — mesma matriz que editar. */
+export function canExcluirVacina(perfil: string | undefined): boolean {
+  return canEditarVacina(perfil);
+}
+
 /** POST /api/v1/fazendas/:id/alertas — GERENTE, GESTAO, PROPRIETARIO, ADMIN, DEVELOPER. */
 export function canCriarAlertaManual(perfil: string | undefined): boolean {
   if (!perfil || perfil === "USER" || perfil === "FUNCIONARIO") return false;

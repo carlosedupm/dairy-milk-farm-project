@@ -1,520 +1,951 @@
 {
-  "info": {
-    "name": "CeialMilk API",
-    "description": "Complete API collection for CeialMilk dairy farm management system",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+ "info": {
+  "name": "CeialMilk API",
+  "description": "Complete API collection for CeialMilk dairy farm management system",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+ },
+ "variable": [
+  {
+   "key": "baseUrl",
+   "value": "http://localhost:8080",
+   "type": "string"
   },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:8080",
-      "type": "string"
-    },
-    {
-      "key": "animalId",
-      "value": "1",
-      "type": "string"
-    }
-  ],
-  "item": [
-    {
-      "name": "Authentication",
-      "description": "JWT authentication endpoints",
-      "item": [
-        {
-          "name": "Login",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@ceialmilk.com\",\n  \"password\": \"password\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "// Save the authentication token",
-                  "var jsonData = pm.response.json();",
-                  "pm.environment.set(\"authToken\", jsonData.token);",
-                  "console.log(\"Token saved to environment: \" + pm.environment.get(\"authToken\"));",
-                  "",
-                  "// Test response structure",
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Response has token\", function () {",
-                  "    pm.expect(jsonData).to.have.property('token');",
-                  "});",
-                  "pm.test(\"Response has email\", function () {",
-                  "    pm.expect(jsonData).to.have.property('email');",
-                  "});",
-                  "pm.test(\"Response has profile\", function () {",
-                  "    pm.expect(jsonData).to.have.property('perfil');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "Validate Token",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "text/plain"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{{authToken}}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/validate",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "validate"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Farms",
-      "description": "Farm management endpoints",
-      "item": [
-        {
-          "name": "Get All Farms",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Farm by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Farm",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nome\": \"Fazenda Esperança\",\n  \"localizacao\": \"Minas Gerais - MG\",\n  \"quantidadeVacas\": 200,\n  \"fundacao\": \"2018-05-20\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Farm",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nome\": \"Fazenda Esperança Atualizada\",\n  \"localizacao\": \"Minas Gerais - MG\",\n  \"quantidadeVacas\": 250,\n  \"fundacao\": \"2018-05-20\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Farm",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "1"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search Farms by Name",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/search/by-nome?nome=Fazenda Esperança",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "search", "by-nome"],
-              "query": [
-                {
-                  "key": "nome",
-                  "value": "Fazenda Esperança"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search Farms by Location",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/search/by-localizacao?localizacao=Minas Gerais",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "search", "by-localizacao"],
-              "query": [
-                {
-                  "key": "localizacao",
-                  "value": "Minas Gerais"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search Farms by Minimum Cows",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/search/by-vacas-min?quantidade=100",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "search", "by-vacas-min"],
-              "query": [
-                {
-                  "key": "quantidade",
-                  "value": "100"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Search Farms by Cows Range",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/search/by-vacas-range?min=50&max=300",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "search", "by-vacas-range"],
-              "query": [
-                {
-                  "key": "min",
-                  "value": "50"
-                },
-                {
-                  "key": "max",
-                  "value": "300"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Farms Count",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/count",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "count"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Check Farm Exists",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/exists?nome=Fazenda Esperança",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "exists"],
-              "query": [
-                {
-                  "key": "nome",
-                  "value": "Fazenda Esperança"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Animais",
-      "description": "Animal context and timeline",
-      "item": [
-        {
-          "name": "Search Animal by Identificacao",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/animais/search/by-identificacao?identificacao=123&limit=20&offset=0",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "animais", "search", "by-identificacao"],
-              "query": [
-                { "key": "identificacao", "value": "123", "description": "Termo parcial (obrigatório)" },
-                { "key": "fazenda_id", "value": "", "description": "Opcional — restringe à fazenda vinculada (header envia fazenda ativa)" },
-                { "key": "limit", "value": "20", "description": "Máx. por página (default 20, max 100)" },
-                { "key": "offset", "value": "0", "description": "Offset para paginação" },
-                { "key": "no_rebanho", "value": "true", "description": "true (default) | false" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Animal Context",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/contexto",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "animais", "{{animalId}}", "contexto"]
-            }
-          },
-          "response": [
-            {
-              "name": "200 — contexto com tratamentos ativos",
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"data\": {\n    \"animal\": { \"id\": 1, \"identificacao\": \"123\", \"status_saude\": \"EM_TRATAMENTO\" },\n    \"resumo_producao\": { \"total_litros\": 0, \"media_litros\": 0, \"total_registros\": 0 },\n    \"fora_do_rebanho\": false,\n    \"gestacao_resumo\": { \"confirmada\": false, \"dias_gestacao\": 0, \"meses_gestacao\": 0 },\n    \"tratamentos_ativos\": [\n      {\n        \"tipo_caso\": \"TRATAMENTO\",\n        \"data_inicio\": \"2026-05-01\",\n        \"data_fim_prevista\": \"2026-05-15\"\n      }\n    ],\n    \"proximas_acoes\": []\n  },\n  \"message\": \"Contexto do animal carregado com sucesso\",\n  \"timestamp\": \"2026-06-03T12:00:00Z\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Animal Timeline",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/timeline?limit=20&offset=0&tipo=todos",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "animais", "{{animalId}}", "timeline"],
-              "query": [
-                { "key": "limit", "value": "20" },
-                { "key": "offset", "value": "0" },
-                { "key": "tipo", "value": "todos", "description": "todos|ciclo|saude|alertas" }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List Animals for Cobertura",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-cobertura",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "{{fazendaId}}", "animais", "para-cobertura"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List Animals for Toque",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-toque",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "{{fazendaId}}", "animais", "para-toque"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List Animals for Parto",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-parto",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "{{fazendaId}}", "animais", "para-parto"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List Animals for Abertura Lactacao",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-abertura-lactacao",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "fazendas", "{{fazendaId}}", "animais", "para-abertura-lactacao"]
-            }
-          },
-          "response": []
-        }
-      ]
-    }
-  ],
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "exec": [
-          "console.log('CeialMilk API Collection - Pre-request script');"
-        ],
-        "type": "text/javascript"
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "exec": [
-          "console.log('CeialMilk API Collection - Test script');"
-        ],
-        "type": "text/javascript"
-      }
-    }
-  ],
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{authToken}}",
-        "type": "string"
-      }
-    ]
+  {
+   "key": "animalId",
+   "value": "1",
+   "type": "string"
   }
+ ],
+ "item": [
+  {
+   "name": "Authentication",
+   "description": "JWT authentication endpoints",
+   "item": [
+    {
+     "name": "Login",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"email\": \"admin@ceialmilk.com\",\n  \"password\": \"password\"\n}"
+      },
+      "url": {
+       "raw": "{{baseUrl}}/api/auth/login",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "auth",
+        "login"
+       ]
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "// Save the authentication token",
+         "var jsonData = pm.response.json();",
+         "pm.environment.set(\"authToken\", jsonData.token);",
+         "console.log(\"Token saved to environment: \" + pm.environment.get(\"authToken\"));",
+         "",
+         "// Test response structure",
+         "pm.test(\"Status code is 200\", function () {",
+         "    pm.response.to.have.status(200);",
+         "});",
+         "pm.test(\"Response has token\", function () {",
+         "    pm.expect(jsonData).to.have.property('token');",
+         "});",
+         "pm.test(\"Response has email\", function () {",
+         "    pm.expect(jsonData).to.have.property('email');",
+         "});",
+         "pm.test(\"Response has profile\", function () {",
+         "    pm.expect(jsonData).to.have.property('perfil');",
+         "});"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Validate Token",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "text/plain"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{{authToken}}"
+      },
+      "url": {
+       "raw": "{{baseUrl}}/api/auth/validate",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "auth",
+        "validate"
+       ]
+      }
+     },
+     "response": []
+    }
+   ]
+  },
+  {
+   "name": "Farms",
+   "description": "Farm management endpoints",
+   "item": [
+    {
+     "name": "Get All Farms",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Get Farm by ID",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/1",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "1"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Create Farm",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"nome\": \"Fazenda Esperança\",\n  \"localizacao\": \"Minas Gerais - MG\",\n  \"quantidadeVacas\": 200,\n  \"fundacao\": \"2018-05-20\"\n}"
+      },
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Update Farm",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"nome\": \"Fazenda Esperança Atualizada\",\n  \"localizacao\": \"Minas Gerais - MG\",\n  \"quantidadeVacas\": 250,\n  \"fundacao\": \"2018-05-20\"\n}"
+      },
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/1",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "1"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Delete Farm",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/1",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "1"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Search Farms by Name",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/search/by-nome?nome=Fazenda Esperança",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "search",
+        "by-nome"
+       ],
+       "query": [
+        {
+         "key": "nome",
+         "value": "Fazenda Esperança"
+        }
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Search Farms by Location",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/search/by-localizacao?localizacao=Minas Gerais",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "search",
+        "by-localizacao"
+       ],
+       "query": [
+        {
+         "key": "localizacao",
+         "value": "Minas Gerais"
+        }
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Search Farms by Minimum Cows",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/search/by-vacas-min?quantidade=100",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "search",
+        "by-vacas-min"
+       ],
+       "query": [
+        {
+         "key": "quantidade",
+         "value": "100"
+        }
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Search Farms by Cows Range",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/search/by-vacas-range?min=50&max=300",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "search",
+        "by-vacas-range"
+       ],
+       "query": [
+        {
+         "key": "min",
+         "value": "50"
+        },
+        {
+         "key": "max",
+         "value": "300"
+        }
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Get Farms Count",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/count",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "count"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Check Farm Exists",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/exists?nome=Fazenda Esperança",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "exists"
+       ],
+       "query": [
+        {
+         "key": "nome",
+         "value": "Fazenda Esperança"
+        }
+       ]
+      }
+     },
+     "response": []
+    }
+   ]
+  },
+  {
+   "name": "Animais",
+   "description": "Animal context and timeline",
+   "item": [
+    {
+     "name": "Search Animal by Identificacao",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/search/by-identificacao?identificacao=123&limit=20&offset=0",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "search",
+        "by-identificacao"
+       ],
+       "query": [
+        {
+         "key": "identificacao",
+         "value": "123",
+         "description": "Termo parcial (obrigatório)"
+        },
+        {
+         "key": "fazenda_id",
+         "value": "",
+         "description": "Opcional — restringe à fazenda vinculada (header envia fazenda ativa)"
+        },
+        {
+         "key": "limit",
+         "value": "20",
+         "description": "Máx. por página (default 20, max 100)"
+        },
+        {
+         "key": "offset",
+         "value": "0",
+         "description": "Offset para paginação"
+        },
+        {
+         "key": "no_rebanho",
+         "value": "true",
+         "description": "true (default) | false"
+        }
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Get Animal Context",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/contexto",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "{{animalId}}",
+        "contexto"
+       ]
+      }
+     },
+     "response": [
+      {
+       "name": "200 — contexto com tratamentos ativos",
+       "status": "OK",
+       "code": 200,
+       "_postman_previewlanguage": "json",
+       "header": [
+        {
+         "key": "Content-Type",
+         "value": "application/json"
+        }
+       ],
+       "body": "{\n  \"data\": {\n    \"animal\": { \"id\": 1, \"identificacao\": \"123\", \"status_saude\": \"EM_TRATAMENTO\" },\n    \"resumo_producao\": { \"total_litros\": 0, \"media_litros\": 0, \"total_registros\": 0 },\n    \"fora_do_rebanho\": false,\n    \"gestacao_resumo\": { \"confirmada\": false, \"dias_gestacao\": 0, \"meses_gestacao\": 0 },\n    \"tratamentos_ativos\": [\n      {\n        \"tipo_caso\": \"TRATAMENTO\",\n        \"data_inicio\": \"2026-05-01\",\n        \"data_fim_prevista\": \"2026-05-15\"\n      }\n    ],\n    \"proximas_acoes\": []\n  },\n  \"message\": \"Contexto do animal carregado com sucesso\",\n  \"timestamp\": \"2026-06-03T12:00:00Z\"\n}"
+      }
+     ]
+    },
+    {
+     "name": "Get Animal Timeline",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/timeline?limit=20&offset=0&tipo=todos",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "{{animalId}}",
+        "timeline"
+       ],
+       "query": [
+        {
+         "key": "limit",
+         "value": "20"
+        },
+        {
+         "key": "offset",
+         "value": "0"
+        },
+        {
+         "key": "tipo",
+         "value": "todos",
+         "description": "todos|ciclo|saude|alertas"
+        }
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "List Animals for Cobertura",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-cobertura",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "{{fazendaId}}",
+        "animais",
+        "para-cobertura"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "List Animals for Toque",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-toque",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "{{fazendaId}}",
+        "animais",
+        "para-toque"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "List Animals for Parto",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-parto",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "{{fazendaId}}",
+        "animais",
+        "para-parto"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "List Animals for Abertura Lactacao",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-abertura-lactacao",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "{{fazendaId}}",
+        "animais",
+        "para-abertura-lactacao"
+       ]
+      }
+     },
+     "response": []
+    }
+   ]
+  },
+  {
+   "name": "Vacinas",
+   "description": "BRF-001 — calendário de vacinação por animal (BR-SAUDE-007 a 011). FUNCIONARIO: GET + POST (aplicada) + PATCH aplicar; PUT/DELETE GERENTE+.",
+   "item": [
+    {
+     "name": "List Vacinas by Animal",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/vacinas",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "{{animalId}}",
+        "vacinas"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Get Vacina by ID",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/vacinas/{{vacinaId}}",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "{{animalId}}",
+        "vacinas",
+        "{{vacinaId}}"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Create Vacina (aplicada)",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tipo_vacina\": \"AFTOSA\",\n  \"dose\": \"1ª dose\",\n  \"data_aplicacao\": \"2026-06-01\",\n  \"validade_dias\": 180,\n  \"lote\": \"L-123\",\n  \"veterinario\": \"Dr. Silva\",\n  \"observacoes\": \"Sem reações\"\n}"
+      },
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/vacinas",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "{{animalId}}",
+        "vacinas"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Create Vacina (prevista — GERENTE+)",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tipo_vacina\": \"BRUCELOSE\",\n  \"data_prevista\": \"2026-08-01\"\n}"
+      },
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/vacinas",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "{{animalId}}",
+        "vacinas"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Aplicar Vacina (PATCH)",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"data_aplicacao\": \"2026-06-09\",\n  \"validade_dias\": 365\n}"
+      },
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/vacinas/{{vacinaId}}/aplicar",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "{{animalId}}",
+        "vacinas",
+        "{{vacinaId}}",
+        "aplicar"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Update Vacina (GERENTE+)",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tipo_vacina\": \"AFTOSA\",\n  \"dose\": \"reforço\",\n  \"data_aplicacao\": \"2026-06-01\",\n  \"validade_dias\": 180\n}"
+      },
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/vacinas/{{vacinaId}}",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "{{animalId}}",
+        "vacinas",
+        "{{vacinaId}}"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Delete Vacina (GERENTE+)",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/animais/{{animalId}}/vacinas/{{vacinaId}}",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "animais",
+        "{{animalId}}",
+        "vacinas",
+        "{{vacinaId}}"
+       ]
+      }
+     },
+     "response": []
+    }
+   ]
+  }
+ ],
+ "event": [
+  {
+   "listen": "prerequest",
+   "script": {
+    "exec": [
+     "console.log('CeialMilk API Collection - Pre-request script');"
+    ],
+    "type": "text/javascript"
+   }
+  },
+  {
+   "listen": "test",
+   "script": {
+    "exec": [
+     "console.log('CeialMilk API Collection - Test script');"
+    ],
+    "type": "text/javascript"
+   }
+  }
+ ],
+ "auth": {
+  "type": "bearer",
+  "bearer": [
+   {
+    "key": "token",
+    "value": "{{authToken}}",
+    "type": "string"
+   }
+  ]
+ }
 }

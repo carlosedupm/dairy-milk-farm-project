@@ -27,6 +27,7 @@ Consulte [`memory-bank/projectbrief.md`](memory-bank/projectbrief.md) e [`docs/b
 ### Outros
 
 - **Regras de domínio**: [`docs/business/README.md`](docs/business/README.md) — atualizar no mesmo PR quando mudar comportamento de produto; use `@docs/business/...` no chat
+- **Fluxo de briefings (analista funcional → implementador)**: [`docs/briefings/README.md`](docs/briefings/README.md) — papéis, gates de aprovação G1–G3 e template; requisito novo nasce como `BR-*` `planejado` + briefing `BRF-NNN`; validador `node scripts/validate-br-refs.mjs` (CI)
 - **API M2M**: [`docs/integracoes/README.md`](docs/integracoes/README.md) · [`docs/business/integracoes.md`](docs/business/integracoes.md) · OpenAPI em `docs/openapi/integracoes-v1.openapi.yaml`
 - **API JWT (Postman)**: [`docs/postman/`](docs/postman/)
 - **Baixa do rebanho**: [`docs/business/baixa-rebanho.md`](docs/business/baixa-rebanho.md)
@@ -95,4 +96,4 @@ OpenAPI da API JWT completa; admin de integrações no OpenAPI; upload PDF; webh
 - Integrações Swagger: `GET /api/v1/integracoes/docs`
 - Regressão ciclo: `docs/tests/regressao-ciclo-fase2.md`
 
-**Última atualização**: 2026-05-29
+**Última atualização**: 2026-06-09

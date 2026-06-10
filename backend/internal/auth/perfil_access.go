@@ -32,6 +32,7 @@ var funcionarioCriasPath = regexp.MustCompile(`^/api/v1/crias(/.*)?$`)
 var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
 var funcionarioAnimaisBaixaPath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/baixa$`)
 var funcionarioAnimaisSaudePath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/saude(/[0-9]+)?$`)
+var funcionarioAnimaisVacinasPath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/vacinas(/[0-9]+(/aplicar)?)?$`)
 var funcionarioAlertasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/alertas(/[0-9]+(/status)?)?$`)
 var funcionarioResumoPecuarioPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/resumo-pecuario$`)
 var funcionarioAssistentePath = regexp.MustCompile(`^/api/v1/assistente(/.*)?$`)
@@ -104,6 +105,19 @@ func requestAllowedForFuncionario(method, path string) bool {
 			return true
 		}
 		if method == http.MethodPost && strings.HasSuffix(path, "/saude") {
+			return true
+		}
+		return false
+	}
+	// Vacinas (BR-SAUDE-007): GET + POST (registrar aplicada — validado no service) + PATCH aplicar; PUT/DELETE → 403.
+	if funcionarioAnimaisVacinasPath.MatchString(path) {
+		if method == http.MethodGet {
+			return true
+		}
+		if method == http.MethodPost && strings.HasSuffix(path, "/vacinas") {
+			return true
+		}
+		if method == http.MethodPatch && strings.HasSuffix(path, "/aplicar") {
 			return true
 		}
 		return false

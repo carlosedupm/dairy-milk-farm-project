@@ -472,6 +472,30 @@ export function validateAnimalSaudeForm(
   return valid();
 }
 
+export function validateAnimalVacinaForm(formState: {
+  modo: "APLICADA" | "PREVISTA";
+  tipoVacina: string;
+  dataPrevista: string;
+  dataAplicacao: string;
+  validadeDias: string;
+}): FormValidationResult {
+  const fields: FieldErrors = {};
+  if (!formState.tipoVacina.trim()) {
+    fields.tipoVacina = "Selecione a vacina.";
+  }
+  if (formState.modo === "APLICADA" && !formState.dataAplicacao.trim()) {
+    fields.dataAplicacao = "Informe a data de aplicação.";
+  }
+  if (formState.modo === "PREVISTA" && !formState.dataPrevista.trim()) {
+    fields.dataPrevista = "Informe a data prevista.";
+  }
+  if (formState.validadeDias.trim() && Number(formState.validadeDias) <= 0) {
+    fields.validadeDias = "Validade deve ser maior que zero.";
+  }
+  if (Object.keys(fields).length > 0) return invalid(fields);
+  return valid();
+}
+
 export function validateUsuarioForm(input: {
   nome: string;
   email: string;

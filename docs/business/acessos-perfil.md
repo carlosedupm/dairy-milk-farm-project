@@ -168,6 +168,15 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**: `perfil_access.go` (`funcionarioAnimaisSaudePath`); `appAccess.ts` (`isFuncionarioAllowedPath`, helpers de escrita).
 - **Estado**: Implementado.
 
+### BR-ACESSO-022 — Vacinas: FUNCIONARIO regista aplicada, não agenda
+
+- **Enunciado**: `FUNCIONARIO` pode listar/consultar vacinas do animal (`GET /api/v1/animais/:id/vacinas*`), **registar vacina aplicada** (`POST` com `data_aplicacao`) e **aplicar vacina prevista** (`PATCH .../:vacinaId/aplicar`); não pode agendar vacina prevista (`POST` sem `data_aplicacao` → 403 `VACINA_AGENDAMENTO_NAO_PERMITIDO`), nem editar/excluir (`PUT`/`DELETE` → 403). Perfis GERENTE+ mantêm CRUD completo. `USER` sem acesso.
+- **Escopo**: sub-recurso `/api/v1/animais/:id/vacinas*`; tab **Vacinas** da ficha e formulários `/animais/:id/vacinas/*`.
+- **Perfis / permissões**: ver [saude-animal.md](./saude-animal.md) — BR-SAUDE-007 (decisão G1 #4 do BRF-001).
+- **Efeito**: bloqueio 403 no servidor (middleware + service); UI usa `canCriarVacina`, `canAgendarVacina`, `canAplicarVacina`, `canEditarVacina`, `canExcluirVacina`.
+- **Implementação**: `backend/internal/auth/perfil_access.go` (`funcionarioAnimaisVacinasPath`); validação de agendamento em `AnimalVacinaService.Create` (`allowAgendar`); `frontend/src/config/appAccess.ts`.
+- **Estado**: Implementado.
+
 ### BR-ACESSO-016 — Baixa do rebanho: FUNCIONARIO só morte
 
 - **Enunciado**: `FUNCIONARIO` pode `POST /api/v1/animais/:id/baixa` **apenas** com `motivo_saida = MORTE`. Outros motivos e `POST .../baixa/reverter` exigem perfis com API completa (gestão/titular/admin).
@@ -220,4 +229,4 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ---
 
-**Última atualização**: 2026-06-08 (BR-ACESSO-018: tour guiado na ficha do animal)
+**Última atualização**: 2026-06-09 (BR-ACESSO-022: vacinas — FUNCIONARIO regista aplicada, não agenda)

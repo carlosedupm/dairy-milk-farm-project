@@ -817,7 +817,7 @@ func (h *AnimalHandler) GetTimelineByID(c *gin.Context) {
 	filter, ok := repository.ParseTimelineFilterTipo(tipoParam)
 	if !ok {
 		response.ErrorBadRequest(c, "Parâmetro tipo inválido", gin.H{
-			"tipo": "Use todos, ciclo, saude ou alertas",
+			"tipo": "Use todos, ciclo, saude, alertas ou vacinas",
 		})
 		return
 	}

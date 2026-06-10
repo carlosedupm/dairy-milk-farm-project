@@ -23,6 +23,18 @@
 
 ## ✅ O que foi concluído
 
+### **BRF-001 — Vacinas / calendário preventivo (✅ 2026-06-09)**
+
+- [x] Migration 36: `animal_vacinas` (tipo, dose, prevista/aplicada, `validade_dias`, `data_proximo_reforco`, RLS, índices) + `animal_saude.vacina_id` + tipos `VACINA_VENCIDA`/`VACINA_REFORCO_VENCIDA` no CHECK de `alertas`
+- [x] Backend: model/repository/service/handler vacinas; rotas sub-recurso `/api/v1/animais/:id/vacinas*` (CRUD + `PATCH /aplicar`)
+- [x] Alertas: regras 7 (`VACINA_VENCIDA`) e 8 (`VACINA_REFORCO_VENCIDA`) no `AlertaGeracaoService` + auto-resolve ao aplicar (BR-ALERTA-016/017)
+- [x] Aplicar vacina → caso `PREVENTIVO` em `animal_saude` (BR-SAUDE-010); validade/reforço com cálculo automático (BR-SAUDE-011)
+- [x] Timeline `tipo=vacinas` (UNION + filtro + UI)
+- [x] RBAC: FUNCIONARIO regista aplicada + aplica prevista; não agenda/edita/exclui (BR-ACESSO-022)
+- [x] Frontend: tab **Vacinas** na ficha, form (modo aplicada/prevista), listagem responsiva, badge de status, dialog aplicar
+- [x] Testes unitários service + RBAC verdes; `validate-br-refs` OK; Postman pasta Vacinas; briefing → **implementado** (primeiro ciclo G1→G3)
+- [ ] Validar migration 36 + fluxo em staging (Docker indisponível no devcontainer)
+
 ### **Scroll infinito mobile — listagens (✅ 2026-06-01 — t_ds_007)**
 
 - [x] `hooks/useMobileInfiniteList.ts` — `useInfiniteQuery`, sentinela, `clientPages`, reset de scroll ao filtrar
@@ -916,6 +928,6 @@
 
 ---
 
-**Última atualização**: 2026-06-08 (Tab Ciclo + visibilidade ciclo — 3 fases UX)
+**Última atualização**: 2026-06-09 (BRF-001 — vacinas / calendário preventivo implementado)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | **UX exclusão** padronizada nas tabelas | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após validação integrações em staging + execução checklist Fase 2

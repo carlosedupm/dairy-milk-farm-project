@@ -23,6 +23,7 @@ import {
 const FILTER_OPTIONS: { value: TimelineFilterTipo; label: string }[] = [
   { value: "todos", label: "Todos" },
   { value: "saude", label: "Saúde" },
+  { value: "vacinas", label: "Vacinas" },
   { value: "alertas", label: "Alertas" },
 ];
 
@@ -108,8 +109,8 @@ export function AnimalTimelineSection({
       <CardHeader className="pb-2 space-y-3">
         <CardTitle className="text-base">Histórico</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Eventos de saúde, alertas e baixa. O ciclo reprodutivo está na tab{" "}
-          <strong className="font-medium text-foreground">Ciclo</strong>.
+          Eventos de saúde, vacinas, alertas e baixa. O ciclo reprodutivo está
+          na tab <strong className="font-medium text-foreground">Ciclo</strong>.
         </p>
         <div
           className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory"

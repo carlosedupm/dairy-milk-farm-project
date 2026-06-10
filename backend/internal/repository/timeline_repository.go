@@ -16,12 +16,13 @@ const (
 	TimelineFilterCiclo   TimelineFilterTipo = "ciclo"
 	TimelineFilterSaude   TimelineFilterTipo = "saude"
 	TimelineFilterAlertas TimelineFilterTipo = "alertas"
+	TimelineFilterVacinas TimelineFilterTipo = "vacinas"
 )
 
 // ParseTimelineFilterTipo valida o query param tipo da timeline.
 func ParseTimelineFilterTipo(v string) (TimelineFilterTipo, bool) {
 	switch TimelineFilterTipo(v) {
-	case TimelineFilterTodos, TimelineFilterCiclo, TimelineFilterSaude, TimelineFilterAlertas:
+	case TimelineFilterTodos, TimelineFilterCiclo, TimelineFilterSaude, TimelineFilterAlertas, TimelineFilterVacinas:
 		return TimelineFilterTipo(v), true
 	default:
 		return TimelineFilterTodos, false
@@ -194,6 +195,35 @@ WHERE al.animal_id = $1
 
 UNION ALL
 
+SELECT 'VACINA',
+       COALESCE(av.data_aplicacao, av.data_prevista)::timestamp,
+       ('Vacina ' ||
+        CASE av.tipo_vacina
+            WHEN 'AFTOSA' THEN 'Aftosa'
+            WHEN 'BRUCELOSE' THEN 'Brucelose'
+            WHEN 'RAIVA' THEN 'Raiva'
+            WHEN 'CLOSTRIDIOSES' THEN 'Clostridioses'
+            WHEN 'IBR_BVD' THEN 'IBR/BVD'
+            WHEN 'LEPTOSPIROSE' THEN 'Leptospirose'
+            ELSE 'Outra'
+        END ||
+        CASE
+            WHEN av.data_aplicacao IS NOT NULL THEN ' (aplicada)'
+            WHEN av.data_prevista < CURRENT_DATE THEN ' (atrasada)'
+            ELSE ' (prevista)'
+        END)::text,
+       (CASE
+            WHEN av.observacoes IS NULL OR TRIM(av.observacoes) = '' THEN COALESCE(av.dose, '')
+            WHEN LENGTH(TRIM(av.observacoes)) <= 120 THEN TRIM(av.observacoes)
+            ELSE LEFT(TRIM(av.observacoes), 120) || '…'
+        END)::text,
+       av.id,
+       av.created_by
+FROM animal_vacinas av
+WHERE av.animal_id = $1
+
+UNION ALL
+
 SELECT 'BAIXA',
        a.data_saida::timestamp,
        'Baixa do rebanho'::text,
@@ -218,6 +248,8 @@ func timelineFilterClause(filter TimelineFilterTipo, paramIdx int) string {
 		return ` AND ev.tipo = 'SAUDE'`
 	case TimelineFilterAlertas:
 		return ` AND ev.tipo = 'ALERTA'`
+	case TimelineFilterVacinas:
+		return ` AND ev.tipo = 'VACINA'`
 	default:
 		return ""
 	}

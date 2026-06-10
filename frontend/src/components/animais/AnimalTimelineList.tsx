@@ -4,11 +4,12 @@ import Link from "next/link";
 import { formatDateTimePtBr } from "@/lib/format";
 import type { CicloTimelineItem } from "@/services/animais";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Pill } from "lucide-react";
+import { Bell, Pill, Syringe } from "lucide-react";
 
 function timelineTipoLabel(tipo: string): string {
   if (tipo === "SAUDE") return "Saúde";
   if (tipo === "ALERTA") return "Alerta";
+  if (tipo === "VACINA") return "Vacina";
   return tipo;
 }
 
@@ -47,6 +48,7 @@ export function AnimalTimelineList({
       {items.map((item, idx) => {
         const isSaude = item.tipo === "SAUDE";
         const isAlerta = item.tipo === "ALERTA";
+        const isVacina = item.tipo === "VACINA";
         const saudeEditHref =
           isSaude && item.ref_id != null && canEditSaude
             ? `/animais/${animalId}/saude/editar/${item.ref_id}`
@@ -66,6 +68,12 @@ export function AnimalTimelineList({
               ) : null}
               {isAlerta ? (
                 <Bell
+                  className="h-4 w-4 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
+              ) : null}
+              {isVacina ? (
+                <Syringe
                   className="h-4 w-4 shrink-0 text-muted-foreground"
                   aria-hidden
                 />
