@@ -6,7 +6,6 @@ import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { create } from "@/services/cios";
 import { invalidateAnimalTimeline } from "@/services/animais";
-import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -49,8 +48,6 @@ function NovoContent() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
-
-  const { data: animais = [] } = useAnimaisOperacionalList(fazendaId);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -132,7 +129,11 @@ function NovoContent() {
       isValidationError={isValidationError}
       fieldErrors={fieldErrors}
     >
-      <CioFormFields animais={animais} formState={formState} setFormState={setFormState} />
+      <CioFormFields
+        fazendaId={fazendaId}
+        formState={formState}
+        setFormState={setFormState}
+      />
     </GestaoFormLayout>
   );
 }

@@ -583,6 +583,33 @@
      "response": []
     },
     {
+     "name": "List Animals for Cio",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{authToken}}"
+       }
+      ],
+      "url": {
+       "raw": "{{baseUrl}}/api/v1/fazendas/{{fazendaId}}/animais/para-cio",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "fazendas",
+        "{{fazendaId}}",
+        "animais",
+        "para-cio"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
      "name": "List Animals for Cobertura",
      "request": {
       "method": "GET",

@@ -338,6 +338,7 @@ func main() {
 						v1.GET("/:id/animais", animalHandler.GetByFazendaID)
 						v1.GET("/:id/animais/count", animalHandler.CountByFazenda)
 						v1.GET("/:id/animais/em-lactacao", animalHandler.GetEmLactacaoByFazendaID)
+						v1.GET("/:id/animais/para-cio", animalHandler.GetParaCioByFazendaID)
 						v1.GET("/:id/animais/para-cobertura", animalHandler.GetParaCoberturaByFazendaID)
 						v1.GET("/:id/animais/para-toque", animalHandler.GetParaToqueByFazendaID)
 						v1.GET("/:id/animais/para-parto", animalHandler.GetParaPartoByFazendaID)

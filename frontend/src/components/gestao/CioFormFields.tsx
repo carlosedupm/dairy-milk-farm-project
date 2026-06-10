@@ -28,12 +28,14 @@ export type CioFormState = {
 };
 
 type Props = {
-  animais: Animal[];
+  fazendaId: number;
+  animais?: Animal[];
   formState: CioFormState;
   setFormState: Dispatch<SetStateAction<CioFormState>>;
+  preserveSelected?: boolean;
 };
 
-export function CioFormFields({ animais, formState, setFormState }: Props) {
+export function CioFormFields({ fazendaId, animais, formState, setFormState, preserveSelected }: Props) {
   const animalIdError = useFormFieldError("animalId");
   const dataError = useFormFieldError("dataDetectado");
 
@@ -41,11 +43,13 @@ export function CioFormFields({ animais, formState, setFormState }: Props) {
     <>
       <AnimalSelect
         animais={animais}
+        fazendaId={fazendaId}
+        cicloContext="cio"
+        preserveSelected={preserveSelected}
         value={formState.animalId}
         onValueChange={(v) => setFormState((s) => ({ ...s, animalId: v }))}
         label="Animal"
         placeholder="Selecione"
-        femeasOnly
         error={animalIdError}
       />
       <div className="space-y-2">

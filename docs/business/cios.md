@@ -40,6 +40,14 @@ Registro de **detecção de cio** na matriz (data/hora e metadados opcionais).
 - **Implementação**: `CioService` + `ciclo_integridade_temporal.go`; `CioFormFields` com `maxDate` agora.
 - **Estado**: implementado.
 
+### BR-CIOS-005 — Elegibilidade por fase de vida (categoria e idade)
+
+- **Enunciado**: Registo de cio exige animal elegível conforme [ciclo-rebanho.md](./ciclo-rebanho.md) **BR-CICLO-016** (não BEZERRA/BEZERRO) e **BR-CICLO-017** (NOVILHA ≥12 meses ou MATRIZ). Listagem no formulário via `GET .../animais/para-cio` (**BR-CICLO-018**).
+- **Escopo**: `POST|PUT /api/v1/cios`.
+- **Efeito**: bloqueio 400 `INT-008`.
+- **Implementação**: `CioService.Create`/`Update` + `ValidateElegibilidadeReprodutiva`; `CioFormFields` com `cicloContext="cio"`.
+- **Estado**: implementado (briefing **BRF-004**).
+
 ---
 
-**Última atualização**: 2026-05-25 (BR-CIOS-004 — validação temporal)
+**Última atualização**: 2026-06-09 (BR-CIOS-005 implementado — BRF-004)

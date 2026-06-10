@@ -37,7 +37,7 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 - **Checks (dois âmbitos)**:
   - **Rebanho ativo** (INT-001 a INT-006): só animais com `data_saida` nula ou futura — ver BR-AUDIT-009.
   - **Pós-baixa** (INT-007): animal com `data_saida` passada e ciclo ainda aberto (BR-BAIXA-003 / reversão parcial).
-- Detalhe: INT-001 (múltiplas lactações ativas), INT-002 (produção sem lactação), INT-003 (gestação sem toque+), INT-004 (restrição sem lactação), INT-005 (PRENHE sem gestação), INT-006 (toque+ sem cobertura), INT-007 (baixa incompleta).
+- Detalhe: INT-001 (múltiplas lactações ativas), INT-002 (produção sem lactação), INT-003 (gestação sem toque+), INT-004 (restrição sem lactação), INT-005 (PRENHE sem gestação), INT-006 (toque+ sem cobertura), INT-007 (baixa incompleta), INT-008 (reprodução/lactação em bezerra/bezerro ou novilha &lt;12m).
 - **Implementação**: `ConformidadeService.ListByFazenda`, rota `GET /api/v1/fazendas/:id/auditoria/conformidade`; UI `ConformidadeHomePanel` na home (`frontend/src/components/dashboard/ConformidadeHomePanel.tsx`), serviço `frontend/src/services/auditoria.ts`; oculto para `FUNCIONARIO` e `USER` (`showConformidadePanelForPerfil` em `appAccess.ts`). Novas anomalias desde a última execução diária geram alertas `NAO_CONFORMIDADE` (severidade CRITICA) via snapshot em `alertas_geracao_estado` — [alertas.md](./alertas.md) BR-ALERTA-008.
 - **Estado**: implementado.
 
@@ -91,9 +91,17 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 - **Implementação**: `ConformidadeService` — consulta INT-007.
 - **Estado**: implementado.
 
+### BR-AUDIT-011 — Conformidade: marco reprodutivo em animal imaturo (INT-008)
+
+- **Enunciado**: O painel de conformidade inclui **INT-008** quando existe registo de cio, cobertura, toque, parto, secagem ou produção de leite em animal **BEZERRA/BEZERRO**, **NOVILHA com menos de 12 meses** desde o nascimento, ou **categoria inadequada/nula** para matriz. A mesma regra bloqueia **novas escritas** (BR-AUDIT-010 estendido).
+- **Escopo**: Animais no rebanho; checks em `ConformidadeService`; bloqueio preventivo nos services de ciclo (BR-CICLO-016/017).
+- **Efeito**: informativo no painel; novos alertas `NAO_CONFORMIDADE` se anomalia nova (BR-ALERTA-008); escrita → 400 `INT-008`.
+- **Implementação**: `checkMarcoReprodutivoAnimalImaturo` em `conformidade_service.go`; `ValidateElegibilidadeReprodutiva` na escrita.
+- **Estado**: implementado (briefing **BRF-004**).
+
 ### BR-AUDIT-010 — Validação preventiva na escrita (integridade do ciclo)
 
-- **Enunciado**: As mesmas regras que alimentam INT-001 a INT-006 (rebanho ativo) devem ser **bloqueadas no servidor** ao registar ou alterar eventos, sempre que o negócio exija coerência imediata. O painel de conformidade permanece para **auditoria** e dados **legados**; novos registos não devem criar novas anomalias quando a API for usada corretamente.
+- **Enunciado**: As mesmas regras que alimentam INT-001 a INT-008 (rebanho ativo) devem ser **bloqueadas no servidor** ao registar ou alterar eventos, sempre que o negócio exija coerência imediata. O painel de conformidade permanece para **auditoria** e dados **legados**; novos registos não devem criar novas anomalias quando a API for usada corretamente.
 - **Escopo**: Escritas de ciclo e cadastro (ver matriz abaixo).
 - **Efeito**: HTTP 400 `VALIDATION_ERROR` com `details.conformidade` = código INT (quando aplicável); mensagem orienta a ação correta (ex.: registar toque positivo antes de marcar PRENHE).
 - **Matriz preventiva (implementado)**:
@@ -107,6 +115,7 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 | INT-005 | PRENHE com gestação confirmada | `AnimalService.Update` — `ValidateStatusReprodutivoPrenhe` |
 | INT-006 | Toque+ com cobertura | `DiagnosticoGestacaoService.Create` — `ErrToquePositivoSemCobertura` |
 | INT-007 | Baixa fecha ciclo | `AnimalBaixaService.RegistrarBaixa` (TX); reversão não reabre ciclo — INT-007 só legado/painel |
+| INT-008 | Marco reprodutivo/lactação em animal imaturo | `ValidateElegibilidadeReprodutiva` — BR-CICLO-016/017; `CioService`, `CoberturaService`, `DiagnosticoGestacaoService`, `PartoService`, `SecagemService`, `ProducaoService` |
 
 **Validação temporal preventiva (TMP-*, BR-CICLO-012–014)** — bloqueio na escrita; **não** entram no painel INT-001–007 (auditoria de estado legado):
 
@@ -124,4 +133,4 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 
 ---
 
-**Última atualização**: 2026-06-09 (TMP-001/002 — escopo saúde + exceção `data_fim`; BR-SAUDE-012 / BRF-002)
+**Última atualização**: 2026-06-09 (BR-AUDIT-011 / INT-008 implementado — BRF-004)

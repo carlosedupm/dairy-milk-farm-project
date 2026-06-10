@@ -67,6 +67,9 @@ func (s *ProducaoService) Create(ctx context.Context, producao *models.ProducaoL
 	if err := EnsureAnimalNoRebanho(animal); err != nil {
 		return err
 	}
+	if err := ValidateElegibilidadeReprodutiva(animal, producao.DataHora); err != nil {
+		return err
+	}
 	if err := ValidateEventoDateTimeTemporal(animal, producao.DataHora); err != nil {
 		return err
 	}
@@ -171,6 +174,9 @@ func (s *ProducaoService) Update(ctx context.Context, producao *models.ProducaoL
 		return err
 	}
 	if err := EnsureAnimalNoRebanho(animal); err != nil {
+		return err
+	}
+	if err := ValidateElegibilidadeReprodutiva(animal, producao.DataHora); err != nil {
 		return err
 	}
 	if producao.DataHora.IsZero() {

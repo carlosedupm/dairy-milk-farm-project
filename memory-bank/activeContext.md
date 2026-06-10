@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **BRF-004 — Elegibilidade reprodutiva (BR-CICLO-016–018, INT-008)**: `ValidateElegibilidadeReprodutiva` em `ciclo_elegibilidade.go`; bloqueio INT-008 em cio/cobertura/toque/parto/secagem/produção; `GET .../animais/para-cio`; listagens `para-cobertura|toque|parto` com `SQLElegivelReproducao`; conformidade `checkMarcoReprodutivoAnimalImaturo`; frontend `CioFormFields` com `cicloContext="cio"`; testes `ciclo_elegibilidade_test.go`; briefing → **implementado** (G3, 2026-06-09).
 1. ✅ **BRF-003 — status_saude derivado (BR-SAUDE-013, BR-PARTOS-008)**: `AnimalService` bloqueia alteração manual com casos ATIVOS (`400 STATUS_SAUDE_DERIVADO`); cadastro genérico força `SAUDAVEL`; parto/cria tardia com `nao_saudavel` + `status_saude_inicial`; UI `AnimalForm` + parto; assistente Live/legado; testes `animal_service_test.go` + `cria_service_test.go`; validação manual G3 confirmada; briefing → **implementado** (G3 fechado, 2026-06-09).
 1. ✅ **BRF-002 — Validação temporal em casos de saúde (BR-SAUDE-012)**: `validateAnimalSaudeTemporal` em `animal_saude_service.go` (TMP-001 em `data_inicio`, TMP-002 em ambas, `data_fim` futura permitida); skip temporal no Update quando `vacina_id`; frontend `saude-date-limits.ts`, `AnimalSaudeFormFields`/`AnimalSaudeForm`, `validateAnimalSaudeForm` com badge TMP-*; vitest `form-validation.saude.test.ts`; testes service + RBAC DELETE; briefing → **implementado** (G3, 2026-06-09).
 1. ✅ **BRF-001 — Vacinas / calendário preventivo (BR-SAUDE-007–011, BR-ALERTA-016/017, BR-ACESSO-022)**: migration 36 (`animal_vacinas`, `animal_saude.vacina_id`, tipos `VACINA_VENCIDA`/`VACINA_REFORCO_VENCIDA` no CHECK de `alertas`); backend completo (model com status derivado `PREVISTA|APLICADA|ATRASADA|REFORCO_VENCIDO`, repository, `AnimalVacinaService` com Create/Aplicar/CRUD, handler, rotas `GET|POST /api/v1/animais/:id/vacinas` + `GET|PUT|DELETE .../:vacinaId` + `PATCH .../aplicar`); regras 7 e 8 no `AlertaGeracaoService` (alerta de vacina prevista atrasada e reforço vencido, limiar 7 dias, ALTA + Web Push) com auto-resolve ao aplicar; aplicar cria caso `PREVENTIVO` em `animal_saude` (BR-SAUDE-010); validade/reforço (`validade_dias` → `data_proximo_reforco`, manual prevalece — BR-SAUDE-011); timeline `tipo=vacinas`; RBAC FUNCIONARIO regista aplicada + PATCH aplicar, não agenda/edita/exclui (403 `VACINA_AGENDAMENTO_NAO_PERMITIDO`); frontend com tab **Vacinas** na ficha, `AnimalVacinaForm`/`AnimalVacinaList`/`AnimalVacinaAplicarDialog`/`VacinaStatusBadge`, helpers em `appAccess.ts`; testes unitários service + RBAC verdes; Postman com pasta Vacinas; briefing `BRF-001` → **implementado** (primeiro ciclo completo G1→G3 do fluxo de briefings).
@@ -105,7 +106,6 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### 🚧 Em andamento:
 
-- **BRF-003 — status_saude derivado**: concluído (G3, 2026-06-09) — ver [`BRF-003`](../docs/briefings/BRF-003-status-saude-derivado.md).
 - **Fase 3 — validação operacional**: checklist staging pós alertas automáticos e Web Push; validar migration 36 + fluxo de vacinas em staging (Docker indisponível no devcontainer atual — migration não validada localmente)
 
 ### ✅ Fase 3 — entregas consolidadas (2026-05-27 a 2026-05-29):
@@ -270,5 +270,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-09 (BRF-002 implementado G3 — validação temporal saúde)
+**Última atualização**: 2026-06-09 (BRF-004 implementado G3 — elegibilidade reprodutiva INT-008)
 **Contexto Ativo**: Go + Next.js 16 | Produção Render+Vercel | **Fase 2 fechada** | **Fase 3** saúde + alertas + Web Push + **vacinas (BRF-001)** | **BRF-002 implementado** | **BRF-003 implementado** (status_saude derivado) | **Produção por lactação** (`lactacao_id`, migration 34) | **Timeline paginada** na ficha | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Recuperação senha aguarda SMTP

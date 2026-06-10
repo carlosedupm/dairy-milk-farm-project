@@ -53,6 +53,9 @@ func (s *DiagnosticoGestacaoService) Create(ctx context.Context, d *models.Diagn
 	if err := ValidateEventoDateTimeTemporal(animal, d.Data); err != nil {
 		return err
 	}
+	if err := ValidateElegibilidadeReprodutiva(animal, d.Data); err != nil {
+		return err
+	}
 
 	var coberturaID int64
 	if d.Resultado == models.DiagnosticoResultadoPositivo {

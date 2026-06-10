@@ -74,6 +74,9 @@ func (s *CoberturaService) validateCoberturaRegras(ctx context.Context, c *model
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return ErrCoberturaApenasFemea
 	}
+	if err := ValidateElegibilidadeReprodutiva(animal, c.Data); err != nil {
+		return err
+	}
 	if c.Tipo == models.CoberturaTipoMontaNatural {
 		hasReprodutor := (c.TouroAnimalID != nil && *c.TouroAnimalID > 0) || (c.TouroInfo != nil && *c.TouroInfo != "")
 		if !hasReprodutor {

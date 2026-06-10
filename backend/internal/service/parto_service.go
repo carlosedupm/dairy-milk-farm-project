@@ -58,6 +58,9 @@ func (s *PartoService) validatePartoAnimalForCreate(ctx context.Context, p *mode
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return nil, errors.New("apenas femeas podem ter parto")
 	}
+	if err := ValidateElegibilidadeReprodutiva(animal, p.Data); err != nil {
+		return nil, err
+	}
 	if p.Tipo != nil && *p.Tipo != "" {
 		valid := false
 		for _, t := range models.ValidTiposParto() {
@@ -274,6 +277,9 @@ func (s *PartoService) Update(ctx context.Context, p *models.Parto) error {
 		return err
 	}
 	if err := ValidateEventoDateTimeTemporal(animal, p.Data); err != nil {
+		return err
+	}
+	if err := ValidateElegibilidadeReprodutiva(animal, p.Data); err != nil {
 		return err
 	}
 	if err := ValidatePartoAposGestacao(ctx, s.gestacaoRepo, p); err != nil {

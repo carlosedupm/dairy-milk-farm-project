@@ -54,10 +54,18 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 - **Implementação**: `AnimalRepository.ListParaCoberturaByFazendaID`; `CoberturaFormFields`.
 - **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
 
+### BR-COBERTURAS-007 — Elegibilidade por fase de vida (categoria e idade)
+
+- **Enunciado**: Cobertura exige matriz elegível conforme **BR-CICLO-016** e **BR-CICLO-017**. Listagem `para-cobertura` actualizada (**BR-CICLO-018**).
+- **Escopo**: `POST|PUT /api/v1/coberturas`; M2M `POST /integracoes/coberturas` (+ lote).
+- **Efeito**: bloqueio 400 `INT-008`.
+- **Implementação**: `CoberturaService.validateCoberturaRegras` + `SQLElegivelReproducao` nas listagens.
+- **Estado**: implementado (briefing **BRF-004**).
+
 ### Canal de integração externa
 
 - Registo via `POST /api/v1/integracoes/coberturas` ou lote `POST /api/v1/integracoes/coberturas/lote` (scope `coberturas:write`) — ver [integracoes.md](./integracoes.md) (`BR-INTEG-*`). Listagem: `GET /api/v1/integracoes/coberturas?animal_id=` (scope `coberturas:read`).
 
 ---
 
-**Última atualização**: 2026-06-02 (BR-COBERTURAS-005 — minDate UI gestão)
+**Última atualização**: 2026-06-09 (BR-COBERTURAS-007 implementado — BRF-004)

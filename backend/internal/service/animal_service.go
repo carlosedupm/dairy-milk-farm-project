@@ -204,6 +204,13 @@ func (s *AnimalService) ListParaCoberturaByFazendaID(ctx context.Context, fazend
 	return s.repo.ListParaCoberturaByFazendaID(ctx, fazendaID)
 }
 
+func (s *AnimalService) ListParaCioByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	if err := s.validateFazendaExists(ctx, fazendaID); err != nil {
+		return nil, err
+	}
+	return s.repo.ListParaCioByFazendaID(ctx, fazendaID)
+}
+
 func (s *AnimalService) ListParaToqueByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
 	if err := s.validateFazendaExists(ctx, fazendaID); err != nil {
 		return nil, err

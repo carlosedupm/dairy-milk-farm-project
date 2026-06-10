@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ceialmilk/api/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -40,6 +41,7 @@ func (s *ConformidadeService) ListByFazenda(ctx context.Context, fazendaID int64
 		s.checkPrenheSemGestacaoConfirmada,
 		s.checkToquePositivoSemCobertura,
 		s.checkAnimalBaixadoComCicloAberto,
+		s.checkMarcoReprodutivoAnimalImaturo,
 	}
 	for _, fn := range checks {
 		items, err := fn(ctx, fazendaID)
@@ -174,6 +176,73 @@ func (s *ConformidadeService) checkAnimalBaixadoComCicloAberto(ctx context.Conte
 		  )`
 	return s.scanAnimalRows(ctx, q, fazendaID, "INT-007", "ALTA",
 		"Animal com baixa registrada mas lactação, gestação confirmada ou restrição de leite ainda aberta (BR-BAIXA-003 / reversão parcial).")
+}
+
+// sqlAnimalImaturoParaMarco (%s = coluna de data do evento) — BR-CICLO-016/017 / INT-008.
+const sqlAnimalImaturoParaMarco = `
+		  (
+		    a.categoria IN ('BEZERRA', 'BEZERRO')
+		    OR a.categoria IS NULL
+		    OR TRIM(a.categoria) = ''
+		    OR a.categoria NOT IN ('NOVILHA', 'MATRIZ')
+		    OR (
+		      a.categoria = 'NOVILHA'
+		      AND (
+		        a.data_nascimento IS NULL
+		        OR (%s)::date < (a.data_nascimento + interval '12 months')::date
+		      )
+		    )
+		  )`
+
+func (s *ConformidadeService) checkMarcoReprodutivoAnimalImaturo(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
+	desc := "Marco reprodutivo ou lactação em animal imaturo (bezerra/bezerro, novilha <12m ou categoria inadequada) — BR-CICLO-016/017."
+	queries := []string{
+		fmt.Sprintf(`
+		SELECT DISTINCT a.id, a.identificacao
+		FROM cios ci
+		INNER JOIN animais a ON a.id = ci.animal_id
+		WHERE ci.fazenda_id = $1`+noRebanhoA+` AND `+sqlAnimalImaturoParaMarco, "ci.data_detectado"),
+		fmt.Sprintf(`
+		SELECT DISTINCT a.id, a.identificacao
+		FROM coberturas cb
+		INNER JOIN animais a ON a.id = cb.animal_id
+		WHERE cb.fazenda_id = $1`+noRebanhoA+` AND `+sqlAnimalImaturoParaMarco, "cb.data"),
+		fmt.Sprintf(`
+		SELECT DISTINCT a.id, a.identificacao
+		FROM diagnosticos_gestacao dg
+		INNER JOIN animais a ON a.id = dg.animal_id
+		WHERE dg.fazenda_id = $1`+noRebanhoA+` AND `+sqlAnimalImaturoParaMarco, "dg.data"),
+		fmt.Sprintf(`
+		SELECT DISTINCT a.id, a.identificacao
+		FROM partos p
+		INNER JOIN animais a ON a.id = p.animal_id
+		WHERE p.fazenda_id = $1`+noRebanhoA+` AND `+sqlAnimalImaturoParaMarco, "p.data"),
+		fmt.Sprintf(`
+		SELECT DISTINCT a.id, a.identificacao
+		FROM secagens s
+		INNER JOIN animais a ON a.id = s.animal_id
+		WHERE s.fazenda_id = $1`+noRebanhoA+` AND `+sqlAnimalImaturoParaMarco, "s.data_secagem"),
+		fmt.Sprintf(`
+		SELECT DISTINCT a.id, a.identificacao
+		FROM producao_leite pl
+		INNER JOIN animais a ON a.id = pl.animal_id
+		WHERE a.fazenda_id = $1`+noRebanhoA+` AND `+sqlAnimalImaturoParaMarco, "pl.data_hora"),
+	}
+	seen := make(map[int64]ConformidadeAnomalia)
+	for _, q := range queries {
+		items, err := s.scanAnimalRows(ctx, q, fazendaID, "INT-008", "ALTA", desc)
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range items {
+			seen[item.AnimalID] = item
+		}
+	}
+	out := make([]ConformidadeAnomalia, 0, len(seen))
+	for _, item := range seen {
+		out = append(out, item)
+	}
+	return out, nil
 }
 
 func (s *ConformidadeService) scanAnimalRows(

@@ -44,6 +44,9 @@ func (s *CioService) Create(ctx context.Context, c *models.Cio) error {
 	if animal.Sexo != nil && *animal.Sexo != "F" {
 		return errors.New("apenas femeas podem ter registro de cio")
 	}
+	if err := ValidateElegibilidadeReprodutiva(animal, c.DataDetectado); err != nil {
+		return err
+	}
 	if c.MetodoDeteccao != nil && *c.MetodoDeteccao != "" {
 		valid := false
 		for _, m := range models.ValidMetodosCio() {
@@ -163,6 +166,9 @@ func (s *CioService) Update(ctx context.Context, c *models.Cio) error {
 		return err
 	}
 	if err := ValidateEventoCioTemporal(animal, c.DataDetectado); err != nil {
+		return err
+	}
+	if err := ValidateElegibilidadeReprodutiva(animal, c.DataDetectado); err != nil {
 		return err
 	}
 	return s.repo.Update(ctx, c)

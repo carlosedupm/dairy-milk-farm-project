@@ -201,6 +201,33 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 - **Estado**: **implementado**.
 - **Relacionado**: mesma regra de 15 dias em `proximas_acoes[]` da ficha — [animais.md](./animais.md) **BR-ANIMAIS-007**.
 
+### BR-CICLO-016 — Elegibilidade reprodutiva por categoria
+
+- **Enunciado**: Animais com categoria **BEZERRA** ou **BEZERRO** **não podem** receber marcos do ciclo reprodutivo/lactação como matriz: cio, cobertura, toque, parto, secagem nem produção de leite. Categorias **TOURO**/**BOI** ou **nula/vazia** também não são elegíveis a esses marcos de matriz.
+- **Escopo**: Escritas via API JWT, M2M e assistente; listagens `para-*` (BR-CICLO-018).
+- **Perfis**: conforme módulo; bloqueio no servidor.
+- **Efeito**: HTTP 400 com `details.conformidade` = **INT-008** (BR-AUDIT-011).
+- **Implementação**: `ValidateElegibilidadeReprodutiva` em `ciclo_elegibilidade.go`; chamadas em `CioService`, `CoberturaService`, `DiagnosticoGestacaoService`, `PartoService`, `SecagemService`, `ProducaoService`.
+- **Estado**: **implementado** (briefing **BRF-004**).
+
+### BR-CICLO-017 — Idade mínima para reprodução (novilha)
+
+- **Enunciado**: Fêmeas com categoria **NOVILHA** só podem receber cio, cobertura, toque ou parto (como matriz) quando **`data_nascimento` + 12 meses civis ≤ data do evento**. **MATRIZ** isenta de idade mínima. Sem `data_nascimento` preenchida, NOVILHA **não** é elegível (INT-008).
+- **Escopo**: Mesmos services que BR-CICLO-016; constante `MesesMinimosNovilhaReproducao = 12`.
+- **Efeito**: INT-008 na escrita; mensagem orientativa na UI.
+- **Implementação**: `ValidateElegibilidadeReprodutiva`; `SQLElegivelReproducao` em `animal_repository.go`.
+- **Estado**: **implementado** (briefing **BRF-004**).
+
+### BR-CICLO-018 — Listagens elegíveis (extensão BR-CICLO-015)
+
+- **Enunciado**: Formulários de ciclo usam endpoints dedicados com filtros de **elegibilidade** (BR-CICLO-016/017) além das condições de estado do ciclo:
+  - **Novo** `GET /api/v1/fazendas/:id/animais/para-cio` — fêmeas NOVILHA (≥12m) ou MATRIZ no rebanho.
+  - **Actualizar** `para-cobertura`, `para-toque`, `para-parto` — excluir BEZERRA/BEZERRO e NOVILHA &lt;12m além das condições actuais (cio sem cobertura, cobertura ≥15d, gestação confirmada).
+- **Escopo**: UI `AnimalSelect` com `cicloContext`; incluir **`cio`** no frontend.
+- **Efeito**: orientação na UI; bloqueio na escrita independente (INT-008).
+- **Implementação**: `ListParaCioByFazendaID`; `CioFormFields` com `cicloContext="cio"`; `animais.ts` + Postman.
+- **Estado**: **implementado** (briefing **BRF-004**).
+
 ---
 
 ## Matriz de aderência atual (resumo)
@@ -208,7 +235,7 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 | Etapa | Estado produto | Notas |
 |-------|----------------|-------|
 | Cadastro / origem / cria no rebanho | Implementado | Parto → animal automático |
-| Cio | Implementado | Atualiza `VAZIA` (exceto `PRENHE`) |
+| Cio | Implementado | BR-CIOS-003/005; elegibilidade categoria/idade (BRF-004) |
 | Cobertura → servida | Implementado | [coberturas.md](./coberturas.md) |
 | Toque → gestação | Implementado | FUNCIONARIO com toques (BR-ACESSO-015) |
 | Gestação (lista) | Implementado | Partos previstos na home (BR-CICLO-009) |
@@ -229,8 +256,8 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ## Backlog de requisitos (próximos)
 
-1. ~~Bloqueio `status_saude` manual com casos ATIVOS — [`BRF-003`](../briefings/BRF-003-status-saude-derivado.md)~~ ✅ implementado (G3, 2026-06-09)
+_(vazio — ver briefings em `docs/briefings/` para novos trabalhos)_
 
 ---
 
-**Última atualização**: 2026-06-09 (BR-SAUDE-012 implementado — BRF-002 G3)
+**Última atualização**: 2026-06-09 (BR-CICLO-016–018 implementados — BRF-004 G3)

@@ -405,6 +405,10 @@ func (h *AnimalHandler) GetParaCoberturaByFazendaID(c *gin.Context) {
 	h.listAnimaisElegiveisByFazendaID(c, h.service.ListParaCoberturaByFazendaID, "Erro ao buscar animais elegíveis para cobertura", "Animais elegíveis para cobertura listados com sucesso")
 }
 
+func (h *AnimalHandler) GetParaCioByFazendaID(c *gin.Context) {
+	h.listAnimaisElegiveisByFazendaID(c, h.service.ListParaCioByFazendaID, "Erro ao buscar animais elegíveis para cio", "Animais elegíveis para cio listados com sucesso")
+}
+
 func (h *AnimalHandler) GetParaToqueByFazendaID(c *gin.Context) {
 	h.listAnimaisElegiveisByFazendaID(c, h.service.ListParaToqueByFazendaID, "Erro ao buscar animais elegíveis para toque", "Animais elegíveis para toque listados com sucesso")
 }

@@ -219,7 +219,32 @@ func (r *AnimalRepository) ListEmLactacaoByFazendaID(ctx context.Context, fazend
 	return r.queryList(ctx, query, fazendaID)
 }
 
-// ListParaCoberturaByFazendaID retorna fêmeas no rebanho com cio registrado sem cobertura vinculada.
+// SQLElegivelReproducao filtra fêmeas NOVILHA (≥12 meses) ou MATRIZ (BR-CICLO-016/017).
+const SQLElegivelReproducao = `
+		AND a.categoria IN ('NOVILHA', 'MATRIZ')
+		AND (
+			a.categoria = 'MATRIZ'
+			OR (
+				a.categoria = 'NOVILHA'
+				AND a.data_nascimento IS NOT NULL
+				AND a.data_nascimento <= CURRENT_DATE - interval '12 months'
+			)
+		)`
+
+// ListParaCioByFazendaID retorna fêmeas elegíveis (NOVILHA ≥12m ou MATRIZ) no rebanho.
+func (r *AnimalRepository) ListParaCioByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM animais a
+		WHERE a.fazenda_id = $1
+		AND a.sexo = $2
+		AND `+sqlNoRebanho+`
+		`+SQLElegivelReproducao+`
+		ORDER BY a.identificacao ASC
+	`, animalSelectWithPrefix("a"))
+	return r.queryList(ctx, query, fazendaID, models.SexoFemea)
+}
+
 func (r *AnimalRepository) ListParaCoberturaByFazendaID(ctx context.Context, fazendaID int64) ([]*models.Animal, error) {
 	query := fmt.Sprintf(`
 		SELECT %s
@@ -227,6 +252,7 @@ func (r *AnimalRepository) ListParaCoberturaByFazendaID(ctx context.Context, faz
 		WHERE a.fazenda_id = $1
 		AND a.sexo = $2
 		AND `+sqlNoRebanho+`
+		`+SQLElegivelReproducao+`
 		AND EXISTS (
 			SELECT 1 FROM cios ci
 			WHERE ci.animal_id = a.id AND ci.fazenda_id = a.fazenda_id
@@ -245,6 +271,7 @@ func (r *AnimalRepository) ListParaToqueByFazendaID(ctx context.Context, fazenda
 		WHERE a.fazenda_id = $1
 		AND a.sexo = $2
 		AND `+sqlNoRebanho+`
+		`+SQLElegivelReproducao+`
 		AND EXISTS (
 			SELECT 1 FROM coberturas cb
 			WHERE cb.animal_id = a.id AND cb.fazenda_id = a.fazenda_id
@@ -266,6 +293,7 @@ func (r *AnimalRepository) ListParaPartoByFazendaID(ctx context.Context, fazenda
 		WHERE a.fazenda_id = $1
 		AND a.sexo = $2
 		AND `+sqlNoRebanho+`
+		`+SQLElegivelReproducao+`
 		AND EXISTS (
 			SELECT 1 FROM gestacoes g
 			WHERE g.animal_id = a.id AND g.fazenda_id = a.fazenda_id

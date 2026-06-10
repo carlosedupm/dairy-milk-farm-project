@@ -6,8 +6,6 @@ import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Cio } from "@/services/cios";
 import { get, update } from "@/services/cios";
-import { useAnimaisOperacionalList } from "@/components/gestao/useAnimaisMap";
-import type { Animal } from "@/services/animais";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
@@ -39,11 +37,10 @@ function initialFormState(cio: Cio): CioFormState {
 
 type CioEditFormProps = {
   cio: Cio;
-  animais: Animal[];
   fazendaId: number;
 };
 
-function CioEditForm({ cio, animais, fazendaId }: CioEditFormProps) {
+function CioEditForm({ cio, fazendaId }: CioEditFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState(() => initialFormState(cio));
@@ -110,7 +107,12 @@ function CioEditForm({ cio, animais, fazendaId }: CioEditFormProps) {
       isValidationError={isValidationError}
       fieldErrors={fieldErrors}
     >
-      <CioFormFields animais={animais} formState={formState} setFormState={setFormState} />
+      <CioFormFields
+        fazendaId={fazendaId}
+        formState={formState}
+        setFormState={setFormState}
+        preserveSelected
+      />
     </GestaoFormLayout>
   );
 }
@@ -125,8 +127,6 @@ function EditarContent() {
     queryFn: () => get(id),
     enabled: id > 0,
   });
-
-  const { data: animais = [] } = useAnimaisOperacionalList(fazendaAtiva?.id);
 
   if (!fazendaAtiva) {
     return (
@@ -170,7 +170,7 @@ function EditarContent() {
       fazendaId={fazendaAtiva.id}
       backHref="/gestao/cios"
     >
-      <CioEditForm key={cio.id} cio={cio} animais={animais} fazendaId={fazendaAtiva.id} />
+      <CioEditForm key={cio.id} cio={cio} fazendaId={fazendaAtiva.id} />
     </GestaoEditarBloqueadoGuard>
   );
 }
