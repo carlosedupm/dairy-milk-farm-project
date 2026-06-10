@@ -65,12 +65,15 @@ Configurado para **não acumular PRs** nem abrir majors arriscados automaticamen
 
 **Fluxo recomendado (dev solo, push direto na `main`):**
 
-1. PRs abertos **não deployam** — só merge na `main` dispara Render/Vercel.
-2. **Fechar** PRs de major breaking sem merge (não afeta produção).
-3. **Mergear** PRs de GitHub Actions e grupos patch/minor quando o CI do PR estiver verde.
-4. **Security updates** do Dependabot ainda podem abrir PRs fora dessas regras — priorizar merge se `npm audit`/`govulncheck` apontarem CVE.
+1. **Render:** PRs não deployam produção — só push/merge na `main` (com CI verde via `checksPass`).
+2. **Vercel:** cada push em branch conectada ao GitHub gera **Preview** por padrão — branches `dependabot/**` enchiam a fila. Bloqueio em `frontend/vercel.json` (`git.deploymentEnabled`: `dependabot/**` → `false`; `main` → `true`).
+3. **Fechar** PRs de major breaking sem merge (não afeta produção).
+4. **Mergear** PRs de GitHub Actions e grupos patch/minor quando o CI do PR estiver verde.
+5. **Security updates** do Dependabot ainda podem abrir PRs fora dessas regras — priorizar merge se `npm audit`/`govulncheck` apontarem CVE.
 
 Para pausar Dependabot temporariamente: `open-pull-requests-limit: 0` no ecossistema desejado.
+
+**Fila Vercel cheia (Dependabot):** no Dashboard → Deployments, cancelar builds `dependabot/*` em **Queued**/**Building**; o deploy de **Production** (`main`) segue na fila — após o `vercel.json` na `main`, novos pushes Dependabot não entram mais. Branches remotas órfãs (`dependabot/*`) podem ser apagadas no GitHub (Settings → branches ou `git push origin --delete <branch>`).
 
 ### Variáveis de Ambiente
 
@@ -176,6 +179,9 @@ O `Dockerfile` na **raiz do repositório** é usado pelo Render (`dockerfilePath
 2. **Root Directory**: `/frontend`
 3. **Build Command**: Automático (`npm run build`)
 4. **Output Directory**: `.next` (automático)
+5. **Preview Dependabot**: `frontend/vercel.json` — `dependabot/**` com `deploymentEnabled: false` (não consome fila nem quota de build); `github.silent: true` reduz checks/comentários do bot em PRs
+
+**Dev solo (opcional no Dashboard):** Settings → Git → desligar **Automatic Preview Deployments** se não usar previews de feature branches — só `main` em produção.
 
 ### Variáveis de Ambiente
 
@@ -485,7 +491,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 Runbook de operações (rollback, dirty migration, incidentes): **`docs/ops/runbook.md`**; checklist pré-deploy: **`docs/ops/security-checklist.md`**.
 
-**Última atualização**: 2026-06-10 (Dependabot: limite de PRs + ignore majors; ruleset `Protect main`; gate Render `checksPass`)
+**Última atualização**: 2026-06-10 (Vercel: bloqueio preview `dependabot/**`; Dependabot limits; ruleset `Protect main`; gate Render `checksPass`)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.
