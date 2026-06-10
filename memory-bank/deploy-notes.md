@@ -53,6 +53,25 @@ Quando fizer sentido (time maior, `main` sempre estável, fluxo branch → PR), 
 - Exigir status checks: `Docs - Validate BR references`, `Backend - Lint and Build`, `Frontend - Lint`, `Frontend - Build`, `Backend - Docker build (smoke test)` + `Analyze (go)` e `Analyze (javascript-typescript)` (CodeQL)
 - Bypass list com admin do repo para hotfixes de emergência
 
+### Dependabot (`.github/dependabot.yml`)
+
+Configurado para **não acumular PRs** nem abrir majors arriscados automaticamente (decisão 2026-06-10, após fechar PRs pendentes no GitHub).
+
+| Ecossistema | Limite de PRs abertos | O que recebe |
+|-------------|----------------------|--------------|
+| **gomod** (`/backend`) | 2 | Grupo `go-minor-patch` (minor + patch); **majors ignorados** |
+| **npm** (`/frontend`) | 2 | Grupo `npm-minor-patch`; **majors ignorados** (incl. `tailwindcss`, `tailwind-merge`, `lucide-react`, `eslint` ≥ 10) |
+| **github-actions** | 3 | Bumps de `actions/*` e CodeQL — costumam ser seguros |
+
+**Fluxo recomendado (dev solo, push direto na `main`):**
+
+1. PRs abertos **não deployam** — só merge na `main` dispara Render/Vercel.
+2. **Fechar** PRs de major breaking sem merge (não afeta produção).
+3. **Mergear** PRs de GitHub Actions e grupos patch/minor quando o CI do PR estiver verde.
+4. **Security updates** do Dependabot ainda podem abrir PRs fora dessas regras — priorizar merge se `npm audit`/`govulncheck` apontarem CVE.
+
+Para pausar Dependabot temporariamente: `open-pull-requests-limit: 0` no ecossistema desejado.
+
 ### Variáveis de Ambiente
 
 #### Injetadas pelo Render (não definir no Blueprint)
@@ -466,7 +485,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 Runbook de operações (rollback, dirty migration, incidentes): **`docs/ops/runbook.md`**; checklist pré-deploy: **`docs/ops/security-checklist.md`**.
 
-**Última atualização**: 2026-06-10 (ruleset mínimo `Protect main` ativo; PR/checks obrigatórios adiados; gate Render `checksPass`; `METRICS_TOKEN`/`TRUSTED_PROXIES`; link para `docs/ops/`)
+**Última atualização**: 2026-06-10 (Dependabot: limite de PRs + ignore majors; ruleset `Protect main`; gate Render `checksPass`)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.

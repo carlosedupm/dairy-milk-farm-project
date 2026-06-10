@@ -4,23 +4,43 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    # Poucos PRs abertos; majors de Go/stdlib tratados manualmente
+    open-pull-requests-limit: 2
     groups:
       go-minor-patch:
         update-types:
           - minor
           - patch
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
+    open-pull-requests-limit: 2
     groups:
       npm-minor-patch:
         update-types:
           - minor
           - patch
+    ignore:
+      # Majors adiados — revisão manual (Tailwind 4, lucide 1.x, ESLint 10, etc.)
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        versions: [">=10"]
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tailwind-merge"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "lucide-react"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    # Actions: bumps costumam ser seguros; limite evita avalanche de PRs
+    open-pull-requests-limit: 3
