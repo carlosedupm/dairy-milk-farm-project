@@ -23,6 +23,11 @@ import {
 } from "@/lib/gestao-date-limits";
 import type { Cobertura } from "@/services/coberturas";
 import { todayISODate } from "@/lib/date-limits";
+import {
+  SAUDE_CONFORMIDADE,
+  SAUDE_DATE_MESSAGES,
+  saudeMessageBeforeAnimalRef,
+} from "@/lib/saude-date-limits";
 import { parseLitrosValue } from "@/lib/litros-format";
 
 export type FieldErrors = Partial<Record<string, string>>;
@@ -449,10 +454,17 @@ export function validateRegistrarBaixa(input: {
   return valid();
 }
 
+export type SaudeFormValidationOptions = {
+  minDate?: string;
+  maxDate?: string;
+};
+
 export function validateAnimalSaudeForm(
-  formState: AnimalSaudeFormState
+  formState: AnimalSaudeFormState,
+  options?: SaudeFormValidationOptions
 ): FormValidationResult {
   const fields: FieldErrors = {};
+  let conformidadeCode: string | undefined;
   if (!formState.tipoCaso.trim()) {
     fields.tipoCaso = "Selecione o tipo de caso.";
   }
@@ -462,13 +474,33 @@ export function validateAnimalSaudeForm(
   if (!formState.status.trim()) {
     fields.status = "Selecione o status.";
   }
-  if (
-    formState.dataFim.trim() &&
-    formState.dataFim < formState.dataInicio
-  ) {
-    fields.dataFim = "A data de fim não pode ser anterior à data de início.";
+  if (formState.dataInicio.trim()) {
+    const maxDate = options?.maxDate ?? todayISODate();
+    if (isIsoDateAfterMax(formState.dataInicio, maxDate)) {
+      fields.dataInicio = SAUDE_DATE_MESSAGES.inicioFuture;
+      conformidadeCode = SAUDE_CONFORMIDADE.naoFuturo;
+    } else if (
+      options?.minDate &&
+      isIsoDateBeforeMin(formState.dataInicio, options.minDate)
+    ) {
+      fields.dataInicio = saudeMessageBeforeAnimalRef(options.minDate);
+      conformidadeCode = SAUDE_CONFORMIDADE.aposEntrada;
+    }
   }
-  if (Object.keys(fields).length > 0) return invalid(fields);
+  if (formState.dataFim.trim()) {
+    if (formState.dataFim < formState.dataInicio) {
+      fields.dataFim = "A data de fim não pode ser anterior à data de início.";
+    } else if (
+      options?.minDate &&
+      isIsoDateBeforeMin(formState.dataFim, options.minDate)
+    ) {
+      fields.dataFim = saudeMessageBeforeAnimalRef(options.minDate);
+      conformidadeCode = SAUDE_CONFORMIDADE.aposEntrada;
+    }
+  }
+  if (Object.keys(fields).length > 0) {
+    return invalid(fields, undefined, conformidadeCode);
+  }
   return valid();
 }
 

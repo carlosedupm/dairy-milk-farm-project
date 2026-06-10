@@ -56,7 +56,7 @@ function NovoContent() {
     );
   }
 
-  return <AnimalSaudeForm animalId={animalId} mode="create" />;
+  return <AnimalSaudeForm animalId={animalId} animal={animal} mode="create" />;
 }
 
 export default function NovoSaudePage() {

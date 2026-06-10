@@ -208,6 +208,9 @@ func TestRequestAllowedForLimitedAPI_FuncionarioAnimaisSaude(t *testing.T) {
 	if requestAllowedForLimitedAPI(models.PerfilFuncionario, http.MethodPut, "/api/v1/animais/1/saude/42") {
 		t.Error("FUNCIONARIO PUT /api/v1/animais/1/saude/42 should be denied")
 	}
+	if requestAllowedForLimitedAPI(models.PerfilFuncionario, http.MethodDelete, "/api/v1/animais/1/saude/42") {
+		t.Error("FUNCIONARIO DELETE /api/v1/animais/1/saude/42 should be denied")
+	}
 }
 
 func TestRequestAllowedForLimitedAPI_FuncionarioCrias(t *testing.T) {

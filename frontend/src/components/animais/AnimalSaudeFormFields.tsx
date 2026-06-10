@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { todayISODate } from "@/lib/date-limits";
+import { GestaoDateMinHint } from "@/components/gestao/GestaoDateMinHint";
 import { cn } from "@/lib/utils";
 import {
   STATUS_CASO_SAUDE,
@@ -54,9 +55,16 @@ export function animalSaudeFormSubmitDisabled(state: AnimalSaudeFormState): bool
 type Props = {
   formState: AnimalSaudeFormState;
   setFormState: Dispatch<SetStateAction<AnimalSaudeFormState>>;
+  minDate?: string;
 };
 
-export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
+function effectiveMinDateForFim(dataInicio: string, animalMinDate?: string): string | undefined {
+  const candidates = [dataInicio.trim(), animalMinDate].filter(Boolean) as string[];
+  if (candidates.length === 0) return undefined;
+  return candidates.sort().pop();
+}
+
+export function AnimalSaudeFormFields({ formState, setFormState, minDate }: Props) {
   const tipoCasoError = useFormFieldError("tipoCaso");
   const dataInicioError = useFormFieldError("dataInicio");
   const dataFimError = useFormFieldError("dataFim");
@@ -94,8 +102,13 @@ export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
         <DatePicker
           value={formState.dataInicio || undefined}
           onChange={(v) => setFormState((s) => ({ ...s, dataInicio: v }))}
+          minDate={minDate}
           maxDate={todayISODate()}
           placeholder="Selecione a data"
+        />
+        <GestaoDateMinHint
+          minDate={minDate}
+          prefix="Data mínima (entrada ou nascimento):"
         />
         <FormFieldError message={dataInicioError} />
       </div>
@@ -104,8 +117,7 @@ export function AnimalSaudeFormFields({ formState, setFormState }: Props) {
         <DatePicker
           value={formState.dataFim || undefined}
           onChange={(v) => setFormState((s) => ({ ...s, dataFim: v }))}
-          minDate={formState.dataInicio || undefined}
-          maxDate={todayISODate()}
+          minDate={effectiveMinDateForFim(formState.dataInicio, minDate)}
           placeholder="Sem data de fim"
         />
         <FormFieldError message={dataFimError} />

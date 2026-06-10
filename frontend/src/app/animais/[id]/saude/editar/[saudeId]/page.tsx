@@ -105,6 +105,7 @@ function EditarContent() {
     <AnimalSaudeForm
       key={registro.id}
       animalId={animalId}
+      animal={animal}
       mode="edit"
       initial={registro}
       saudeId={saudeId}

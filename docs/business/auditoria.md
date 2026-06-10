@@ -112,8 +112,8 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 
 | Código | Regra | Bloqueio na escrita |
 |--------|--------|---------------------|
-| TMP-001 | Data/hora não futura | Todos os eventos de ciclo, cadastro animal, baixa |
-| TMP-002 | Evento ≥ entrada/nascimento | Eventos de ciclo; nascimento ≤ entrada no cadastro |
+| TMP-001 | Data/hora não futura | Eventos de ciclo, `animal_saude.data_inicio`, cadastro animal, baixa; vacinas (`data_aplicacao`). **Exceção**: `animal_saude.data_fim` pode ser futura (BR-SAUDE-012 / BRF-002) |
+| TMP-002 | Evento ≥ entrada/nascimento | Eventos de ciclo; `animal_saude.data_inicio` e `data_fim`; nascimento ≤ entrada no cadastro |
 | TMP-003 | Cobertura ≥ cio; toque ≥ cobertura | `CoberturaService`, `DiagnosticoGestacaoService` |
 | TMP-004 | Parto ≥ confirmação gestação | `PartoService` |
 | TMP-005 | Secagem ≥ início lactação ativa | `SecagemService` |
@@ -124,4 +124,4 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 
 ---
 
-**Última atualização**: 2026-05-25 (BR-AUDIT-010 — INT-001 a INT-007 + TMP-001 a TMP-006)
+**Última atualização**: 2026-06-09 (TMP-001/002 — escopo saúde + exceção `data_fim`; BR-SAUDE-012 / BRF-002)

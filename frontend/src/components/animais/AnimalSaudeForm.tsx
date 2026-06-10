@@ -27,11 +27,15 @@ import {
   getApiErrorMessage,
 } from "@/lib/errors";
 import { validateAnimalSaudeForm, type FieldErrors } from "@/lib/form-validation";
+import { todayISODate } from "@/lib/date-limits";
+import { minDateFromAnimal } from "@/lib/saude-date-limits";
+import type { Animal } from "@/services/animais";
 import { toast } from "@/hooks/use-toast";
 import { animalFichaSaudeTabHref } from "@/components/animais/ficha/animalFichaTabs";
 
 type Props = {
   animalId: number;
+  animal: Pick<Animal, "data_entrada" | "data_nascimento">;
   mode: "create" | "edit";
   initial?: AnimalSaudeRegistro;
   saudeId?: number;
@@ -47,7 +51,7 @@ function stateFromRegistro(row: AnimalSaudeRegistro): AnimalSaudeFormState {
   };
 }
 
-export function AnimalSaudeForm({ animalId, mode, initial, saudeId }: Props) {
+export function AnimalSaudeForm({ animalId, animal, mode, initial, saudeId }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -62,6 +66,7 @@ export function AnimalSaudeForm({ animalId, mode, initial, saudeId }: Props) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const listHref = animalFichaSaudeTabHref(animalId);
+  const animalMinDate = minDateFromAnimal(animal);
   const canSubmit =
     mode === "create" ? canCriarRegistroSaude(perfil) : canEditarRegistroSaude(perfil);
 
@@ -119,10 +124,14 @@ export function AnimalSaudeForm({ animalId, mode, initial, saudeId }: Props) {
   const handleSubmit = () => {
     setFormError("");
     setConformidadeCode(undefined);
-    const validation = validateAnimalSaudeForm(formState);
+    const validation = validateAnimalSaudeForm(formState, {
+      minDate: animalMinDate,
+      maxDate: todayISODate(),
+    });
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setFormError(validation.summary ?? "Corrija os campos assinalados.");
+      setConformidadeCode(validation.conformidadeCode);
       setIsValidationError(true);
       return;
     }
@@ -150,7 +159,11 @@ export function AnimalSaudeForm({ animalId, mode, initial, saudeId }: Props) {
         O status de saúde do animal na ficha é recalculado automaticamente com
         base nos casos ativos após guardar.
       </p>
-      <AnimalSaudeFormFields formState={formState} setFormState={setFormState} />
+      <AnimalSaudeFormFields
+        formState={formState}
+        setFormState={setFormState}
+        minDate={animalMinDate}
+      />
     </GestaoFormLayout>
   );
 }

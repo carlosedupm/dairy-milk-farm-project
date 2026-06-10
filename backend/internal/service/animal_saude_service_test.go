@@ -165,6 +165,12 @@ func animalAtivoNoRebanho(id, fazendaID int64) *models.Animal {
 	return &models.Animal{ID: id, FazendaID: fazendaID, Identificacao: "V-001"}
 }
 
+func animalAtivoComEntrada(id, fazendaID int64, entrada time.Time) *models.Animal {
+	a := animalAtivoNoRebanho(id, fazendaID)
+	a.DataEntrada = &entrada
+	return a
+}
+
 func animalBaixado(id, fazendaID int64) *models.Animal {
 	saida := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	return &models.Animal{ID: id, FazendaID: fazendaID, Identificacao: "V-BAIXA", DataSaida: &saida}
@@ -247,6 +253,145 @@ func TestAnimalSaude_Create_DataFimAnteriorInicio(t *testing.T) {
 	_, err := svc.Create(ctx, animalID, in)
 	if !errors.Is(err, ErrAnimalSaudeDataFimInvalida) {
 		t.Fatalf("expected ErrAnimalSaudeDataFimInvalida, got %v", err)
+	}
+}
+
+func TestAnimalSaude_Create_InicioHoje_SemFim(t *testing.T) {
+	ctx := context.Background()
+	const animalID int64 = 10
+	svc := newAnimalSaudeServiceForTest(
+		newFakeAnimalSaudeRepo(),
+		newFakeAnimalRepoForSaude(map[int64]*models.Animal{
+			animalID: animalAtivoNoRebanho(animalID, 1),
+		}),
+	)
+	in := validSaudeInput()
+	in.TipoCaso = models.AnimalSaudeTipoTratamento
+	in.DataInicio = CivilToday()
+	in.Status = models.AnimalSaudeStatusAtivo
+
+	row, err := svc.Create(ctx, animalID, in)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if row.DataFim != nil {
+		t.Fatal("expected no data_fim")
+	}
+}
+
+func TestAnimalSaude_Create_DataFimFutura(t *testing.T) {
+	ctx := context.Background()
+	const animalID int64 = 10
+	svc := newAnimalSaudeServiceForTest(
+		newFakeAnimalSaudeRepo(),
+		newFakeAnimalRepoForSaude(map[int64]*models.Animal{
+			animalID: animalAtivoNoRebanho(animalID, 1),
+		}),
+	)
+	hoje := CivilToday()
+	fim := hoje.AddDate(0, 0, 7)
+	in := validSaudeInput()
+	in.TipoCaso = models.AnimalSaudeTipoTratamento
+	in.DataInicio = hoje
+	in.DataFim = &fim
+	in.Status = models.AnimalSaudeStatusAtivo
+
+	row, err := svc.Create(ctx, animalID, in)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if row.DataFim == nil || !row.DataFim.Equal(fim) {
+		t.Fatalf("expected data_fim %v, got %v", fim, row.DataFim)
+	}
+}
+
+func TestAnimalSaude_Create_InicioFutura_TMP001(t *testing.T) {
+	ctx := context.Background()
+	const animalID int64 = 10
+	svc := newAnimalSaudeServiceForTest(
+		newFakeAnimalSaudeRepo(),
+		newFakeAnimalRepoForSaude(map[int64]*models.Animal{
+			animalID: animalAtivoNoRebanho(animalID, 1),
+		}),
+	)
+	futura := CivilToday().AddDate(0, 0, 2)
+	in := validSaudeInput()
+	in.DataInicio = futura
+
+	_, err := svc.Create(ctx, animalID, in)
+	ie, ok := AsIntegridadeCiclo(err)
+	if !ok || ie.IntCodigo != "TMP-001" {
+		t.Fatalf("expected TMP-001, got %v", err)
+	}
+}
+
+func TestAnimalSaude_Create_InicioAntesEntrada_TMP002(t *testing.T) {
+	ctx := context.Background()
+	const animalID int64 = 10
+	entrada := CivilToday().AddDate(0, 0, -10)
+	svc := newAnimalSaudeServiceForTest(
+		newFakeAnimalSaudeRepo(),
+		newFakeAnimalRepoForSaude(map[int64]*models.Animal{
+			animalID: animalAtivoComEntrada(animalID, 1, entrada),
+		}),
+	)
+	antes := entrada.AddDate(0, 0, -5)
+	in := validSaudeInput()
+	in.DataInicio = antes
+
+	_, err := svc.Create(ctx, animalID, in)
+	ie, ok := AsIntegridadeCiclo(err)
+	if !ok || ie.IntCodigo != "TMP-002" {
+		t.Fatalf("expected TMP-002, got %v", err)
+	}
+}
+
+func TestValidateAnimalSaudeTemporal_DataFimAntesEntrada_TMP002(t *testing.T) {
+	entrada := CivilToday().AddDate(0, 0, -5)
+	animal := animalAtivoComEntrada(10, 1, entrada)
+	inicio := CivilToday()
+	fimAntesEntrada := entrada.AddDate(0, 0, -2)
+	err := validateAnimalSaudeTemporal(animal, SaveAnimalSaudeInput{
+		TipoCaso:   models.AnimalSaudeTipoTratamento,
+		DataInicio: inicio,
+		DataFim:    &fimAntesEntrada,
+		Status:     models.AnimalSaudeStatusAtivo,
+	})
+	ie, ok := AsIntegridadeCiclo(err)
+	if !ok || ie.IntCodigo != "TMP-002" {
+		t.Fatalf("expected TMP-002, got %v", err)
+	}
+}
+
+func TestAnimalSaude_Update_SkipTemporalQuandoVacinaID(t *testing.T) {
+	ctx := context.Background()
+	const animalID int64 = 10
+	entrada := CivilToday().AddDate(0, 0, -5)
+	vacinaID := int64(99)
+	saudeFake := newFakeAnimalSaudeRepo()
+	saudeFake.casos = []*models.AnimalSaude{{
+		ID:         1,
+		AnimalID:   animalID,
+		TipoCaso:   models.AnimalSaudeTipoPreventivo,
+		DataInicio: CivilToday(),
+		Status:     models.AnimalSaudeStatusConcluido,
+		VacinaID:   &vacinaID,
+	}}
+	svc := newAnimalSaudeServiceForTest(
+		saudeFake,
+		newFakeAnimalRepoForSaude(map[int64]*models.Animal{
+			animalID: animalAtivoComEntrada(animalID, 1, entrada),
+		}),
+	)
+	// data_inicio futura seria TMP-001, mas skip porque vacina_id preenchido
+	futura := CivilToday().AddDate(0, 0, 3)
+	in := SaveAnimalSaudeInput{
+		TipoCaso:   models.AnimalSaudeTipoPreventivo,
+		DataInicio: futura,
+		Status:     models.AnimalSaudeStatusConcluido,
+	}
+	if _, err := svc.Update(ctx, animalID, 1, in); err != nil {
+		t.Fatalf("Update with vacina_id should skip temporal validation: %v", err)
 	}
 }
 

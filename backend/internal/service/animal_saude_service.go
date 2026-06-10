@@ -79,10 +79,14 @@ func (s *AnimalSaudeService) GetByID(ctx context.Context, animalID, saudeID int6
 }
 
 func (s *AnimalSaudeService) Create(ctx context.Context, animalID int64, in SaveAnimalSaudeInput) (*models.AnimalSaude, error) {
-	if _, err := s.ensureAnimalAtivo(ctx, animalID); err != nil {
+	animal, err := s.ensureAnimalAtivo(ctx, animalID)
+	if err != nil {
 		return nil, err
 	}
 	if err := validateAnimalSaudeInput(in); err != nil {
+		return nil, err
+	}
+	if err := validateAnimalSaudeTemporal(animal, in); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +110,8 @@ func (s *AnimalSaudeService) Create(ctx context.Context, animalID int64, in Save
 }
 
 func (s *AnimalSaudeService) Update(ctx context.Context, animalID, saudeID int64, in SaveAnimalSaudeInput) (*models.AnimalSaude, error) {
-	if _, err := s.ensureAnimalAtivo(ctx, animalID); err != nil {
+	animal, err := s.ensureAnimalAtivo(ctx, animalID)
+	if err != nil {
 		return nil, err
 	}
 	if err := validateAnimalSaudeInput(in); err != nil {
@@ -119,6 +124,12 @@ func (s *AnimalSaudeService) Update(ctx context.Context, animalID, saudeID int64
 			return nil, ErrAnimalSaudeNotFound
 		}
 		return nil, err
+	}
+
+	if existing.VacinaID == nil {
+		if err := validateAnimalSaudeTemporal(animal, in); err != nil {
+			return nil, err
+		}
 	}
 
 	existing.TipoCaso = in.TipoCaso
@@ -212,6 +223,25 @@ func (s *AnimalSaudeService) syncAnimalStatusSaude(ctx context.Context, animalID
 	}
 	nextStatus := deriveAnimalStatusSaudeFromCasosAtivos(ativos)
 	return s.animalRepo.UpdateStatusSaude(ctx, animalID, &nextStatus)
+}
+
+// validateAnimalSaudeTemporal aplica TMP-001 em data_inicio e TMP-002 em ambas as datas (BR-SAUDE-012).
+// data_fim pode ser futura — exceção a TMP-001 documentada em BR-CICLO-012.
+func validateAnimalSaudeTemporal(animal *models.Animal, in SaveAnimalSaudeInput) error {
+	dataInicio := normalizeAnimalSaudeDate(in.DataInicio)
+	if err := ValidateDataNaoFutura(dataInicio); err != nil {
+		return err
+	}
+	if err := ValidateEventoAposReferenciaAnimal(animal, dataInicio); err != nil {
+		return err
+	}
+	if in.DataFim != nil {
+		dataFim := normalizeAnimalSaudeDate(*in.DataFim)
+		if err := ValidateEventoAposReferenciaAnimal(animal, dataFim); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func validateAnimalSaudeInput(in SaveAnimalSaudeInput) error {

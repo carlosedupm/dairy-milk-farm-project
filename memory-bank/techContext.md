@@ -148,7 +148,7 @@ O projeto inclui um **Dev Container** (`.devcontainer/`) alinhado à stack Go + 
 ### Comandos no container
 
 - **Backend**: `cd backend && go run ./cmd/api` (porta 8080).
-- **Frontend**: `cd frontend && npm run dev` ou `npm run dev --prefix frontend` (porta 3000).
+- **Frontend**: `cd frontend && npm run dev` ou `npm run dev --prefix frontend` (porta 3000); testes unitários lib: `npm run test:unit` (vitest).
 - **Post-create** (automático): `apt-get install postgresql-client`, `go mod download -C backend` e `npm install --prefix frontend`.
 
 ### Variáveis de ambiente (ceialmilk-dev)
@@ -288,5 +288,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-06-08 (validação cronológica ciclo UI)
+**Última atualização**: 2026-06-09 (vitest + BRF-002 validação temporal saúde)
 **Stack**: Go + Next.js 16 — Fase 2 concluída; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)

@@ -144,8 +144,6 @@ UpdateStatusSaude → animais.status_saude
 
 | Item | Estado | Notas |
 |------|--------|-------|
-| Vacinas / calendário preventivo | implementado | BR-SAUDE-007 a 011 (BRF-001) |
-| Validação temporal BR-CICLO-012 em datas de caso | planejado | Datas de caso não validadas contra «hoje» ou entrada do animal |
 | Bloqueio de edição manual de `status_saude` com casos ATIVOS | planejado | Gap opcional; hoje cadastro manual pode divergir até próximo CRUD de caso |
 
 ---
@@ -229,5 +227,16 @@ UpdateStatusSaude → animais.status_saude
   - Auto-resolve do alerta ao registrar nova dose aplicada (`afterAplicacao` — BR-ALERTA-010 estendido).
 - **Estado**: implementado.
 
+### BR-SAUDE-012 — Validação temporal de datas do caso clínico
+
+- **Enunciado**: Ao criar ou editar caso em `animal_saude`, `data_inicio` não pode ser futura (**TMP-001**, BR-CICLO-012) nem anterior à `data_entrada`/`data_nascimento` do animal (**TMP-002**, BR-CICLO-013). Quando informada, `data_fim` deve ser ≥ `data_inicio` (BR-SAUDE-002) e ≥ referências do animal (**TMP-002**), mas **pode ser futura** (alta prevista — exceção a TMP-001 documentada em BR-CICLO-012).
+- **Escopo**: `POST|PUT /api/v1/animais/:id/saude`; `POST /api/v1/integracoes/saude`; assistente `registrar_saude`. **Fora do escopo**: casos criados via fluxo de vacina (BR-SAUDE-010) — datas já validadas em `animal_vacina_service`; Update de caso com `vacina_id` preenchido não revalida temporalmente.
+- **Perfis / permissões**: qualquer perfil com escrita permitida (BR-ACESSO-017); validação no servidor.
+- **Efeito**: bloqueio 400 com `details.conformidade` = `TMP-001` ou `TMP-002`.
+- **Implementação**:
+  - Backend: `validateAnimalSaudeTemporal` em `backend/internal/service/animal_saude_service.go`; reutiliza `ValidateDataNaoFutura` / `ValidateEventoAposReferenciaAnimal` (`ciclo_integridade_temporal.go`); testes em `animal_saude_service_test.go`.
+  - Frontend: `frontend/src/lib/saude-date-limits.ts`; `AnimalSaudeFormFields` (`minDate` animal, `maxDate` só em início); `validateAnimalSaudeForm` com TMP-*; testes `form-validation.saude.test.ts` (vitest).
+- **Estado**: implementado (briefing **BRF-002**, G3 2026-06-09).
+
 ---
-**Última atualização**: 2026-06-09 (BR-SAUDE-007 a 011 — vacinas / calendário preventivo)
+**Última atualização**: 2026-06-09 (BR-SAUDE-012 implementado — BRF-002 G3)

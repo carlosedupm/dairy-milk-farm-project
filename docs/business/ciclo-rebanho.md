@@ -169,8 +169,8 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ### BR-CICLO-012 — Eventos do ciclo não podem ser futuros
 
-- **Enunciado**: Ao registar ou alterar marcos do ciclo (cio, cobertura, toque, parto, secagem, início de lactação, produção, restrição de leite) e ao cadastrar **baixa** ou datas de **nascimento/entrada** do animal, a data (ou data/hora) do evento **não pode ser posterior a hoje** (data civil local no servidor; data/hora ≤ agora para campos com hora).
-- **Escopo**: Escritas de ciclo e cadastro animal; integrações M2M passam pelos mesmos services.
+- **Enunciado**: Ao registar ou alterar marcos do ciclo (cio, cobertura, toque, parto, secagem, início de lactação, produção, restrição de leite), **`animal_saude.data_inicio`** e ao cadastrar **baixa** ou datas de **nascimento/entrada** do animal, a data (ou data/hora) do evento **não pode ser posterior a hoje** (data civil local no servidor; data/hora ≤ agora para campos com hora). **Exceção (BR-SAUDE-012)**: `animal_saude.data_fim` **pode ser futura** (alta prevista) — TMP-001 **não** se aplica a `data_fim`.
+- **Escopo**: Escritas de ciclo, casos clínicos (`data_inicio`) e cadastro animal; integrações M2M passam pelos mesmos services.
 - **Perfis**: conforme módulo.
 - **Efeito**: bloqueio no servidor (400) com código **TMP-001** em `details.conformidade`; UI limita pickers com `maxDate` / `max` agora (`frontend/src/lib/date-limits.ts`).
 - **Implementação**: `backend/internal/service/ciclo_integridade_temporal.go` (`ValidateDataNaoFutura`, `ValidateDateTimeNaoFuturo`); formulários em gestão, produção, baixa, animal, restrições.
@@ -178,8 +178,8 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ### BR-CICLO-013 — Evento não anterior à entrada ou nascimento
 
-- **Enunciado**: A data do evento deve ser **≥ `data_entrada`** quando preenchida e **≥ `data_nascimento`** quando preenchida. No cadastro do animal, `data_nascimento` e `data_entrada` não podem ser futuras; se ambas existirem, `data_nascimento` ≤ `data_entrada`.
-- **Escopo**: Por animal; todas as escritas de ciclo listadas em BR-CICLO-012; baixa exige `data_saida` ≥ `data_entrada` (já em BR-BAIXA-001).
+- **Enunciado**: A data do evento deve ser **≥ `data_entrada`** quando preenchida e **≥ `data_nascimento`** quando preenchida. No cadastro do animal, `data_nascimento` e `data_entrada` não podem ser futuras; se ambas existirem, `data_nascimento` ≤ `data_entrada`. Inclui **`animal_saude.data_inicio`** e **`animal_saude.data_fim`** (quando preenchida) — ver [saude-animal.md](./saude-animal.md) **BR-SAUDE-012**.
+- **Escopo**: Por animal; todas as escritas de ciclo listadas em BR-CICLO-012; casos clínicos; baixa exige `data_saida` ≥ `data_entrada` (já em BR-BAIXA-001).
 - **Efeito**: bloqueio no servidor com **TMP-002**.
 - **Implementação**: `ValidateEventoAposReferenciaAnimal`, `ValidateAnimalDatasCadastro`; `AnimalBaixaService.ValidateBaixaRequest`.
 - **Estado**: **implementado**.
@@ -216,22 +216,21 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 | Parto + lactação | Implementado | |
 | Produção | Implementado | Lactação ativa obrigatória (BR-CICLO-007); `lactacao_id` automático (BR-PRODUCAO-006); FUNCIONARIO POST |
 | Restrição leite | Implementado | [leite-restricoes.md](./leite-restricoes.md) |
-| Saúde (casos clínicos) | Implementado | CRUD, sync `status_saude`, timeline, RBAC — [saude-animal.md](./saude-animal.md); vacinas = backlog |
+| Saúde (casos clínicos) | Implementado | CRUD, sync, timeline, RBAC, vacinas (BRF-001), validação temporal (BR-SAUDE-012 / BRF-002) |
 | Alertas proativos | Implementado | Geração diária, dedup, auto-resolve, Web Push, UI `/alertas` — [alertas.md](./alertas.md) |
 | Dashboard pecuário | Implementado | `DashboardKpiGrid` + painéis colapsáveis (BR-CICLO-009, BR-GESTACOES-005) |
 | Ficha animal (tabs + sidebar) | Implementado | BR-ANIMAIS-008 |
 | Ficha animal (timeline) | Implementado | BR-CICLO-008; tab Histórico; paginação `GET .../timeline` |
 | Ficha animal (próximas ações CTA) | Implementado | BR-ANIMAIS-007; tabs Visão Geral e Ciclo; máx. 4; sticky mobile |
 | Saída do rebanho (baixa) | Implementado | [baixa-rebanho.md](./baixa-rebanho.md) BR-CICLO-011; rótulos Gestão BR-BAIXA-009 |
-| Validação temporal (escrita) | Implementado | BR-CICLO-012–014; TMP-001–006; ver [auditoria.md](./auditoria.md) BR-AUDIT-010 |
+| Validação temporal (escrita) | Implementado | Ciclo, vacinas e casos `animal_saude` (BR-SAUDE-012) |
 
 ---
 
 ## Backlog de requisitos (próximos)
 
-1. Vacinas / calendário preventivo (saúde — [saude-animal.md](./saude-animal.md) backlog)
-2. Validação temporal BR-CICLO-012 em datas de casos de saúde
+1. Bloqueio edição manual `status_saude` com casos ATIVOS — [saude-animal.md](./saude-animal.md) backlog (opcional)
 
 ---
 
-**Última atualização**: 2026-06-08 (tour guiado na ficha do animal — BR-CICLO-008)
+**Última atualização**: 2026-06-09 (BR-SAUDE-012 implementado — BRF-002 G3)
