@@ -172,6 +172,15 @@ func main() {
 					animalSvc := service.NewAnimalService(animalRepo, fazendaRepo, gestacaoRepo, animalSaudeRepo)
 					animalVacinaRepo := repository.NewAnimalVacinaRepository(pool)
 					animalVacinaSvc := service.NewAnimalVacinaService(animalVacinaRepo, animalRepo, animalSaudeRepo)
+					animalHormonioRepo := repository.NewAnimalHormonioLactacaoRepository(pool)
+					animalHormonioSvc := service.NewAnimalHormonioLactacaoService(
+						animalHormonioRepo,
+						animalRepo,
+						lactacaoRepo,
+						gestacaoRepo,
+						diagnosticoGestacaoRepo,
+						animalSaudeRepo,
+					)
 					reclassificacaoCategoriaSvc := service.NewReclassificacaoCategoriaService(animalRepo)
 					producaoSvc := service.NewProducaoService(producaoRepo, animalRepo, lactacaoRepo)
 					lactacaoSvc := service.NewLactacaoService(lactacaoRepo, animalRepo, fazendaRepo)
@@ -250,9 +259,11 @@ func main() {
 					animalHandler := handlers.NewAnimalHandler(animalSvc, animalBaixaSvc, fazendaSvc, producaoSvc, reclassificacaoCategoriaSvc, restricaoLeiteSvc, gestacaoSvc, animalCicloSvc, animalSaudeSvc, userRepo)
 					animalSaudeHandler := handlers.NewAnimalSaudeHandler(animalSaudeSvc, animalSvc, fazendaSvc)
 					animalVacinaHandler := handlers.NewAnimalVacinaHandler(animalVacinaSvc, animalSvc, fazendaSvc)
+					animalHormonioHandler := handlers.NewAnimalHormonioLactacaoHandler(animalHormonioSvc, animalSvc, fazendaSvc)
 					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
 					partoSvc := service.NewPartoService(pool, partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo, criaSvc)
 					secagemSvc := service.NewSecagemService(pool, secagemRepo, lactacaoRepo, animalRepo, fazendaRepo)
+					secagemSvc.SetHormonioLactacaoRepo(animalHormonioRepo)
 					if alertaGeracaoSvc != nil {
 						secagemSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
 					}
@@ -390,6 +401,7 @@ func main() {
 						v1.GET("/:id/folgas/alteracoes", folgasHandler.GetAlteracoes)
 						v1.GET("/:id/folgas/alertas", folgasHandler.GetAlertas)
 						v1.GET("/:id/folgas/resumo-equidade", folgasHandler.GetResumoEquidade)
+						v1.GET("/:id/hormonios-lactacao/pendentes", animalHormonioHandler.ListPendentes)
 					}
 
 					// Rotas de Animais
@@ -417,6 +429,13 @@ func main() {
 						animais.PUT("/:id/vacinas/:vacinaId", animalVacinaHandler.Update)
 						animais.PATCH("/:id/vacinas/:vacinaId/aplicar", animalVacinaHandler.Aplicar)
 						animais.DELETE("/:id/vacinas/:vacinaId", animalVacinaHandler.Delete)
+						animais.GET("/:id/hormonios-lactacao", animalHormonioHandler.List)
+						animais.GET("/:id/hormonios-lactacao/protocolo", animalHormonioHandler.GetProtocolo)
+						animais.PATCH("/:id/hormonios-lactacao/protocolo/encerrar", animalHormonioHandler.EncerrarProtocolo)
+						animais.GET("/:id/hormonios-lactacao/:aplicacaoId", animalHormonioHandler.GetByID)
+						animais.POST("/:id/hormonios-lactacao", animalHormonioHandler.Create)
+						animais.PUT("/:id/hormonios-lactacao/:aplicacaoId", animalHormonioHandler.Update)
+						animais.DELETE("/:id/hormonios-lactacao/:aplicacaoId", animalHormonioHandler.Delete)
 						animais.POST("/:id/baixa/reverter", animalHandler.ReverterBaixa)
 						animais.POST("/:id/baixa", animalHandler.RegistrarBaixa)
 						animais.GET("/:id", animalHandler.GetByID)

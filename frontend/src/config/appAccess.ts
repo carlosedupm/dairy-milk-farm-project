@@ -100,6 +100,7 @@ const FUNCIONARIO_GESTAO_PATHS = [
   "/gestao/toques",
   "/gestao/partos",
   "/gestao/secagens",
+  "/gestao/hormonios-lactacao",
 ] as const;
 
 function isFuncionarioAllowedPath(path: string): boolean {
@@ -110,6 +111,8 @@ function isFuncionarioAllowedPath(path: string): boolean {
   if (/^\/animais\/\d+\/saude$/.test(path)) return true;
   if (/^\/animais\/\d+\/saude\/novo$/.test(path)) return true;
   if (/^\/animais\/\d+\/producao$/.test(path)) return true;
+  if (/^\/animais\/\d+\/hormonios-lactacao(\/novo|\/\d+\/editar)?$/.test(path))
+    return true;
   if (path === "/producao/novo") return true;
   if (path === "/folgas" || path.startsWith("/folgas/")) return true;
   if (path === "/alertas" || path.startsWith("/alertas/")) return true;
@@ -236,6 +239,27 @@ export function canEditarVacina(perfil: string | undefined): boolean {
 /** DELETE /api/v1/animais/:id/vacinas/:vacinaId — mesma matriz que editar. */
 export function canExcluirVacina(perfil: string | undefined): boolean {
   return canEditarVacina(perfil);
+}
+
+/** POST hormônios lactação — FUNCIONARIO+ (BR-ACESSO-025). */
+export function canCriarHormonioLactacao(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER") return false;
+  return true;
+}
+
+/** PUT/DELETE aplicações — GERENTE+ (BR-ACESSO-025). */
+export function canEditarHormonioLactacao(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER" || perfil === "FUNCIONARIO") return false;
+  return true;
+}
+
+export function canExcluirHormonioLactacao(perfil: string | undefined): boolean {
+  return canEditarHormonioLactacao(perfil);
+}
+
+/** PATCH encerrar protocolo — GERENTE+ (BR-ACESSO-025). */
+export function canEncerrarProtocoloHormonio(perfil: string | undefined): boolean {
+  return canEditarHormonioLactacao(perfil);
 }
 
 /** POST /api/v1/fazendas/:id/alertas — GERENTE, GESTAO, PROPRIETARIO, ADMIN, DEVELOPER. */

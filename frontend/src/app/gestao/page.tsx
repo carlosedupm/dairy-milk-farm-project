@@ -8,7 +8,15 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { GestaoOrientacaoPanel } from "@/components/gestao/GestaoOrientacaoPanel";
 import { GestaoPendenciasCicloPanel } from "@/components/gestao/GestaoPendenciasCicloPanel";
-import { Layers, Heart, Stethoscope, Baby, Droplet, Milk } from "lucide-react";
+import {
+  Layers,
+  Heart,
+  Stethoscope,
+  Baby,
+  Droplet,
+  Milk,
+  Syringe,
+} from "lucide-react";
 
 const links = [
   { href: "/lotes", label: "Lotes", icon: Layers },
@@ -19,6 +27,11 @@ const links = [
   { href: "/gestao/partos", label: "Partos", icon: Baby },
   { href: "/gestao/secagens", label: "Secagens", icon: Droplet },
   { href: "/gestao/lactacoes", label: "Lactações", icon: Milk },
+  {
+    href: "/gestao/hormonios-lactacao/pendentes",
+    label: "Hormônios pendentes",
+    icon: Syringe,
+  },
 ];
 
 function GestaoContent() {
@@ -42,6 +55,7 @@ function GestaoContent() {
             "/gestao/toques",
             "/gestao/partos",
             "/gestao/secagens",
+            "/gestao/hormonios-lactacao/pendentes",
           ].includes(href)
         )
       : links;

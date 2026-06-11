@@ -10,6 +10,7 @@ import { AnimalFichaTabHistorico } from "@/components/animais/ficha/AnimalFichaT
 import { AnimalFichaTabProducao } from "@/components/animais/ficha/AnimalFichaTabProducao";
 import { AnimalFichaTabSaude } from "@/components/animais/ficha/AnimalFichaTabSaude";
 import { AnimalFichaTabVacinas } from "@/components/animais/ficha/AnimalFichaTabVacinas";
+import { AnimalFichaTabHormonioLactacao } from "@/components/animais/ficha/AnimalFichaTabHormonioLactacao";
 import { AnimalFichaTabVisaoGeral } from "@/components/animais/ficha/AnimalFichaTabVisaoGeral";
 import { animalProximasAcoesPageSpacerClass } from "@/components/animais/AnimalProximasAcoesCta";
 import {
@@ -111,6 +112,9 @@ export function AnimalFichaTabs({
           <TabsTrigger value="vacinas" className="min-h-11">
             {ANIMAL_FICHA_TAB_LABELS.vacinas}
           </TabsTrigger>
+          <TabsTrigger value="hormonio-lactacao" className="min-h-11">
+            {ANIMAL_FICHA_TAB_LABELS["hormonio-lactacao"]}
+          </TabsTrigger>
           <TabsTrigger value="producao" className="min-h-11">
             {ANIMAL_FICHA_TAB_LABELS.producao}
           </TabsTrigger>
@@ -163,6 +167,15 @@ export function AnimalFichaTabs({
           animalId={id}
           foraDoRebanho={foraDoRebanho}
           enabled={activeTab === "vacinas"}
+        />
+      </TabsContent>
+
+      <TabsContent value="hormonio-lactacao" role="tabpanel">
+        <AnimalFichaTabHormonioLactacao
+          animalId={id}
+          fazendaId={animal.fazenda_id}
+          foraDoRebanho={foraDoRebanho}
+          enabled={activeTab === "hormonio-lactacao"}
         />
       </TabsContent>
 

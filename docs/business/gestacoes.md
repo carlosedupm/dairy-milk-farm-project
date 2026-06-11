@@ -48,6 +48,10 @@ Registro de **gestação confirmada** após toque positivo e acompanhamento até
 - **Implementação**: `ResumoPecuarioService.Build` + `ListPartosPrevistosNaJanelaByFazendaID`; `DashboardKpiGrid`; `lib/gestacoesFilters.ts`; `frontend/src/app/gestao/gestacoes/page.tsx`.
 - **Estado**: implementado.
 
+### Referência — hormônios de lactação
+
+- Gestação `CONFIRMADA` com `data_prevista_parto` delimita o protocolo de hormônio de lactação (teto **70 dias** antes do parto) — ver [hormonios-lactacao.md](./hormonios-lactacao.md) **BR-HORM-005**, **BR-HORM-007** (briefing [`BRF-005`](../briefings/BRF-005-hormonios-lactacao.md), implementado).
+
 ---
 
-**Última atualização**: 2026-05-30
+**Última atualização**: 2026-06-10 (ref. BR-HORM-005/007 / BRF-005 implementado)

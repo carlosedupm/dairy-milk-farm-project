@@ -115,7 +115,7 @@ export type AnimalContexto = {
   tratamentos_ativos?: TratamentoAtivoContexto[]
 }
 
-export type TimelineFilterTipo = 'todos' | 'ciclo' | 'saude' | 'alertas' | 'vacinas'
+export type TimelineFilterTipo = 'todos' | 'ciclo' | 'saude' | 'alertas' | 'vacinas' | 'hormonio_lactacao'
 
 export type AnimalTimelinePage = {
   timeline: CicloTimelineItem[]

@@ -245,6 +245,15 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**: `backend/internal/handlers/auth_handler.go`; `backend/internal/handlers/admin_handler.go`; `frontend/src/lib/form-validation.ts` (`validateRegistroForm`, `validateUsuarioForm`).
 - **Estado**: Implementado (2026-06-10).
 
+### BR-ACESSO-025 — Hormônios de lactação: FUNCIONARIO regista, GERENTE+ encerra
+
+- **Enunciado**: `FUNCIONARIO` pode listar/consultar aplicações e protocolo (`GET /api/v1/animais/:id/hormonios-lactacao*`), consultar pendentes da fazenda (`GET /api/v1/fazendas/:id/hormonios-lactacao/pendentes`) e **registrar aplicação** (`POST`); não pode editar/excluir aplicações (`PUT`/`DELETE` → 403) nem **encerrar protocolo** (`PATCH .../protocolo/encerrar` → 403). Perfis GERENTE+ mantêm CRUD completo + encerramento. `USER` sem acesso.
+- **Escopo**: sub-recurso `/api/v1/animais/:id/hormonios-lactacao*`; tab **Hormônio lactação** da ficha; `/gestao/hormonios-lactacao/pendentes`.
+- **Perfis / permissões**: ver [hormonios-lactacao.md](./hormonios-lactacao.md) — BR-HORM-001, BR-HORM-008.
+- **Efeito**: bloqueio 403 no servidor; UI via `canCriarHormonioLactacao`, `canEditarHormonioLactacao`, `canEncerrarProtocoloHormonio`, etc.
+- **Implementação**: `backend/internal/auth/perfil_access.go` (`funcionarioAnimaisHormoniosPath`, `funcionarioFazendaHormoniosPendentesPath`); `frontend/src/config/appAccess.ts`; testes `TestRequestAllowedForFuncionario_AnimaisHormonios`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-06-10 (BR-ACESSO-023 isolamento multi-tenant; BR-ACESSO-024 política de senha 8+)
+**Última atualização**: 2026-06-10 (BR-ACESSO-025 implementado — BRF-005 hormônios lactação)

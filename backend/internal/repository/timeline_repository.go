@@ -16,13 +16,14 @@ const (
 	TimelineFilterCiclo   TimelineFilterTipo = "ciclo"
 	TimelineFilterSaude   TimelineFilterTipo = "saude"
 	TimelineFilterAlertas TimelineFilterTipo = "alertas"
-	TimelineFilterVacinas TimelineFilterTipo = "vacinas"
+	TimelineFilterVacinas           TimelineFilterTipo = "vacinas"
+	TimelineFilterHormonioLactacao  TimelineFilterTipo = "hormonio_lactacao"
 )
 
 // ParseTimelineFilterTipo valida o query param tipo da timeline.
 func ParseTimelineFilterTipo(v string) (TimelineFilterTipo, bool) {
 	switch TimelineFilterTipo(v) {
-	case TimelineFilterTodos, TimelineFilterCiclo, TimelineFilterSaude, TimelineFilterAlertas, TimelineFilterVacinas:
+	case TimelineFilterTodos, TimelineFilterCiclo, TimelineFilterSaude, TimelineFilterAlertas, TimelineFilterVacinas, TimelineFilterHormonioLactacao:
 		return TimelineFilterTipo(v), true
 	default:
 		return TimelineFilterTodos, false
@@ -224,6 +225,27 @@ WHERE av.animal_id = $1
 
 UNION ALL
 
+SELECT 'HORMONIO_LACTACAO',
+       ha.data_aplicacao::timestamp,
+       ('Hormônio lactação ' ||
+        CASE ha.produto
+            WHEN 'LACTROPIN' THEN 'Lactropin'
+            WHEN 'BUST' THEN 'Bust'
+            ELSE 'Outro'
+        END ||
+        ' — dose ' || ha.numero_dose::text)::text,
+       (CASE
+            WHEN ha.observacoes IS NULL OR TRIM(ha.observacoes) = '' THEN COALESCE(ha.lote, '')
+            WHEN LENGTH(TRIM(ha.observacoes)) <= 120 THEN TRIM(ha.observacoes)
+            ELSE LEFT(TRIM(ha.observacoes), 120) || '…'
+        END)::text,
+       ha.id,
+       ha.created_by
+FROM animal_hormonio_lactacao_aplicacoes ha
+WHERE ha.animal_id = $1
+
+UNION ALL
+
 SELECT 'BAIXA',
        a.data_saida::timestamp,
        'Baixa do rebanho'::text,
@@ -250,6 +272,8 @@ func timelineFilterClause(filter TimelineFilterTipo, paramIdx int) string {
 		return ` AND ev.tipo = 'ALERTA'`
 	case TimelineFilterVacinas:
 		return ` AND ev.tipo = 'VACINA'`
+	case TimelineFilterHormonioLactacao:
+		return ` AND ev.tipo = 'HORMONIO_LACTACAO'`
 	default:
 		return ""
 	}

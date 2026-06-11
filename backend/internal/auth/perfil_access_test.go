@@ -196,6 +196,35 @@ func TestRequestAllowedForFuncionario_AnimaisVacinas(t *testing.T) {
 	}
 }
 
+func TestRequestAllowedForFuncionario_AnimaisHormonios(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		method string
+		path   string
+		want   bool
+	}{
+		{http.MethodGet, "/api/v1/animais/1/hormonios-lactacao", true},
+		{http.MethodGet, "/api/v1/animais/1/hormonios-lactacao/42", true},
+		{http.MethodGet, "/api/v1/animais/1/hormonios-lactacao/protocolo", true},
+		{http.MethodPost, "/api/v1/animais/1/hormonios-lactacao", true},
+		{http.MethodPut, "/api/v1/animais/1/hormonios-lactacao/42", false},
+		{http.MethodDelete, "/api/v1/animais/1/hormonios-lactacao/42", false},
+		{http.MethodPatch, "/api/v1/animais/1/hormonios-lactacao/protocolo/encerrar", false},
+		{http.MethodGet, "/api/v1/fazendas/1/hormonios-lactacao/pendentes", true},
+		{http.MethodPost, "/api/v1/fazendas/1/hormonios-lactacao/pendentes", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			t.Parallel()
+			if got := requestAllowedForFuncionario(tt.method, tt.path); got != tt.want {
+				t.Errorf("requestAllowedForFuncionario(%q, %q) = %v, want %v", tt.method, tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRequestAllowedForLimitedAPI_FuncionarioAnimaisSaude(t *testing.T) {
 	t.Parallel()
 

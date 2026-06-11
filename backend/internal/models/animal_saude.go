@@ -23,7 +23,8 @@ type AnimalSaude struct {
 	DataFim     *time.Time `json:"data_fim,omitempty" db:"data_fim"`
 	Status      string     `json:"status" db:"status"`
 	Observacoes *string    `json:"observacoes,omitempty" db:"observacoes"`
-	VacinaID    *int64     `json:"vacina_id,omitempty" db:"vacina_id"`
+	VacinaID                    *int64 `json:"vacina_id,omitempty" db:"vacina_id"`
+	HormonioLactacaoAplicacaoID *int64 `json:"hormonio_lactacao_aplicacao_id,omitempty" db:"hormonio_lactacao_aplicacao_id"`
 	CreatedBy   *int64     `json:"created_by,omitempty" db:"created_by"`
 	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt   *time.Time `json:"updated_at,omitempty" db:"updated_at"`

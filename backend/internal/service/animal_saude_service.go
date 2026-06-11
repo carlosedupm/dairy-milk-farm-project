@@ -126,7 +126,7 @@ func (s *AnimalSaudeService) Update(ctx context.Context, animalID, saudeID int64
 		return nil, err
 	}
 
-	if existing.VacinaID == nil {
+	if existing.VacinaID == nil && existing.HormonioLactacaoAplicacaoID == nil {
 		if err := validateAnimalSaudeTemporal(animal, in); err != nil {
 			return nil, err
 		}

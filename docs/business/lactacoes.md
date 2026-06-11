@@ -47,6 +47,10 @@ Ciclo de **lactação** por animal, normalmente aberto automaticamente no parto.
 - **Implementação**: `AnimalRepository.ListParaAberturaLactacaoByFazendaID`; `LactacaoFormFields`.
 - **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
 
+### Referência — hormônios de lactação
+
+- Protocolo de aplicações de somatotropina (Lactropin, Bust, …) vincula-se à **lactação ativa**; secagem encerra lactação e protocolo — ver [hormonios-lactacao.md](./hormonios-lactacao.md) **BR-HORM-003**, **BR-HORM-008** (briefing [`BRF-005`](../briefings/BRF-005-hormonios-lactacao.md), implementado).
+
 ---
 
-**Última atualização**: 2026-06-02 (BR-LACTACAO-005 — LactacaoFormFields)
+**Última atualização**: 2026-06-10 (ref. BR-HORM-003/008 / BRF-005 implementado)

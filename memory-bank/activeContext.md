@@ -115,8 +115,11 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 - **Web Push alertas (Onda 2.5)**: migration 33 — `push_subscriptions`, `usuarios.fazenda_ativa_id`; `PushNotificationService` (VAPID); API `/api/v1/me/push/*` e `PUT /me/fazenda-ativa`; SW com `push`/`notificationclick`; banner `PushPermissionBanner`. Catálogo: `docs/business/alertas.md` (BR-ALERTA-011–012).
 - **Testes unitários saúde + alertas (Onda 3.2)**: fakes in-memory na fronteira service→repository; interfaces `animalSaudeStore`, `alertaStore`, `alertaGeracaoStore`; CRUD/sync saúde, `AlertaService` (Create/UpdateStatus/Delete), dedup genérico `tryCreateAlerta`, auto-resolve `TRATAMENTO_VENCIDO` ao concluir tratamento. Comando: `cd backend && go test ./internal/service/... -count=1`.
 
-### 🚧 Em andamento:
+### ✅ Concluído desde a última atualização:
 
+1. ✅ **BRF-005 — Hormônios de lactação (G3, 2026-06-10)**: migration 37; backend (`AnimalHormonioLactacaoService`, RBAC BR-ACESSO-025, timeline, hook secagem); frontend (tab ficha, forms, `/gestao/hormonios-lactacao/pendentes`); testes service + `perfil_access`; catálogo **BR-HORM-001–011** + **BR-ACESSO-025** implementados.
+
+### 🚧 Em andamento:
 - **Fase 3 — validação operacional**: checklist staging pós alertas automáticos e Web Push; validar migration 36 + fluxo de vacinas em staging (Docker indisponível no devcontainer atual — migration não validada localmente)
 
 ### ✅ Fase 3 — entregas consolidadas (2026-05-27 a 2026-05-29):
@@ -284,5 +287,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-10 (hardening de segurança: IDOR, refresh tokens, CSP/proxy, CI de segurança, Go 1.25)
-**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 fechada** | **Hardening de segurança concluído** (BR-ACESSO-023/024) | **Fase 3** saúde + alertas + Web Push + **vacinas (BRF-001)** | **BRF-002/003/004 implementados** | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Recuperação senha aguarda SMTP | **Ações manuais pendentes**: rotacionar key TestSprite, `METRICS_TOKEN` no Render
+**Última atualização**: 2026-06-10 (BRF-005 G3 — hormônios lactação BR-HORM-* implementado)
+**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 fechada** | **Hardening de segurança concluído** (BR-ACESSO-023/024) | **Fase 3** saúde + alertas + Web Push + **vacinas (BRF-001)** + **hormônios lactação (BRF-005)** | **BRF-002/003/004/005 implementados** | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Recuperação senha aguarda SMTP | **Ações manuais pendentes**: rotacionar key TestSprite, `METRICS_TOKEN` no Render

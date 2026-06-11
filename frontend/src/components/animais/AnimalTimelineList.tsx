@@ -10,6 +10,7 @@ function timelineTipoLabel(tipo: string): string {
   if (tipo === "SAUDE") return "Saúde";
   if (tipo === "ALERTA") return "Alerta";
   if (tipo === "VACINA") return "Vacina";
+  if (tipo === "HORMONIO_LACTACAO") return "Hormônio";
   return tipo;
 }
 

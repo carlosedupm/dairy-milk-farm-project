@@ -34,6 +34,8 @@ var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
 var funcionarioAnimaisBaixaPath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/baixa$`)
 var funcionarioAnimaisSaudePath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/saude(/[0-9]+)?$`)
 var funcionarioAnimaisVacinasPath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/vacinas(/[0-9]+(/aplicar)?)?$`)
+var funcionarioAnimaisHormoniosPath = regexp.MustCompile(`^/api/v1/animais/[0-9]+/hormonios-lactacao(/[0-9]+|/protocolo(/encerrar)?)?$`)
+var funcionarioFazendaHormoniosPendentesPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/hormonios-lactacao/pendentes$`)
 var funcionarioAlertasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/alertas(/[0-9]+(/status)?)?$`)
 var funcionarioResumoPecuarioPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/resumo-pecuario$`)
 var funcionarioAssistentePath = regexp.MustCompile(`^/api/v1/assistente(/.*)?$`)
@@ -106,6 +108,19 @@ func requestAllowedForFuncionario(method, path string) bool {
 			return true
 		}
 		return false
+	}
+	// Hormônios lactação (BR-ACESSO-025): GET + POST (registrar); PUT/DELETE/PATCH encerrar → 403.
+	if funcionarioAnimaisHormoniosPath.MatchString(path) {
+		if method == http.MethodGet {
+			return true
+		}
+		if method == http.MethodPost && strings.HasSuffix(path, "/hormonios-lactacao") {
+			return true
+		}
+		return false
+	}
+	if method == http.MethodGet && funcionarioFazendaHormoniosPendentesPath.MatchString(path) {
+		return true
 	}
 	// Vacinas (BR-SAUDE-007): GET + POST (registrar aplicada — validado no service) + PATCH aplicar; PUT/DELETE → 403.
 	if funcionarioAnimaisVacinasPath.MatchString(path) {

@@ -24,6 +24,7 @@ const FILTER_OPTIONS: { value: TimelineFilterTipo; label: string }[] = [
   { value: "todos", label: "Todos" },
   { value: "saude", label: "Saúde" },
   { value: "vacinas", label: "Vacinas" },
+  { value: "hormonio_lactacao", label: "Hormônio" },
   { value: "alertas", label: "Alertas" },
 ];
 

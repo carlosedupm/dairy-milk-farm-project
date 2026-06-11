@@ -31,6 +31,16 @@
 - [x] Frontend: `AnimalForm` (create sem picker; edit disabled + badge + link Saúde); parto/cria tardia com checkbox «não saudável»
 - [x] Testes unitários `animal_service_test.go`, `cria_service_test.go`; validação manual G3 confirmada; briefing → **implementado** (G3 fechado)
 
+### **BRF-005 — Hormônios de lactação (✅ 2026-06-10)**
+
+- [x] Migration 37: `animal_hormonio_lactacao_protocolos`, `animal_hormonio_lactacao_aplicacoes`, `animal_saude.hormonio_lactacao_aplicacao_id`, RLS, índice único protocolo ATIVO por lactação
+- [x] Backend: model/repository/service/handler; rotas `/api/v1/animais/:id/hormonios-lactacao*` + `GET /fazendas/:id/hormonios-lactacao/pendentes`
+- [x] Elegibilidade BR-HORM-003–007, TMP-001/002/003; protocolo na 1ª dose; `data_proxima = min(+14d, parto-70d)`
+- [x] Timeline `tipo=hormonio_lactacao`; secagem encerra protocolo (BR-HORM-008); caso PREVENTIVO (BR-HORM-011)
+- [x] RBAC BR-ACESSO-025: FUNCIONARIO GET+POST; GERENTE+ PUT/DELETE/PATCH encerrar
+- [x] Frontend: tab **Hormônio lactação** na ficha, forms novo/editar, `/gestao/hormonios-lactacao/pendentes`, hub Gestão, appAccess
+- [x] Testes unitários service + `perfil_access`; `validate-br-refs` OK; briefing → **implementado** (G3)
+
 ### **BRF-001 — Vacinas / calendário preventivo (✅ 2026-06-09)**
 
 - [x] Migration 36: `animal_vacinas` (tipo, dose, prevista/aplicada, `validade_dias`, `data_proximo_reforco`, RLS, índices) + `animal_saude.vacina_id` + tipos `VACINA_VENCIDA`/`VACINA_REFORCO_VENCIDA` no CHECK de `alertas`
@@ -946,6 +956,6 @@
 
 ---
 
-**Última atualização**: 2026-06-10 (hardening de segurança e processo concluído)
+**Última atualização**: 2026-06-10 (BRF-005 hormônios lactação G3 + hardening de segurança)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Hardening de segurança 2026-06-10** ✅ | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Senha aguarda SMTP
 **Próxima revisão**: após ações manuais de segurança (rotação TestSprite, METRICS_TOKEN) + validação staging; reavaliar ruleset completo (PR + status checks) quando o fluxo migrar para branch/PR

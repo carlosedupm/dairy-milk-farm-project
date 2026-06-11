@@ -18,6 +18,7 @@ type SecagemService struct {
 	lactacaoRepo   *repository.LactacaoRepository
 	animalRepo     *repository.AnimalRepository
 	fazendaRepo    *repository.FazendaRepository
+	hormonioRepo   *repository.AnimalHormonioLactacaoRepository
 	alertaResolver AlertaAutoResolver
 }
 
@@ -39,6 +40,10 @@ func NewSecagemService(
 
 func (s *SecagemService) SetAlertaAutoResolver(r AlertaAutoResolver) {
 	s.alertaResolver = r
+}
+
+func (s *SecagemService) SetHormonioLactacaoRepo(r *repository.AnimalHormonioLactacaoRepository) {
+	s.hormonioRepo = r
 }
 
 func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error {
@@ -98,6 +103,10 @@ func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error 
 		return err
 	}
 
+	if err := s.encerrarProtocoloHormonioSeExistirTx(ctx, tx, sec); err != nil {
+		return err
+	}
+
 	if err := s.encerrarLactacaoAtivaSeExistirTx(ctx, tx, sec); err != nil {
 		return err
 	}
@@ -117,6 +126,22 @@ func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error 
 
 func (s *SecagemService) encerrarLactacaoAtivaSeExistirTx(ctx context.Context, tx pgx.Tx, sec *models.Secagem) error {
 	return EncerrarLactacaoAtivaTx(ctx, tx, s.lactacaoRepo, sec.AnimalID, sec.DataSecagem)
+}
+
+func (s *SecagemService) encerrarProtocoloHormonioSeExistirTx(ctx context.Context, tx pgx.Tx, sec *models.Secagem) error {
+	if s.hormonioRepo == nil {
+		return nil
+	}
+	lact, err := s.lactacaoRepo.GetEmAndamentoByAnimalIDTx(ctx, tx, sec.AnimalID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	return s.hormonioRepo.EncerrarProtocoloAtivoByLactacaoIDTx(
+		ctx, tx, lact.ID, models.HormonioMotivoSecagem, TruncateToCivilDate(sec.DataSecagem),
+	)
 }
 
 func (s *SecagemService) GetByID(ctx context.Context, id int64) (*models.Secagem, error) {

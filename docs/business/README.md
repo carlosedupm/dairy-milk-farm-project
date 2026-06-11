@@ -54,6 +54,7 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 | Partos e crias | [partos.md](./partos.md) | ✅ |
 | Lactações | [lactacoes.md](./lactacoes.md) | ✅ |
 | Produção de leite | [producao-leite.md](./producao-leite.md) | ✅ |
+| Hormônios de lactação (Lactropin, Bust) | [hormonios-lactacao.md](./hormonios-lactacao.md) | ✅ `BR-HORM-001`–`011` implementado |
 | Leite — descarte / laboratório | [leite-restricoes.md](./leite-restricoes.md) | ✅ |
 | Baixa do rebanho | [baixa-rebanho.md](./baixa-rebanho.md) | ✅ |
 
@@ -74,4 +75,4 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 
 ---
 
-**Última atualização**: 2026-06-09 (fluxo de briefings: regra nova nasce `planejado` na análise funcional; validador `validate-br-refs`)
+**Última atualização**: 2026-06-10 (BR-HORM-* implementado — BRF-005 G3)

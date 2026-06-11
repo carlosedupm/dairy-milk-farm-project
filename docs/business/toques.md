@@ -70,6 +70,10 @@ Registro de **toque** (diagnóstico de gestação) após cobertura, com resultad
 
 - Registo via `POST /api/v1/integracoes/toques` ou lote `POST /api/v1/integracoes/toques/lote` (scope `toques:write`) — ver [integracoes.md](./integracoes.md) (`BR-INTEG-*`). Aceita `classificacao_operacional`, `dias_gestacao_estimados` e `metodo`.
 
+### Referência — hormônios de lactação
+
+- O **1º toque positivo após o início da lactação** habilita a 1ª aplicação de hormônio de lactação — ver [hormonios-lactacao.md](./hormonios-lactacao.md) **BR-HORM-004** (briefing [`BRF-005`](../briefings/BRF-005-hormonios-lactacao.md), implementado).
+
 ---
 
-**Última atualização**: 2026-06-02 (BR-TOQUES-007 — minDate UI gestão)
+**Última atualização**: 2026-06-10 (ref. BR-HORM-004 / BRF-005 implementado)

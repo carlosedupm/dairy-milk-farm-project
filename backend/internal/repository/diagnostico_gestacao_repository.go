@@ -105,3 +105,35 @@ func (r *DiagnosticoGestacaoRepository) Delete(ctx context.Context, id int64) er
 	_, err := r.db.Exec(ctx, `DELETE FROM diagnosticos_gestacao WHERE id = $1`, id)
 	return err
 }
+
+// GetPrimeiroPositivoAposData retorna o 1º toque prenhe (POSITIVO ou classificação PRENHA) com data >= dataInicio.
+func (r *DiagnosticoGestacaoRepository) GetPrimeiroPositivoAposData(
+	ctx context.Context,
+	animalID int64,
+	dataInicio time.Time,
+) (*models.DiagnosticoGestacao, error) {
+	const q = `
+		SELECT ` + diagnosticoGestacaoSelectCols + `
+		FROM diagnosticos_gestacao
+		WHERE animal_id = $1
+		  AND data >= $2::date
+		  AND (
+		    resultado = $3
+		    OR classificacao_operacional = $4
+		  )
+		ORDER BY data ASC, id ASC
+		LIMIT 1
+	`
+	d, err := scanDiagnosticoGestacao(r.db.QueryRow(
+		ctx,
+		q,
+		animalID,
+		dataInicio,
+		models.DiagnosticoResultadoPositivo,
+		models.ClassificacaoOperacionalPrenha,
+	))
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	return d, err
+}
