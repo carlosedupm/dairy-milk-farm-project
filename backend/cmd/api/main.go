@@ -587,6 +587,7 @@ func main() {
 						admin.PATCH("/integracoes/:id", integracaoAdminHandler.Update)
 						admin.POST("/integracoes/:id/rotacionar-chave", integracaoAdminHandler.RotacionarChave)
 						admin.POST("/integracoes/:id/revogar", integracaoAdminHandler.Revogar)
+						admin.POST("/integracoes/:id/reativar", integracaoAdminHandler.Reativar)
 						admin.GET("/integracoes/:id/chamadas", integracaoAdminHandler.ListChamadas)
 						if alertaAdminHandler != nil {
 							admin.POST("/alertas/gerar", alertaAdminHandler.GerarAlertasDiarios)

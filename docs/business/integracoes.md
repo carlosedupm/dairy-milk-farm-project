@@ -5,7 +5,7 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 **Implementação principal**
 
 - Backend: `backend/internal/auth/integration.go`, `backend/internal/handlers/integracao_handler.go`, `backend/internal/service/integracao_service.go`
-- Admin: `GET|POST|PATCH /api/v1/admin/integracoes`, rotação e revogação de chave
+- Admin: `GET|POST|PATCH /api/v1/admin/integracoes`, rotação, revogação e reativação de chave
 - API M2M: prefixo `/api/v1/integracoes/*` com `Authorization: Bearer cmk_live_...`
 - UI: `frontend/src/app/admin/integracoes/*`
 - Guia técnico: [docs/integracoes/README.md](../integracoes/README.md)
@@ -87,6 +87,14 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 - **Implementação**: `IntegracaoHandler.ListAlertas` → `AlertaService.ListByFazenda`.
 - **Estado**: implementado.
 
+### BR-INTEG-012 — Reativação de cliente revogado
+
+- **Enunciado**: Admin pode reativar cliente com `revogado_em` preenchido via `POST /api/v1/admin/integracoes/:id/reativar`; o servidor limpa `revogado_em`, define `ativo=true` e gera nova chave API; a chave anterior deixa de autenticar.
+- **Escopo**: clientes previamente revogados; perfil admin JWT.
+- **Efeito**: bloqueio M2M até reativação (BR-INTEG-004); após reativação, só a nova chave funciona.
+- **Implementação**: `IntegracaoAdminHandler.Reativar`, `IntegracaoService.Reativar`, UI `/admin/integracoes/[id]` (botão Reativar + diálogo de chave).
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-30 (BR-INTEG-009–011 — scopes saude e alertas M2M)
+**Última atualização**: 2026-06-10 (BR-INTEG-012 — reativação admin com nova chave)

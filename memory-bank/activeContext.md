@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **Admin Integrações — UX revogação/reativação e diálogo de chave (2026-06-10)**: popup de chave após «Rotacionar» fechava instantaneamente (remount por `formKey` + `invalidateQueries`); diálogo elevado para `page.tsx`; novo `POST /api/v1/admin/integracoes/:id/reativar` (BR-INTEG-012) com nova chave obrigatória; botão Reativar na ficha; permanece na página após revogar.
 1. ✅ **Hardening de segurança e processo (2026-06-10)** — plano completo executado:
    - **Secret TestSprite removido**: `.cursor/mcp.json` usa `${env:TESTSPRITE_API_KEY}`; `testsprite_tests/tmp/` e `.cursor/mcp.json` no `.gitignore` (rotação da chave no provedor é ação manual pendente do usuário).
    - **IDOR corrigido (BR-ACESSO-023)**: `animal_handler` (by-status-saude, by-sexo, count, by-lote) com `ResolveFazendaIDsForList`; `CriaHandler` valida fazenda do parto (`validatePartoAccess`); Assistente texto e Live com validação de tenant em todos os resolvers (`ensureAnimalAccess`, `resolveFazendaIDForUser`, perfil ADMIN/DEVELOPER para cadastrar/editar fazenda); testes cross-tenant novos.

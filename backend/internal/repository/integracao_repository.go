@@ -125,6 +125,21 @@ func (r *IntegracaoRepository) Revogar(ctx context.Context, id int64) error {
 	return err
 }
 
+func (r *IntegracaoRepository) Reativar(ctx context.Context, id int64, keyPrefix, keyHash string) error {
+	tag, err := r.db.Exec(ctx, `
+		UPDATE integracao_clientes
+		SET ativo = true, revogado_em = NULL, key_prefix = $2, key_hash = $3, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1 AND revogado_em IS NOT NULL
+	`, id, keyPrefix, keyHash)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
 func (r *IntegracaoRepository) SetFazendas(ctx context.Context, clienteID int64, fazendaIDs []int64) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {

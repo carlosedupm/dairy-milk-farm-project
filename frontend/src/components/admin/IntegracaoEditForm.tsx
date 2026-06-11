@@ -7,10 +7,10 @@ import {
   updateIntegracao,
   rotacionarChaveIntegracao,
   revogarIntegracao,
+  reativarIntegracao,
   INTEGRATION_SCOPES,
 } from "@/services/integracoes";
 import type { Fazenda } from "@/services/fazendas";
-import { ApiKeyRevealDialog } from "@/components/admin/ApiKeyRevealDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,19 +27,25 @@ import { toast } from "@/hooks/use-toast";
 type Props = {
   cliente: IntegracaoCliente;
   fazendas: Fazenda[];
+  onKeyRevealed: (apiKey: string, title?: string) => void;
   onRevoked: () => void;
 };
 
-export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
+export function IntegracaoEditForm({
+  cliente,
+  fazendas,
+  onKeyRevealed,
+  onRevoked,
+}: Props) {
   const queryClient = useQueryClient();
   const [nome, setNome] = useState(cliente.nome);
   const [fazendaIds, setFazendaIds] = useState<number[]>(cliente.fazenda_ids ?? []);
   const [scopes, setScopes] = useState<string[]>(cliente.scopes ?? []);
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [showKeyDialog, setShowKeyDialog] = useState(false);
   const [error, setError] = useState("");
   const [nomeError, setNomeError] = useState("");
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
+
+  const isRevogado = !!cliente.revogado_em;
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -65,12 +71,8 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
     mutationFn: () => rotacionarChaveIntegracao(cliente.id),
     onSuccess: (res) => {
       setError("");
-      setApiKey(res.api_key);
-      setShowKeyDialog(true);
+      onKeyRevealed(res.api_key, "Nova chave de API");
       toast.info("Chave rotacionada — copie a nova chave no diálogo");
-      queryClient.invalidateQueries({
-        queryKey: ["admin", "integracoes", cliente.id],
-      });
     },
     onError: (err) => {
       setError(getApiErrorMessage(err, "Erro ao rotacionar chave."));
@@ -86,6 +88,19 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
     },
     onError: (err) => {
       setError(getApiErrorMessage(err, "Erro ao revogar cliente."));
+      setConformidadeCode(getApiErrorConformidadeCode(err));
+    },
+  });
+
+  const reativarMutation = useMutation({
+    mutationFn: () => reativarIntegracao(cliente.id),
+    onSuccess: (res) => {
+      setError("");
+      onKeyRevealed(res.api_key, "Chave de API — cliente reativado");
+      toast.info("Cliente reativado — copie a nova chave no diálogo");
+    },
+    onError: (err) => {
+      setError(getApiErrorMessage(err, "Erro ao reativar cliente."));
       setConformidadeCode(getApiErrorConformidadeCode(err));
     },
   });
@@ -108,113 +123,125 @@ export function IntegracaoEditForm({ cliente, fazendas, onRevoked }: Props) {
   const displayCode = conformidadeCode ?? parsed?.conformidadeCode;
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuração</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error?.trim() ? (
-            <FormValidationAlert
-              message={displayMessage}
-              conformidadeCode={displayCode}
-            />
-          ) : null}
-          <div className="space-y-2">
-            <Label htmlFor="nome-edit">Nome</Label>
-            <Input
-              id="nome-edit"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              aria-invalid={nomeError ? true : undefined}
-              className={nomeError ? "border-destructive" : undefined}
-            />
-            <FormFieldError message={nomeError} />
-          </div>
-          <div className="space-y-2">
-            <Label>Fazendas</Label>
-            <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
-              {fazendas.map((f) => (
-                <div key={f.id} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={fazendaIds.includes(f.id)}
-                    onChange={() =>
-                      setFazendaIds((prev) =>
-                        prev.includes(f.id)
-                          ? prev.filter((x) => x !== f.id)
-                          : [...prev, f.id]
-                      )
-                    }
-                    className="rounded border-input min-w-[18px] min-h-[18px]"
-                  />
-                  <span>{f.nome}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Scopes</Label>
-            {INTEGRATION_SCOPES.map((s) => (
-              <div key={s.id} className="flex items-center gap-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>Configuração</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error?.trim() ? (
+          <FormValidationAlert
+            message={displayMessage}
+            conformidadeCode={displayCode}
+          />
+        ) : null}
+        <div className="space-y-2">
+          <Label htmlFor="nome-edit">Nome</Label>
+          <Input
+            id="nome-edit"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            aria-invalid={nomeError ? true : undefined}
+            className={nomeError ? "border-destructive" : undefined}
+          />
+          <FormFieldError message={nomeError} />
+        </div>
+        <div className="space-y-2">
+          <Label>Fazendas</Label>
+          <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+            {fazendas.map((f) => (
+              <div key={f.id} className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={scopes.includes(s.id)}
+                  checked={fazendaIds.includes(f.id)}
                   onChange={() =>
-                    setScopes((prev) =>
-                      prev.includes(s.id)
-                        ? prev.filter((x) => x !== s.id)
-                        : [...prev, s.id]
+                    setFazendaIds((prev) =>
+                      prev.includes(f.id)
+                        ? prev.filter((x) => x !== f.id)
+                        : [...prev, f.id]
                     )
                   }
                   className="rounded border-input min-w-[18px] min-h-[18px]"
                 />
-                <span className="text-sm">{s.label}</span>
+                <span>{f.nome}</span>
               </div>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
+        </div>
+        <div className="space-y-2">
+          <Label>Scopes</Label>
+          {INTEGRATION_SCOPES.map((s) => (
+            <div key={s.id} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={scopes.includes(s.id)}
+                onChange={() =>
+                  setScopes((prev) =>
+                    prev.includes(s.id)
+                      ? prev.filter((x) => x !== s.id)
+                      : [...prev, s.id]
+                  )
+                }
+                className="rounded border-input min-w-[18px] min-h-[18px]"
+              />
+              <span className="text-sm">{s.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={saveMutation.isPending}
+          >
+            Guardar
+          </Button>
+          {isRevogado ? (
             <Button
               type="button"
-              onClick={handleSave}
-              disabled={saveMutation.isPending}
-            >
-              Guardar
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => rotateMutation.mutate()}
-              disabled={rotateMutation.isPending || !!cliente.revogado_em}
-            >
-              Rotacionar chave
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
+              variant="default"
               onClick={() => {
                 if (
                   confirm(
-                    "Revogar este cliente? A chave atual deixará de funcionar."
+                    "Reativar este cliente? Será gerada uma nova chave de API; a chave anterior continuará inválida."
                   )
                 ) {
-                  revokeMutation.mutate();
+                  reativarMutation.mutate();
                 }
               }}
-              disabled={revokeMutation.isPending || !!cliente.revogado_em}
+              disabled={reativarMutation.isPending}
             >
-              Revogar
+              Reativar
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <ApiKeyRevealDialog
-        open={showKeyDialog}
-        onOpenChange={setShowKeyDialog}
-        apiKey={apiKey ?? ""}
-        title="Nova chave de API"
-      />
-    </>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => rotateMutation.mutate()}
+                disabled={rotateMutation.isPending}
+              >
+                Rotacionar chave
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  if (
+                    confirm(
+                      "Revogar este cliente? A chave atual deixará de funcionar."
+                    )
+                  ) {
+                    revokeMutation.mutate();
+                  }
+                }}
+                disabled={revokeMutation.isPending}
+              >
+                Revogar
+              </Button>
+            </>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

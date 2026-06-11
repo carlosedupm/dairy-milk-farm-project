@@ -222,6 +222,7 @@ Variável de ambiente `INTEGRATION_RATE_LIMIT_PER_HOUR` (default **300** requisi
 | `PATCH` | `/api/v1/admin/integracoes/:id` | Nome, fazendas, scopes |
 | `POST` | `/api/v1/admin/integracoes/:id/rotacionar-chave` | Nova chave |
 | `POST` | `/api/v1/admin/integracoes/:id/revogar` | Revogar |
+| `POST` | `/api/v1/admin/integracoes/:id/reativar` | Reativar revogado (+ nova `api_key`) |
 
 ## Postman
 
@@ -229,4 +230,4 @@ Importe a spec OpenAPI (recomendado para integrações) ou `docs/postman/CeialMi
 
 ---
 
-**Última atualização**: 2026-05-30
+**Última atualização**: 2026-06-10

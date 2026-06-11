@@ -1,13 +1,15 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getIntegracao } from "@/services/integracoes";
 import { list as listFazendas } from "@/services/fazendas";
 import { RequireAdminRoute } from "@/components/layout/RequireAdminRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { IntegracaoEditForm } from "@/components/admin/IntegracaoEditForm";
+import { ApiKeyRevealDialog } from "@/components/admin/ApiKeyRevealDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -21,7 +23,10 @@ import { Badge } from "@/components/ui/badge";
 import { formatDateTimePtBr } from "@/lib/format";
 
 function AdminIntegracaoDetalheContent({ id }: { id: number }) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [showKeyDialog, setShowKeyDialog] = useState(false);
+  const [keyDialogTitle, setKeyDialogTitle] = useState("Nova chave de API");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "integracoes", id],
@@ -32,6 +37,19 @@ function AdminIntegracaoDetalheContent({ id }: { id: number }) {
     queryKey: ["fazendas", "admin-all"],
     queryFn: listFazendas,
   });
+
+  function handleKeyRevealed(key: string, title = "Nova chave de API") {
+    setApiKey(key);
+    setKeyDialogTitle(title);
+    setShowKeyDialog(true);
+  }
+
+  function handleKeyDialogChange(open: boolean) {
+    setShowKeyDialog(open);
+    if (!open) {
+      queryClient.invalidateQueries({ queryKey: ["admin", "integracoes", id] });
+    }
+  }
 
   if (isLoading) {
     return (
@@ -52,7 +70,6 @@ function AdminIntegracaoDetalheContent({ id }: { id: number }) {
 
   const cliente = data.cliente;
   const chamadas = data.chamadas_recentes ?? [];
-  const formKey = `${cliente.id}-${cliente.updated_at}`;
 
   return (
     <PageContainer variant="default">
@@ -73,10 +90,15 @@ function AdminIntegracaoDetalheContent({ id }: { id: number }) {
         </div>
 
         <IntegracaoEditForm
-          key={formKey}
+          key={cliente.id}
           cliente={cliente}
           fazendas={fazendas}
-          onRevoked={() => router.push("/admin/integracoes")}
+          onKeyRevealed={handleKeyRevealed}
+          onRevoked={() => {
+            queryClient.invalidateQueries({
+              queryKey: ["admin", "integracoes", id],
+            });
+          }}
         />
 
         <Card>
@@ -121,6 +143,13 @@ function AdminIntegracaoDetalheContent({ id }: { id: number }) {
           </CardContent>
         </Card>
       </div>
+
+      <ApiKeyRevealDialog
+        open={showKeyDialog}
+        onOpenChange={handleKeyDialogChange}
+        apiKey={apiKey ?? ""}
+        title={keyDialogTitle}
+      />
     </PageContainer>
   );
 }

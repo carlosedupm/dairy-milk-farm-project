@@ -167,6 +167,20 @@ func (s *IntegracaoService) Revogar(ctx context.Context, id int64) error {
 	return s.repo.Revogar(ctx, id)
 }
 
+func (s *IntegracaoService) Reativar(ctx context.Context, id int64) (string, error) {
+	fullKey, keyPrefix, keyHash, err := GenerateAPIKey()
+	if err != nil {
+		return "", err
+	}
+	if err := s.repo.Reativar(ctx, id, keyPrefix, keyHash); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", ErrIntegracaoClienteNotFound
+		}
+		return "", err
+	}
+	return fullKey, nil
+}
+
 func (s *IntegracaoService) ResolveClienteByAPIKey(ctx context.Context, fullKey string) (*models.IntegracaoCliente, error) {
 	prefix, err := ExtractKeyPrefix(fullKey)
 	if err != nil {

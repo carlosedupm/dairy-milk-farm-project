@@ -114,6 +114,15 @@ export async function revogarIntegracao(id: number): Promise<void> {
   await api.post(`/api/v1/admin/integracoes/${id}/revogar`);
 }
 
+export async function reativarIntegracao(
+  id: number
+): Promise<{ api_key: string }> {
+  const { data } = await api.post<ApiResponse<{ api_key: string }>>(
+    `/api/v1/admin/integracoes/${id}/reativar`
+  );
+  return data.data;
+}
+
 export async function listChamadasIntegracao(
   id: number,
   params?: { limit?: number; offset?: number }

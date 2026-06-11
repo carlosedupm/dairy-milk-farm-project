@@ -129,6 +129,16 @@ func (h *IntegracaoAdminHandler) Revogar(c *gin.Context) {
 	response.SuccessOK(c, nil, "Cliente revogado")
 }
 
+func (h *IntegracaoAdminHandler) Reativar(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	apiKey, err := h.integracaoSvc.Reativar(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorNotFound(c, "Cliente nao encontrado ou nao esta revogado")
+		return
+	}
+	response.SuccessOK(c, gin.H{"api_key": apiKey}, "Cliente reativado. Guarde a nova api_key — nao sera exibida novamente.")
+}
+
 func (h *IntegracaoAdminHandler) ListChamadas(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
