@@ -121,8 +121,8 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 - [x] Vacinas / calendário preventivo (BRF-001 — BR-SAUDE-007–011, BR-ALERTA-016/017)
 - [x] Hormônios de lactação (BRF-005 — BR-HORM-001–011)
 - [x] Alertas automáticos de ciclo/saúde/conformidade + Web Push (BR-ALERTA-001–017)
-- [ ] Assistente por capacidades para FUNCIONARIO (BR-ACESSO-006) — plano em [`docs/ops/assistente-funcionario-fases.md`](../docs/ops/assistente-funcionario-fases.md)
-- [ ] Alerta automático hormônio lactação pendente (BRF-006 — BR-ALERTA-018 / BR-HORM-012 `planejado`)
+- [x] Assistente fase 1 consulta para FUNCIONARIO (BRF-007 — BR-ACESSO-006 parcial)
+- [x] Alerta automático hormônio lactação pendente (BRF-006 — BR-ALERTA-018 / BR-HORM-012)
 - [ ] Gráficos e exportações
 - [ ] Offline-first onde tecnicamente viável
 - [ ] IoT; **escopos M2M adicionais** (produção, partos, vacinas, webhooks) — backlog

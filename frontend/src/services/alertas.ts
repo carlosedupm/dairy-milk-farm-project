@@ -7,6 +7,9 @@ export const TIPOS_ALERTA = [
   "NAO_CONFORMIDADE",
   "GESTACAO_SEM_SECAGEM",
   "CIO_DETECTADO",
+  "VACINA_VENCIDA",
+  "VACINA_REFORCO_VENCIDA",
+  "HORMONIO_LACTACAO_PENDENTE",
   "MANUAL",
 ] as const;
 
@@ -19,6 +22,9 @@ export const TIPO_ALERTA_LABELS: Record<TipoAlerta, string> = {
   NAO_CONFORMIDADE: "Não conformidade",
   GESTACAO_SEM_SECAGEM: "Gestação sem secagem",
   CIO_DETECTADO: "Cio detectado",
+  VACINA_VENCIDA: "Vacina atrasada",
+  VACINA_REFORCO_VENCIDA: "Reforço de vacina vencido",
+  HORMONIO_LACTACAO_PENDENTE: "Hormônio lactação pendente",
   MANUAL: "Manual",
 };
 

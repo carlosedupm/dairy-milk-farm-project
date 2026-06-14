@@ -27,11 +27,11 @@ import {
 } from "@/lib/errors";
 import { toast } from "@/hooks/use-toast";
 import { formatDatePtBr } from "@/lib/format";
-import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import {
   alertaSeveridadeLabel,
   alertaStatusLabel,
   alertaTipoLabel,
+  alertaAnimalHref,
   SEVERIDADE_BADGE_VARIANT,
 } from "./alertas-utils";
 import { ListEmptyState } from "@/components/layout/ListEmptyState";
@@ -209,7 +209,7 @@ export function AlertasTable({
                 </>
               }
               href={
-                item.animal_id ? animalFichaCicloHref(item.animal_id) : undefined
+                item.animal_id ? alertaAnimalHref(item.tipo, item.animal_id) : undefined
               }
               actions={
                 actions.length > 0 ? (
@@ -263,7 +263,7 @@ export function AlertasTable({
                       <TableCell>
                         {item.animal_id && item.animal_identificacao ? (
                           <Link
-                            href={animalFichaCicloHref(item.animal_id)}
+                            href={alertaAnimalHref(item.tipo, item.animal_id)!}
                             className="text-primary underline-offset-4 hover:underline"
                           >
                             {item.animal_identificacao}

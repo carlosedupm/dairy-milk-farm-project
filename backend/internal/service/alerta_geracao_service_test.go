@@ -193,3 +193,57 @@ func (t *alertaGeracaoServiceTest) runPartoPrevistoOnly(ctx context.Context, faz
 	}
 	return res, nil
 }
+
+type fakeHormonioRepoGeracao struct {
+	pendentes []*models.HormonioLactacaoPendente
+	err       error
+}
+
+func (f *fakeHormonioRepoGeracao) ListPendentesByFazendaID(_ context.Context, _ int64, _ time.Time) ([]*models.HormonioLactacaoPendente, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.pendentes, nil
+}
+
+func TestRegraHormonioLactacaoPendente_CriaEDeduplica(t *testing.T) {
+	ctx := context.Background()
+	ref := time.Date(2026, 6, 14, 12, 0, 0, 0, time.UTC)
+	fakeAlerta := newFakeAlertaRepoGeracao()
+	hormonioFake := &fakeHormonioRepoGeracao{
+		pendentes: []*models.HormonioLactacaoPendente{
+			{AnimalID: 10, AnimalIdentificacao: "V-10"},
+			{AnimalID: 20, AnimalIdentificacao: "V-20"},
+		},
+	}
+	svc := &AlertaGeracaoService{
+		alertaRepo:         fakeAlerta,
+		animalHormonioRepo: hormonioFake,
+		sistemaUserID:      1,
+		tz:                 time.UTC,
+	}
+
+	c1, ig1, err := svc.regraHormonioLactacaoPendente(ctx, 1, ref)
+	if err != nil {
+		t.Fatalf("primeira execução: %v", err)
+	}
+	if c1 != 2 || ig1 != 0 {
+		t.Fatalf("primeira: criados=%d ignorados=%d", c1, ig1)
+	}
+
+	c2, ig2, err := svc.regraHormonioLactacaoPendente(ctx, 1, ref)
+	if err != nil {
+		t.Fatalf("segunda execução: %v", err)
+	}
+	if c2 != 0 || ig2 != 2 {
+		t.Fatalf("segunda: criados=%d ignorados=%d", c2, ig2)
+	}
+	if fakeAlerta.created != 2 {
+		t.Fatalf("total created=%d, want 2", fakeAlerta.created)
+	}
+
+	severidade, ok := models.SeveridadePadraoPorTipo(models.AlertaTipoHormonioLactacaoPendente)
+	if !ok || severidade != models.AlertaSeveridadeAlta {
+		t.Fatalf("severidade=%s ok=%v, want ALTA", severidade, ok)
+	}
+}

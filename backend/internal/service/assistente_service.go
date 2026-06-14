@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ceialmilk/api/internal/assistente"
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/ceialmilk/api/internal/observability"
 )
@@ -294,7 +295,10 @@ Frase do usuário:
 }
 
 // Executar executa a ação conforme intent e payload (já confirmados pelo usuário).
-func (s *AssistenteService) Executar(ctx context.Context, intent string, payload map[string]interface{}, fazendaAtivaID int64, userID int64) (interface{}, error) {
+func (s *AssistenteService) Executar(ctx context.Context, intent string, payload map[string]interface{}, fazendaAtivaID int64, userID int64, perfil string) (interface{}, error) {
+	if perfil == models.PerfilFuncionario && !assistente.FuncionarioIntentAllowed(intent) {
+		return nil, fmt.Errorf("perfil não autorizado para intent %s", intent)
+	}
 	switch intent {
 	case intentCadastrarFazenda:
 		return s.executarCadastrarFazenda(ctx, payload)

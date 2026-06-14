@@ -40,10 +40,9 @@ var funcionarioAlertasPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/alerta
 var funcionarioResumoPecuarioPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/resumo-pecuario$`)
 var funcionarioAssistentePath = regexp.MustCompile(`^/api/v1/assistente(/.*)?$`)
 
-// TODO(capabilities-assistente): liberar rotas de assistente para FUNCIONARIO
-// de forma granular por capacidade, conforme regras de negócio.
+// Liberado para FUNCIONARIO fase 1 (BRF-007): rotas do assistente em modo consulta.
 func funcionarioAssistenteCapabilityEnabled(_ string, _ string) bool {
-	return false
+	return true
 }
 
 // PerfilTemAcessoAPICompleta indica se o perfil pode usar todos os endpoints /api/v1 autenticados.

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ORIGEM_LABELS,
@@ -21,6 +22,9 @@ import { ANIMAL_BAIXADO_ACAO_BLOQUEADA_MSG } from "@/components/animais/animalRe
 import { Button } from "@/components/ui/button";
 import { ButtonWithTooltip } from "@/components/ui/button-with-tooltip";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog";
+import { getApiErrorMessage } from "@/lib/errors";
+import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -78,6 +82,8 @@ export function AnimalFichaTabVisaoGeral({
   revertMutation,
   deleteMutation,
 }: Props) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const statusSaude = animal.status_saude as StatusSaude | undefined;
   const sexo = animal.sexo as Sexo | undefined;
 
@@ -275,38 +281,17 @@ export function AnimalFichaTabVisaoGeral({
                   ))}
                 {showEditarCadastroAnimal &&
                   (canExcluirCadastroAnimal ? (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="destructive" size="default">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Excluir
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Excluir animal</DialogTitle>
-                          <DialogDescription>
-                            Tem certeza que deseja excluir &quot;
-                            {animal.identificacao}&quot;? Esta ação não pode ser
-                            desfeita.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <DialogClose asChild>
-                            <Button variant="outline">Cancelar</Button>
-                          </DialogClose>
-                          <Button
-                            variant="destructive"
-                            onClick={() => deleteMutation.mutate()}
-                            disabled={deleteMutation.isPending}
-                          >
-                            {deleteMutation.isPending
-                              ? "Excluindo…"
-                              : "Excluir"}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                    <Button
+                      variant="destructive"
+                      size="default"
+                      onClick={() => {
+                        setDeleteError("");
+                        setDeleteOpen(true);
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir
+                    </Button>
                   ) : (
                     <ButtonWithTooltip
                       variant="destructive"
@@ -334,6 +319,40 @@ export function AnimalFichaTabVisaoGeral({
           </CardContent>
         </Card>
       ) : null}
+
+      <DeleteRecordDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) setDeleteError("");
+        }}
+        title="Excluir animal"
+        description={
+          <>
+            Tem certeza que deseja excluir &quot;{animal.identificacao}&quot;?
+            Esta ação não pode ser desfeita.
+          </>
+        }
+        error={deleteError}
+        isPending={deleteMutation.isPending}
+        onConfirm={() => {
+          setDeleteError("");
+          deleteMutation.mutate(undefined, {
+            onSuccess: () => {
+              setDeleteOpen(false);
+              toast.success("Animal excluído");
+            },
+            onError: (err: unknown) => {
+              const message = getApiErrorMessage(
+                err,
+                "Não foi possível excluir este animal."
+              );
+              setDeleteError(message);
+              toast.error(message);
+            },
+          });
+        }}
+      />
     </div>
   );
 }

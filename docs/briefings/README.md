@@ -55,7 +55,8 @@ Análise ──► G1: briefing aprovado ──► Implementação ──► G2:
 
 | ID | Título | Status |
 |----|--------|--------|
-| BRF-006 | Alerta hormônio lactação pendente | rascunho |
+| BRF-006 | Alerta hormônio lactação pendente | implementado |
+| BRF-007 | Assistente FUNCIONARIO fase 1 (consulta) | implementado |
 | BRF-005 | Hormônios lactação | implementado |
 | BRF-004 | Elegibilidade reprodutiva | implementado |
 | BRF-003 | status_saude derivado | implementado |

@@ -258,7 +258,7 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 | ID | Descrição | Briefing | Estado |
 |----|-----------|----------|--------|
-| BR-ALERTA-018 / BR-HORM-012 | Alerta automático hormônio lactação pendente | [BRF-006](../briefings/BRF-006-alerta-hormonio-lactacao-pendente.md) | planejado |
+| BR-ALERTA-018 / BR-HORM-012 | Alerta automático hormônio lactação pendente | [BRF-006](../briefings/BRF-006-alerta-hormonio-lactacao-pendente.md) | implementado |
 | BR-ACESSO-006 ext. | Assistente FUNCIONARIO fase 1 (consulta) | Plano [assistente-funcionario-fases.md](../ops/assistente-funcionario-fases.md) | planejado |
 
 ---

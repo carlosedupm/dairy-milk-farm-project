@@ -9,8 +9,8 @@
 | ID | `BRF-006` |
 | Data | 2026-06-14 |
 | Analista | Análise backlog CeialMilk |
-| Status | rascunho |
-| Aprovado por (G1) | — |
+| Status | implementado |
+| Aprovado por (G1) | Desenvolvedor (2026-06-14) |
 | PR vinculado (G2) | — |
 
 ## 1. Objetivo
@@ -71,15 +71,15 @@ Quando um animal elegível a hormônio de lactação tem **1ª dose pendente** o
 
 | # | Pergunta | Resposta (desenvolvedor) |
 |---|----------|--------------------------|
-| 1 | Severidade MEDIA em vez de ALTA para reduzir ruído de push? | |
-| 2 | Um alerta por animal ou um por protocolo/lactação? | Proposta: **um por animal** (BR-ALERTA-009) |
+| 1 | Severidade MEDIA em vez de ALTA para reduzir ruído de push? | **ALTA** + Web Push (paridade com vacinas atrasadas) |
+| 2 | Um alerta por animal ou um por protocolo/lactação? | **Um por animal** (BR-ALERTA-009) |
 
 ## 6. Critérios de aceite (gate G3)
 
-- [ ] `go test ./...` + `validate-br-refs` OK
-- [ ] Geração manual admin + cron sem duplicar
-- [ ] BR-ALERTA-018 / BR-HORM-012 → `implementado`
-- [ ] `memory-bank/activeContext.md` atualizado
+- [x] `go test ./...` + `validate-br-refs` OK
+- [ ] Geração manual admin + cron sem duplicar (validar em staging)
+- [x] BR-ALERTA-018 / BR-HORM-012 → `implementado`
+- [x] `memory-bank/activeContext.md` atualizado
 
 ## 7. Notas adicionais
 

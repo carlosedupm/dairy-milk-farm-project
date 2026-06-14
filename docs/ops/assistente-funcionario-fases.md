@@ -2,7 +2,7 @@
 
 Plano de liberação incremental do Assistente Virtual para o perfil **FUNCIONARIO**, conforme **BR-ACESSO-006** e jornada de campo em [`memory-bank/productContext.md`](../../memory-bank/productContext.md).
 
-**Estado atual:** `FUNCIONARIO` bloqueado na UI (`showAssistenteForPerfil` → `PERFIL_ASSISTENTE_CAPABILITIES.FUNCIONARIO = []`) e API (`funcionarioAssistentePath` → 403).
+**Estado atual:** `FUNCIONARIO` com capability `assistente.consulta` (BRF-007 implementado, 2026-06-14). Fases 2–4 pendentes.
 
 ## Princípios
 

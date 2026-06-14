@@ -56,6 +56,8 @@ func (h *AssistenteHandler) Interpretar(c *gin.Context) {
 // Executar recebe { "intent": "...", "payload": { ... } } (já confirmado pelo usuário) e executa a ação.
 func (h *AssistenteHandler) Executar(c *gin.Context) {
 	userID := c.GetInt64("user_id")
+	perfilVal, _ := c.Get("perfil")
+	perfil, _ := perfilVal.(string)
 
 	var req service.ExecutarRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -63,8 +65,12 @@ func (h *AssistenteHandler) Executar(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.Executar(c.Request.Context(), req.Intent, req.Payload, req.FazendaID, userID)
+	result, err := h.svc.Executar(c.Request.Context(), req.Intent, req.Payload, req.FazendaID, userID, perfil)
 	if err != nil {
+		if strings.Contains(err.Error(), "perfil não autorizado") {
+			response.ErrorForbidden(c, "Seu perfil não pode executar esta ação no assistente")
+			return
+		}
 		if errors.Is(err, service.ErrFazendaDuplicada) {
 			response.ErrorConflict(c, "Já existe uma fazenda com esse nome e localização", nil)
 			return

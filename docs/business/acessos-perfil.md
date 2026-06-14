@@ -79,19 +79,21 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Implementação**: `backend/internal/auth/perfil_access.go` (`funcionarioRestricoesLeitePath`); UI em `RestricoesLeiteHomePanel` oculta ação Liberar para FUNCIONARIO.
 - **Estado**: Implementado.
 
-### BR-ACESSO-006 — Assistente virtual bloqueado para FUNCIONARIO (com evolução por capacidades)
+### BR-ACESSO-006 — Assistente virtual para FUNCIONARIO (fase 1 consulta)
 
-- **Enunciado**: O perfil `FUNCIONARIO` não visualiza nem aciona o Assistente Virtual no estado atual do produto.
-- **Escopo**: Frontend (visibilidade do FAB/modal) e backend (rotas `/api/v1/assistente/*`).
-- **Perfis / permissões**: `FUNCIONARIO` bloqueado; demais perfis seguem regra vigente.
+- **Enunciado**: O perfil `FUNCIONARIO` visualiza e aciona o Assistente Virtual em **modo consulta** (`assistente.consulta`): contar/listar animais da fazenda ativa e detalhar animal por identificação. Escrita (cadastro, produção, exclusão, saúde, alertas write) permanece bloqueada.
+- **Escopo**: Frontend (FAB/modal) e backend (rotas `/api/v1/assistente/*` + filtro de tools/intents).
+- **Perfis / permissões**: `FUNCIONARIO` — consulta apenas; GERENTE+ inalterado.
 - **Efeito**:
-  - UI: FAB e modal do assistente não são renderizados para `FUNCIONARIO`.
-  - API: acesso direto/manual às rotas do assistente retorna 403 para `FUNCIONARIO`.
+  - UI: FAB visível quando `PERFIL_ASSISTENTE_CAPABILITIES.FUNCIONARIO` inclui `assistente.consulta`.
+  - API Live: só `listar_animais`, `detalhar_animal`, `finalizar_conversa`.
+  - API texto: só intents `consultar_animais_fazenda`, `listar_animais_fazenda`, `detalhar_animal`.
 - **Implementação**:
-  - Frontend: `frontend/src/config/appAccess.ts` (`showAssistenteForPerfil`, `isAssistenteEnabledForPerfil`, `PERFIL_ASSISTENTE_CAPABILITIES`) e `frontend/src/components/layout/ConditionalHeader.tsx`.
-  - Backend: `backend/internal/auth/perfil_access.go` (`funcionarioAssistentePath` + bloqueio explícito em `requestAllowedForFuncionario`).
-  - UX de erro Live: `frontend/src/hooks/useGeminiLive.ts` (`RECONNECT_FAIL_MESSAGE` neutra).
-- **Evolução planejada**: liberação incremental por capacidades — plano em [`docs/ops/assistente-funcionario-fases.md`](../../docs/ops/assistente-funcionario-fases.md) (fase 1: consulta animal; fase 2: produção; …).
+  - Frontend: `frontend/src/config/appAccess.ts`.
+  - Backend: `backend/internal/assistente/capabilities.go`, `perfil_access.go`, `assistente_live_service.go`, `assistente_service.go`.
+  - Briefing: [`BRF-007`](../briefings/BRF-007-assistente-funcionario-fase1.md).
+- **Evolução planejada**: fases 2–4 em [`docs/ops/assistente-funcionario-fases.md`](../../docs/ops/assistente-funcionario-fases.md).
+- **Estado**: parcial (fase 1 implementada).
 
 ### BR-ACESSO-007 — Registo público: perfil USER sem vínculo a fazendas
 

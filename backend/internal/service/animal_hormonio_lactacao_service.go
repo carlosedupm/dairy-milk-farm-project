@@ -78,12 +78,13 @@ type hormonioSaudeStore interface {
 }
 
 type AnimalHormonioLactacaoService struct {
-	repo         hormonioLactacaoStore
-	animalRepo   hormonioAnimalStore
-	lactacaoRepo hormonioLactacaoLookup
-	gestacaoRepo hormonioGestacaoStore
-	toqueRepo    hormonioToqueStore
-	saudeRepo    hormonioSaudeStore
+	repo           hormonioLactacaoStore
+	animalRepo     hormonioAnimalStore
+	lactacaoRepo   hormonioLactacaoLookup
+	gestacaoRepo   hormonioGestacaoStore
+	toqueRepo      hormonioToqueStore
+	saudeRepo      hormonioSaudeStore
+	alertaResolver AlertaAutoResolver
 }
 
 func NewAnimalHormonioLactacaoService(
@@ -102,6 +103,10 @@ func NewAnimalHormonioLactacaoService(
 		toqueRepo:    toqueRepo,
 		saudeRepo:    saudeRepo,
 	}
+}
+
+func (s *AnimalHormonioLactacaoService) SetAlertaAutoResolver(r AlertaAutoResolver) {
+	s.alertaResolver = r
 }
 
 func (s *AnimalHormonioLactacaoService) ListByAnimalID(ctx context.Context, animalID int64) ([]*models.AnimalHormonioLactacaoAplicacao, error) {
@@ -236,8 +241,13 @@ func (s *AnimalHormonioLactacaoService) Create(ctx context.Context, animalID int
 	if err := s.repo.CreateAplicacao(ctx, aplicacao); err != nil {
 		return nil, err
 	}
-	s.createCasoPreventivo(ctx, aplicacao)
+	s.afterCreate(ctx, animal, aplicacao)
 	return aplicacao, nil
+}
+
+func (s *AnimalHormonioLactacaoService) afterCreate(ctx context.Context, animal *models.Animal, aplicacao *models.AnimalHormonioLactacaoAplicacao) {
+	resolveAlertaSilencioso(ctx, s.alertaResolver, animal.FazendaID, animal.ID, models.AlertaTipoHormonioLactacaoPendente)
+	s.createCasoPreventivo(ctx, aplicacao)
 }
 
 func (s *AnimalHormonioLactacaoService) Update(ctx context.Context, animalID, aplicacaoID int64, in SaveHormonioLactacaoInput) (*models.AnimalHormonioLactacaoAplicacao, error) {

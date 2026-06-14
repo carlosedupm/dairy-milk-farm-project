@@ -10,6 +10,8 @@ import {
   type TipoAlerta,
 } from "@/services/alertas";
 import type { FilterFieldDef } from "@/hooks/useFilterSync";
+import { animalFichaHormonioLactacaoTabHref } from "@/components/animais/ficha/animalFichaTabs";
+import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { parseOptionalString, serializeYmdParam } from "@/lib/filter-url";
 import {
   getDefaultServerListPeriod,
@@ -168,4 +170,16 @@ export function alertaSeveridadeLabel(s: string): string {
 
 export function alertaStatusLabel(s: string): string {
   return STATUS_ALERTA_LABELS[s as StatusAlerta] ?? s;
+}
+
+/** Link de drill-down do alerta para ficha ou gestão conforme o tipo. */
+export function alertaAnimalHref(
+  tipo: string,
+  animalId: number | null | undefined,
+): string | undefined {
+  if (!animalId) return undefined;
+  if (tipo === "HORMONIO_LACTACAO_PENDENTE") {
+    return animalFichaHormonioLactacaoTabHref(animalId);
+  }
+  return animalFichaCicloHref(animalId);
 }

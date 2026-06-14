@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ceialmilk/api/internal/assistente"
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/google/generative-ai-go/genai"
 	"github.com/gorilla/websocket"
@@ -108,7 +109,7 @@ func (s *AssistenteLiveService) StartSession(ctx context.Context, userID int64, 
 	// Configurar ferramentas (Function Calling)
 	model.Tools = []*genai.Tool{
 		{
-			FunctionDeclarations: s.getFunctionDeclarations(),
+			FunctionDeclarations: s.getFunctionDeclarationsForPerfil(perfil),
 		},
 	}
 
@@ -585,6 +586,20 @@ func (s *AssistenteLiveService) getFunctionDeclarations() []*genai.FunctionDecla
 	}
 }
 
+func (s *AssistenteLiveService) getFunctionDeclarationsForPerfil(perfil string) []*genai.FunctionDeclaration {
+	all := s.getFunctionDeclarations()
+	if perfil != models.PerfilFuncionario {
+		return all
+	}
+	filtered := make([]*genai.FunctionDeclaration, 0, len(all))
+	for _, fn := range all {
+		if assistente.FuncionarioLiveToolAllowed(fn.Name) {
+			filtered = append(filtered, fn)
+		}
+	}
+	return filtered
+}
+
 // assistenteLiveDomainErr retorna erro de domínio para o Gemini sem (nil, err).
 func assistenteLiveDomainErr(msg string) (interface{}, error) {
 	return map[string]any{"erro": msg}, nil
@@ -593,6 +608,10 @@ func assistenteLiveDomainErr(msg string) (interface{}, error) {
 // ExecuteFunction executa a lógica de negócio baseada na chamada de função do Gemini.
 func (s *AssistenteLiveService) ExecuteFunction(ctx context.Context, call genai.FunctionCall, userID int64, perfil string, fazendaAtivaID int64) (interface{}, error) {
 	slog.Info("Assistente Live: executando função", "name", call.Name, "args", call.Args, "user_id", userID)
+
+	if perfil == models.PerfilFuncionario && !assistente.FuncionarioLiveToolAllowed(call.Name) {
+		return assistenteLiveDomainErr("seu perfil só pode consultar animais no assistente (modo consulta)")
+	}
 
 	switch call.Name {
 	case "listar_fazendas":

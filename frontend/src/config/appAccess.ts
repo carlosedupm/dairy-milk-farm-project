@@ -333,7 +333,7 @@ export type AssistenteCapability =
 const PERFIL_ASSISTENTE_CAPABILITIES: Partial<
   Record<string, AssistenteCapability[]>
 > = {
-  FUNCIONARIO: [],
+  FUNCIONARIO: ["assistente.consulta"],
 };
 
 export function isAssistenteEnabledForPerfil(

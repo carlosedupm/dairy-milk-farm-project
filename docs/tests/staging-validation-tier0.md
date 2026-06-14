@@ -26,7 +26,7 @@ Registar resultado:
 
 | Data | Ambiente | Executor | Itens OK | Falhas (ID) |
 |------|----------|----------|----------|-------------|
-| | | | | |
+| 2026-06-14 | devcontainer (local) | agente CI | sec. 6 OK | sec. 1–5 pendentes (Render/manual) |
 
 ## 3. Migration 36 — vacinas (BRF-001)
 
@@ -72,11 +72,12 @@ cd frontend && npm run lint && npm run typecheck
 node scripts/validate-br-refs.mjs
 ```
 
-**Última execução local (2026-06-14):** `go test ./...` OK; `validate-br-refs` OK (217 IDs, 615 ficheiros). Secções 1–5 (staging/produção) **pendentes** — requerem ambiente Render e ações manuais do operador.
+**Última execução local (2026-06-14):** `go test ./...` OK; `validate-br-refs` OK (217 IDs, 615 ficheiros); `npm run lint` + `npm run typecheck` OK. Secções 1–5 (staging/produção) **pendentes** — requerem ambiente Render e ações manuais do operador (rotacionar TestSprite, `METRICS_TOKEN`, regressão Fase 2 manual, M2M contra `:8080`).
 
 ## Resultado global
 
-- [ ] Tier 0 completo — data: ______
+- [ ] Tier 0 completo — data: ______ (bloqueado: sec. 1–5 Render)
+- [x] Pré-validação automatizada local (sec. 6) — 2026-06-14
 - [ ] Falhas abertas registadas em `memory-bank/activeContext.md` → Problemas Conhecidos
 
 **Última atualização**: 2026-06-14

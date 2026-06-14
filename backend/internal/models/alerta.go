@@ -11,6 +11,7 @@ const (
 	AlertaTipoCioDetectado         = "CIO_DETECTADO"
 	AlertaTipoVacinaVencida        = "VACINA_VENCIDA"
 	AlertaTipoVacinaReforcoVencido = "VACINA_REFORCO_VENCIDA"
+	AlertaTipoHormonioLactacaoPendente = "HORMONIO_LACTACAO_PENDENTE"
 	AlertaTipoManual               = "MANUAL"
 )
 
@@ -62,6 +63,7 @@ func ValidAlertaTipos() []string {
 		AlertaTipoCioDetectado,
 		AlertaTipoVacinaVencida,
 		AlertaTipoVacinaReforcoVencido,
+		AlertaTipoHormonioLactacaoPendente,
 		AlertaTipoManual,
 	}
 }
@@ -114,7 +116,7 @@ func IsValidAlertaStatus(v string) bool {
 func SeveridadePadraoPorTipo(tipo string) (string, bool) {
 	switch tipo {
 	case AlertaTipoTratamentoVencido, AlertaTipoPartoPrevisto, AlertaTipoGestacaoSemSecagem,
-		AlertaTipoVacinaVencida, AlertaTipoVacinaReforcoVencido:
+		AlertaTipoVacinaVencida, AlertaTipoVacinaReforcoVencido, AlertaTipoHormonioLactacaoPendente:
 		return AlertaSeveridadeAlta, true
 	case AlertaTipoRestricaoLeiteAtiva:
 		return AlertaSeveridadeMedia, true
@@ -187,6 +189,8 @@ func LabelTipoAlerta(tipo string) string {
 		return "Vacina atrasada"
 	case AlertaTipoVacinaReforcoVencido:
 		return "Reforço de vacina vencido"
+	case AlertaTipoHormonioLactacaoPendente:
+		return "Hormônio lactação pendente"
 	case AlertaTipoManual:
 		return "Manual"
 	default:

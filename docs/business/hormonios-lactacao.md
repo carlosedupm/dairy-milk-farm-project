@@ -73,10 +73,10 @@ Registro de **aplicações de somatotropina bovina recombinante** (ex.: Lactropi
 
 ### BR-HORM-009 — Listagem de pendentes
 
-- **Enunciado**: `GET /api/v1/fazendas/:id/hormonios-lactacao/pendentes` retorna animais elegíveis (BR-HORM-003/004/005/007) **sem protocolo na lactação** (1ª dose pendente) **ou** com protocolo `ATIVO` e `data_proxima_aplicacao <= hoje`, excluindo janela de 70d e protocolos encerrados. **Alerta automático** planejado em BRF-006 (BR-ALERTA-018 / BR-HORM-012).
-- **Escopo**: UI `/gestao/hormonios-lactacao/pendentes`.
-- **Implementação**: `ListPendentesByFazendaID` em [`animal_hormonio_lactacao_repository.go`](../../backend/internal/repository/animal_hormonio_lactacao_repository.go)
-- **Estado**: implementado (listagem); alerta `planejado` (BRF-006).
+- **Enunciado**: `GET /api/v1/fazendas/:id/hormonios-lactacao/pendentes` retorna animais elegíveis (BR-HORM-003/004/005/007) **sem protocolo na lactação** (1ª dose pendente) **ou** com protocolo `ATIVO` e `data_proxima_aplicacao <= hoje`, excluindo janela de 70d e protocolos encerrados. A mesma lógica alimenta alerta automático `HORMONIO_LACTACAO_PENDENTE` (BR-ALERTA-018 / BR-HORM-012).
+- **Escopo**: UI `/gestao/hormonios-lactacao/pendentes` + geração diária de alertas.
+- **Implementação**: `ListPendentesByFazendaID` em [`animal_hormonio_lactacao_repository.go`](../../backend/internal/repository/animal_hormonio_lactacao_repository.go); regra 9 em `alerta_geracao_service.go`.
+- **Estado**: implementado.
 
 ### BR-HORM-010 — Aplicações na timeline da ficha
 
@@ -90,12 +90,12 @@ Registro de **aplicações de somatotropina bovina recombinante** (ex.: Lactropi
 - **Implementação**: `createCasoPreventivo`; coluna migration 37; padrão BR-SAUDE-010
 - **Estado**: implementado.
 
-### BR-HORM-012 — Alerta automático de dose pendente (planejado)
+### BR-HORM-012 — Alerta automático de dose pendente
 
 - **Enunciado**: Na geração diária (BR-ALERTA-008), animais retornados pela mesma lógica de BR-HORM-009 (pendentes) geram alerta `HORMONIO_LACTACAO_PENDENTE` (severidade ALTA, Web Push). Ao registrar nova aplicação, alerta correspondente → RESOLVIDO (BR-ALERTA-010).
 - **Escopo**: Cron + `POST /admin/alertas/gerar`; dedup BR-ALERTA-009.
-- **Implementação**: planejado — briefing [`BRF-006`](../briefings/BRF-006-alerta-hormonio-lactacao-pendente.md); ver BR-ALERTA-018.
-- **Estado**: planejado.
+- **Implementação**: regra 9 em [`alerta_geracao_service.go`](../../backend/internal/service/alerta_geracao_service.go); `afterCreate` em [`animal_hormonio_lactacao_service.go`](../../backend/internal/service/animal_hormonio_lactacao_service.go); migration 38; briefing [`BRF-006`](../briefings/BRF-006-alerta-hormonio-lactacao-pendente.md) → implementado.
+- **Estado**: implementado.
 
 ---
 
@@ -112,4 +112,4 @@ Registro de **aplicações de somatotropina bovina recombinante** (ex.: Lactropi
 
 ---
 
-**Última atualização**: 2026-06-14 (BR-HORM-012 / BRF-006 planejados)
+**Última atualização**: 2026-06-14 (BR-HORM-012 implementado — BRF-006)

@@ -95,6 +95,20 @@ Acesso **máquina-a-máquina** para sistemas externos ou agentes de IA registare
 - **Implementação**: `IntegracaoAdminHandler.Reativar`, `IntegracaoService.Reativar`, UI `/admin/integracoes/[id]` (botão Reativar + diálogo de chave).
 - **Estado**: implementado.
 
+### BR-INTEG-013 — Leitura M2M de produção de leite (planejado)
+
+- **Enunciado**: `GET /api/v1/integracoes/producao` lista registos de produção por `fazenda_id` e período; scope `producao:read`.
+- **Escopo**: fazenda vinculada; animal no rebanho.
+- **Efeito**: leitura apenas; alinhado a [producao-leite.md](./producao-leite.md).
+- **Estado**: planejado (backlog Tier 2).
+
+### BR-INTEG-014 — Leitura M2M de partos (planejado)
+
+- **Enunciado**: `GET /api/v1/integracoes/partos` lista partos por `fazenda_id` e período; scope `partos:read`.
+- **Escopo**: fazenda vinculada.
+- **Efeito**: leitura apenas; alinhado a [partos.md](./partos.md).
+- **Estado**: planejado (backlog Tier 2).
+
 ---
 
-**Última atualização**: 2026-06-10 (BR-INTEG-012 — reativação admin com nova chave)
+**Última atualização**: 2026-06-14 (BR-INTEG-013/014 planejados — backlog M2M)

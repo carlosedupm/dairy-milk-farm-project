@@ -390,8 +390,8 @@
 - [x] Assistente Live: tools saúde e alertas (2026-05-30)
 - [x] Alertas automáticos de ciclo/saúde/conformidade (Onda 2.2 — ver progress Onda 2.2)
 - [ ] Predições avançadas (reprodução, produção) — roadmap Fase 3+
-- [ ] Assistente por capacidades FUNCIONARIO — ver [`docs/ops/assistente-funcionario-fases.md`](../docs/ops/assistente-funcionario-fases.md)
-- [ ] Alerta automático hormônio lactação (BRF-006 — `planejado`)
+- [x] Assistente FUNCIONARIO fase 1 consulta (BRF-007 — BR-ACESSO-006 parcial)
+- [x] Alerta automático hormônio lactação (BRF-006 implementado)
 - [ ] Testes de integração cobrindo 70%+ (consolidado com Sprint 3)
 
 ## 📊 Métricas de Progresso Detalhadas
@@ -959,4 +959,4 @@
 
 **Última atualização**: 2026-06-14 (sincronização backlog pós-análise; Fase 3 marcada concluída em código)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
-**Próxima revisão**: após Tier 0 staging + BRF-006 (alerta hormônio) + fase 1 assistente FUNCIONARIO
+**Próxima revisão**: após Tier 0 staging Render (sec. 1–5) + validação manual G3 BRF-006/007

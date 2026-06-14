@@ -37,11 +37,16 @@ type alertaGeracaoStore interface {
 	ResolveOpenByFazendaTipoAnimal(ctx context.Context, fazendaID int64, tipo string, animalID int64) error
 }
 
+type hormonioPendentesForAlertaStore interface {
+	ListPendentesByFazendaID(ctx context.Context, fazendaID int64, refDate time.Time) ([]*models.HormonioLactacaoPendente, error)
+}
+
 type AlertaGeracaoService struct {
-	alertaRepo       alertaGeracaoStore
-	fazendaRepo      *repository.FazendaRepository
-	animalSaudeRepo  *repository.AnimalSaudeRepository
-	animalVacinaRepo *repository.AnimalVacinaRepository
+	alertaRepo         alertaGeracaoStore
+	fazendaRepo        *repository.FazendaRepository
+	animalSaudeRepo    *repository.AnimalSaudeRepository
+	animalVacinaRepo   *repository.AnimalVacinaRepository
+	animalHormonioRepo hormonioPendentesForAlertaStore
 	gestacaoRepo     *repository.GestacaoRepository
 	restricaoRepo    *repository.RestricaoLeiteRepository
 	cioRepo          *repository.CioRepository
@@ -109,6 +114,11 @@ func (s *AlertaGeracaoService) SetAnimalVacinaRepo(repo *repository.AnimalVacina
 	s.animalVacinaRepo = repo
 }
 
+// SetAnimalHormonioLactacaoRepo habilita a regra 9 (BR-ALERTA-018).
+func (s *AlertaGeracaoService) SetAnimalHormonioLactacaoRepo(repo hormonioPendentesForAlertaStore) {
+	s.animalHormonioRepo = repo
+}
+
 func (s *AlertaGeracaoService) GerarAlertasDiarios(ctx context.Context, refDate time.Time) (GerarAlertasResultado, error) {
 	refLocal := truncateToDateInTZ(refDate, s.tz)
 	var total GerarAlertasResultado
@@ -142,6 +152,7 @@ func (s *AlertaGeracaoService) gerarPorFazenda(ctx context.Context, fazendaID in
 		s.regraCioDetectado,
 		s.regraVacinaVencida,
 		s.regraVacinaReforcoVencido,
+		s.regraHormonioLactacaoPendente,
 	}
 	for _, fn := range regras {
 		c, ig, err := fn(ctx, fazendaID, refDate)
@@ -252,6 +263,30 @@ func (s *AlertaGeracaoService) regraVacinaReforcoVencido(ctx context.Context, fa
 	}
 	return s.criarAlertasAnimais(ctx, fazendaID, models.AlertaTipoVacinaReforcoVencido, itens, func(ident string) string {
 		return fmt.Sprintf("Reforço de vacina vencido — Animal %s", ident)
+	}, nil)
+}
+
+// regraHormonioLactacaoPendente (regra 9 — BR-ALERTA-018): 1ª dose ou manutenção com data_proxima ≤ hoje.
+func (s *AlertaGeracaoService) regraHormonioLactacaoPendente(ctx context.Context, fazendaID int64, refDate time.Time) (int, int, error) {
+	if s.animalHormonioRepo == nil {
+		return 0, 0, nil
+	}
+	pendentes, err := s.animalHormonioRepo.ListPendentesByFazendaID(ctx, fazendaID, refDate)
+	if err != nil {
+		return 0, 0, err
+	}
+	itens := make([]repository.AlertaAnimalIdentificacao, 0, len(pendentes))
+	for _, p := range pendentes {
+		if p == nil {
+			continue
+		}
+		itens = append(itens, repository.AlertaAnimalIdentificacao{
+			AnimalID:      p.AnimalID,
+			Identificacao: p.AnimalIdentificacao,
+		})
+	}
+	return s.criarAlertasAnimais(ctx, fazendaID, models.AlertaTipoHormonioLactacaoPendente, itens, func(ident string) string {
+		return fmt.Sprintf("Hormônio de lactação pendente — Animal %s", ident)
 	}, nil)
 }
 

@@ -38,6 +38,7 @@ Complementa [`regressao-ciclo-fase2.md`](./regressao-ciclo-fase2.md) para entreg
 | H2 | Intervalo <14d entre doses | 400 HORMONIO_INTERVALO_MINIMO |
 | H3 | Janela 70d pré-parto | 400 HORMONIO_JANELA_PRE_PARTO |
 | H4 | Pendentes na gestão | Lista 1ª dose ou próxima ≤ hoje |
+| H5 | Pendente na geração diária | Alerta `HORMONIO_LACTACAO_PENDENTE` ALTA; auto-resolve ao POST dose |
 
 ## Elegibilidade reprodutiva (BRF-004 / BR-CICLO-016–018)
 
@@ -53,6 +54,6 @@ Complementa [`regressao-ciclo-fase2.md`](./regressao-ciclo-fase2.md) para entreg
 
 | Data | Ambiente | Executor | Notas |
 |------|----------|----------|-------|
-| | | | |
+| 2026-06-14 | devcontainer | agente CI | Testes automatizados BRF-006/007; validação manual UI pendente staging |
 
 **Última atualização**: 2026-06-14

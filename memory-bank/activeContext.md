@@ -4,9 +4,16 @@
 
 ### **Status Geral**
 
-Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrado do rebanho)** e **Fase 3 (saúde, alertas, vacinas, hormônios)** consideradas **fechadas em código e catálogo** — validação operacional Tier 0 em staging pendente. **Foco atual:** executar [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md); preparar BRF-006 (alerta hormônio) e fase 1 do assistente FUNCIONARIO.
+Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** fechadas em código; **BRF-006** (alerta hormônio) e **BRF-007** (assistente FUNCIONARIO fase 1) implementados. **Foco atual:** validação operacional Tier 0 em staging (sec. 1–5 Render); backlog Tier 2 (M2M produção/partos, testes integração).
 
 ### ✅ Concluído desde a última atualização:
+
+1. ✅ **BRF-006 — Alerta hormônio lactação pendente (2026-06-14)**: migration 38; regra 9 `HORMONIO_LACTACAO_PENDENTE` (ALTA + push); auto-resolve ao POST dose; frontend tipos/filtro + drill-down tab hormônio; BR-ALERTA-018 / BR-HORM-012 implementados.
+1. ✅ **BRF-007 — Assistente FUNCIONARIO fase 1 (2026-06-14)**: `assistente.consulta`; `internal/assistente/capabilities.go`; tools `listar_animais` + `detalhar_animal`; BR-ACESSO-006 parcial.
+1. ✅ **UX — DeleteRecordDialog na ficha animal (2026-06-14)**: `AnimalFichaTabVisaoGeral` alinhado às listagens.
+1. ✅ **Tier 2 docs (2026-06-14)**: regressão Fase 3 H5; BR-INTEG-013/014 planejados; Tier 0 sec. 6 CI verde.
+
+### ✅ Histórico (sessões anteriores):
 
 1. ✅ **Admin Integrações — UX revogação/reativação e diálogo de chave (2026-06-10)**: popup de chave após «Rotacionar» fechava instantaneamente (remount por `formKey` + `invalidateQueries`); diálogo elevado para `page.tsx`; novo `POST /api/v1/admin/integracoes/:id/reativar` (BR-INTEG-012) com nova chave obrigatória; botão Reativar na ficha; permanece na página após revogar.
 1. ✅ **Hardening de segurança e processo (2026-06-10)** — plano completo executado:
@@ -212,11 +219,10 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### 📋 Próximos passos imediatos:
 
-1. **Tier 0 staging** — executar [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) (checklist ciclo Fase 2, migration 36 vacinas, M2M, ações manuais segurança).
-2. **Tier 1 produto** — aprovar e implementar BRF-006 (alerta hormônio lactação); fase 1 assistente FUNCIONARIO ([`docs/ops/assistente-funcionario-fases.md`](../docs/ops/assistente-funcionario-fases.md)); catálogo lotes (`docs/business/lotes.md` ✅).
-3. Recuperação de senha — **adiado** até provedor SMTP definido (`deploy-notes.md`).
-4. Backlog Tier 2: testes integração 70%+; checklist Fase 3 ([`docs/tests/regressao-fase3-checklist.md`](../docs/tests/regressao-fase3-checklist.md)); escopos M2M produção/partos; BR-ACESSO-010 convites.
-5. DoD em toda entrega: código + `docs/business/` + memory bank quando mudar marco.
+1. **Tier 0 staging (Render)** — sec. 1–5 de [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md): `METRICS_TOKEN`, TestSprite, regressão Fase 2 manual, M2M `:8080`, migration 38 em ambiente real.
+2. **Validação manual G3** — BRF-006 geração admin/cron; BRF-007 assistente no curral com perfil FUNCIONARIO.
+3. **Tier 2** — implementar BR-INTEG-013/014 (M2M produção/partos); meta testes integração; BR-ACESSO-010 convites; assistente fases 2–4.
+4. Recuperação de senha — **adiado** até SMTP (`deploy-notes.md`).
 
 ## 🛠️ Decisões Técnicas Ativas
 

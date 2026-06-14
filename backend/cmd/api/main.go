@@ -245,8 +245,10 @@ func main() {
 					} else {
 						alertaGeracaoSvc.SetPushNotificationService(pushSvc)
 						alertaGeracaoSvc.SetAnimalVacinaRepo(animalVacinaRepo)
+						alertaGeracaoSvc.SetAnimalHormonioLactacaoRepo(animalHormonioRepo)
 						animalSaudeSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
 						animalVacinaSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
+						animalHormonioSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
 						restricaoLeiteSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
 						cronCtx, cancel := context.WithCancel(context.Background())
 						alertasCronCancel = cancel
