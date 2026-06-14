@@ -292,5 +292,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-06-10 (Go 1.25.11 + deps de segurança; METRICS_TOKEN/TRUSTED_PROXIES; CI com golangci-lint/govulncheck/CodeQL/Dependabot; proxy.ts + CSP no frontend)
+**Última atualização**: 2026-06-14 (frontend: `npm overrides` esbuild ≥0.28.1 e postcss ≥8.5.10 — CI `npm audit --audit-level=high` zerado; vitest 3.2.6)
 **Stack**: Go 1.25 + Next.js 16.2.9 — Fase 2 concluída; hardening de segurança 2026-06-10; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)
