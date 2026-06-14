@@ -38,7 +38,7 @@ Registro de **gestação confirmada** após toque positivo e acompanhamento até
 - **Escopo**: Fazenda ativa; perfis com dashboard completo (não FUNCIONARIO restrito).
 - **Efeito**: navegação; lista vazia quando contador é zero.
 - **Implementação**: KPI «Prenhes» removido da faixa principal (substituído por BR-CICLO-009 / BR-GESTACOES-005); filtro `status=CONFIRMADA` em `gestacoes/page.tsx` mantido para outros atalhos.
-- **Estado**: parcial (drill-down prenhes substituído na home por KPI partos 7d; regra de contagem `prenhes_total` permanece na API).
+- **Estado**: implementado (KPI «Prenhes» removido da home em favor de BR-GESTACOES-005 / BR-CICLO-009; `prenhes_total` permanece na API para outros consumidores).
 
 ### BR-GESTACOES-005 — Drill-down «Partos 7 dias» na home
 

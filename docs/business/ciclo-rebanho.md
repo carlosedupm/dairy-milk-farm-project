@@ -256,8 +256,11 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 ## Backlog de requisitos (próximos)
 
-_(vazio — ver briefings em `docs/briefings/` para novos trabalhos)_
+| ID | Descrição | Briefing | Estado |
+|----|-----------|----------|--------|
+| BR-ALERTA-018 / BR-HORM-012 | Alerta automático hormônio lactação pendente | [BRF-006](../briefings/BRF-006-alerta-hormonio-lactacao-pendente.md) | planejado |
+| BR-ACESSO-006 ext. | Assistente FUNCIONARIO fase 1 (consulta) | Plano [assistente-funcionario-fases.md](../ops/assistente-funcionario-fases.md) | planejado |
 
 ---
 
-**Última atualização**: 2026-06-09 (BR-CICLO-016–018 implementados — BRF-004 G3)
+**Última atualização**: 2026-06-14 (backlog BRF-006 + assistente FUNCIONARIO)

@@ -274,5 +274,13 @@ Implementação: `models.IsTransicaoAlertaStatusValida`, `AlertaService.UpdateSt
   - Tipos novos no CHECK de `alertas.tipo` (migration 36).
 - **Estado**: implementado.
 
+### BR-ALERTA-018 — Geração automática de alerta HORMONIO_LACTACAO_PENDENTE (planejado)
+
+- **Enunciado**: Na geração automática diária (BR-ALERTA-008), o sistema identifica animais com dose de hormônio de lactação pendente (mesmos critérios de BR-HORM-009) e gera alerta `HORMONIO_LACTACAO_PENDENTE` (severidade ALTA, Web Push).
+- **Escopo**: Animal no rebanho; elegibilidade BR-HORM-003–007.
+- **Efeito**: alerta persistido; dedup BR-ALERTA-009; auto-resolve ao registrar aplicação (BR-ALERTA-010 / BR-HORM-012).
+- **Implementação**: planejado — regra 9 em `alerta_geracao_service.go`; migration CHECK `alertas.tipo`; briefing [`BRF-006`](../briefings/BRF-006-alerta-hormonio-lactacao-pendente.md).
+- **Estado**: planejado.
+
 ---
-**Última atualização**: 2026-06-09 (BR-ALERTA-016/017 — vacinas)
+**Última atualização**: 2026-06-14 (BR-ALERTA-018 planejado — BRF-006)

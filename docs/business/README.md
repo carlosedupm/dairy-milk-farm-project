@@ -38,7 +38,7 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 |--------|---------|--------|--------|
 | **Ciclo do rebanho (mestre)** | [ciclo-rebanho.md](./ciclo-rebanho.md) | `BR-CICLO-*` | ✅ Referência mestre |
 | **Saúde animal** | [saude-animal.md](./saude-animal.md) | `BR-SAUDE-001`–`005` | ✅ |
-| **Alertas proativos** | [alertas.md](./alertas.md) | `BR-ALERTA-001`–`013` | ✅ |
+| **Alertas proativos** | [alertas.md](./alertas.md) | `BR-ALERTA-001`–`018` | ✅ (+ `018` planejado) |
 | **Auditoria e conformidade** | [auditoria.md](./auditoria.md) | `BR-AUDIT-*`, INT-001–007 | ✅ |
 
 ### Ciclo reprodutivo e produção
@@ -71,8 +71,8 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 | Folgas (escala 5x1) | [folgas.md](./folgas.md) | ✅ |
 | Acessos por perfil (RBAC) | [acessos-perfil.md](./acessos-perfil.md) | ✅ |
 | Integrações externas (API M2M) | [integracoes.md](./integracoes.md) | ✅ |
-| Lotes | *a criar* `lotes.md` | 🚧 |
+| Lotes | [lotes.md](./lotes.md) | `BR-LOTE-001`–`004` | ✅ |
 
 ---
 
-**Última atualização**: 2026-06-10 (BR-HORM-* implementado — BRF-005 G3)
+**Última atualização**: 2026-06-14 (lotes.md + BRF-006 backlog)

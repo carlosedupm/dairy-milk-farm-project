@@ -115,13 +115,17 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 - [ ] Recuperação de senha (adiado — aguarda SMTP)
 - [x] **API de integrações M2M** (toques pós-vet, busca animal, coberturas; admin `/admin/integracoes`; OpenAPI/Swagger em `/api/v1/integracoes/docs`) — ver `docs/business/integracoes.md`
 
-### **Fase 3 — Saúde, inteligência e escala**
+### **Fase 3 — Saúde, inteligência e escala** *(concluída em código — 2026-06-10; validação staging pendente)*
 
-- [ ] Módulo saúde (vacinas, tratamentos)
-- [ ] Alertas automáticos reprodutivos e de produção
-- [ ] Assistente por capacidades; gráficos e exportações
+- [x] Módulo saúde animal (CRUD casos clínicos, sync `status_saude`, timeline — `saude-animal.md` BR-SAUDE-001–013)
+- [x] Vacinas / calendário preventivo (BRF-001 — BR-SAUDE-007–011, BR-ALERTA-016/017)
+- [x] Hormônios de lactação (BRF-005 — BR-HORM-001–011)
+- [x] Alertas automáticos de ciclo/saúde/conformidade + Web Push (BR-ALERTA-001–017)
+- [ ] Assistente por capacidades para FUNCIONARIO (BR-ACESSO-006) — plano em [`docs/ops/assistente-funcionario-fases.md`](../docs/ops/assistente-funcionario-fases.md)
+- [ ] Alerta automático hormônio lactação pendente (BRF-006 — BR-ALERTA-018 / BR-HORM-012 `planejado`)
+- [ ] Gráficos e exportações
 - [ ] Offline-first onde tecnicamente viável
-- [ ] IoT; **escopos M2M adicionais** (produção, partos, webhooks) — backlog
+- [ ] IoT; **escopos M2M adicionais** (produção, partos, vacinas, webhooks) — backlog
 
 ## ✅ Definição de pronto (DoD) para entregas de produto
 
@@ -143,10 +147,10 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 | Período | Entrega alvo |
 |---------|----------------|
 | **Q2 2026** | Fase 2 concluída; integrações M2M v1; validar checklist + integrador em staging |
-| **Q3 2026** | Fase 3: saúde animal mínimo + alertas; recuperação de senha (após SMTP) |
+| **Q3 2026** | Fase 3 entregue em código; validação staging Tier 0; BRF-006 alerta hormônio; assistente FUNCIONARIO fase 1; recuperação de senha (após SMTP) |
 | **Q4 2026+** | Inteligência, offline, ecossistema |
 
 ---
 
-**Última atualização**: 2026-06-10  
-**Versão do Brief**: 3.3 (hardening de segurança e processo concluído; objetivos e fases inalterados)
+**Última atualização**: 2026-06-14  
+**Versão do Brief**: 3.4 (Fase 3 marcada concluída em código; backlog Tier 0–1 documentado)

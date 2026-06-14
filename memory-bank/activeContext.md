@@ -4,7 +4,7 @@
 
 ### **Status Geral**
 
-Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrado do rebanho)** considerada **fechada** em código e catálogo — inclui qualidade (checklist de regressão) e visibilidade (painel de conformidade, «Registado por» na ficha). **Foco atual:** validação operacional do checklist em staging e **Fase 3** (saúde, alertas); recuperação de senha **adiada** (SMTP).
+Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrado do rebanho)** e **Fase 3 (saúde, alertas, vacinas, hormônios)** consideradas **fechadas em código e catálogo** — validação operacional Tier 0 em staging pendente. **Foco atual:** executar [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md); preparar BRF-006 (alerta hormônio) e fase 1 do assistente FUNCIONARIO.
 
 ### ✅ Concluído desde a última atualização:
 
@@ -121,7 +121,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 1. ✅ **BRF-005 — Hormônios de lactação (G3, 2026-06-10)**: migration 37; backend (`AnimalHormonioLactacaoService`, RBAC BR-ACESSO-025, timeline, hook secagem); frontend (tab ficha, forms, `/gestao/hormonios-lactacao/pendentes`); testes service + `perfil_access`; catálogo **BR-HORM-001–011** + **BR-ACESSO-025** implementados.
 
 ### 🚧 Em andamento:
-- **Fase 3 — validação operacional**: checklist staging pós alertas automáticos e Web Push; validar migration 36 + fluxo de vacinas em staging (Docker indisponível no devcontainer atual — migration não validada localmente)
+- **Validação operacional Tier 0** — checklist Fase 2 + migration 36/37 + M2M em staging; ações manuais segurança (`METRICS_TOKEN`, rotação TestSprite). Ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md).
 
 ### ✅ Fase 3 — entregas consolidadas (2026-05-27 a 2026-05-29):
 
@@ -212,10 +212,10 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ### 📋 Próximos passos imediatos:
 
-1. Executar checklist em [docs/tests/regressao-ciclo-fase2.md](../docs/tests/regressao-ciclo-fase2.md) em ambiente de staging/produção e registar falhas.
-2. Validar fluxo integração externa ponta-a-ponta (ex.: relatório vet → lote toques) com cliente real em staging; confirmar scopes e vínculo de fazendas no admin.
+1. **Tier 0 staging** — executar [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) (checklist ciclo Fase 2, migration 36 vacinas, M2M, ações manuais segurança).
+2. **Tier 1 produto** — aprovar e implementar BRF-006 (alerta hormônio lactação); fase 1 assistente FUNCIONARIO ([`docs/ops/assistente-funcionario-fases.md`](../docs/ops/assistente-funcionario-fases.md)); catálogo lotes (`docs/business/lotes.md` ✅).
 3. Recuperação de senha — **adiado** até provedor SMTP definido (`deploy-notes.md`).
-4. Backlog pós-Fase 2: paginação timeline, agricultura/assistente, Fase 3 (saúde); expandir scopes M2M (produção, partos) se necessário.
+4. Backlog Tier 2: testes integração 70%+; checklist Fase 3 ([`docs/tests/regressao-fase3-checklist.md`](../docs/tests/regressao-fase3-checklist.md)); escopos M2M produção/partos; BR-ACESSO-010 convites.
 5. DoD em toda entrega: código + `docs/business/` + memory bank quando mudar marco.
 
 ## 🛠️ Decisões Técnicas Ativas
@@ -288,5 +288,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2 (ciclo integrad
 
 ---
 
-**Última atualização**: 2026-06-10 (BRF-005 G3 — hormônios lactação BR-HORM-* implementado)
-**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 fechada** | **Hardening de segurança concluído** (BR-ACESSO-023/024) | **Fase 3** saúde + alertas + Web Push + **vacinas (BRF-001)** + **hormônios lactação (BRF-005)** | **BRF-002/003/004/005 implementados** | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Recuperação senha aguarda SMTP | **Ações manuais pendentes**: rotacionar key TestSprite, `METRICS_TOKEN` no Render
+**Última atualização**: 2026-06-14 (sincronização backlog; Fase 3 fechada em código; Tier 0 staging documentado)
+**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 + Fase 3 fechadas em código** | **Tier 0 staging pendente** | BRF-006 + assistente FUNCIONARIO fase 1 no backlog Tier 1 | **M2M** BR-INTEG-001–012 | Recuperação senha aguarda SMTP

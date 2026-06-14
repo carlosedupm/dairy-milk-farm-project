@@ -328,7 +328,7 @@
 - [x] Autenticação completa (registro, refresh tokens)
 - [x] CRUD de Animais (backend + frontend)
 - [x] CRUD de Produção de Leite (backend + frontend)
-- [ ] Validações e tratamento de erros
+- [x] Validações e tratamento de erros (`getApiErrorMessage`, `FormValidationAlert`, TMP/INT na API)
 
 ### **Sprint 4 (Consolidação Módulo Agrícola)**
 
@@ -340,10 +340,10 @@
 
 ### **Sprint 3 (Melhorias)**
 
-- [ ] Testes unitários (Go)
-- [ ] Testes de integração
-- [ ] Observabilidade (Sentry, BetterStack)
-- [ ] Otimizações de performance
+- [x] Testes unitários (Go) — services (saúde, alertas, ciclo, IDOR), handlers, `perfil_access`; vitest frontend no CI
+- [ ] Testes de integração (meta 70%+ cobertura de fluxos ciclo + saúde + alertas + M2M)
+- [x] Observabilidade — Sentry integrado; [ ] BetterStack em produção (configuração pendente)
+- [ ] Otimizações de performance (sem gargalo documentado)
 - [x] **Documentação de API (integrações M2M)**: OpenAPI 3.0 + Swagger UI em `/api/v1/integracoes/docs` (JWT geral e admin integrações fora do escopo)
 - [ ] Documentação OpenAPI da API JWT completa (futuro)
 
@@ -389,9 +389,10 @@
 - [x] Módulo saúde animal (CRUD, RBAC, UI, timeline, sync `status_saude`; catálogo `saude-animal.md`)
 - [x] Assistente Live: tools saúde e alertas (2026-05-30)
 - [x] Alertas automáticos de ciclo/saúde/conformidade (Onda 2.2 — ver progress Onda 2.2)
-- [ ] Predições avançadas (reprodução, produção)
-- [ ] Assistente por capacidades; integração IoT (opcional)
-- [ ] Testes de integração cobrindo 70%+
+- [ ] Predições avançadas (reprodução, produção) — roadmap Fase 3+
+- [ ] Assistente por capacidades FUNCIONARIO — ver [`docs/ops/assistente-funcionario-fases.md`](../docs/ops/assistente-funcionario-fases.md)
+- [ ] Alerta automático hormônio lactação (BRF-006 — `planejado`)
+- [ ] Testes de integração cobrindo 70%+ (consolidado com Sprint 3)
 
 ## 📊 Métricas de Progresso Detalhadas
 
@@ -404,7 +405,7 @@
 ### **Qualidade**
 
 ```progress
-▄▄▄▄▄▄▄▄▄▄ 0%
+████████░░ 80%
 ```
 
 ### **Documentação**
@@ -956,6 +957,6 @@
 
 ---
 
-**Última atualização**: 2026-06-10 (BRF-005 hormônios lactação G3 + hardening de segurança)
-**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Hardening de segurança 2026-06-10** ✅ | **Fase 3** saúde + alertas + Web Push + timeline + `lactacao_id` | **M2M** BR-INTEG-001–011 | Checklist staging pendente | Senha aguarda SMTP
-**Próxima revisão**: após ações manuais de segurança (rotação TestSprite, METRICS_TOKEN) + validação staging; reavaliar ruleset completo (PR + status checks) quando o fluxo migrar para branch/PR
+**Última atualização**: 2026-06-14 (sincronização backlog pós-análise; Fase 3 marcada concluída em código)
+**Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
+**Próxima revisão**: após Tier 0 staging + BRF-006 (alerta hormônio) + fase 1 assistente FUNCIONARIO

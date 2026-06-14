@@ -91,7 +91,7 @@ Regras de autorização por perfil para navegação e operações na aplicação
   - Frontend: `frontend/src/config/appAccess.ts` (`showAssistenteForPerfil`, `isAssistenteEnabledForPerfil`, `PERFIL_ASSISTENTE_CAPABILITIES`) e `frontend/src/components/layout/ConditionalHeader.tsx`.
   - Backend: `backend/internal/auth/perfil_access.go` (`funcionarioAssistentePath` + bloqueio explícito em `requestAllowedForFuncionario`).
   - UX de erro Live: `frontend/src/hooks/useGeminiLive.ts` (`RECONNECT_FAIL_MESSAGE` neutra).
-- **Evolução planejada**: a liberação para `FUNCIONARIO` será incremental por capacidades de negócio (capability-based), sem liberar o assistente completo de uma só vez.
+- **Evolução planejada**: liberação incremental por capacidades — plano em [`docs/ops/assistente-funcionario-fases.md`](../../docs/ops/assistente-funcionario-fases.md) (fase 1: consulta animal; fase 2: produção; …).
 
 ### BR-ACESSO-007 — Registo público: perfil USER sem vínculo a fazendas
 

@@ -108,7 +108,7 @@ Detalhe transversal: **[docs/business/ciclo-rebanho.md](../docs/business/ciclo-r
 - Pequenas fazendas; ciclo reprodutivo + leite + folgas; catálogo `BR-*` completo.
 
 ### **Fase 2 (100–500 fazendas)**
-- Dashboard, saúde animal mínimo, alertas automáticos.
+- Dashboard, saúde animal, alertas automáticos — **entregue em código (2026-06)**.
 
 ### **Fase 3 (500+ fazendas)**
 - Saúde animal, alertas automáticos, predições; offline avançado.
@@ -116,5 +116,5 @@ Detalhe transversal: **[docs/business/ciclo-rebanho.md](../docs/business/ciclo-r
 
 ---
 
-**Última atualização**: 2026-06-10  
-**Versão do Contexto**: 3.2 (revisão de higiene pós-hardening de segurança; visão de produto inalterada)
+**Última atualização**: 2026-06-14  
+**Versão do Contexto**: 3.3 (Fase 2 produto alinhada a entregas de saúde/alertas)

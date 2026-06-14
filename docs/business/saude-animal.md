@@ -140,11 +140,9 @@ UpdateStatusSaude → animais.status_saude
 
 ---
 
-## Backlog (planejado)
+## Backlog
 
-| Item | Estado | Notas |
-|------|--------|-------|
-| Bloqueio de edição manual de `status_saude` com casos ATIVOS | implementado | **BR-SAUDE-013** — briefing [`BRF-003`](../briefings/BRF-003-status-saude-derivado.md) |
+_(vazio — regras BRF-001 a BRF-005 implementadas; próximo trabalho planejado: BRF-006 alerta hormônio lactação)_
 
 ---
 
@@ -252,4 +250,4 @@ UpdateStatusSaude → animais.status_saude
 - **Estado**: implementado (briefing **BRF-003**, G3 2026-06-09).
 
 ---
-**Última atualização**: 2026-06-09 (BR-SAUDE-013 implementado — BRF-003)
+**Última atualização**: 2026-06-14 (backlog esvaziado; BR-SAUDE-001–013 implementados)

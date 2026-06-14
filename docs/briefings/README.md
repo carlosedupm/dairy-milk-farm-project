@@ -51,6 +51,17 @@ Análise ──► G1: briefing aprovado ──► Implementação ──► G2:
 - **Template**: [`briefing-template.md`](./briefing-template.md)
 - Briefings `arquivado` permanecem no diretório (histórico auditável: PR → `BRF-NNN` → `BR-*`)
 
+### Briefings ativos / recentes
+
+| ID | Título | Status |
+|----|--------|--------|
+| BRF-006 | Alerta hormônio lactação pendente | rascunho |
+| BRF-005 | Hormônios lactação | implementado |
+| BRF-004 | Elegibilidade reprodutiva | implementado |
+| BRF-003 | status_saude derivado | implementado |
+| BRF-002 | Validação temporal saúde | implementado |
+| BRF-001 | Vacinas / calendário | implementado |
+
 ## Verificação automatizada
 
 ```bash
@@ -76,4 +87,4 @@ Executado no CI. Falha se:
 
 ---
 
-**Última atualização**: 2026-06-09
+**Última atualização**: 2026-06-14
