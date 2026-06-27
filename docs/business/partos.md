@@ -57,6 +57,7 @@ Registro de **parto** da matriz, opcionalmente com **crias** no mesmo POST, aber
 - **Efeito**: filtro na listagem; em edição o animal selecionado permanece visível (`preserveSelected`).
 - **Implementação**: `AnimalRepository.ListParaPartoByFazendaID`; `PartoFormFields`.
 - **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
+- **Correção (2026-06-27)**: `PartoService.resolveGestacaoID` / `resolveGestacaoIDTx` garantem que o `gestacao_id` seja preenchido automaticamente quando o frontend envia nil (select de gestação opcional). Sem isso, `ListParaPartoByFazendaID` (`NOT EXISTS partos WHERE gestacao_id = g.id`) continuava retornando o animal após o registro, pois `gestacao_id = NULL` nunca satisfaz o `NOT EXISTS`. A correção atualiza tanto o status da gestação para `PARTO_REALIZADO` quanto o campo `gestacao_id` no registro de parto via `PartoRepository.UpdateGestacaoIDTx` / `UpdateGestacaoID`.
 
 ### BR-PARTOS-008 — Cria viva não saudável no parto
 
@@ -72,4 +73,4 @@ Registro de **parto** da matriz, opcionalmente com **crias** no mesmo POST, aber
 
 ---
 
-**Última atualização**: 2026-06-09 (BR-PARTOS-008 implementado — BRF-003)
+**Última atualização**: 2026-06-27 (BR-PARTOS-007 correção — resolveGestacaoID auto-vincula gestação)

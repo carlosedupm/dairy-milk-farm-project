@@ -64,6 +64,22 @@ func (r *PartoRepository) GetByAnimalIDTx(ctx context.Context, tx pgx.Tx, animal
 	return list, rows.Err()
 }
 
+// UpdateGestacaoIDTx atualiza o campo gestacao_id de um parto (versão transacional).
+// Usado quando o parto foi criado sem vínculo e o backend resolve
+// a gestação automaticamente (resolveGestacaoIDTx).
+func (r *PartoRepository) UpdateGestacaoIDTx(ctx context.Context, tx pgx.Tx, partoID, gestacaoID int64) error {
+	query := `UPDATE partos SET gestacao_id = $1 WHERE id = $2`
+	_, err := tx.Exec(ctx, query, gestacaoID, partoID)
+	return err
+}
+
+// UpdateGestacaoID atualiza o campo gestacao_id de um parto (sem transação explícita).
+func (r *PartoRepository) UpdateGestacaoID(ctx context.Context, partoID, gestacaoID int64) error {
+	query := `UPDATE partos SET gestacao_id = $1 WHERE id = $2`
+	_, err := r.db.Exec(ctx, query, gestacaoID, partoID)
+	return err
+}
+
 func (r *PartoRepository) GetByID(ctx context.Context, id int64) (*models.Parto, error) {
 	query := `SELECT id, animal_id, gestacao_id, data, tipo, numero_crias, complicacoes, observacoes, fazenda_id, created_at FROM partos WHERE id = $1`
 	var p models.Parto

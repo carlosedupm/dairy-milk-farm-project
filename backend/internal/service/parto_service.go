@@ -76,6 +76,60 @@ func (s *PartoService) validatePartoAnimalForCreate(ctx context.Context, p *mode
 	return animal, nil
 }
 
+// resolveGestacaoID busca a gestação CONFIRMADA do animal quando o parto
+// não veio com gestacao_id (registro legato ou frontend sem seleção).
+// Atualiza o status da gestação para PARTO_REALIZADO e retorna o ID
+// encontrado para preencher o campo do parto.
+func (s *PartoService) resolveGestacaoID(ctx context.Context, p *models.Parto) error {
+	if p.GestacaoID != nil {
+		g, err := s.gestacaoRepo.GetByID(ctx, *p.GestacaoID)
+		if err != nil {
+			return err
+		}
+		g.Status = models.GestacaoStatusPartoRealizado
+		return s.gestacaoRepo.Update(ctx, g)
+	}
+	g, err := s.gestacaoRepo.GetAtivaConfirmadaByAnimalID(ctx, p.AnimalID)
+	if err != nil {
+		return err
+	}
+	if g != nil {
+		p.GestacaoID = &g.ID
+		g.Status = models.GestacaoStatusPartoRealizado
+		if err := s.gestacaoRepo.Update(ctx, g); err != nil {
+			return err
+		}
+		// Atualiza o campo gestacao_id no registro de parto (inserido sem vínculo).
+		return s.repo.UpdateGestacaoID(ctx, p.ID, g.ID)
+	}
+	return nil
+}
+
+func (s *PartoService) resolveGestacaoIDTx(ctx context.Context, tx pgx.Tx, p *models.Parto) error {
+	if p.GestacaoID != nil {
+		g, err := s.gestacaoRepo.GetByIDTx(ctx, tx, *p.GestacaoID)
+		if err != nil {
+			return err
+		}
+		g.Status = models.GestacaoStatusPartoRealizado
+		return s.gestacaoRepo.UpdateTx(ctx, tx, g)
+	}
+	g, err := s.gestacaoRepo.GetAtivaConfirmadaByAnimalIDTx(ctx, tx, p.AnimalID)
+	if err != nil {
+		return err
+	}
+	if g != nil {
+		p.GestacaoID = &g.ID
+		g.Status = models.GestacaoStatusPartoRealizado
+		if err := s.gestacaoRepo.UpdateTx(ctx, tx, g); err != nil {
+			return err
+		}
+		// Atualiza o campo gestacao_id no registro de parto (inserido sem vínculo).
+		return s.repo.UpdateGestacaoIDTx(ctx, tx, p.ID, g.ID)
+	}
+	return nil
+}
+
 func (s *PartoService) applyAfterPartoCreate(ctx context.Context, p *models.Parto, animal *models.Animal) error {
 	partos, _ := s.repo.GetByAnimalID(ctx, p.AnimalID)
 	if len(partos) == 1 && !animal.IsMatriz() {
@@ -86,12 +140,8 @@ func (s *PartoService) applyAfterPartoCreate(ctx context.Context, p *models.Part
 	if err := s.animalRepo.UpdateStatusReprodutivo(ctx, p.AnimalID, &status); err != nil {
 		return err
 	}
-	if p.GestacaoID != nil {
-		g, _ := s.gestacaoRepo.GetByID(ctx, *p.GestacaoID)
-		if g != nil {
-			g.Status = models.GestacaoStatusPartoRealizado
-			_ = s.gestacaoRepo.Update(ctx, g)
-		}
+	if err := s.resolveGestacaoID(ctx, p); err != nil {
+		return err
 	}
 	if err := EncerrarLactacaoAtiva(ctx, s.lactacaoRepo, p.AnimalID, p.Data); err != nil {
 		return err
@@ -119,16 +169,8 @@ func (s *PartoService) applyAfterPartoCreateTx(ctx context.Context, tx pgx.Tx, p
 	if err := s.animalRepo.UpdateStatusReprodutivoTx(ctx, tx, p.AnimalID, &status); err != nil {
 		return err
 	}
-	if p.GestacaoID != nil {
-		g, gErr := s.gestacaoRepo.GetByIDTx(ctx, tx, *p.GestacaoID)
-		if gErr != nil {
-			if !errors.Is(gErr, pgx.ErrNoRows) {
-				return gErr
-			}
-		} else {
-			g.Status = models.GestacaoStatusPartoRealizado
-			_ = s.gestacaoRepo.UpdateTx(ctx, tx, g)
-		}
+	if err := s.resolveGestacaoIDTx(ctx, tx, p); err != nil {
+		return err
 	}
 	if err := EncerrarLactacaoAtivaTx(ctx, tx, s.lactacaoRepo, p.AnimalID, p.Data); err != nil {
 		return err
