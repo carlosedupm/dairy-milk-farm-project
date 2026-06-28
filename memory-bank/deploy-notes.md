@@ -75,6 +75,8 @@ Para pausar Dependabot temporariamente: `open-pull-requests-limit: 0` no ecossis
 
 **Fila Vercel cheia (Dependabot):** no Dashboard → Deployments, cancelar builds `dependabot/*` em **Queued**/**Building**; o deploy de **Production** (`main`) segue na fila — após o `vercel.json` na `main`, novos pushes Dependabot não entram mais. Branches remotas órfãs (`dependabot/*`) podem ser apagadas no GitHub (Settings → branches ou `git push origin --delete <branch>`).
 
+**Erro Dependabot `private_registry_config_not_found` (`npm.pkg.github.com`):** o CeialMilk **não usa** pacotes npm privados do GitHub Packages — só `registry.npmjs.org`. Esse erro aparece quando a conta/org `@carlosedupm` tem npm ligado ao GitHub Packages e o Dependabot tenta resolver credenciais de registry privado. Correção no repo: `frontend/.npmrc` com `registry=https://registry.npmjs.org/`. Se persistir após push: (1) GitHub → Settings da conta/org → Packages → verificar se npm está ligado ao GitHub Packages sem uso neste projeto; (2) **ou** adicionar em `.github/dependabot.yml` um bloco `registries` para `https://npm.pkg.github.com` com secret Dependabot (`packages:read`) — só necessário se passar a consumir pacotes `@carlosedupm/*` privados.
+
 ### Variáveis de Ambiente
 
 #### Injetadas pelo Render (não definir no Blueprint)
@@ -491,7 +493,7 @@ Os scripts `scripts/fix-pg-hba-now.sh` e `scripts/ensure-ceialmilk-db.sh` são a
 
 Runbook de operações (rollback, dirty migration, incidentes): **`docs/ops/runbook.md`**; checklist pré-deploy: **`docs/ops/security-checklist.md`**.
 
-**Última atualização**: 2026-06-10 (Vercel: bloqueio preview `dependabot/**`; Dependabot limits; ruleset `Protect main`; gate Render `checksPass`)
+**Última atualização**: 2026-06-28 (Dependabot: `frontend/.npmrc` registry público; troubleshooting `npm.pkg.github.com`)
 **Stack**: Go + Next.js (Render + Vercel)
 **Backend Render**: ✅ Deploy em produção — PostgreSQL, JWT, CORS, health e API operacionais.
 **Frontend Vercel**: ✅ Deploy em produção — login, validate e CRUD validados no ar.
