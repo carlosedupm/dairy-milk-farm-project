@@ -8,6 +8,9 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **BR-PARTOS-007 — Auto-vínculo gestação no parto (2026-06-27)**: `PartoService.resolveGestacaoID` / `resolveGestacaoIDTx` preenche `gestacao_id` quando o frontend envia nil (select opcional); `PartoRepository.UpdateGestacaoIDTx`; corrige animal que reaparecia em `para-parto` após registro; catálogo `partos.md` atualizado.
+1. ✅ **CI — pgx 5.9.2 + npm lockfile (2026-06-28)**: `pgx/v5` 5.5.4→5.9.2 (GO-2026-5004); `npm audit fix` (form-data, @babel/core, js-yaml); CI verde.
+1. ✅ **Dependabot — `frontend/.npmrc` (2026-06-28)**: registry público `registry.npmjs.org`; troubleshooting `private_registry_config_not_found` em `deploy-notes.md`.
 1. ✅ **BRF-006 — Alerta hormônio lactação pendente (2026-06-14)**: migration 38; regra 9 `HORMONIO_LACTACAO_PENDENTE` (ALTA + push); auto-resolve ao POST dose; frontend tipos/filtro + drill-down tab hormônio; BR-ALERTA-018 / BR-HORM-012 implementados.
 1. ✅ **BRF-007 — Assistente FUNCIONARIO fase 1 (2026-06-14)**: `assistente.consulta`; `internal/assistente/capabilities.go`; tools `listar_animais` + `detalhar_animal`; BR-ACESSO-006 parcial.
 1. ✅ **UX — DeleteRecordDialog na ficha animal (2026-06-14)**: `AnimalFichaTabVisaoGeral` alinhado às listagens.
@@ -58,7 +61,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 1. ✅ **Onboarding — jornada novo utilizador (t_ds_003)**: wizard 3 passos em `/onboarding` só para **USER sem fazenda**; tour opcional no Dashboard (busca, KPIs, acesso rápido) com `localStorage`; «Ver tour do início novamente» no popover da conta; empty states orientativos em animais, produção e hub de gestão; BR-ACESSO-018.
 1. ✅ **Alertas — DoD listagem (t_ds_008)**: filtro de período (`start`/`end`, OR `created_at`/`data_prevista`) na toolbar com `DatePicker`; botão **Atualizar** (refetch manual); badge Bell no Header com contagem de alertas **ABERTOS** (`useAlertasAbertosCount`, BR-ALERTA-014/015).
 1. ✅ **Design System — tokens semânticos (RF01–RF06)**: documentação em `docs/design-system/tokens.md`; runtime em `globals.css`; JSON W3C em `frontend/design-tokens/tokens.json`; migração de cores literais para `feedback-*` nos componentes operacionais; script `npm run validate:tokens` no CI; regra Cursor `design-tokens.mdc`.
-1. ✅ **Exclusão em listagens — erro no diálogo + toast**: `DeleteRecordDialog` com props `error` e `conformidadeCode` (alertas INT/TMP); padrão em todas as tabelas com exclusão — `deleteError` em estado, `onError` com `getApiErrorMessage` + `toast.error` (diálogo permanece aberto), `toast.success` no `onSuccess`, limpar erro ao fechar/confirmar; aplicado em `CoberturaTable`, `CioTable`, `PartoTable`, `AnimalTable`, `ProducaoTable`, `FazendaTable`, `AnimalSaudeList`, `AlertasTable`. Cobertura: mensagem 409 quando gestação/toque vinculado (BR-COBERTURAS-004). **Pendente alinhar**: exclusão inline na ficha `/animais/[id]`.
+1. ✅ **Exclusão em listagens — erro no diálogo + toast**: `DeleteRecordDialog` com props `error` e `conformidadeCode` (alertas INT/TMP); padrão em todas as tabelas com exclusão — `deleteError` em estado, `onError` com `getApiErrorMessage` + `toast.error` (diálogo permanece aberto), `toast.success` no `onSuccess`, limpar erro ao fechar/confirmar; aplicado em `CoberturaTable`, `CioTable`, `PartoTable`, `AnimalTable`, `ProducaoTable`, `FazendaTable`, `AnimalSaudeList`, `AlertasTable`, **`AnimalFichaTabVisaoGeral`**. Cobertura: mensagem 409 quando gestação/toque vinculado (BR-COBERTURAS-004).
 1. ✅ **Form Validation — padronização completa (RF01–RF05)**: `docs/design-system/form-patterns.md`; `useToast()` hook + `toast` imperativo; `FormValidationAlert`/`FormFieldError`; validadores em `lib/form-validation.ts` (incl. login, registro, agricultura, alertas); migrados núcleo operacional + login/registro/folgas/agricultura/`CriarAlertaDialog`; toast de sucesso nas mutations; contrato a11y Sonner em `components/ui/toast.tsx`.
 1. ✅ **Ficha animal — CTA «Próximas ações» (BR-ANIMAIS-007)**: `BuildProximasAcoes` com prioridade Parto > Secagem > Cobertura > Toque > Produção (máx. 4), toque ≥15 dias (`HasPendenteToqueByAnimalID`), sem baixa nas sugestões; `AnimalProximasAcoesCta` nas tabs Visão Geral e Ciclo (primário, RBAC desabilitado, sticky mobile + safe-area, spacer dinâmico); docs `animais.md` / `ciclo-rebanho.md`.
 1. ✅ **Header — menu contextual por perfil**: `useMenuItems` + `useHeaderVisibility`; nav só com áreas permitidas (`hasNav`); label «Gestão reprodutiva» para FUNCIONARIO; nav/busca exigem fazenda ativa (2+ vínculos); shell `Header.tsx` &lt; 100 linhas; `HeaderMobileDrawer`, `HeaderAccountPopover`; `getNavAreaLabel` em `headerNav.ts`.
@@ -122,10 +125,6 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 - **Alertas proativos (Onda 2.1 + 2.2)**: migration 31–32 — tabela `alertas`, `alertas_geracao_estado`, geração diária (`AlertaGeracaoService`, cron in-process), resolução automática em saúde/secagem/restrição. API: `GET|POST /api/v1/fazendas/:id/alertas`, `GET|PATCH .../status`, `DELETE` (só MANUAL, GERENTE+); admin `POST /api/v1/admin/alertas/gerar`. UI: `/alertas`, `AlertasHomePanel`. Catálogo: `docs/business/alertas.md` (BR-ALERTA-001–010).
 - **Web Push alertas (Onda 2.5)**: migration 33 — `push_subscriptions`, `usuarios.fazenda_ativa_id`; `PushNotificationService` (VAPID); API `/api/v1/me/push/*` e `PUT /me/fazenda-ativa`; SW com `push`/`notificationclick`; banner `PushPermissionBanner`. Catálogo: `docs/business/alertas.md` (BR-ALERTA-011–012).
 - **Testes unitários saúde + alertas (Onda 3.2)**: fakes in-memory na fronteira service→repository; interfaces `animalSaudeStore`, `alertaStore`, `alertaGeracaoStore`; CRUD/sync saúde, `AlertaService` (Create/UpdateStatus/Delete), dedup genérico `tryCreateAlerta`, auto-resolve `TRATAMENTO_VENCIDO` ao concluir tratamento. Comando: `cd backend && go test ./internal/service/... -count=1`.
-
-### ✅ Concluído desde a última atualização:
-
-1. ✅ **BRF-005 — Hormônios de lactação (G3, 2026-06-10)**: migration 37; backend (`AnimalHormonioLactacaoService`, RBAC BR-ACESSO-025, timeline, hook secagem); frontend (tab ficha, forms, `/gestao/hormonios-lactacao/pendentes`); testes service + `perfil_access`; catálogo **BR-HORM-001–011** + **BR-ACESSO-025** implementados.
 
 ### 🚧 Em andamento:
 - **Validação operacional Tier 0** — checklist Fase 2 + migration 36/37 + M2M em staging; ações manuais segurança (`METRICS_TOKEN`, rotação TestSprite). Ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md).
@@ -294,5 +293,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 
 ---
 
-**Última atualização**: 2026-06-14 (sincronização backlog; Fase 3 fechada em código; Tier 0 staging documentado)
-**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 + Fase 3 fechadas em código** | **Tier 0 staging pendente** | BRF-006 + assistente FUNCIONARIO fase 1 no backlog Tier 1 | **M2M** BR-INTEG-001–012 | Recuperação senha aguarda SMTP
+**Última atualização**: 2026-06-28 (BR-PARTOS-007; pgx 5.9.2; `.npmrc` Dependabot)
+**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 + Fase 3 fechadas em código** | **Tier 0 staging pendente** | BRF-006/007 implementados | **M2M** BR-INTEG-001–012 | Recuperação senha aguarda SMTP

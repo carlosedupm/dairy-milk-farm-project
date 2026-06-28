@@ -94,13 +94,15 @@ require (
     github.com/google/uuid v1.6.0
     github.com/google/generative-ai-go v0.20.1
     github.com/gorilla/websocket v1.5.3
-    github.com/jackc/pgx/v5 v5.5.4
+    github.com/jackc/pgx/v5 v5.9.2
     github.com/SherClockHolmes/webpush-go v1.4.0
     golang.org/x/crypto v0.51.0
 )
 ```
 
-Atualizações de segurança (2026-06-10): `golang-jwt/jwt/v5` 5.2.0→5.3.1, `webpush-go` 1.3.0→1.4.0 (remove jwt v3 vulnerável), `x/net` 0.49→0.55 — govulncheck sem achados alcançáveis. Lint: `backend/.golangci.yml` (golangci-lint v2, preset standard).
+Atualizações de segurança (2026-06-10): `golang-jwt/jwt/v5` 5.2.0→5.3.1, `webpush-go` 1.3.0→1.4.0 (remove jwt v3 vulnerável), `x/net` 0.49→0.55 — govulncheck sem achados alcançáveis. **pgx/v5** 5.5.4→**5.9.2** (2026-06-28, GO-2026-5004). Lint: `backend/.golangci.yml` (golangci-lint v2, preset standard).
+
+**npm (frontend)**: `frontend/.npmrc` fixa `registry=https://registry.npmjs.org/` — o projeto não usa GitHub Packages; evita erro Dependabot `private_registry_config_not_found` quando a conta/org tem npm ligado ao GitHub Packages. Ver `deploy-notes.md`.
 
 ## Estratégia de Deploy
 
@@ -292,5 +294,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-06-14 (frontend: `npm overrides` esbuild ≥0.28.1 e postcss ≥8.5.10 — CI `npm audit --audit-level=high` zerado; vitest 3.2.6)
+**Última atualização**: 2026-06-28 (pgx/v5 5.9.2; `frontend/.npmrc` registry público; npm audit fix lockfile)
 **Stack**: Go 1.25 + Next.js 16.2.9 — Fase 2 concluída; hardening de segurança 2026-06-10; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)

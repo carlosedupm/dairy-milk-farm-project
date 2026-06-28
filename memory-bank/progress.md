@@ -24,6 +24,19 @@
 
 ## ✅ O que foi concluído
 
+### **BR-PARTOS-007 — Auto-vínculo gestação no parto (✅ 2026-06-27)**
+
+- [x] Backend: `PartoService.resolveGestacaoID` / `resolveGestacaoIDTx` — busca `GetAtivaConfirmadaByAnimalID` quando `GestacaoID` é nil no POST
+- [x] `PartoRepository.UpdateGestacaoID` / `UpdateGestacaoIDTx` — persiste `gestacao_id` no registro de parto
+- [x] Corrige animal que reaparecia em `GET .../animais/para-parto` após registro (NOT EXISTS não satisfeito com `gestacao_id` NULL)
+- [x] Catálogo `docs/business/partos.md` atualizado
+
+### **CI — dependências de segurança (✅ 2026-06-28)**
+
+- [x] `pgx/v5` 5.5.4 → 5.9.2 (GO-2026-5004)
+- [x] `npm audit fix` no frontend (form-data, @babel/core, js-yaml)
+- [x] `frontend/.npmrc` com registry público; troubleshooting Dependabot em `deploy-notes.md`
+
 ### **BRF-003 — status_saude derivado (✅ 2026-06-09)**
 
 - [x] Backend: `ErrStatusSaudeDerivado` / `STATUS_SAUDE_DERIVADO`; `AnimalService` strip `SAUDAVEL` no create + bloqueio no update com casos ATIVOS; `resolveStatusSaudeCriaViva` no parto (BR-PARTOS-008)
@@ -96,7 +109,7 @@
 - [x] Padrão replicado: `deleteError` + `onError`/`onSuccess` + toasts; diálogo aberto em falha de API
 - [x] Tabelas: `CoberturaTable`, `CioTable`, `PartoTable`, `AnimalTable`, `ProducaoTable`, `FazendaTable`, `AnimalSaudeList`, `AlertasTable`
 - [x] UX 409 cobertura (BR-COBERTURAS-004) visível no modal e toast — não só no console
-- [ ] Pendente: exclusão na ficha `/animais/[id]` (fluxo inline, sem `DeleteRecordDialog`)
+- [x] Ficha animal: `AnimalFichaTabVisaoGeral` com `DeleteRecordDialog` (2026-06-14)
 
 ### **Form validation inline + global + toast (✅ 2026-05-30)**
 
@@ -421,6 +434,16 @@
 ```
 
 ## 🔄 Histórico de Progresso
+
+### **2026-06-28 - CI e Dependabot**
+
+- ✅ **pgx/v5 5.9.2**: corrige GO-2026-5004; `go.mod`/`go.sum` atualizados.
+- ✅ **npm lockfile**: `npm audit fix` (form-data, @babel/core, js-yaml); CI frontend verde.
+- ✅ **`frontend/.npmrc`**: registry público; nota em `deploy-notes.md` para erro Dependabot `private_registry_config_not_found`.
+
+### **2026-06-27 - BR-PARTOS-007**
+
+- ✅ **Parto sem `gestacao_id` explícito**: backend auto-vincula gestação `CONFIRMADA` ativa do animal; animal deixa de reaparecer em `para-parto` após registro.
 
 ### **2026-06-10 - Hardening de segurança e processo**
 
@@ -957,6 +980,6 @@
 
 ---
 
-**Última atualização**: 2026-06-14 (sincronização backlog pós-análise; Fase 3 marcada concluída em código)
+**Última atualização**: 2026-06-28 (BR-PARTOS-007; pgx 5.9.2; `.npmrc`)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
 **Próxima revisão**: após Tier 0 staging Render (sec. 1–5) + validação manual G3 BRF-006/007
