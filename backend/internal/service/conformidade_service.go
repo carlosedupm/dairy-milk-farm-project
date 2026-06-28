@@ -70,22 +70,25 @@ func (s *ConformidadeService) checkMultiplasLactacoesAtivas(ctx context.Context,
 		"Mais de uma lactação ativa para o mesmo animal (BR-CICLO-005).")
 }
 
+// sqlProducaoSemLactacaoNaData — INT-002 / BR-CICLO-007: lactação cujo intervalo cobre o dia civil da produção
+// (alinhado a FindLactacaoForProducaoDate / lactacaoCoveringProducaoDate; inclui lactações encerradas).
+const sqlProducaoSemLactacaoNaData = `
+		  AND NOT EXISTS (
+		    SELECT 1 FROM lactacoes l
+		    WHERE l.animal_id = p.animal_id
+		      AND l.fazenda_id = $1
+		      AND l.data_inicio <= p.data_hora::date
+		      AND (l.data_fim IS NULL OR l.data_fim >= p.data_hora::date)
+		  )`
+
 func (s *ConformidadeService) checkProducaoSemLactacaoAtiva(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {
 	q := `
 		SELECT DISTINCT a.id, a.identificacao
 		FROM producao_leite p
 		INNER JOIN animais a ON a.id = p.animal_id
-		WHERE a.fazenda_id = $1` + noRebanhoA + `
-		  AND NOT EXISTS (
-		    SELECT 1 FROM lactacoes l
-		    WHERE l.animal_id = p.animal_id
-		      AND l.fazenda_id = $1
-		      AND l.data_fim IS NULL
-		      AND (l.status IS NULL OR l.status = 'EM_ANDAMENTO')
-		      AND l.data_inicio <= p.data_hora::date
-		  )`
+		WHERE a.fazenda_id = $1` + noRebanhoA + sqlProducaoSemLactacaoNaData
 	return s.scanAnimalRows(ctx, q, fazendaID, "INT-002", "ALTA",
-		"Registo de produção sem lactação ativa na data (BR-CICLO-007).")
+		"Registo de produção sem lactação que cubra a data (BR-CICLO-007).")
 }
 
 func (s *ConformidadeService) checkGestacaoSemToquePositivo(ctx context.Context, fazendaID int64) ([]ConformidadeAnomalia, error) {

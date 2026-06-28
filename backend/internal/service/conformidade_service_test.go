@@ -41,6 +41,20 @@ func TestSQLNoRebanhoFor_alias(t *testing.T) {
 	}
 }
 
+// INT-002 no painel: intervalo de lactação na data (não exige lactação activa hoje).
+func TestConformidadeINT002UsesLactacaoIntervalCoverage(t *testing.T) {
+	if strings.Contains(sqlProducaoSemLactacaoNaData, "data_fim IS NULL") &&
+		strings.Contains(sqlProducaoSemLactacaoNaData, "EM_ANDAMENTO") {
+		t.Fatalf("INT-002 audit must not require currently active lactation: %q", sqlProducaoSemLactacaoNaData)
+	}
+	if !strings.Contains(sqlProducaoSemLactacaoNaData, "l.data_inicio <= p.data_hora::date") {
+		t.Fatalf("missing start date check: %q", sqlProducaoSemLactacaoNaData)
+	}
+	if !strings.Contains(sqlProducaoSemLactacaoNaData, "l.data_fim IS NULL OR l.data_fim >= p.data_hora::date") {
+		t.Fatalf("missing interval end check: %q", sqlProducaoSemLactacaoNaData)
+	}
+}
+
 func TestListByFazenda_returnsEmptySliceNotNil(t *testing.T) {
 	// Documenta contrato: sem DB, o handler expõe [] e total 0 quando não há anomalias.
 	var empty []ConformidadeAnomalia

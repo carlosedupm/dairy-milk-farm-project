@@ -22,6 +22,7 @@ import {
 import { parseLitrosValue } from "@/lib/litros-format";
 import { AnimalSelect } from "@/components/animais/AnimalSelect";
 import { ProducaoLactacaoIndicator } from "@/components/producao/ProducaoLactacaoIndicator";
+import { isLactacaoAtivaNaData } from "@/components/producao/producaoLactacaoUtils";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -149,6 +150,17 @@ export function ProducaoForm({
     animaisEmLactacao.length > 0 &&
     animalSelectValue === "";
 
+  const lactacaoValidaNaData =
+    !initial &&
+    contextoAnimalId > 0 &&
+    contextoAnimal?.lactacao_ativa != null &&
+    isLactacaoAtivaNaData(contextoAnimal.lactacao_ativa, dataHora);
+
+  const lactacaoBloqueiaSubmit =
+    !initial &&
+    contextoAnimalId > 0 &&
+    (loadingContexto || !lactacaoValidaNaData);
+
   const handleFazendaChange = (v: string) => {
     const nextFazendaId = Number(v);
     setFazendaId(nextFazendaId);
@@ -172,6 +184,16 @@ export function ProducaoForm({
     if (!validation.valid) {
       setFieldErrors(validation.fields);
       setError(validation.summary ?? "Corrija os campos assinalados.");
+      setIsValidationError(true);
+      return;
+    }
+
+    if (lactacaoBloqueiaSubmit) {
+      setError(
+        loadingContexto
+          ? "Aguarde a verificação da lactação antes de salvar."
+          : "Registre ou ajuste a lactação e a data antes de salvar a produção."
+      );
       setIsValidationError(true);
       return;
     }
@@ -333,7 +355,12 @@ export function ProducaoForm({
             </div>
           </div>
 
-          <Button type="submit" size="lg" disabled={isPending} className="min-h-[44px]">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={isPending || lactacaoBloqueiaSubmit}
+            className="min-h-[44px]"
+          >
             {isPending ? "Salvando…" : submitLabel}
           </Button>
         </form>

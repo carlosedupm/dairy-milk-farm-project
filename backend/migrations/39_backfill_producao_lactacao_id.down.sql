@@ -1,0 +1,1 @@
+-- Reversão não restaura lactacao_id preenchido pelo backfill (dados derivados).

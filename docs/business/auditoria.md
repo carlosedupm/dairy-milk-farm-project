@@ -37,7 +37,7 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 - **Checks (dois âmbitos)**:
   - **Rebanho ativo** (INT-001 a INT-006): só animais com `data_saida` nula ou futura — ver BR-AUDIT-009.
   - **Pós-baixa** (INT-007): animal com `data_saida` passada e ciclo ainda aberto (BR-BAIXA-003 / reversão parcial).
-- Detalhe: INT-001 (múltiplas lactações ativas), INT-002 (produção sem lactação), INT-003 (gestação sem toque+), INT-004 (restrição sem lactação), INT-005 (PRENHE sem gestação), INT-006 (toque+ sem cobertura), INT-007 (baixa incompleta), INT-008 (reprodução/lactação em bezerra/bezerro ou novilha &lt;12m).
+- Detalhe: INT-001 (múltiplas lactações ativas), INT-002 (produção sem lactação **que cubra a data** — intervalo `data_inicio`…`data_fim`, inclui lactações encerradas; distinto da escrita que exige lactação **ativa** na data), INT-003 (gestação sem toque+), INT-004 (restrição sem lactação), INT-005 (PRENHE sem gestação), INT-006 (toque+ sem cobertura), INT-007 (baixa incompleta), INT-008 (reprodução/lactação em bezerra/bezerro ou novilha &lt;12m).
 - **Implementação**: `ConformidadeService.ListByFazenda`, rota `GET /api/v1/fazendas/:id/auditoria/conformidade`; UI `ConformidadeHomePanel` na home (`frontend/src/components/dashboard/ConformidadeHomePanel.tsx`), serviço `frontend/src/services/auditoria.ts`; oculto para `FUNCIONARIO` e `USER` (`showConformidadePanelForPerfil` em `appAccess.ts`). Novas anomalias desde a última execução diária geram alertas `NAO_CONFORMIDADE` (severidade CRITICA) via snapshot em `alertas_geracao_estado` — [alertas.md](./alertas.md) BR-ALERTA-008.
 - **Estado**: implementado.
 
@@ -109,7 +109,7 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 | Código | Regra | Bloqueio na escrita |
 |--------|--------|---------------------|
 | INT-001 | Uma lactação ativa | Parto encerra lactação anterior antes de abrir a nova; criação manual de lactação (`ErrLactacaoAtivaJaExiste`) |
-| INT-002 | Produção com lactação na data | `ProducaoService` Create/Update — `ValidateLactacaoAtivaParaProducao` |
+| INT-002 | Produção sem lactação que cubra a data (painel) / lactação ativa na data (escrita) | Painel: `checkProducaoSemLactacaoAtiva` (intervalo); escrita: `ProducaoService` — `ValidateLactacaoAtivaParaProducao` |
 | INT-003 | Gestação confirmada só após toque+ | Apenas via `DiagnosticoGestacaoService.Create` (não há POST direto em gestações) |
 | INT-004 | Restrição com lactação ativa | `RestricaoLeiteService.Create` — `ExistsAtivaNaFazenda` |
 | INT-005 | PRENHE com gestação confirmada | `AnimalService.Update` — `ValidateStatusReprodutivoPrenhe` |
@@ -133,4 +133,4 @@ Rastreio de **quem persistiu** cada evento do ciclo pecuário e verificação de
 
 ---
 
-**Última atualização**: 2026-06-09 (BR-AUDIT-011 / INT-008 implementado — BRF-004)
+**Última atualização**: 2026-06-27 (INT-002 painel — intervalo de lactação na data)

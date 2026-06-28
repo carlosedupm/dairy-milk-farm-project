@@ -24,7 +24,7 @@ Checklist manual para fechar a Fase 2. Executar em ambiente com migrações 1–
 | Código | Como provocar (dev) | Esperado na API |
 |--------|---------------------|-----------------|
 | INT-001 | Duas lactações ativas no mesmo animal | Lista com codigo INT-001 |
-| INT-002 | Produção com lactação já encerrada | INT-002 |
+| INT-002 | Produção sem lactação que cubra a data (ex.: data anterior ao parto ou sem lactação cadastrada) | INT-002 |
 | INT-003 | Gestação CONFIRMADA sem toque POSITIVO | INT-003 |
 | INT-004 | Restrição AGUARDANDO_LAB sem lactação | INT-004 |
 | INT-005 | Animal PRENHE sem gestação confirmada | INT-005 (MEDIA) |
@@ -50,4 +50,4 @@ Checklist dedicado: [validacao-temporal-ciclo.md](./validacao-temporal-ciclo.md)
 - TestSprite `TC001`–`TC009` em `testsprite_tests/` (API base).
 - Playwright: `frontend/tests/e2e/` (auth/navegação; estender para gestão quando necessário).
 
-**Última atualização**: 2026-05-25
+**Última atualização**: 2026-06-27

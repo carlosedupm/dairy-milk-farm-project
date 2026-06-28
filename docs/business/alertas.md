@@ -194,7 +194,7 @@ Alertas `NAO_CONFORMIDADE` (severidade CRITICA) são criados quando a geração 
 | Código | Descrição (one-liner) | Âmbito |
 |--------|----------------------|--------|
 | INT-001 | Múltiplas lactações ativas no mesmo animal | Rebanho ativo |
-| INT-002 | Produção sem lactação ativa na data | Rebanho ativo |
+| INT-002 | Produção sem lactação que cubra a data | Rebanho ativo |
 | INT-003 | Gestação confirmada sem toque positivo | Rebanho ativo |
 | INT-004 | Restrição de leite sem lactação ativa | Rebanho ativo |
 | INT-005 | Animal PRENHE sem gestação confirmada | Rebanho ativo |
