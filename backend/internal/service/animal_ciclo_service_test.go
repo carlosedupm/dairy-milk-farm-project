@@ -89,7 +89,7 @@ func TestBuildProximasAcoesCandidates(t *testing.T) {
 	lact := &models.Lactacao{ID: 3}
 
 	t.Run("gestacao e lactacao prioriza parto secagem e producao", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, lact, gest, false, models.StatusReprodutivoPrenhe)
+		got := buildProximasAcoesCandidates(1, lact, gest, false, models.StatusReprodutivoPrenhe, true)
 		if len(got) != 3 {
 			t.Fatalf("expected 3, got %d", len(got))
 		}
@@ -100,29 +100,36 @@ func TestBuildProximasAcoesCandidates(t *testing.T) {
 		}
 	})
 
+	t.Run("gestacao seca omite secagem mas mantem parto", func(t *testing.T) {
+		got := buildProximasAcoesCandidates(1, nil, gest, false, models.StatusReprodutivoSeca, false)
+		if len(got) != 1 || got[0].Codigo != models.AcaoRegistrarParto {
+			t.Fatalf("got %+v", got)
+		}
+	})
+
 	t.Run("so lactacao produção", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoParida)
+		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoParida, false)
 		if len(got) != 1 || got[0].Codigo != models.AcaoRegistrarProducao {
 			t.Fatalf("got %+v", got)
 		}
 	})
 
 	t.Run("pendente toque sem gestacao", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, nil, nil, true, models.StatusReprodutivoServida)
+		got := buildProximasAcoesCandidates(1, nil, nil, true, models.StatusReprodutivoServida, false)
 		if len(got) != 1 || got[0].Codigo != models.AcaoRegistrarToque {
 			t.Fatalf("got %+v", got)
 		}
 	})
 
 	t.Run("servida sem elegibilidade toque", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, nil, nil, false, models.StatusReprodutivoServida)
+		got := buildProximasAcoesCandidates(1, nil, nil, false, models.StatusReprodutivoServida, false)
 		if len(got) != 0 {
 			t.Fatalf("expected empty, got %+v", got)
 		}
 	})
 
 	t.Run("vazia sugere cobertura", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, nil, nil, false, models.StatusReprodutivoVazia)
+		got := buildProximasAcoesCandidates(1, nil, nil, false, models.StatusReprodutivoVazia, false)
 		if len(got) != 1 || got[0].Codigo != models.AcaoRegistrarCobertura {
 			t.Fatalf("got %+v", got)
 		}

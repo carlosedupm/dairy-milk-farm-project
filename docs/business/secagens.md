@@ -44,6 +44,14 @@ Registro de **secagem** da matriz (período seco antes do parto ou por baixa pro
 - **Implementação**: `AnimalRepository.ListEmLactacaoByFazendaID`; `SecagemFormFields`.
 - **Estado**: implementado (ver [ciclo-rebanho.md](./ciclo-rebanho.md) BR-CICLO-015).
 
+### BR-SECAGENS-006 — Uma secagem por período seco do ciclo
+
+- **Enunciado**: Não é permitido registrar secagem duplicada no mesmo ciclo: animal com `status_reprodutivo = SECA`, ou gestação confirmada ativa que já possui secagem (`gestacao_id` ou `data_secagem >= data_confirmacao` da gestação).
+- **Escopo**: Por animal; Create via API JWT, assistente e deep link com `animal_id` pré-selecionado.
+- **Efeito**: bloqueio no servidor (**409 Conflict**); `proximas_acoes[]` omite «Registrar secagem» quando secagem já feita (ver [animais.md](./animais.md) BR-ANIMAIS-007).
+- **Implementação**: `SecagemService.prepareSecagemCreate` + `secagem_duplicidade.go`; auto-vínculo `gestacao_id` quando gestação confirmada ativa; `SecagemRepository.ExistsForGestacaoID` / `ExistsForAnimalSinceDate`; handler `SecagemHandler.Create`.
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-06-02 (BR-SECAGENS-004 — minDate UI gestão)
+**Última atualização**: 2026-06-27 (BR-SECAGENS-006 — bloqueio de secagem duplicada)

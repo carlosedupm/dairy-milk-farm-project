@@ -12,11 +12,15 @@ import (
 
 var ErrSecagemNotFound = errors.New("secagem nao encontrada")
 
+// ErrSecagemJaRegistrada indica secagem duplicada no ciclo atual (animal SECA ou gestação já seca).
+var ErrSecagemJaRegistrada = errors.New("animal ja possui secagem registrada para o ciclo atual")
+
 type SecagemService struct {
 	pool           *pgxpool.Pool
 	repo           *repository.SecagemRepository
 	lactacaoRepo   *repository.LactacaoRepository
 	animalRepo     *repository.AnimalRepository
+	gestacaoRepo   *repository.GestacaoRepository
 	fazendaRepo    *repository.FazendaRepository
 	hormonioRepo   *repository.AnimalHormonioLactacaoRepository
 	alertaResolver AlertaAutoResolver
@@ -27,6 +31,7 @@ func NewSecagemService(
 	repo *repository.SecagemRepository,
 	lactacaoRepo *repository.LactacaoRepository,
 	animalRepo *repository.AnimalRepository,
+	gestacaoRepo *repository.GestacaoRepository,
 	fazendaRepo *repository.FazendaRepository,
 ) *SecagemService {
 	return &SecagemService{
@@ -34,6 +39,7 @@ func NewSecagemService(
 		repo:         repo,
 		lactacaoRepo: lactacaoRepo,
 		animalRepo:   animalRepo,
+		gestacaoRepo: gestacaoRepo,
 		fazendaRepo:  fazendaRepo,
 	}
 }
@@ -85,6 +91,9 @@ func (s *SecagemService) Create(ctx context.Context, sec *models.Secagem) error 
 		return err
 	}
 	if err := ValidateSecagemAposInicioLactacao(ctx, s.lactacaoRepo, sec); err != nil {
+		return err
+	}
+	if err := s.prepareSecagemCreate(ctx, animal, sec); err != nil {
 		return err
 	}
 

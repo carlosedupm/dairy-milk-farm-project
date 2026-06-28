@@ -339,6 +339,7 @@ func buildProximasAcoesCandidates(
 	gest *models.Gestacao,
 	pendenteToque bool,
 	statusReprodutivo string,
+	secagemPendente bool,
 ) []models.ProximaAcao {
 	var acoes []models.ProximaAcao
 	if lact != nil {
@@ -349,11 +350,13 @@ func buildProximasAcoesCandidates(
 		})
 	}
 	if gest != nil {
-		acoes = append(acoes, models.ProximaAcao{
-			Codigo:   models.AcaoRegistrarSecagem,
-			Label:    "Registrar secagem",
-			HrefPath: fmt.Sprintf("/gestao/secagens/novo?animal_id=%d", animalID),
-		})
+		if secagemPendente {
+			acoes = append(acoes, models.ProximaAcao{
+				Codigo:   models.AcaoRegistrarSecagem,
+				Label:    "Registrar secagem",
+				HrefPath: fmt.Sprintf("/gestao/secagens/novo?animal_id=%d", animalID),
+			})
+		}
 		acoes = append(acoes, models.ProximaAcao{
 			Codigo:   models.AcaoRegistrarParto,
 			Label:    "Registrar parto",
@@ -413,7 +416,15 @@ func (s *AnimalCicloService) BuildProximasAcoes(ctx context.Context, animal *mod
 		st = *animal.StatusReprodutivo
 	}
 
-	return buildProximasAcoesCandidates(aid, lact, gest, pendenteToque, st), nil
+	secagemPendente := false
+	if gest != nil {
+		secagemPendente, err = secagemPendenteForAnimal(ctx, s.secagemRepo, st, gest)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return buildProximasAcoesCandidates(aid, lact, gest, pendenteToque, st, secagemPendente), nil
 }
 
 func formatClassificacaoOperacionalLabel(classificacao string) string {

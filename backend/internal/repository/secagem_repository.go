@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/ceialmilk/api/internal/models"
 	"github.com/jackc/pgx/v5"
@@ -74,6 +75,21 @@ func (r *SecagemRepository) GetByFazendaID(ctx context.Context, fazendaID int64)
 func (r *SecagemRepository) Delete(ctx context.Context, id int64) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM secagens WHERE id = $1`, id)
 	return err
+}
+
+func (r *SecagemRepository) ExistsForGestacaoID(ctx context.Context, gestacaoID int64) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM secagens WHERE gestacao_id = $1)`, gestacaoID).Scan(&exists)
+	return exists, err
+}
+
+func (r *SecagemRepository) ExistsForAnimalSinceDate(ctx context.Context, animalID int64, since time.Time) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM secagens WHERE animal_id = $1 AND data_secagem >= $2::date)`,
+		animalID, since,
+	).Scan(&exists)
+	return exists, err
 }
 
 func (r *SecagemRepository) CreateTx(ctx context.Context, tx pgx.Tx, s *models.Secagem) error {

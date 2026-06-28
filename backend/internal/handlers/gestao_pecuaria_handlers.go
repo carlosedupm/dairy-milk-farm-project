@@ -695,6 +695,10 @@ func (h *SecagemHandler) Create(c *gin.Context) {
 			response.ErrorNotFound(c, "Animal nao encontrado")
 			return
 		}
+		if errors.Is(err, service.ErrSecagemJaRegistrada) {
+			response.ErrorConflict(c, err.Error(), nil)
+			return
+		}
 		response.ErrorInternal(c, "Erro ao registrar secagem", err.Error())
 		return
 	}

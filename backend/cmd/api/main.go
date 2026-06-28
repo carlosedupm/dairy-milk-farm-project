@@ -264,7 +264,7 @@ func main() {
 					animalHormonioHandler := handlers.NewAnimalHormonioLactacaoHandler(animalHormonioSvc, animalSvc, fazendaSvc)
 					criaSvc := service.NewCriaService(pool, criaRepo, partoRepo, animalRepo)
 					partoSvc := service.NewPartoService(pool, partoRepo, animalRepo, gestacaoRepo, lactacaoRepo, fazendaRepo, criaSvc)
-					secagemSvc := service.NewSecagemService(pool, secagemRepo, lactacaoRepo, animalRepo, fazendaRepo)
+					secagemSvc := service.NewSecagemService(pool, secagemRepo, lactacaoRepo, animalRepo, gestacaoRepo, fazendaRepo)
 					secagemSvc.SetHormonioLactacaoRepo(animalHormonioRepo)
 					if alertaGeracaoSvc != nil {
 						secagemSvc.SetAlertaAutoResolver(alertaGeracaoSvc)
