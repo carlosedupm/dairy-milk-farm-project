@@ -7,7 +7,7 @@ ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 
 # Go (alinhado ao toolchain em backend/go.mod)
-ARG GO_VERSION=1.25.11
+ARG GO_VERSION=1.25.12
 RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o /tmp/go.tar.gz \
     && tar -C /usr/local -xzf /tmp/go.tar.gz \
     && rm /tmp/go.tar.gz

@@ -1,7 +1,7 @@
 # Dockerfile na raiz do monorepo — usado pelo Render (dockerfilePath: ./Dockerfile, dockerContext: .)
 # Build do backend CeialMilk API
 
-FROM golang:1.25-alpine AS build
+FROM golang:1.25.12-alpine AS build
 
 WORKDIR /app
 

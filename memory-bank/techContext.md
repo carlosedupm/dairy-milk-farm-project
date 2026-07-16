@@ -4,7 +4,7 @@
 
 ### Backend
 
-- **Linguagem**: Go 1.25 (toolchain go1.25.11 — atualizado em 2026-06-10 para zerar o govulncheck: vulnerabilidades da stdlib 1.24.x corrigidas a partir de 1.25.8–1.25.11)
+- **Linguagem**: Go 1.25 (toolchain go1.25.12 — atualizado em 2026-07-15 para GO-2026-5856 crypto/tls ECH; govulncheck)
 - **Framework Web**: Gin (HTTP router e middleware)
 - **Banco de Dados**: PostgreSQL 15
 - **Acesso a Dados**: pgx/v5 (driver PostgreSQL nativo com type safety)
@@ -42,7 +42,7 @@
 
 ### Backend (Render)
 
-- **Imagem Base**: `golang:1.24-alpine` (build) → `alpine:latest` (runtime)
+- **Imagem Base**: `golang:1.25.12-alpine` (build) → `alpine:3.22` (runtime)
 - **Porta**: 8080 (configurável via `PORT` env var)
 - **Health Check**: `/health` endpoint
 - **Variáveis de Ambiente**:
@@ -84,7 +84,7 @@
 ```go
 module github.com/ceialmilk/api
 
-go 1.25.11
+go 1.25.12
 
 require (
     github.com/getsentry/sentry-go v0.41.0
