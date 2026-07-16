@@ -162,6 +162,14 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
   - Testes: `identificacao_relevance_test.go`.
 - **Estado**: implementado.
 
+### BR-ANIMAIS-013 — Links de detalhe para eventos na ficha
+
+- **Enunciado**: Na ficha `/animais/:id`, cada evento exibido nas tabs **Histórico** e **Ciclo** (e marcos no mini-preview da sidebar) possui **link de navegação** para os detalhes completos do respectivo evento (visualização/edição), permitindo ao usuário acessar a informação relacionada. Detalhe completo em [ciclo-rebanho.md](./ciclo-rebanho.md) **BR-CICLO-019**.
+- **Escopo**: UI (timeline Histórico + timeline visual Ciclo + mini-preview); usa `ref_id` retornado por `GET /api/v1/animais/:id/timeline`.
+- **Comportamento**: clique no título do evento → rota de detalhe por `item.tipo` (ex.: `PARTO` → `/animais/:animalId/partos/:eventoId`; `VACINA` → `/animais/:animalId/vacinas/:eventoId`; eventos de gestão `/gestao/.../:eventoId`). Respeita RBAC por perfil.
+- **Implementação**: `AnimalTimelineList.tsx`, `AnimalCicloTimelineVisual.tsx`, `AnimalFichaTabCiclo.tsx`, `AnimalCicloMiniPreview.tsx`; mapeamento de rotas em `lib/animalFichaLinks.ts`.
+- **Estado**: **planejado** (BR-CICLO-019).
+
 ---
 
-**Última atualização**: 2026-06-27 (BR-ANIMAIS-007 — secagem pendente na ficha)
+**Última atualização**: 2026-07-15 (BR-ANIMAIS-013 — links de detalhe para eventos da ficha)
