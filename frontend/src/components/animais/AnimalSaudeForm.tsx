@@ -39,6 +39,8 @@ type Props = {
   mode: "create" | "edit";
   initial?: AnimalSaudeRegistro;
   saudeId?: number;
+  /** Força visualização mesmo se o perfil pudesse editar (ex.: animal baixado). */
+  forceReadOnly?: boolean;
 };
 
 function stateFromRegistro(row: AnimalSaudeRegistro): AnimalSaudeFormState {
@@ -51,7 +53,14 @@ function stateFromRegistro(row: AnimalSaudeRegistro): AnimalSaudeFormState {
   };
 }
 
-export function AnimalSaudeForm({ animalId, animal, mode, initial, saudeId }: Props) {
+export function AnimalSaudeForm({
+  animalId,
+  animal,
+  mode,
+  initial,
+  saudeId,
+  forceReadOnly = false,
+}: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -112,16 +121,18 @@ export function AnimalSaudeForm({ animalId, animal, mode, initial, saudeId }: Pr
     },
   });
 
-  if (!canSubmit) {
+  if (!canSubmit && mode === "create") {
     return (
       <p className="text-muted-foreground">
-        O seu perfil não pode{" "}
-        {mode === "create" ? "registar" : "editar"} casos de saúde deste animal.
+        O seu perfil não pode registar casos de saúde deste animal.
       </p>
     );
   }
 
+  const readOnly = forceReadOnly || (mode === "edit" && !canSubmit);
+
   const handleSubmit = () => {
+    if (readOnly) return;
     setFormError("");
     setConformidadeCode(undefined);
     const validation = validateAnimalSaudeForm(formState, {
@@ -142,11 +153,12 @@ export function AnimalSaudeForm({ animalId, animal, mode, initial, saudeId }: Pr
 
   return (
     <GestaoFormLayout
-      title={mode === "create" ? "Novo registo de saúde" : "Editar registo de saúde"}
+      title={readOnly ? "Detalhe do registo de saúde" : mode === "create" ? "Novo registo de saúde" : "Editar registo de saúde"}
       backHref={listHref}
       submitLabel={mode === "create" ? "Registrar" : "Salvar"}
       onSubmit={handleSubmit}
       isPending={mutation.isPending}
+      hideSubmit={readOnly}
       error={formError}
       errorConformidadeCode={
         conformidadeCode ??
@@ -156,14 +168,17 @@ export function AnimalSaudeForm({ animalId, animal, mode, initial, saudeId }: Pr
       fieldErrors={fieldErrors}
     >
       <p className="text-muted-foreground text-sm">
-        O status de saúde do animal na ficha é recalculado automaticamente com
-        base nos casos ativos após guardar.
+        {readOnly
+          ? "Visualização apenas — o seu perfil não pode editar este registo."
+          : "O status de saúde do animal na ficha é recalculado automaticamente com base nos casos ativos após guardar."}
       </p>
-      <AnimalSaudeFormFields
-        formState={formState}
-        setFormState={setFormState}
-        minDate={animalMinDate}
-      />
+      <fieldset disabled={readOnly} className="min-w-0 space-y-5 border-0 p-0 m-0">
+        <AnimalSaudeFormFields
+          formState={formState}
+          setFormState={setFormState}
+          minDate={animalMinDate}
+        />
+      </fieldset>
     </GestaoFormLayout>
   );
 }

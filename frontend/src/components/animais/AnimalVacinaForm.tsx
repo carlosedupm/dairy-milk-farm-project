@@ -40,6 +40,7 @@ type Props = {
   mode: "create" | "edit";
   initial?: AnimalVacinaRegistro;
   vacinaId?: number;
+  forceReadOnly?: boolean;
 };
 
 function stateFromRegistro(row: AnimalVacinaRegistro): AnimalVacinaFormState {
@@ -59,7 +60,13 @@ function stateFromRegistro(row: AnimalVacinaRegistro): AnimalVacinaFormState {
   };
 }
 
-export function AnimalVacinaForm({ animalId, mode, initial, vacinaId }: Props) {
+export function AnimalVacinaForm({
+  animalId,
+  mode,
+  initial,
+  vacinaId,
+  forceReadOnly = false,
+}: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -123,16 +130,18 @@ export function AnimalVacinaForm({ animalId, mode, initial, vacinaId }: Props) {
     },
   });
 
-  if (!canSubmit) {
+  if (!canSubmit && mode === "create") {
     return (
       <p className="text-muted-foreground">
-        O seu perfil não pode {mode === "create" ? "registrar" : "editar"}{" "}
-        vacinas deste animal.
+        O seu perfil não pode registrar vacinas deste animal.
       </p>
     );
   }
 
+  const readOnly = forceReadOnly || (mode === "edit" && !canSubmit);
+
   const handleSubmit = () => {
+    if (readOnly) return;
     setFormError("");
     setConformidadeCode(undefined);
     const validation = validateAnimalVacinaForm(formState);
@@ -149,11 +158,18 @@ export function AnimalVacinaForm({ animalId, mode, initial, vacinaId }: Props) {
 
   return (
     <GestaoFormLayout
-      title={mode === "create" ? "Nova vacina" : "Editar vacina"}
+      title={
+        readOnly
+          ? "Detalhe da vacina"
+          : mode === "create"
+            ? "Nova vacina"
+            : "Editar vacina"
+      }
       backHref={listHref}
       submitLabel={mode === "create" ? "Registrar" : "Salvar"}
       onSubmit={handleSubmit}
       isPending={mutation.isPending}
+      hideSubmit={readOnly}
       error={formError}
       errorConformidadeCode={
         conformidadeCode ??
@@ -165,14 +181,17 @@ export function AnimalVacinaForm({ animalId, mode, initial, vacinaId }: Props) {
       fieldErrors={fieldErrors}
     >
       <p className="text-muted-foreground text-sm">
-        Vacina aplicada cria automaticamente um caso preventivo concluído na
-        tab Saúde. Vacina prevista atrasada gera alerta automático.
+        {readOnly
+          ? "Visualização apenas — o seu perfil não pode editar vacinas."
+          : "Vacina aplicada cria automaticamente um caso preventivo concluído na tab Saúde. Vacina prevista atrasada gera alerta automático."}
       </p>
-      <AnimalVacinaFormFields
-        formState={formState}
-        setFormState={setFormState}
-        canAgendar={canAgendar}
-      />
+      <fieldset disabled={readOnly} className="min-w-0 space-y-5 border-0 p-0 m-0">
+        <AnimalVacinaFormFields
+          formState={formState}
+          setFormState={setFormState}
+          canAgendar={canAgendar}
+        />
+      </fieldset>
     </GestaoFormLayout>
   );
 }

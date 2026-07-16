@@ -498,6 +498,7 @@ func main() {
 					toques := api.Group("/v1/toques", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						toques.GET("", diagnosticoGestacaoHandler.GetByFazendaID)
+						toques.GET("/:id", diagnosticoGestacaoHandler.GetByID)
 						toques.POST("", diagnosticoGestacaoHandler.Create)
 						toques.POST("/lote", diagnosticoGestacaoHandler.CreateLote)
 					}
@@ -505,6 +506,7 @@ func main() {
 					gestacoes := api.Group("/v1/gestacoes", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						gestacoes.GET("", gestacaoHandler.GetByFazendaID)
+						gestacoes.GET("/:id", gestacaoHandler.GetByID)
 					}
 					// Partos
 					partos := api.Group("/v1/partos", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
@@ -525,12 +527,14 @@ func main() {
 					secagens := api.Group("/v1/secagens", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						secagens.GET("", secagemHandler.GetByFazendaID)
+						secagens.GET("/:id", secagemHandler.GetByID)
 						secagens.POST("", secagemHandler.Create)
 					}
 					// Lactacoes
 					lactacoes := api.Group("/v1/lactacoes", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						lactacoes.GET("", lactacaoHandler.GetByFazendaID)
+						lactacoes.GET("/:id", lactacaoHandler.GetByID)
 						lactacoes.POST("", lactacaoHandler.Create)
 					}
 					// Protocolos IATF

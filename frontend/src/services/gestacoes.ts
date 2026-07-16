@@ -16,3 +16,8 @@ export async function listByFazenda(fazendaId: number): Promise<Gestacao[]> {
   const { data } = await api.get<ApiResponse<Gestacao[]>>("/api/v1/gestacoes", { params: { fazenda_id: fazendaId } });
   return data.data ?? [];
 }
+
+export async function get(id: number): Promise<Gestacao | null> {
+  const { data } = await api.get<ApiResponse<Gestacao>>(`/api/v1/gestacoes/${id}`);
+  return data.data ?? null;
+}

@@ -25,6 +25,11 @@ export async function listByFazenda(fazendaId: number): Promise<Lactacao[]> {
   return data.data ?? [];
 }
 
+export async function get(id: number): Promise<Lactacao | null> {
+  const { data } = await api.get<ApiResponse<Lactacao>>(`/api/v1/lactacoes/${id}`);
+  return data.data ?? null;
+}
+
 export async function create(payload: LactacaoCreate): Promise<Lactacao> {
   const { data } = await api.post<ApiResponse<Lactacao>>("/api/v1/lactacoes", payload);
   if (!data.data) throw new Error("Resposta invalida");

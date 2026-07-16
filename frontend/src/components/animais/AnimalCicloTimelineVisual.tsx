@@ -25,6 +25,7 @@ import {
   type CicloMarcoPrevisto,
 } from "@/components/animais/animalCicloTimelineUtils";
 import { cn } from "@/lib/utils";
+import { timelineItemHref } from "@/lib/animalEventoLinks";
 
 export function CicloTimelineSkeleton() {
   return (
@@ -52,6 +53,7 @@ export function CicloTimelineSkeleton() {
 
 type Props = {
   marcos: CicloMarco[];
+  animalId: number;
 };
 
 function MarcoPrevistoCard({
@@ -93,8 +95,21 @@ function MarcoPrevistoCard({
   );
 }
 
-function MarcoConcluidoCard({ marco }: { marco: CicloMarcoConcluido }) {
+function MarcoConcluidoCard({
+  marco,
+  animalId,
+  perfil,
+}: {
+  marco: CicloMarcoConcluido;
+  animalId: number;
+  perfil: string | undefined;
+}) {
   const secundario = isTipoSecundario(marco.tipo);
+  const href = timelineItemHref(
+    animalId,
+    { tipo: marco.tipo, ref_id: marco.ref_id },
+    perfil
+  );
 
   return (
     <>
@@ -106,7 +121,17 @@ function MarcoConcluidoCard({ marco }: { marco: CicloMarcoConcluido }) {
           {formatDatePtBr(marco.data)}
         </span>
       </div>
-      <p className="font-medium break-words">{marco.titulo}</p>
+      {href ? (
+        <Link
+          href={href}
+          className="font-medium break-words hover:underline"
+          aria-label={`Ver detalhes: ${marco.titulo}`}
+        >
+          {marco.titulo}
+        </Link>
+      ) : (
+        <p className="font-medium break-words">{marco.titulo}</p>
+      )}
       {marco.detalhe ? (
         <p className="text-sm text-muted-foreground break-words mt-0.5">
           {marco.detalhe}
@@ -162,10 +187,12 @@ function MarcoNode({
   marco,
   isLast,
   perfil,
+  animalId,
 }: {
   marco: CicloMarco;
   isLast: boolean;
   perfil: string | undefined;
+  animalId: number;
 }) {
   const isPrevisto = marco.status === "previsto";
   const tipo = marco.status === "previsto" ? marco.tipo : marco.tipo;
@@ -213,7 +240,11 @@ function MarcoNode({
           {isPrevisto ? (
             <MarcoPrevistoCard marco={marco} perfil={perfil} />
           ) : (
-            <MarcoConcluidoCard marco={marco} />
+            <MarcoConcluidoCard
+              marco={marco}
+              animalId={animalId}
+              perfil={perfil}
+            />
           )}
         </div>
       </div>
@@ -221,7 +252,7 @@ function MarcoNode({
   );
 }
 
-export function AnimalCicloTimelineVisual({ marcos }: Props) {
+export function AnimalCicloTimelineVisual({ marcos, animalId }: Props) {
   const { user } = useAuth();
 
   return (
@@ -232,6 +263,7 @@ export function AnimalCicloTimelineVisual({ marcos }: Props) {
             marco={marco}
             isLast={idx === marcos.length - 1}
             perfil={user?.perfil}
+            animalId={animalId}
           />
         </div>
       ))}

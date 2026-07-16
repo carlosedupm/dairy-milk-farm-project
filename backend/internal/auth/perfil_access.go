@@ -28,6 +28,12 @@ var funcionarioRestricoesLeitePath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]
 var funcionarioFazendaAnimaisPath = regexp.MustCompile(`^/api/v1/fazendas/[0-9]+/animais(/count|/em-lactacao|/para-cio|/para-cobertura|/para-toque|/para-parto|/para-abertura-lactacao)?$`)
 var funcionarioGestaoPath = regexp.MustCompile(`^/api/v1/(cios|coberturas|partos|secagens|toques)(/.*)?$`)
 
+// BR-CICLO-019: leitura de gestação/lactação (detalhe a partir da ficha); sem POST/PUT.
+var funcionarioGestaoLeituraPath = regexp.MustCompile(`^/api/v1/(gestacoes|lactacoes)(/.*)?$`)
+
+// BR-CICLO-019: GET detalhe de produção (read-only); POST continua separado.
+var funcionarioProducaoGetPath = regexp.MustCompile(`^/api/v1/producao/[0-9]+$`)
+
 // Crias: sub-recurso operacional de partos (listar/complementar na edição de parto).
 var funcionarioCriasPath = regexp.MustCompile(`^/api/v1/crias(/.*)?$`)
 var funcionarioAnimaisPath = regexp.MustCompile(`^/api/v1/animais(/.*)?$`)
@@ -96,6 +102,9 @@ func requestAllowedForFuncionario(method, path string) bool {
 	if funcionarioGestaoPath.MatchString(path) {
 		return true
 	}
+	if method == http.MethodGet && funcionarioGestaoLeituraPath.MatchString(path) {
+		return true
+	}
 	if (method == http.MethodGet || method == http.MethodPost) && funcionarioCriasPath.MatchString(path) {
 		return true
 	}
@@ -153,6 +162,9 @@ func requestAllowedForFuncionario(method, path string) bool {
 		return true
 	}
 	if method == http.MethodPost && path == "/api/v1/producao" {
+		return true
+	}
+	if method == http.MethodGet && funcionarioProducaoGetPath.MatchString(path) {
 		return true
 	}
 	return false

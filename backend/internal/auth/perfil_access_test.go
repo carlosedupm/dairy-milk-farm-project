@@ -275,6 +275,38 @@ func TestRequestAllowedForFuncionario_ResumoPecuario(t *testing.T) {
 	}
 }
 
+func TestRequestAllowedForFuncionario_GestaoLeituraEProducaoGet(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		method string
+		path   string
+		want   bool
+	}{
+		{http.MethodGet, "/api/v1/gestacoes", true},
+		{http.MethodGet, "/api/v1/gestacoes/42", true},
+		{http.MethodPost, "/api/v1/gestacoes", false},
+		{http.MethodGet, "/api/v1/lactacoes", true},
+		{http.MethodGet, "/api/v1/lactacoes/42", true},
+		{http.MethodPost, "/api/v1/lactacoes", false},
+		{http.MethodGet, "/api/v1/producao/42", true},
+		{http.MethodGet, "/api/v1/producao", false},
+		{http.MethodPost, "/api/v1/producao", true},
+		{http.MethodPut, "/api/v1/producao/42", false},
+		{http.MethodGet, "/api/v1/toques/42", true},
+		{http.MethodGet, "/api/v1/secagens/42", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			t.Parallel()
+			if got := requestAllowedForFuncionario(tt.method, tt.path); got != tt.want {
+				t.Errorf("requestAllowedForFuncionario(%q, %q) = %v, want %v", tt.method, tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRequestAllowedForFuncionario_Alertas(t *testing.T) {
 	t.Parallel()
 

@@ -12,8 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { canEditarRegistroSaude } from "@/config/appAccess";
 import { cn } from "@/lib/utils";
 import {
   AnimalTimelineList,
@@ -39,8 +37,6 @@ export function AnimalTimelineSection({
   tipoFilter,
   onTipoFilterChange,
 }: Props) {
-  const { user } = useAuth();
-  const canEditSaude = canEditarRegistroSaude(user?.perfil);
   const sectionRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -156,7 +152,6 @@ export function AnimalTimelineSection({
             <AnimalTimelineList
               items={items}
               animalId={animalId}
-              canEditSaude={canEditSaude}
             />
 
             <div ref={sentinelRef} className="h-1" aria-hidden />

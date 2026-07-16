@@ -3,6 +3,7 @@ import api, { type ApiResponse } from "./api";
 export type DiagnosticoGestacao = {
   id: number;
   animal_id: number;
+  cobertura_id?: number | null;
   data: string;
   resultado: string;
   classificacao_operacional?: string | null;
@@ -73,6 +74,13 @@ export async function listByFazenda(
     { params: query }
   );
   return data.data ?? [];
+}
+
+export async function get(id: number): Promise<DiagnosticoGestacao | null> {
+  const { data } = await api.get<ApiResponse<DiagnosticoGestacao>>(
+    `/api/v1/toques/${id}`
+  );
+  return data.data ?? null;
 }
 
 export async function create(

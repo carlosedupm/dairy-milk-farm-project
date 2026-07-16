@@ -22,6 +22,8 @@ type Props = {
   isValidationError?: boolean;
   fieldErrors?: FieldErrors;
   submitDisabled?: boolean;
+  /** Oculta o botão de submit (modo visualização / read-only). */
+  hideSubmit?: boolean;
 };
 
 export function GestaoFormLayout({
@@ -36,6 +38,7 @@ export function GestaoFormLayout({
   isValidationError = false,
   fieldErrors,
   submitDisabled = false,
+  hideSubmit = false,
 }: Props) {
   const parsed = error ? parsePrefixedConformidadeMessage(error) : null;
   const displayMessage = parsed?.message ?? error ?? "";
@@ -60,14 +63,16 @@ export function GestaoFormLayout({
           <FormFieldErrorsProvider fieldErrors={fieldErrors}>
             {children}
           </FormFieldErrorsProvider>
-          <Button
-            size="lg"
-            onClick={onSubmit}
-            disabled={submitDisabled || isPending}
-            className="min-h-[44px]"
-          >
-            {isPending ? "Salvando…" : submitLabel}
-          </Button>
+          {hideSubmit ? null : (
+            <Button
+              size="lg"
+              onClick={onSubmit}
+              disabled={submitDisabled || isPending}
+              className="min-h-[44px]"
+            >
+              {isPending ? "Salvando…" : submitLabel}
+            </Button>
+          )}
         </CardContent>
       </Card>
     </PageContainer>

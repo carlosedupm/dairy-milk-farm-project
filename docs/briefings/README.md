@@ -55,7 +55,7 @@ Análise ──► G1: briefing aprovado ──► Implementação ──► G2:
 
 | ID | Título | Status |
 |----|--------|--------|
-| BRF-008 | Links de navegação para eventos do ciclo na ficha | rascunho |
+| BRF-008 | Links de navegação para eventos do ciclo na ficha | implementado |
 | BRF-006 | Alerta hormônio lactação pendente | implementado |
 | BRF-007 | Assistente FUNCIONARIO fase 1 (consulta) | implementado |
 | BRF-005 | Hormônios lactação | implementado |
@@ -89,4 +89,4 @@ Executado no CI. Falha se:
 
 ---
 
-**Última atualização**: 2026-06-14
+**Última atualização**: 2026-07-16

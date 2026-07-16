@@ -4,72 +4,54 @@
 Na ficha do animal (`/animais/:id`), cada evento exibido na timeline (tab **Histórico** e tab **Ciclo**) deve ter um **link de navegação** para acessar os detalhes completos do respectivo evento, permitindo ao usuário visualizar e/ou editar as informações relacionadas.
 
 ## Escopo
-- **Tab Histórico** (`AnimalTimelineSection`): eventos de saúde, vacinas, hormônio lactação, alertas, baixa.
-- **Tab Ciclo** (`AnimalFichaTabCiclo` / `AnimalCicloTimelineSection` / `AnimalCicloTimelineVisual`): eventos do ciclo reprodutivo (cio, cobertura, toque, gestação, secagem, parto, lactação, produção).
-- **Sidebar / Mini-preview** (`AnimalCicloMiniPreview`): marcos do ciclo com links rápidos.
+- **Tab Histórico** (`AnimalTimelineSection` / `AnimalTimelineList`): saúde, vacinas, hormônio lactação, alertas, produção e demais tipos com `ref_id`.
+- **Tab Ciclo** (`AnimalFichaTabCiclo` / `AnimalCicloTimelineSection` / `AnimalCicloTimelineVisual`): marcos concluídos do ciclo reprodutivo.
+- **Sidebar / Mini-preview** (`AnimalCicloMiniPreview`): herda links via `AnimalCicloTimelineSection`.
 
 ## Requisitos funcionais
 
-### 1. Tipos de eventos com link
-| Tipo de evento | Rota de detalhe | Notas |
-|---|---|---|
-| **Saúde** (`SAUDE`) | `/animais/:animalId/saude/editar/:eventoId` | Já implementado (BR-SAUDE-005) |
-| **Vacina** (`VACINA`) | `/animais/:animalId/vacinas/:eventoId` | **NOVO** - criar rota |
-| **Hormônio lactação** (`HORMONIO_LACTACAO`) | `/animais/:animalId/hormonios-lactacao/:eventoId` | **NOVO** - criar rota |
-| **Parto** (`PARTO`) | `/animais/:animalId/partos/:eventoId` | **NOVO** - criar rota |
-| **Gestação** (`GESTACAO`) | `/gestao/gestacoes/:eventoId` | Já existe |
-| **Cobertura** (`COBERTURA`) | `/gestao/coberturas/:eventoId` | Já existe |
-| **Toque** (`TOQUE`) | `/gestao/toques/:eventoId` | Já existe |
-| **Cio** (`CIO`) | `/gestao/cios/:eventoId` | Já existe |
-| **Secagem** (`SECAGEM`) | `/gestao/secagens/:eventoId` | Já existe |
-| **Lactação** (`LACTACAO`) | `/animais/:animalId/lactacoes/:eventoId` | **NOVO** - criar rota |
-| **Produção** (`PRODUCAO`) | `/producao/:eventoId` | Já existe (edição de registro) |
-| **Alerta** (`ALERTA`) | `/alertas/:eventoId` | Já implementado (link para lista de alertas) |
-| **Baixa** (`BAIXA`) | `/animais/baixa?animal_id=:animalId` | Já implementado |
+### 1. Tipos de eventos com link (paths reais)
 
-### 2. Comportamento do link
-- **Clique no título do evento** na timeline → navega para a página de detalhe/edição do evento.
-- **Eventos sem rota de detalhe** (ex.: alertas já linkam para lista) → manter comportamento atual ou melhorar.
-- **Permissões**: respeitar RBAC existente (ex.: FUNCIONARIO só edita toques/produção; vacinas/hormônio/parto conforme perfil).
+| Tipo | Rota frontend | Notas |
+|------|---------------|-------|
+| `CIO` | `/gestao/cios/{ref_id}/editar` | Wire |
+| `COBERTURA` | `/gestao/coberturas/{ref_id}/editar` | Wire |
+| `PARTO` | `/gestao/partos/{ref_id}/editar` | Wire — não criar `/animais/:id/partos/...` |
+| `PRODUCAO` | `/producao/{ref_id}/editar` | Wire + read-only se sem PUT |
+| `SAUDE` | `/animais/{animalId}/saude/editar/{ref_id}` | Wire + read-only se sem PUT |
+| `VACINA` | `/animais/{animalId}/vacinas/editar/{ref_id}` | Wire + read-only se sem PUT |
+| `HORMONIO_LACTACAO` | `/animais/{animalId}/hormonios-lactacao/{ref_id}/editar` | Wire + read-only se sem PUT |
+| `TOQUE` | `/gestao/toques/{ref_id}/editar` | GET + página detalhe |
+| `GESTACAO` | `/gestao/gestacoes/{ref_id}/editar` | GET + página detalhe |
+| `SECAGEM` | `/gestao/secagens/{ref_id}/editar` | GET + página detalhe |
+| `LACTACAO` | `/gestao/lactacoes/{ref_id}/editar` | GET + página detalhe (sob `/gestao`) |
+| `ALERTA` | `/alertas` | Lista (sem deep-link por id) |
+| `BAIXA` | — | Texto informativo; sem link |
+
+### 2. Comportamento
+- Clique no título → navega para detalhe/edição.
+- Link só se `isPathAllowedForPerfil` permitir o path (mesmo sem PUT — formulário read-only).
+- Mapper único: `frontend/src/lib/animalEventoLinks.ts` (`timelineItemHref`).
 
 ### 3. Indicador visual
-- Eventos com link de detalhe: título sublinhado ao hover + cursor pointer (padrão Shadcn `Link`).
-- Tooltip opcional: "Ver detalhes do [tipo de evento]".
-
-## Requisitos não-funcionais
-- **Performance**: não carregar dados extras na timeline; link usa `ref_id` já retornado pela API.
-- **Acessibilidade**: links com `aria-label` descritivo.
-- **Consistência**: seguir padrão de rotas existente (`/animais/:id/recurso/:eventoId` para recursos do animal; `/gestao/recurso/:eventoId` para recursos de gestão).
+- Título com `Link` + hover underline; `aria-label` descritivo.
 
 ## Estado
-- **planejado**
+- **implementado** (BRF-008)
 
 ## Implementação
-### Frontend
-1. **`frontend/src/services/animais.ts`**: adicionar `'parto' | 'lactacao' | 'vacina' | 'hormonio_lactacao'` ao `TimelineFilterTipo` (se necessário para filtro).
-2. **`frontend/src/components/animais/AnimalTimelineList.tsx`**: adicionar lógica de `href` por `item.tipo` usando `item.ref_id`.
-3. **`frontend/src/components/animais/ficha/AnimalFichaTabCiclo.tsx`** e **`AnimalCicloTimelineVisual.tsx`**: adicionar links nos eventos da timeline visual.
-4. **Criar páginas de detalhe** para vacinas, hormônio lactação, partos, lactações (se não existirem).
-
-### Backend
-1. Verificar se endpoints `GET /api/v1/partos/:id`, `GET /api/v1/lactacoes/:id`, `GET /api/v1/vacinas/:id`, `GET /api/v1/hormonios-lactacao/:id` existem; criar se necessário.
-2. Garantir que `GET /api/v1/animais/:id/timeline` retorna `ref_id` preenchido para todos os tipos de evento.
+- Frontend: `animalEventoLinks.ts`, `AnimalTimelineList`, `AnimalCicloTimelineVisual` (`MarcoConcluidoCard`), páginas `/gestao/{toques,gestacoes,secagens,lactacoes}/[id]/editar`, allowlist `appAccess.ts`, read-only em saúde/vacina/hormônio/produção.
+- Backend: `GET /api/v1/toques|gestacoes|secagens|lactacoes/:id`; whitelist FUNCIONARIO leitura gestação/lactação + `GET /api/v1/producao/:id` em `perfil_access.go`.
 
 ## Critérios de aceite
-1. Na tab **Histórico**, ao clicar em um evento de vacina/hormônio/parto, abre a página de detalhe correspondente.
-2. Na tab **Ciclo**, ao clicar em um evento de parto/secagem/lactação, abre a página de detalhe correspondente.
-3. No `AnimalCicloMiniPreview` (sidebar), marcos clicáveis navegam para o detalhe.
-4. Links respeitam permissões do usuário (RBAC).
-5. Documentação atualizada em `docs/business/animais.md` e `docs/business/ciclo-rebanho.md`.
+1. Histórico / Ciclo / mini-preview usam o mesmo mapper.
+2. `ref_id` ausente ou `BAIXA` → sem link; `ALERTA` → `/alertas`.
+3. FUNCIONARIO abre detalhe em read-only onde não há PUT.
+4. Marcos previstos sem regressão.
 
 ## Relacionado
-- BR-CICLO-008 (Ficha do animal com histórico unificado)
-- BR-SAUDE-005 (Timeline de saúde na ficha)
-- BR-ANIMAIS-008 (Ficha animal - tabs + sidebar)
-- BRF-001 (Vacinas), BRF-006 (Hormônio lactação), BR-CICLO-004 (Parto)
+- BR-ANIMAIS-013, BR-ACESSO-002, BRF-008
 
 ---
 
-**Criado em**: 2026-07-15  
-**Autor**: Agente Hermes (análise funcional)  
-**Próximo passo**: Briefing (BRF-NNN) → Plano → Execução
+**Última atualização**: 2026-07-15

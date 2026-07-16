@@ -239,6 +239,22 @@ func (h *DiagnosticoGestacaoHandler) GetByFazendaID(c *gin.Context) {
 	}
 	response.SuccessOK(c, list, "OK")
 }
+func (h *DiagnosticoGestacaoHandler) GetByID(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	d, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrDiagnosticoNotFound) {
+			response.ErrorNotFound(c, "Diagnostico nao encontrado")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar diagnostico", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, d.FazendaID) {
+		return
+	}
+	response.SuccessOK(c, d, "OK")
+}
 func (h *DiagnosticoGestacaoHandler) Create(c *gin.Context) {
 	var req struct {
 		AnimalID                int64   `json:"animal_id" binding:"required"`
@@ -326,6 +342,22 @@ func (h *GestacaoHandler) GetByFazendaID(c *gin.Context) {
 		return
 	}
 	response.SuccessOK(c, list, "OK")
+}
+func (h *GestacaoHandler) GetByID(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	g, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrGestacaoNotFound) {
+			response.ErrorNotFound(c, "Gestacao nao encontrada")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar gestacao", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, g.FazendaID) {
+		return
+	}
+	response.SuccessOK(c, g, "OK")
 }
 
 // PartoHandler
@@ -656,6 +688,22 @@ func (h *SecagemHandler) GetByFazendaID(c *gin.Context) {
 	}
 	response.SuccessOK(c, list, "OK")
 }
+func (h *SecagemHandler) GetByID(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	sec, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrSecagemNotFound) {
+			response.ErrorNotFound(c, "Secagem nao encontrada")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar secagem", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, sec.FazendaID) {
+		return
+	}
+	response.SuccessOK(c, sec, "OK")
+}
 func (h *SecagemHandler) Create(c *gin.Context) {
 	var req struct {
 		AnimalID          int64   `json:"animal_id" binding:"required"`
@@ -729,6 +777,22 @@ func (h *LactacaoHandler) GetByFazendaID(c *gin.Context) {
 		return
 	}
 	response.SuccessOK(c, list, "OK")
+}
+func (h *LactacaoHandler) GetByID(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	l, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrLactacaoNotFound) {
+			response.ErrorNotFound(c, "Lactacao nao encontrada")
+			return
+		}
+		response.ErrorInternal(c, "Erro ao buscar lactacao", err.Error())
+		return
+	}
+	if !ValidateFazendaAccess(c, h.fazendaSvc, l.FazendaID) {
+		return
+	}
+	response.SuccessOK(c, l, "OK")
 }
 func (h *LactacaoHandler) Create(c *gin.Context) {
 	var req struct {

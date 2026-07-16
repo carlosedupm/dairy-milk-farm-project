@@ -116,6 +116,7 @@ export function AnimalHormonioLactacaoForm({
     mode === "create"
       ? canCriarHormonioLactacao(user?.perfil)
       : canEditarHormonioLactacao(user?.perfil);
+  const readOnly = mode === "edit" && !canSubmit;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -171,6 +172,7 @@ export function AnimalHormonioLactacaoForm({
   });
 
   const handleSubmit = () => {
+    if (readOnly) return;
     setFormError("");
     setConformidadeCode(undefined);
     const errors = validateForm(formState);
@@ -186,14 +188,17 @@ export function AnimalHormonioLactacaoForm({
   return (
     <GestaoFormLayout
       title={
-        mode === "create"
-          ? "Registrar hormônio de lactação"
-          : "Editar aplicação"
+        readOnly
+          ? "Detalhe da aplicação"
+          : mode === "create"
+            ? "Registrar hormônio de lactação"
+            : "Editar aplicação"
       }
       backHref={listHref}
       onSubmit={handleSubmit}
       submitLabel={mode === "create" ? "Registrar" : "Salvar"}
       isPending={mutation.isPending}
+      hideSubmit={readOnly}
       submitDisabled={!canSubmit}
       error={formError}
       isValidationError={isValidationError}
@@ -201,13 +206,16 @@ export function AnimalHormonioLactacaoForm({
       fieldErrors={fieldErrors}
     >
       <p className="text-muted-foreground text-sm">
-        A data deve ser posterior ao início da lactação atual e ao 1º toque prenhe
-        desta lactação. O registo usa a lactação e a gestação ativas hoje.
+        {readOnly
+          ? "Visualização apenas — o seu perfil não pode editar aplicações de hormônio."
+          : "A data deve ser posterior ao início da lactação atual e ao 1º toque prenhe desta lactação. O registo usa a lactação e a gestação ativas hoje."}
       </p>
-      <AnimalHormonioLactacaoFormFields
-        formState={formState}
-        setFormState={setFormState}
-      />
+      <fieldset disabled={readOnly} className="min-w-0 space-y-5 border-0 p-0 m-0">
+        <AnimalHormonioLactacaoFormFields
+          formState={formState}
+          setFormState={setFormState}
+        />
+      </fieldset>
     </GestaoFormLayout>
   );
 }

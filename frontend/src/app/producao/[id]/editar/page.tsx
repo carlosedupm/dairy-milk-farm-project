@@ -10,12 +10,16 @@ import { PageContainer } from '@/components/layout/PageContainer'
 import { BackLink } from '@/components/layout/BackLink'
 import { ProducaoForm } from '@/components/producao/ProducaoForm'
 import { toast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
+import { canEditarProducao } from '@/config/appAccess'
 
 function EditarProducaoContent() {
   const params = useParams()
   const id = Number(params.id)
   const router = useRouter()
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const readOnly = !canEditarProducao(user?.perfil)
 
   const { data: initial, isLoading, error } = useQuery({
     queryKey: ['producao', id],
@@ -72,7 +76,9 @@ function EditarProducaoContent() {
       </div>
       <ProducaoForm
         initial={initial}
+        readOnly={readOnly}
         onSubmit={async (p) => {
+          if (readOnly) return
           await mutation.mutateAsync(p)
         }}
         isPending={mutation.isPending}

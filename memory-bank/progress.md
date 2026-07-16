@@ -24,6 +24,15 @@
 
 ## ✅ O que foi concluído
 
+### **BRF-008 — Links de eventos na ficha (✅ 2026-07-15)**
+
+- [x] Mapper `timelineItemHref` (`frontend/src/lib/animalEventoLinks.ts`) + unit tests
+- [x] Links no Histórico (`AnimalTimelineList`), Ciclo (`MarcoConcluidoCard`) e mini-preview
+- [x] Backend `GET /api/v1/toques|gestacoes|secagens|lactacoes/:id` + whitelist FUNCIONARIO (leitura gestação/lactação + GET produção)
+- [x] Páginas detalhe `/gestao/{toques,gestacoes,secagens,lactacoes}/[id]/editar`
+- [x] Read-only em saúde/vacina/hormônio/produção quando sem PUT; allowlist UI FUNCIONARIO
+- [x] BR-CICLO-019 / BR-ANIMAIS-013 / BR-ACESSO-002 (leitura) → implementado; briefing → implementado
+
 ### **BR-PARTOS-007 — Auto-vínculo gestação no parto (✅ 2026-06-27)**
 
 - [x] Backend: `PartoService.resolveGestacaoID` / `resolveGestacaoIDTx` — busca `GetAtivaConfirmadaByAnimalID` quando `GestacaoID` é nil no POST
@@ -980,6 +989,6 @@
 
 ---
 
-**Última atualização**: 2026-06-28 (BR-PARTOS-007; pgx 5.9.2; `.npmrc`)
+**Última atualização**: 2026-07-15 (BRF-008 — links de eventos na ficha)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
 **Próxima revisão**: após Tier 0 staging Render (sec. 1–5) + validação manual G3 BRF-006/007

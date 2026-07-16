@@ -6,8 +6,6 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { AnimalVacinaForm } from "@/components/animais/AnimalVacinaForm";
-import { canEditarVacina } from "@/config/appAccess";
-import { useAuth } from "@/contexts/AuthContext";
 import { get as getAnimal, isAnimalForaDoRebanho } from "@/services/animais";
 import {
   animalVacinaDetailQueryKey,
@@ -20,7 +18,6 @@ function EditarContent() {
   const params = useParams();
   const animalId = Number(params.id);
   const vacinaId = Number(params.vacinaId);
-  const { user } = useAuth();
 
   const { data: animal, isLoading: loadingAnimal } = useQuery({
     queryKey: ["animais", animalId],
@@ -47,17 +44,6 @@ function EditarContent() {
       <PageContainer variant="narrow">
         <p className="text-destructive">ID inválido.</p>
         <BackLink href="/animais">Voltar</BackLink>
-      </PageContainer>
-    );
-  }
-
-  if (!canEditarVacina(user?.perfil)) {
-    return (
-      <PageContainer variant="narrow">
-        <BackLink href={animalFichaVacinasTabHref(animalId)}>Voltar</BackLink>
-        <p className="text-muted-foreground mt-4">
-          O seu perfil não pode editar vacinas.
-        </p>
       </PageContainer>
     );
   }
@@ -90,17 +76,6 @@ function EditarContent() {
     );
   }
 
-  if (isAnimalForaDoRebanho(animal)) {
-    return (
-      <PageContainer variant="narrow">
-        <BackLink href={animalFichaVacinasTabHref(animalId)}>Voltar</BackLink>
-        <p className="text-muted-foreground mt-4">
-          Animal fora do rebanho — edição de vacinas indisponível.
-        </p>
-      </PageContainer>
-    );
-  }
-
   return (
     <AnimalVacinaForm
       key={registro.id}
@@ -108,6 +83,7 @@ function EditarContent() {
       mode="edit"
       initial={registro}
       vacinaId={vacinaId}
+      forceReadOnly={isAnimalForaDoRebanho(animal)}
     />
   );
 }

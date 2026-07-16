@@ -18,6 +18,11 @@ export async function listByFazenda(fazendaId: number): Promise<Secagem[]> {
   return data.data ?? [];
 }
 
+export async function get(id: number): Promise<Secagem | null> {
+  const { data } = await api.get<ApiResponse<Secagem>>(`/api/v1/secagens/${id}`);
+  return data.data ?? null;
+}
+
 export async function create(payload: SecagemCreate): Promise<Secagem> {
   const { data } = await api.post<ApiResponse<Secagem>>("/api/v1/secagens", payload);
   if (!data.data) throw new Error("Resposta invalida");

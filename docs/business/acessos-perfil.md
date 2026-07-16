@@ -26,16 +26,16 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ### BR-ACESSO-002 — Gestão parcial para FUNCIONARIO
 
-- **Enunciado**: No módulo Gestão, `FUNCIONARIO` pode acessar Cios, Coberturas, **Toques**, Partos e Secagens (sem gestações/lactações globais).
+- **Enunciado**: No módulo Gestão, `FUNCIONARIO` pode acessar Cios, Coberturas, **Toques**, Partos e Secagens. **Leitura** de gestação/lactação e detalhe de produção (GET) permitida a partir da ficha do animal (BR-CICLO-019); sem POST/PUT nesses recursos.
 - **Escopo**: Frontend e API de gestão pecuária.
 - **Perfis / permissões**: `FUNCIONARIO`.
 - **Efeito**:
-  - UI: cards/rotas de Gestão fora desse escopo ficam ocultos ou bloqueados.
-  - API: endpoints fora da whitelist retornam 403.
+  - UI: cards/rotas de Gestão de criação fora do escopo operacional ficam ocultos ou bloqueados; detalhe `/gestao/gestacoes/:id/editar` e `/gestao/lactacoes/:id/editar` acessíveis via link da timeline (read-only).
+  - API: endpoints fora da whitelist retornam 403; `GET /api/v1/gestacoes*`, `GET /api/v1/lactacoes*`, `GET /api/v1/producao/:id` liberados (somente GET).
 - **Implementação**:
-  - Rotas UI: `/gestao`, `/gestao/cios*`, `/gestao/coberturas*`, `/gestao/toques*`, `/gestao/partos*`, `/gestao/secagens*`.
-  - API: `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/toques*`, `/api/v1/partos*`, `/api/v1/secagens*`, `GET|POST /api/v1/crias*`.
-- **Estado**: Implementado.
+  - Rotas UI: `/gestao`, `/gestao/cios*`, `/gestao/coberturas*`, `/gestao/toques*`, `/gestao/partos*`, `/gestao/secagens*`, `/gestao/gestacoes*`, `/gestao/lactacoes*`, `/producao/:id/editar` (leitura).
+  - API: `/api/v1/cios*`, `/api/v1/coberturas*`, `/api/v1/toques*`, `/api/v1/partos*`, `/api/v1/secagens*`, `GET /api/v1/gestacoes*`, `GET /api/v1/lactacoes*`, `GET /api/v1/producao/:id`, `GET|POST /api/v1/crias*`; `perfil_access.go` (`funcionarioGestaoLeituraPath`, `funcionarioProducaoGetPath`).
+- **Estado**: Implementado (extensão leitura BRF-008).
 
 ### BR-ACESSO-003 — Animais em modo consulta para FUNCIONARIO
 
@@ -258,4 +258,4 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ---
 
-**Última atualização**: 2026-06-10 (BR-ACESSO-025 implementado — BRF-005 hormônios lactação)
+**Última atualização**: 2026-07-15 (BR-ACESSO-002 — leitura gestação/lactação/produção detalhe; BRF-008)

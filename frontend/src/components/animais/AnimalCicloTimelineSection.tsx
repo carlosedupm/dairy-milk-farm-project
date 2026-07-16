@@ -161,7 +161,7 @@ export function AnimalCicloTimelineSection({
         />
       ) : (
         <>
-          <AnimalCicloTimelineVisual marcos={marcosCiclo} />
+          <AnimalCicloTimelineVisual marcos={marcosCiclo} animalId={animalId} />
           {paginated ? (
             <>
               <div ref={sentinelRef} className="h-1" aria-hidden />

@@ -100,6 +100,8 @@ const FUNCIONARIO_GESTAO_PATHS = [
   "/gestao/toques",
   "/gestao/partos",
   "/gestao/secagens",
+  "/gestao/gestacoes",
+  "/gestao/lactacoes",
   "/gestao/hormonios-lactacao",
 ] as const;
 
@@ -108,12 +110,13 @@ function isFuncionarioAllowedPath(path: string): boolean {
   if (path === "/animais") return true;
   if (path === "/animais/baixa") return true;
   if (/^\/animais\/\d+$/.test(path)) return true;
-  if (/^\/animais\/\d+\/saude$/.test(path)) return true;
-  if (/^\/animais\/\d+\/saude\/novo$/.test(path)) return true;
+  if (/^\/animais\/\d+\/saude(\/novo|\/editar\/\d+)?$/.test(path)) return true;
+  if (/^\/animais\/\d+\/vacinas(\/novo|\/editar\/\d+)?$/.test(path)) return true;
   if (/^\/animais\/\d+\/producao$/.test(path)) return true;
   if (/^\/animais\/\d+\/hormonios-lactacao(\/novo|\/\d+\/editar)?$/.test(path))
     return true;
   if (path === "/producao/novo") return true;
+  if (/^\/producao\/\d+\/editar$/.test(path)) return true;
   if (path === "/folgas" || path.startsWith("/folgas/")) return true;
   if (path === "/alertas" || path.startsWith("/alertas/")) return true;
   return FUNCIONARIO_GESTAO_PATHS.some(
@@ -181,6 +184,12 @@ export function showAssistenteForPerfil(perfil: string | undefined): boolean {
 
 export function canRegistrarProducao(perfil: string | undefined): boolean {
   return isPathAllowedForPerfil(perfil, "/producao/novo");
+}
+
+/** PUT /api/v1/producao/:id — exceto FUNCIONARIO e USER (BR-CICLO-019 read-only). */
+export function canEditarProducao(perfil: string | undefined): boolean {
+  if (!perfil || perfil === "USER" || perfil === "FUNCIONARIO") return false;
+  return true;
 }
 
 export function canRegistrarBaixa(perfil: string | undefined): boolean {

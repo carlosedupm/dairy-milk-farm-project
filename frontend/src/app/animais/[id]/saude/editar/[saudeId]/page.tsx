@@ -6,8 +6,6 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { AnimalSaudeForm } from "@/components/animais/AnimalSaudeForm";
-import { canEditarRegistroSaude } from "@/config/appAccess";
-import { useAuth } from "@/contexts/AuthContext";
 import { get as getAnimal, isAnimalForaDoRebanho } from "@/services/animais";
 import {
   animalSaudeDetailQueryKey,
@@ -20,7 +18,6 @@ function EditarContent() {
   const params = useParams();
   const animalId = Number(params.id);
   const saudeId = Number(params.saudeId);
-  const { user } = useAuth();
 
   const { data: animal, isLoading: loadingAnimal } = useQuery({
     queryKey: ["animais", animalId],
@@ -47,17 +44,6 @@ function EditarContent() {
       <PageContainer variant="narrow">
         <p className="text-destructive">ID inválido.</p>
         <BackLink href="/animais">Voltar</BackLink>
-      </PageContainer>
-    );
-  }
-
-  if (!canEditarRegistroSaude(user?.perfil)) {
-    return (
-      <PageContainer variant="narrow">
-        <BackLink href={animalFichaSaudeTabHref(animalId)}>Voltar</BackLink>
-        <p className="text-muted-foreground mt-4">
-          O seu perfil não pode editar registos de saúde.
-        </p>
       </PageContainer>
     );
   }
@@ -90,17 +76,6 @@ function EditarContent() {
     );
   }
 
-  if (isAnimalForaDoRebanho(animal)) {
-    return (
-      <PageContainer variant="narrow">
-        <BackLink href={animalFichaSaudeTabHref(animalId)}>Voltar</BackLink>
-        <p className="text-muted-foreground mt-4">
-          Animal fora do rebanho — edição de saúde indisponível.
-        </p>
-      </PageContainer>
-    );
-  }
-
   return (
     <AnimalSaudeForm
       key={registro.id}
@@ -109,6 +84,7 @@ function EditarContent() {
       mode="edit"
       initial={registro}
       saudeId={saudeId}
+      forceReadOnly={isAnimalForaDoRebanho(animal)}
     />
   );
 }

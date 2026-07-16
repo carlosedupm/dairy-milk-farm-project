@@ -5,6 +5,8 @@ import { formatDateTimePtBr } from "@/lib/format";
 import type { CicloTimelineItem } from "@/services/animais";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Pill, Syringe } from "lucide-react";
+import { timelineItemHref } from "@/lib/animalEventoLinks";
+import { useAuth } from "@/contexts/AuthContext";
 
 function timelineTipoLabel(tipo: string): string {
   if (tipo === "SAUDE") return "Saúde";
@@ -36,24 +38,18 @@ export function TimelineSkeletonRows() {
 type Props = {
   items: CicloTimelineItem[];
   animalId: number;
-  canEditSaude: boolean;
 };
 
-export function AnimalTimelineList({
-  items,
-  animalId,
-  canEditSaude,
-}: Props) {
+export function AnimalTimelineList({ items, animalId }: Props) {
+  const { user } = useAuth();
+
   return (
     <ul className="space-y-3 min-w-0">
       {items.map((item, idx) => {
         const isSaude = item.tipo === "SAUDE";
         const isAlerta = item.tipo === "ALERTA";
         const isVacina = item.tipo === "VACINA";
-        const saudeEditHref =
-          isSaude && item.ref_id != null && canEditSaude
-            ? `/animais/${animalId}/saude/editar/${item.ref_id}`
-            : null;
+        const href = timelineItemHref(animalId, item, user?.perfil);
 
         return (
           <li
@@ -86,17 +82,11 @@ export function AnimalTimelineList({
                 {formatDateTimePtBr(item.data)}
               </span>
             </div>
-            {saudeEditHref ? (
+            {href ? (
               <Link
-                href={saudeEditHref}
+                href={href}
                 className="font-medium break-words hover:underline block py-0.5"
-              >
-                {item.titulo}
-              </Link>
-            ) : isAlerta ? (
-              <Link
-                href="/alertas"
-                className="font-medium break-words hover:underline block py-0.5"
+                aria-label={`Ver detalhes: ${item.titulo}`}
               >
                 {item.titulo}
               </Link>

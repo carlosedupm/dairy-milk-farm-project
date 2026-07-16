@@ -57,6 +57,7 @@ type Props = {
   defaultFazendaId?: number;
   defaultAnimalId?: number;
   fazendaUnicaId?: number;
+  readOnly?: boolean;
 };
 
 export function ProducaoForm({
@@ -67,6 +68,7 @@ export function ProducaoForm({
   defaultFazendaId,
   defaultAnimalId,
   fazendaUnicaId,
+  readOnly = false,
 }: Props) {
   const { fazendaAtiva } = useFazendaAtiva();
 
@@ -171,6 +173,7 @@ export function ProducaoForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
     setError("");
     setConformidadeCode(undefined);
     setFieldErrors({});
@@ -223,11 +226,20 @@ export function ProducaoForm({
     <Card>
       <CardHeader>
         <CardTitle>
-          {initial ? "Editar produção" : "Registrar produção"}
+          {readOnly
+            ? "Detalhe da produção"
+            : initial
+              ? "Editar produção"
+              : "Registrar produção"}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
+          {readOnly ? (
+            <p className="text-sm text-muted-foreground">
+              Visualização apenas — o seu perfil não pode editar este registo.
+            </p>
+          ) : null}
           {error?.trim() ? (
             <FormValidationAlert
               message={displayMessage}
@@ -358,8 +370,9 @@ export function ProducaoForm({
           <Button
             type="submit"
             size="lg"
-            disabled={isPending || lactacaoBloqueiaSubmit}
-            className="min-h-[44px]"
+            disabled={readOnly || isPending || lactacaoBloqueiaSubmit}
+            className={readOnly ? "hidden" : "min-h-[44px]"}
+            aria-hidden={readOnly}
           >
             {isPending ? "Salvando…" : submitLabel}
           </Button>

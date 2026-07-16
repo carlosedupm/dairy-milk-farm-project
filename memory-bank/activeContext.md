@@ -4,10 +4,11 @@
 
 ### **Status Geral**
 
-Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** fechadas em código; **BRF-006** (alerta hormônio) e **BRF-007** (assistente FUNCIONARIO fase 1) implementados. **Foco atual:** validação operacional Tier 0 em staging (sec. 1–5 Render); backlog Tier 2 (M2M produção/partos, testes integração).
+Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** fechadas em código; **BRF-006**, **BRF-007** e **BRF-008** (links de eventos na ficha) implementados. **Foco atual:** validação operacional Tier 0 em staging (sec. 1–5 Render); backlog Tier 2 (M2M produção/partos, testes integração).
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **BRF-008 — Links de navegação para eventos do ciclo na ficha (2026-07-15)**: mapper `animalEventoLinks.ts`; links no Histórico/Ciclo/mini-preview; GET `toques|gestacoes|secagens|lactacoes/:id` + páginas `/gestao/.../editar`; allowlist FUNCIONARIO leitura (gestação/lactação/produção/saúde/vacina); read-only quando sem PUT; BR-CICLO-019 / BR-ANIMAIS-013 implementados.
 1. ✅ **BR-SECAGENS-006 — Bloqueio de secagem duplicada (2026-06-27)**: `SecagemService` rejeita nova secagem quando animal `SECA` ou gestação confirmada já seca (409); auto-vínculo `gestacao_id`; `proximas_acoes[]` omite «Registrar secagem» após secagem; testes `secagem_duplicidade_test.go` + `animal_ciclo_service_test.go`; catálogo `secagens.md` + BR-ANIMAIS-007.
 1. ✅ **INT-002 / BR-CICLO-007 — conformidade e produção (2026-06-27)**: `checkProducaoSemLactacaoAtiva` alinhado a intervalo de lactação na data (sem falso positivo pós-secagem); migration 39 backfill `lactacao_id` legado; `ProducaoForm` bloqueia submit quando lactação/data inválidas; docs `auditoria.md`, `producao-leite.md`, `regressao-ciclo-fase2.md`.
 1. ✅ **BR-PARTOS-007 — Auto-vínculo gestação no parto (2026-06-27)**: `PartoService.resolveGestacaoID` / `resolveGestacaoIDTx` preenche `gestacao_id` quando o frontend envia nil (select opcional); `PartoRepository.UpdateGestacaoIDTx`; corrige animal que reaparecia em `para-parto` após registro; catálogo `partos.md` atualizado.
@@ -295,5 +296,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 
 ---
 
-**Última atualização**: 2026-06-28 (BR-PARTOS-007; pgx 5.9.2; `.npmrc` Dependabot)
+**Última atualização**: 2026-07-15 (BRF-008 — links de eventos na ficha)
 **Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 + Fase 3 fechadas em código** | **Tier 0 staging pendente** | BRF-006/007 implementados | **M2M** BR-INTEG-001–012 | Recuperação senha aguarda SMTP
