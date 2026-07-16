@@ -9,7 +9,7 @@
 | ID | `BRF-008` |
 | Data | 2026-07-16 |
 | Analista | Cursor Agent (análise frontend + API) |
-| Status | aprovado (G1) |
+| Status | aprovado |
 | Aprovado por (G1) | — |
 | PR vinculado (G2) | — |
 

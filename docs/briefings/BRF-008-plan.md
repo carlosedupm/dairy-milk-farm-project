@@ -1,5 +1,11 @@
 # BRF-008 - Plano de Implementação
 
+| Campo | Valor |
+|-------|-------|
+| ID | `BRF-008` |
+| Status | aprovado |
+| Relacionado | [BR-CICLO-019](../business/BR-CICLO-019.md), [BR-ANIMAIS-013](../business/animais.md) |
+
 ## 1. Tarefas Principais (em ordem)
 
 ### 1.1. Verificar endpoints existentes (Backend)
