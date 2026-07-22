@@ -49,13 +49,32 @@ export async function logout(): Promise<void> {
   await api.post('/api/auth/logout')
 }
 
+function apiBaseURL(): string {
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+}
+
+/** Renova o access token via refresh cookie HttpOnly. */
+export async function refresh(): Promise<boolean> {
+  try {
+    const response = await fetch(`${apiBaseURL()}/api/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+    return response.ok
+  } catch {
+    return false
+  }
+}
+
 export async function validate(): Promise<ValidateResponse['data'] | null> {
   try {
     // Valida o token via cookie HttpOnly
     // Usar fetch diretamente para ter controle total sobre o tratamento de erros
     // e evitar logs desnecessários no console para 401 esperados
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-    const response = await fetch(`${baseURL}/api/auth/validate`, {
+    const response = await fetch(`${apiBaseURL()}/api/auth/validate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,6 +99,18 @@ export async function validate(): Promise<ValidateResponse['data'] | null> {
     // Qualquer erro também retorna null (usuário não autenticado)
     return null
   }
+}
+
+/**
+ * Valida a sessão; se o access expirou, tenta refresh e valida de novo.
+ * Só devolve null quando refresh também falha (ex.: refresh expirado/revogado).
+ */
+export async function ensureSession(): Promise<ValidateResponse['data'] | null> {
+  const first = await validate()
+  if (first) return first
+  const refreshed = await refresh()
+  if (!refreshed) return null
+  return validate()
 }
 
 export async function register(payload: RegisterPayload): Promise<RegisterResponse['data']> {

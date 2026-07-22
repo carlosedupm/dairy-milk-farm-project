@@ -24,6 +24,19 @@
 
 ## ✅ O que foi concluído
 
+### **BRF-009 — Modo ordenha com turno (✅ 2026-07-21)**
+
+- [x] `/producao/ordenha` + `lib/ordenha-turno.ts` (+ vitest) + `useOrdenhaSession`
+- [x] UI lista/turno/bloqueio/badge restrição; atalhos Dashboard + `/producao`
+- [x] BR-PRODUCAO-008/009, BR-LEITE-008, BR-ACESSO-015 → implementado; briefing → implementado
+
+### **BR-PRODUCAO-007 — Registro contínuo na ordenha (✅ 2026-07-21)**
+
+- [x] `authService.ensureSession` + `AuthContext` (mount + visibilitychange)
+- [x] `ProducaoForm` `continuous` + `/producao/novo` sem redirect para ficha
+- [x] `AnimalSelect` `focusToken`; botão Concluir; toast com ação «Ver ficha»
+- [x] Catálogo `docs/business/producao-leite.md` (BR-PRODUCAO-007); `systemPatterns.md`
+
 ### **BRF-008 — Links de eventos na ficha (✅ 2026-07-15)**
 
 - [x] Mapper `timelineItemHref` (`frontend/src/lib/animalEventoLinks.ts`) + unit tests
@@ -443,6 +456,23 @@
 ```
 
 ## 🔄 Histórico de Progresso
+
+### **2026-07-21 - BRF-009 modo ordenha implementado**
+
+- ✅ `/producao/ordenha` + `ordenha-turno.ts` / `useOrdenhaSession` / UI; Manhã/Tarde; now; bloqueio; badge restrição.
+- ✅ BR-PRODUCAO-008/009, BR-LEITE-008, BR-ACESSO-015 → implementado; briefing → implementado.
+- ✅ **G3 manual OK** (desenvolvedor): fluxo ordenha validado; empty state `/producao` e KPI FUNCIONARIO apontam para ordenha; docs desalinhadas (`/producao/novo` como atalho principal) corrigidas.
+
+### **2026-07-21 - BRF-009 rascunho (modo ordenha)**
+
+- ✅ Análise funcional + briefing `BRF-009` (`rascunho`); regras `BR-PRODUCAO-008/009`, `BR-LEITE-008` planejadas; `BR-ACESSO-015` parcial.
+- ⏳ G1: responder §5 do briefing antes de implementação.
+
+### **2026-07-21 - Ordenha: sessão + registro contínuo**
+
+- ✅ **Auth bootstrap**: `ensureSession()` em `services/auth.ts`; `AuthContext` no mount e `visibilitychange` — evita re-login após access JWT expirado com refresh válido.
+- ✅ **BR-PRODUCAO-007**: `/producao/novo` contínuo — limpa animal/litros/qualidade, preserva fazenda/data-hora, botão Concluir, toast «Ver ficha».
+- ✅ Catálogo `producao-leite.md` + `systemPatterns.md` (bootstrap auth).
 
 ### **2026-06-28 - CI e Dependabot**
 
@@ -989,6 +1019,6 @@
 
 ---
 
-**Última atualização**: 2026-07-15 (BRF-008 — links de eventos na ficha)
+**Última atualização**: 2026-07-21 (BRF-009 G3 OK)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
 **Próxima revisão**: após Tier 0 staging Render (sec. 1–5) + validação manual G3 BRF-006/007

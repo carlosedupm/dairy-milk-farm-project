@@ -366,6 +366,8 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 - **Tokens fora do JSON**: login/refresh **não** retornam `access_token`/`refresh_token` no corpo; somente cookies HttpOnly (reduz superfície XSS)
 - **Password Hashing**: BCrypt com custo 10; senha mínima **8 caracteres** validada front+back (BR-ACESSO-024)
 - **Token Refresh**: Endpoint `/api/auth/refresh` para renovar access tokens usando refresh tokens
+- **Bootstrap de sessão (frontend)**: `AuthContext` usa `authService.ensureSession()` (`validate` → se 401, `refresh` → `validate`) no mount e ao voltar ao app (`visibilitychange`). Evita forçar login quando o access (15 min) expirou mas o refresh (7 dias) ainda é válido — crítico na ordenha com pausas entre vacas. O interceptor Axios em `services/api.ts` continua a renovar em 401 nas chamadas de API.
+- **Modo ordenha (BR-PRODUCAO-008)**: UI `/producao/ordenha` — sessão cliente (`sessionStorage`); turno Manhã/Tarde classificado por `data_hora` (`lib/ordenha-turno.ts`); `POST /producao` unitário sem `data_hora` (servidor = now); bloqueio de duplicata no turno só nesta UI; badge restrição via `restricoes-leite/ativas`.
 
 ### **Autorização**
 
@@ -734,6 +736,6 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 ---
 
-**Versão dos Padrões**: 2.29 (Go + Next.js) — hardening de segurança: refresh tokens hash+rotação, erros sanitizados, CSP report-only, proxy.ts, redirects seguros, multi-tenant BR-ACESSO-023.
+**Versão dos Padrões**: 2.31 (Go + Next.js) — modo ordenha BRF-009 + bootstrap auth.
 
-**Última atualização**: 2026-06-28 (BR-PARTOS-007 — auto-vínculo gestação no parto)
+**Última atualização**: 2026-07-21 (BRF-009 G3 OK — atalhos/KPI → ordenha)

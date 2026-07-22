@@ -8,6 +8,9 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **BRF-009 — Modo ordenha com turno (2026-07-21)**: `/producao/ordenha`; turnos Manhã/Tarde; `data_hora`=now; bloqueio duplicata no turno; badge restrição; `ordenha-turno.ts` + testes; BR-PRODUCAO-008/009, BR-LEITE-008, BR-ACESSO-015; briefing → **implementado** (**G3 manual OK**).
+1. ✅ **BR-PRODUCAO-007 — Registro contínuo na ordenha (2026-07-21)**: `/producao/novo` permanece no form após save; limpa animal/litros/qualidade; preserva fazenda e data/hora; botão Concluir → `/producao`; toast com «Ver ficha».
+1. ✅ **Sessão auth — bootstrap com refresh (2026-07-21)**: `ensureSession()` (`validate` → `refresh` → `validate`) no `AuthContext` (mount + `visibilitychange`); evita re-login após expiração do access JWT (15 min) enquanto o refresh (7 dias) for válido.
 1. ✅ **BRF-008 — Links de navegação para eventos do ciclo na ficha (2026-07-15)**: mapper `animalEventoLinks.ts`; links no Histórico/Ciclo/mini-preview; GET `toques|gestacoes|secagens|lactacoes/:id` + páginas `/gestao/.../editar`; allowlist FUNCIONARIO leitura (gestação/lactação/produção/saúde/vacina); read-only quando sem PUT; BR-CICLO-019 / BR-ANIMAIS-013 implementados.
 1. ✅ **BR-SECAGENS-006 — Bloqueio de secagem duplicada (2026-06-27)**: `SecagemService` rejeita nova secagem quando animal `SECA` ou gestação confirmada já seca (409); auto-vínculo `gestacao_id`; `proximas_acoes[]` omite «Registrar secagem» após secagem; testes `secagem_duplicidade_test.go` + `animal_ciclo_service_test.go`; catálogo `secagens.md` + BR-ANIMAIS-007.
 1. ✅ **INT-002 / BR-CICLO-007 — conformidade e produção (2026-06-27)**: `checkProducaoSemLactacaoAtiva` alinhado a intervalo de lactação na data (sem falso positivo pós-secagem); migration 39 backfill `lactacao_id` legado; `ProducaoForm` bloqueia submit quando lactação/data inválidas; docs `auditoria.md`, `producao-leite.md`, `regressao-ciclo-fase2.md`.
@@ -44,7 +47,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 1. ✅ **Ficha — badge e feedback visual para animal baixado (BR-BAIXA-011)**: sidebar com badges «Fora do rebanho» + «Baixado» (`AnimalBaixadoBadge`); Editar/Excluir desabilitados com tooltip (não ocultos para gestores); tabs Saúde/Produção com botões bloqueados visíveis; `AnimalEditarBloqueadoGuard`; `PUT`/`DELETE` animal → 400 `ANIMAL_FORA_REBANHO`; `ButtonWithTooltip`, `animalRebanhoUtils.ts`.
 1. ✅ **Visibilidade do ciclo reprodutivo (3 fases UX)**: nova tab **Ciclo** na ficha (`?tab=ciclo`); Visão Geral com mini-timeline + cadastro colapsável; Histórico só saúde/alertas com `&tipo=` na URL; coluna Reprodução em `/animais`; links contextuais (alertas, gestão, busca, dashboard) → `?tab=ciclo`; `GestaoPendenciasCicloPanel` no hub `/gestao`; `lib/animalFichaLinks.ts`.
 1. ✅ **Timeline visual do ciclo reprodutivo (BR-CICLO-008)**: filtro **Ciclo** na tab Histórico exibe timeline vertical (`AnimalCicloTimelineVisual`) com ícones por tipo, marcos concluídos (API) e previstos (`proximas_acoes` do contexto); filtros Todos/Saúde/Alertas mantêm lista simples (`AnimalTimelineList`); empty state com CTA «Registrar cio»; `animalCicloTimelineUtils.ts`.
-1. ✅ **Dashboard — KPIs para FUNCIONARIO (BR-CICLO-009)**: `showKpiGridForPerfil` em `appAccess.ts`; `DashboardKpiGrid` visível na home para FUNCIONARIO; `PecuarioResumoHomePanel` via `showPecuarioResumoPanelForPerfil` (lista partos 30d); `ConformidadeHomePanel` permanece oculto; drill-downs alternativos (Partos → `/gestao`, Leite → `/producao/novo`); whitelist `GET .../resumo-pecuario` em `perfil_access.go`; testes em `perfil_access_test.go`.
+1. ✅ **Dashboard — KPIs para FUNCIONARIO (BR-CICLO-009)**: `showKpiGridForPerfil` em `appAccess.ts`; `DashboardKpiGrid` visível na home para FUNCIONARIO; `PecuarioResumoHomePanel` via `showPecuarioResumoPanelForPerfil` (lista partos 30d); `ConformidadeHomePanel` permanece oculto; drill-downs alternativos (Partos → `/gestao`, Leite → `/producao/ordenha`); whitelist `GET .../resumo-pecuario` em `perfil_access.go`; testes em `perfil_access_test.go`.
 1. ✅ **Bug GET /api/v1/me — 404 (BR-ACESSO-021)**: Rota `GET /api/v1/me` registada em `main.go`; handler `AuthHandler.Me` devolve `{ id, nome, email, perfil }`; whitelist USER/FUNCIONARIO em `perfil_access.go`; testes em `auth_handler_test.go` e `perfil_access_test.go`; OpenAPI atualizado.
 1. ✅ **Bug DELETE fazendas — 403 para ADMIN (BR-ACESSO-020)**: `DELETE /api/v1/fazendas/:id` passou a usar `ValidateFazendaAccessOrGestao` (ADMIN/DEVELOPER/GESTAO sem vínculo) e middleware `RequirePodeDeletarFazenda` (ADMIN/DEVELOPER/GESTAO/PROPRIETARIO); testes em `access_helper_test.go`, `middleware_test.go`, `perfil_test.go`.
 1. ✅ **Header — lazy render da busca**: `useAdaptiveSearch` com `panelActive` (foco/clique/`openSearch()` ou ≥2 caracteres); `HeaderBuscaTrigger` monta Popover/Dialog + `AnimalSearchPanel` só após interacção; `next/dynamic` (`ssr: false`); desmontagem completa ao fechar; `key={pathname}` mantém reset na navegação.
@@ -250,6 +253,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 - ✅ **Decidido**: JWT com algoritmo **RS256** (chaves pública/privada)
 - ✅ **Decidido**: **Refresh Tokens** armazenados no banco como **hash SHA-256** com **rotação** a cada refresh (2026-06-10)
 - ✅ **Decidido**: Cookies **HttpOnly** e **Secure** para armazenamento de tokens; tokens **nunca** no corpo JSON
+- ✅ **Decidido (2026-07-21)**: Bootstrap de sessão no frontend com `ensureSession` (validate + refresh) para não forçar re-login quando o access JWT de 15 min expira durante pausas operacionais (ex.: ordenha)
 - ✅ **Decidido**: **Bcrypt** para hashing de senhas; senha mínima **8 caracteres** (BR-ACESSO-024)
 - ✅ **Decidido**: **CORS estrito** configurado para domínio da Vercel
 - ✅ **Decidido**: Erros 500 com mensagem genérica ao cliente; detalhes só em log estruturado (`ErrorInternal`)
@@ -296,5 +300,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 
 ---
 
-**Última atualização**: 2026-07-15 (BRF-008 — links de eventos na ficha)
-**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **Fase 2 + Fase 3 fechadas em código** | **Tier 0 staging pendente** | BRF-006/007 implementados | **M2M** BR-INTEG-001–012 | Recuperação senha aguarda SMTP
+**Última atualização**: 2026-07-21 (BRF-009 G3 OK — memory-bank sync)
+**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **BRF-009 G3 OK** (`/producao/ordenha`) | BR-PRODUCAO-007 contínuo | BRF-006/007/008 | **M2M** BR-INTEG-001–012 | Recuperação senha aguarda SMTP

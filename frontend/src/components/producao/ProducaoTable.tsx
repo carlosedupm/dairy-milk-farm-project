@@ -125,9 +125,9 @@ export function ProducaoTable({
     return (
       <ListEmptyState
         icon={Milk}
-        emptyTitle="Registre sua primeira produção"
-        emptyDescription="Registe a ordenha para acompanhar o volume de leite da fazenda ao longo do tempo."
-        registerLabel="Registrar produção"
+        emptyTitle="Registe a primeira ordenha"
+        emptyDescription="Use o modo ordenha para lançar o leite vaca a vaca no turno, ou o registo avulso para um animal."
+        registerLabel="Iniciar ordenha"
         registerHref={novoProducaoHref}
         canRegister={canRegister ?? true}
         hasActiveFilters={hasActiveFilters}

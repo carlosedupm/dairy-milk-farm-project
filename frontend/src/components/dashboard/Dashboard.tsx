@@ -117,9 +117,9 @@ export function Dashboard() {
           icon: List,
         },
         {
-          href: "/producao/novo",
-          title: "Registrar produção",
-          description: "Registar leite da ordenha",
+          href: "/producao/ordenha",
+          title: "Iniciar ordenha",
+          description: "Registar leite vaca a vaca no turno",
           icon: Droplets,
         },
         {
@@ -149,9 +149,9 @@ export function Dashboard() {
           icon: List,
         },
         {
-          href: "/producao/novo",
-          title: "Registrar produção",
-          description: "Registrar produção de leite",
+          href: "/producao/ordenha",
+          title: "Iniciar ordenha",
+          description: "Registar leite vaca a vaca no turno",
           icon: Droplets,
         },
       ];

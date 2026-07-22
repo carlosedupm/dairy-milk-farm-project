@@ -19,7 +19,7 @@ import {
 } from "@/components/producao/ProducaoListToolbar";
 import { Button } from "@/components/ui/button";
 import { ListPaginationBar } from "@/components/ui/pagination";
-import { Plus, Building2, Milk } from "lucide-react";
+import { Plus, Building2, Milk, Droplets } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FazendaSelector } from "@/components/fazendas/FazendaSelector";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
@@ -187,12 +187,20 @@ function ProducaoContent() {
         title={title}
         action={
           fazendaAtiva && canRegister ? (
-            <Button asChild>
-              <Link href={`/producao/novo?fazenda_id=${fazendaAtiva.id}`}>
-                <Plus className="mr-2 h-4 w-4" />
-                Registrar produção
-              </Link>
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button asChild>
+                <Link href="/producao/ordenha">
+                  <Droplets className="mr-2 h-4 w-4" />
+                  Iniciar ordenha
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={`/producao/novo?fazenda_id=${fazendaAtiva.id}`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Registo avulso
+                </Link>
+              </Button>
+            </div>
           ) : null
         }
       >
@@ -254,9 +262,7 @@ function ProducaoContent() {
                 hasActiveFilters={filtersActive}
                 onClearFilters={clearFilters}
                 novoProducaoHref={
-                  fazendaAtiva
-                    ? `/producao/novo?fazenda_id=${fazendaAtiva.id}`
-                    : undefined
+                  fazendaAtiva ? "/producao/ordenha" : undefined
                 }
                 canRegister={canRegister}
               />

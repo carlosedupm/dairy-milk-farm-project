@@ -53,9 +53,9 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 | Secagens | [secagens.md](./secagens.md) | ✅ |
 | Partos e crias | [partos.md](./partos.md) | ✅ |
 | Lactações | [lactacoes.md](./lactacoes.md) | ✅ |
-| Produção de leite | [producao-leite.md](./producao-leite.md) | ✅ |
+| Produção de leite | [producao-leite.md](./producao-leite.md) | ✅ (BR-PRODUCAO-008/009 — BRF-009) |
 | Hormônios de lactação (Lactropin, Bust) | [hormonios-lactacao.md](./hormonios-lactacao.md) | ✅ `BR-HORM-001`–`011` implementado |
-| Leite — descarte / laboratório | [leite-restricoes.md](./leite-restricoes.md) | ✅ |
+| Leite — descarte / laboratório | [leite-restricoes.md](./leite-restricoes.md) | ✅ (BR-LEITE-008 — BRF-009) |
 | Baixa do rebanho | [baixa-rebanho.md](./baixa-rebanho.md) | ✅ |
 
 ### Agricultura
@@ -75,4 +75,4 @@ Ver também [AGENTS.md](../../AGENTS.md) e `.cursor/rules/documentation-maintena
 
 ---
 
-**Última atualização**: 2026-06-14 (lotes.md + BRF-006 backlog)
+**Última atualização**: 2026-07-21 (BRF-009 modo ordenha implementado)

@@ -147,7 +147,7 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 - **Enunciado**: Titular/gerente **e FUNCIONARIO** abrem o Dashboard e vêem **quatro KPIs acima da dobra** (sem scroll em viewport típico): partos previstos nos **próximos 7 dias**, animais **em lactação**, **alertas críticos abertos** e **produção de leite hoje** (L/dia). Valor zero exibe **«Nenhum»** (não «0»). Painéis de detalhe (restrições, alertas, rebanho/partos 30d, conformidade) são **colapsáveis** com estado inteligente: expandidos quando há itens, recolhidos quando vazios.
 - **Escopo**: Fazenda ativa; faixa de KPIs visível para FUNCIONARIO (`showKpiGridForPerfil`); painel Rebanho 30d (`PecuarioResumoHomePanel`) visível para FUNCIONARIO (`showPecuarioResumoPanelForPerfil`); painel Conformidade oculto para FUNCIONARIO/USER (`showConformidadePanelForPerfil`).
-- **Efeito**: informativo com **drill-down** — cada KPI navega para a lista/fonte: partos 7d → `/gestao/gestacoes?status=CONFIRMADA&partos_dias=7` (demais perfis) ou `/gestao` (FUNCIONARIO); lactação → `/animais?em_lactacao=1`; alertas críticos → `/alertas?status=ABERTO&severidade=CRITICA`; produção hoje → `/producao?start&end` (dia civil) ou `/producao/novo` (FUNCIONARIO). Lista de partos 30d no painel Rebanho (colapsável) com links para ficha do animal (`animalFichaCicloHref`); visível para FUNCIONARIO e demais perfis operacionais.
+- **Efeito**: informativo com **drill-down** — cada KPI navega para a lista/fonte: partos 7d → `/gestao/gestacoes?status=CONFIRMADA&partos_dias=7` (demais perfis) ou `/gestao` (FUNCIONARIO); lactação → `/animais?em_lactacao=1`; alertas críticos → `/alertas?status=ABERTO&severidade=CRITICA`; produção hoje → `/producao?start&end` (dia civil) ou `/producao/ordenha` (FUNCIONARIO — BR-PRODUCAO-008). Lista de partos 30d no painel Rebanho (colapsável) com links para ficha do animal (`animalFichaCicloHref`); visível para FUNCIONARIO e demais perfis operacionais.
 - **Implementação**: `GET /api/v1/fazendas/:id/resumo-pecuario` (`partos_proximos_7d_total`, `lactacao_ativa_total`, `producao_hoje_litros`, …); whitelist GET em `perfil_access.go` para FUNCIONARIO; `showPecuarioResumoPanelForPerfil` e `Dashboard.tsx`; `DashboardKpiGrid`, `ResumoKpiTile`, `DashboardKpiSkeleton`, `lib/kpiFormat.ts`, `lib/resumoPecuarioLinks.ts` (`buildPartos7dKpiHref`, `buildProducaoKpiHref`), `HomeCollapsiblePanel`; `PecuarioResumoHomePanel` (só lista 30d); [gestacoes.md](./gestacoes.md) BR-GESTACOES-005; alerta `PARTO_PREVISTO` — [alertas.md](./alertas.md) BR-ALERTA-008.
 - **Estado**: **implementado**.
 
@@ -258,10 +258,11 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 
 | ID | Descrição | Briefing | Estado |
 |----|-----------|----------|--------|
+| BR-PRODUCAO-008/009 / BR-LEITE-008 | Modo ordenha com turno (+ aviso restrição leite) | [BRF-009](../briefings/BRF-009-modo-ordenha-turno.md) | implementado |
 | BR-ALERTA-018 / BR-HORM-012 | Alerta automático hormônio lactação pendente | [BRF-006](../briefings/BRF-006-alerta-hormonio-lactacao-pendente.md) | implementado |
 | BR-ACESSO-006 ext. | Assistente FUNCIONARIO fase 1 (consulta) | Plano [assistente-funcionario-fases.md](../ops/assistente-funcionario-fases.md) | planejado |
 | BR-CICLO-019 / BR-ANIMAIS-013 | Links de navegação para eventos do ciclo na ficha | [BRF-008](../briefings/BRF-008-links-navegacao-eventos-ciclo-ficha.md) | implementado |
 
 ---
 
-**Última atualização**: 2026-07-15 (BR-CICLO-019 / BRF-008 — links de eventos na ficha)
+**Última atualização**: 2026-07-21 (BRF-009 G3 OK — KPI/atalhos → ordenha)

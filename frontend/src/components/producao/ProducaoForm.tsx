@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import type {
   ProducaoLeite,
@@ -58,6 +59,13 @@ type Props = {
   defaultAnimalId?: number;
   fazendaUnicaId?: number;
   readOnly?: boolean;
+  /**
+   * BR-PRODUCAO-007: após sucesso, limpa animal/litros/qualidade,
+   * mantém fazenda e data/hora, e foca o seletor para o próximo registo.
+   */
+  continuous?: boolean;
+  /** Href do botão «Concluir» (só em modo continuous). */
+  concludeHref?: string;
 };
 
 export function ProducaoForm({
@@ -69,6 +77,8 @@ export function ProducaoForm({
   defaultAnimalId,
   fazendaUnicaId,
   readOnly = false,
+  continuous = false,
+  concludeHref = "/producao",
 }: Props) {
   const { fazendaAtiva } = useFazendaAtiva();
 
@@ -96,6 +106,13 @@ export function ProducaoForm({
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
   const [isValidationError, setIsValidationError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  /** Após reset contínuo, ignora pré-seleção ?animal_id= da URL. */
+  const [ignoreDefaultAnimal, setIgnoreDefaultAnimal] = useState(false);
+  const [animalFocusToken, setAnimalFocusToken] = useState(0);
+
+  const resolvedDefaultAnimalId = ignoreDefaultAnimal
+    ? undefined
+    : defaultAnimalId;
 
   const { data: fazendas = [] } = useQuery<Fazenda[]>({
     queryKey: ["me", "fazendas"],
@@ -116,7 +133,11 @@ export function ProducaoForm({
   });
 
   const contextoAnimalId =
-    animalId > 0 ? animalId : defaultAnimalId && defaultAnimalId > 0 ? defaultAnimalId : 0;
+    animalId > 0
+      ? animalId
+      : resolvedDefaultAnimalId && resolvedDefaultAnimalId > 0
+        ? resolvedDefaultAnimalId
+        : 0;
 
   const { data: contextoAnimal, isLoading: loadingContexto } = useQuery({
     queryKey: ["animais", contextoAnimalId, "contexto"],
@@ -145,8 +166,8 @@ export function ProducaoForm({
 
   const linkAnimalIndisponivel =
     !initial &&
-    defaultAnimalId != null &&
-    defaultAnimalId > 0 &&
+    resolvedDefaultAnimalId != null &&
+    resolvedDefaultAnimalId > 0 &&
     fazendaId > 0 &&
     !loadingAnimais &&
     animaisEmLactacao.length > 0 &&
@@ -166,9 +187,21 @@ export function ProducaoForm({
   const handleFazendaChange = (v: string) => {
     const nextFazendaId = Number(v);
     setFazendaId(nextFazendaId);
-    if (!initial && !defaultAnimalId) {
+    if (!initial && !resolvedDefaultAnimalId) {
       setAnimalId(0);
     }
+  };
+
+  const resetForNextAnimal = () => {
+    setIgnoreDefaultAnimal(true);
+    setAnimalId(0);
+    setQuantidade("");
+    setQualidade(undefined);
+    setError("");
+    setConformidadeCode(undefined);
+    setFieldErrors({});
+    setIsValidationError(false);
+    setAnimalFocusToken((t) => t + 1);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -211,6 +244,9 @@ export function ProducaoForm({
 
     try {
       await onSubmit(payload);
+      if (continuous && !initial) {
+        resetForNextAnimal();
+      }
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Erro ao salvar. Tente novamente."));
       setConformidadeCode(getApiErrorConformidadeCode(err));
@@ -300,6 +336,7 @@ export function ProducaoForm({
                 (!initial && animaisParaSelect.length === 0)
               }
               femeasOnly
+              focusToken={animalFocusToken}
               error={fieldErrors.animalId}
             />
           </div>
@@ -367,15 +404,34 @@ export function ProducaoForm({
             </div>
           </div>
 
-          <Button
-            type="submit"
-            size="lg"
-            disabled={readOnly || isPending || lactacaoBloqueiaSubmit}
-            className={readOnly ? "hidden" : "min-h-[44px]"}
-            aria-hidden={readOnly}
+          <div
+            className={
+              continuous && !initial && !readOnly
+                ? "flex flex-col-reverse gap-3 sm:flex-row sm:items-center"
+                : undefined
+            }
           >
-            {isPending ? "Salvando…" : submitLabel}
-          </Button>
+            {continuous && !initial && !readOnly ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="min-h-[44px]"
+                asChild
+              >
+                <Link href={concludeHref}>Concluir</Link>
+              </Button>
+            ) : null}
+            <Button
+              type="submit"
+              size="lg"
+              disabled={readOnly || isPending || lactacaoBloqueiaSubmit}
+              className={readOnly ? "hidden" : "min-h-[44px]"}
+              aria-hidden={readOnly}
+            >
+              {isPending ? "Salvando…" : submitLabel}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

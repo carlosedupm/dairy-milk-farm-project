@@ -43,7 +43,7 @@ Regras de autorização por perfil para navegação e operações na aplicação
 - **Escopo**: Frontend e API de animais.
 - **Perfis / permissões**: `FUNCIONARIO`.
 - **Efeito**:
-  - UI: sem CRUD de animal; atalho para `/producao/novo` na home (ver BR-ACESSO-015).
+  - UI: sem CRUD de animal; atalho home «Iniciar ordenha» → `/producao/ordenha` (ver BR-ACESSO-015).
   - API: `GET` em `/api/v1/animais*`.
 - **Implementação**:
   - UI: `/animais`, `/animais/:id`.
@@ -52,12 +52,12 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ### BR-ACESSO-015 — FUNCIONARIO: produção e toques no curral
 
-- **Enunciado**: `FUNCIONARIO` pode **registrar produção de leite** (`POST /api/v1/producao`) e **toques** (`POST /api/v1/toques`, `POST /api/v1/toques/lote`), fechando o ciclo cobertura → diagnóstico → ordenha no campo.
-- **Escopo**: API e rotas UI `/producao/novo`, `/gestao/toques*`.
-- **Perfis / permissões**: `FUNCIONARIO`; demais perfis inalterados.
+- **Enunciado**: `FUNCIONARIO` pode **registrar produção de leite** (`POST /api/v1/producao`) e **toques** (`POST /api/v1/toques`, `POST /api/v1/toques/lote`), fechando o ciclo cobertura → diagnóstico → ordenha no campo. Inclui a UI do **modo ordenha** (`/producao/ordenha` — BR-PRODUCAO-008), `/producao/novo` e listagem `/producao`.
+- **Escopo**: API e rotas UI `/producao`, `/producao/novo`, `/producao/ordenha`, `/gestao/toques*`.
+- **Perfis / permissões**: `FUNCIONARIO`; demais perfis inalterados (quem já regista produção também acede ao modo ordenha).
 - **Efeito**: bloqueio mantido em `PUT/DELETE` de produção, gestações, lactações e assistente.
-- **Implementação**: `perfil_access.go` (`toques` em `funcionarioGestaoPath`, incl. `POST /api/v1/toques/lote`; `POST /api/v1/producao`); `appAccess.ts` (`/producao/novo`, `/gestao/toques`, `/gestao/toques/lote`); `Dashboard.tsx` atalho produção.
-- **Estado**: Implementado.
+- **Implementação**: `perfil_access.go` (`toques` em `funcionarioGestaoPath`, incl. `POST /api/v1/toques/lote`; `POST /api/v1/producao`); `appAccess.ts` (`/producao`, `/producao/novo`, `/producao/ordenha`, `/gestao/toques`, `/gestao/toques/lote`); `Dashboard.tsx` atalho «Iniciar ordenha»; briefing [`BRF-009`](../briefings/BRF-009-modo-ordenha-turno.md).
+- **Estado**: implementado.
 
 ### BR-ACESSO-004 — Folgas e endpoints auxiliares mantidos para FUNCIONARIO
 
@@ -258,4 +258,4 @@ Regras de autorização por perfil para navegação e operações na aplicação
 
 ---
 
-**Última atualização**: 2026-07-15 (BR-ACESSO-002 — leitura gestação/lactação/produção detalhe; BRF-008)
+**Última atualização**: 2026-07-21 (BR-ACESSO-015 — modo ordenha BRF-009)

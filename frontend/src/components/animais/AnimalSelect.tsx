@@ -49,6 +49,8 @@ type Props = {
   fazendaId?: number;
   /** Modo edição: animal selecionado permanece visível fora do filtro */
   preserveSelected?: boolean;
+  /** Incrementar para focar o trigger (ex.: após reset contínuo na ordenha) */
+  focusToken?: number;
   id?: string;
   error?: string;
 };
@@ -69,12 +71,14 @@ export function AnimalSelect({
   cicloContext,
   fazendaId,
   preserveSelected = false,
+  focusToken,
   id,
   error,
 }: Props) {
   const listboxId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -148,6 +152,12 @@ export function AnimalSelect({
     return () => window.clearTimeout(t);
   }, [open]);
 
+  useEffect(() => {
+    if (focusToken == null || focusToken <= 0) return;
+    const t = window.setTimeout(() => triggerRef.current?.focus(), 0);
+    return () => window.clearTimeout(t);
+  }, [focusToken]);
+
   const safeHighlightedIndex =
     visibleAnimais.length === 0
       ? 0
@@ -219,6 +229,7 @@ export function AnimalSelect({
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
+            ref={triggerRef}
             type="button"
             id={triggerId}
             variant="outline"

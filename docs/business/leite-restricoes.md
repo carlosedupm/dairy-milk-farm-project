@@ -68,6 +68,15 @@ Operação em que o leite do animal **não deve ir para o tanque** (ordenha em b
 - **Implementação**: `AlertaGeracaoService`, `RestricaoLeiteRepository.ListAtivasAguardandoAntigasByFazendaID`; [alertas.md](./alertas.md) BR-ALERTA-008/010.
 - **Estado**: implementado.
 
+### BR-LEITE-008 — Restrições ativas visíveis no modo ordenha
+
+- **Enunciado**: No fluxo de modo ordenha ([producao-leite.md](./producao-leite.md) BR-PRODUCAO-008/009), animais com restrição `AGUARDANDO_LAB` devem ser destacados na lista para o ordenhador não enviar leite ao tanque.
+- **Escopo**: UI; mesma fonte que BR-LEITE-002 (`GET .../restricoes-leite/ativas`).
+- **Perfis / permissões**: quem acede ao modo ordenha (BR-ACESSO-015).
+- **Efeito**: informativo; não altera ciclo de vida da restrição.
+- **Implementação**: `OrdenhaSessionView` / `OrdenhaAnimalCard`; briefing [`BRF-009`](../briefings/BRF-009-modo-ordenha-turno.md).
+- **Estado**: implementado.
+
 ---
 
-**Última atualização**: 2026-05-29
+**Última atualização**: 2026-07-21 (BR-LEITE-008 implementado — BRF-009)

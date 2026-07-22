@@ -116,6 +116,8 @@ function isFuncionarioAllowedPath(path: string): boolean {
   if (/^\/animais\/\d+\/hormonios-lactacao(\/novo|\/\d+\/editar)?$/.test(path))
     return true;
   if (path === "/producao/novo") return true;
+  if (path === "/producao/ordenha") return true;
+  if (path === "/producao") return true;
   if (/^\/producao\/\d+\/editar$/.test(path)) return true;
   if (path === "/folgas" || path.startsWith("/folgas/")) return true;
   if (path === "/alertas" || path.startsWith("/alertas/")) return true;

@@ -35,7 +35,7 @@ export function buildProducaoKpiHref(
   start: string,
   end: string,
 ): string {
-  if (perfil === "FUNCIONARIO") return "/producao/novo";
+  if (perfil === "FUNCIONARIO") return "/producao/ordenha";
   return buildProducaoListHref(start, end);
 }
 

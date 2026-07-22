@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast as sonnerToast } from "sonner";
 import { create } from "@/services/producao";
 import type { ProducaoCreate } from "@/services/producao";
 import { invalidateAnimalTimeline } from "@/services/animais";
@@ -10,8 +11,6 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { BackLink } from "@/components/layout/BackLink";
 import { ProducaoForm } from "@/components/producao/ProducaoForm";
 import { useMinhasFazendas } from "@/hooks/useMinhasFazendas";
-import { toast } from "@/hooks/use-toast";
-import { gestaoNovoSuccessPath } from "@/lib/gestaoNovoUrl";
 
 function NovaProducaoContent() {
   const router = useRouter();
@@ -33,7 +32,6 @@ function NovaProducaoContent() {
   const mutation = useMutation({
     mutationFn: (p: ProducaoCreate) => create(p),
     onSuccess: async (_data, variables) => {
-      toast.success("Produção registada");
       await queryClient.invalidateQueries({ queryKey: ["producao"] });
       await queryClient.invalidateQueries({ queryKey: ["resumo-pecuario"] });
       if (variables.animal_id) {
@@ -42,12 +40,26 @@ function NovaProducaoContent() {
         });
         invalidateAnimalTimeline(queryClient, variables.animal_id);
       }
-      router.push(
-        gestaoNovoSuccessPath(
-          variables.animal_id ? String(variables.animal_id) : "",
-          "/producao",
-        ),
-      );
+
+      // BR-PRODUCAO-007: permanece no formulário; toast com atalho para a ficha
+      sonnerToast.success("Produção registada", {
+        action: variables.animal_id
+          ? {
+              label: "Ver ficha",
+              onClick: () => {
+                router.push(`/animais/${variables.animal_id}`);
+              },
+            }
+          : undefined,
+      });
+
+      // Remove animal_id da URL para não re-pré-selecionar após refresh
+      if (searchParams.get("animal_id")) {
+        const sp = new URLSearchParams(searchParams.toString());
+        sp.delete("animal_id");
+        const q = sp.toString();
+        router.replace(q ? `/producao/novo?${q}` : "/producao/novo");
+      }
     },
   });
 
@@ -57,6 +69,8 @@ function NovaProducaoContent() {
         <BackLink href="/producao" />
       </div>
       <ProducaoForm
+        continuous
+        concludeHref="/producao"
         onSubmit={async (p) => {
           await mutation.mutateAsync(p);
         }}

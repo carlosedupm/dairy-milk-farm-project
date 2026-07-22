@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -22,37 +23,77 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+function toUser(data: {
+  user_id: number
+  email: string
+  perfil: string
+  nome?: string
+}): User {
+  return {
+    id: data.user_id,
+    email: data.email,
+    perfil: data.perfil,
+    nome: data.nome ?? '',
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isReady, setIsReady] = useState(false)
+  const checkingRef = useRef(false)
 
-  // Validar token ao montar o componente
+  const applySession = useCallback(async (): Promise<User | null> => {
+    const userData = await authService.ensureSession()
+    if (!userData) {
+      setUser(null)
+      return null
+    }
+    const next = toUser(userData)
+    setUser(next)
+    return next
+  }, [])
+
+  // Bootstrap: validate → refresh se necessário → validate
   useEffect(() => {
     const checkAuth = async () => {
-      const userData = await authService.validate()
-      if (userData) {
-        setUser({
-          id: userData.user_id,
-          email: userData.email,
-          perfil: userData.perfil,
-          nome: userData.nome ?? '',
-        })
+      checkingRef.current = true
+      try {
+        await applySession()
+      } finally {
+        checkingRef.current = false
+        setIsReady(true)
       }
-      setIsReady(true)
     }
     checkAuth()
+  }, [applySession])
+
+  // Ao voltar ao app (telefone bloqueado / aba em background), renovar sessão se preciso.
+  // Em falha transitória não limpa o user — o interceptor Axios trata 401 nas APIs.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return
+      if (checkingRef.current) return
+      checkingRef.current = true
+      void (async () => {
+        try {
+          const userData = await authService.ensureSession()
+          if (userData) {
+            setUser(toUser(userData))
+          }
+        } finally {
+          checkingRef.current = false
+        }
+      })()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
     await authService.login(email, password)
     const full = await authService.validate()
     if (!full) return null
-    const next: User = {
-      id: full.user_id,
-      email: full.email,
-      perfil: full.perfil,
-      nome: full.nome ?? '',
-    }
+    const next = toUser(full)
     setUser(next)
     return next
   }, [])
