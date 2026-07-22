@@ -24,6 +24,12 @@
 
 ## ✅ O que foi concluído
 
+### **BR-ANIMAIS-007 — CTAs VAZIA + lactação (✅ 2026-07-22)**
+
+- [x] `BuildProximasAcoes` / `buildProximasAcoesCandidates`: secagem operacional (lactação ativa sem gestação, não `SECA`); cobertura com lactação para VAZIA/PARIDA
+- [x] Testes unitários (VAZIA+lactação → secagem, cobertura, produção; regressões prenhe/SECA)
+- [x] Catálogo `docs/business/animais.md` (BR-ANIMAIS-007)
+
 ### **BRF-009 — Modo ordenha com turno (✅ 2026-07-21)**
 
 - [x] `/producao/ordenha` + `lib/ordenha-turno.ts` (+ vitest) + `useOrdenhaSession`
@@ -456,6 +462,11 @@
 ```
 
 ## 🔄 Histórico de Progresso
+
+### **2026-07-22 - BR-ANIMAIS-007 CTAs VAZIA + lactação**
+
+- ✅ `proximas_acoes[]`: secagem operacional (lactação sem gestação) + cobertura com lactação para VAZIA/PARIDA.
+- ✅ Testes `animal_ciclo_service_test.go`; catálogo `animais.md`.
 
 ### **2026-07-21 - BRF-009 modo ordenha implementado**
 
@@ -1019,6 +1030,6 @@
 
 ---
 
-**Última atualização**: 2026-07-21 (BRF-009 G3 OK)
+**Última atualização**: 2026-07-22 (BR-ANIMAIS-007 — CTAs VAZIA + lactação)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
 **Próxima revisão**: após Tier 0 staging Render (sec. 1–5) + validação manual G3 BRF-006/007

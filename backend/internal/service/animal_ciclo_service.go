@@ -349,14 +349,15 @@ func buildProximasAcoesCandidates(
 			HrefPath: fmt.Sprintf("/producao/novo?animal_id=%d", animalID),
 		})
 	}
+	// Secagem: gestação confirmada pendente (pré-parto) ou lactação ativa sem prenhez (operacional).
+	if secagemPendente {
+		acoes = append(acoes, models.ProximaAcao{
+			Codigo:   models.AcaoRegistrarSecagem,
+			Label:    "Registrar secagem",
+			HrefPath: fmt.Sprintf("/gestao/secagens/novo?animal_id=%d", animalID),
+		})
+	}
 	if gest != nil {
-		if secagemPendente {
-			acoes = append(acoes, models.ProximaAcao{
-				Codigo:   models.AcaoRegistrarSecagem,
-				Label:    "Registrar secagem",
-				HrefPath: fmt.Sprintf("/gestao/secagens/novo?animal_id=%d", animalID),
-			})
-		}
 		acoes = append(acoes, models.ProximaAcao{
 			Codigo:   models.AcaoRegistrarParto,
 			Label:    "Registrar parto",
@@ -373,7 +374,7 @@ func buildProximasAcoesCandidates(
 	if statusReprodutivo == "" ||
 		statusReprodutivo == models.StatusReprodutivoVazia ||
 		statusReprodutivo == models.StatusReprodutivoParida {
-		if lact == nil && gest == nil {
+		if gest == nil {
 			acoes = append(acoes, models.ProximaAcao{
 				Codigo:   models.AcaoRegistrarCobertura,
 				Label:    "Registrar cobertura",
@@ -422,6 +423,9 @@ func (s *AnimalCicloService) BuildProximasAcoes(ctx context.Context, animal *mod
 		if err != nil {
 			return nil, err
 		}
+	} else if lact != nil && st != models.StatusReprodutivoSeca {
+		// Secagem operacional (BAIXA_PRODUCAO / TRATAMENTO) com lactação ativa sem gestação.
+		secagemPendente = true
 	}
 
 	return buildProximasAcoesCandidates(aid, lact, gest, pendenteToque, st, secagemPendente), nil

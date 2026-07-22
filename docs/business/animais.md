@@ -63,7 +63,7 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 ### BR-ANIMAIS-007 — Próximas ações na ficha (CTA de ciclo)
 
-- **Enunciado**: `proximas_acoes[]` sugere até **quatro** ações operacionais de ciclo, ordenadas por prioridade: **Parto > Secagem > Cobertura > Toque > Produção**. «Registrar baixa» **não** entra nas sugestões (fluxo dedicado na ficha). **Toque** só quando existir cobertura há ≥15 dias sem diagnóstico (alinhado a BR-CICLO-015). **Secagem** só quando existir gestação confirmada ativa **e** secagem ainda pendente (animal não `SECA` e sem secagem vinculada à gestação — [secagens.md](./secagens.md) BR-SECAGENS-006). Animal fora do rebanho ou macho → array vazio.
+- **Enunciado**: `proximas_acoes[]` sugere até **quatro** ações operacionais de ciclo, ordenadas por prioridade: **Parto > Secagem > Cobertura > Toque > Produção**. «Registrar baixa» **não** entra nas sugestões (fluxo dedicado na ficha). **Toque** só quando existir cobertura há ≥15 dias sem diagnóstico (alinhado a BR-CICLO-015). **Secagem** quando (a) gestação confirmada ativa **e** secagem ainda pendente (animal não `SECA` e sem secagem vinculada à gestação — [secagens.md](./secagens.md) BR-SECAGENS-006), **ou** (b) lactação ativa **sem** gestação confirmada e animal não `SECA` (secagem operacional alinhada a BR-SECAGENS-003/005 — ex.: VAZIA após toque negativo ainda em lactação). **Cobertura** quando status é vazio, `VAZIA` ou `PARIDA` e não há gestação confirmada — **com ou sem** lactação ativa (rebreeding em lactação). Animal fora do rebanho ou macho → array vazio.
 - **Escopo**: `GET /api/v1/animais/:id/contexto`; UI nas tabs **Visão Geral** e **Ciclo** de `/animais/:id`.
 - **Perfis / permissões**: CTAs visíveis conforme `proximas_acoes[]`; botão **desabilitado** na UI se `href_path` não permitido para o perfil (`appAccess` / `perfil_access.go`).
 - **Efeito**: orientação no curral; bloqueio de escrita mantido na API ao submeter formulários.
@@ -172,4 +172,4 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 ---
 
-**Última atualização**: 2026-07-15 (BR-ANIMAIS-013 / BRF-008 — links de detalhe na ficha)
+**Última atualização**: 2026-07-22 (BR-ANIMAIS-007 — secagem operacional e cobertura com lactação em VAZIA/PARIDA)

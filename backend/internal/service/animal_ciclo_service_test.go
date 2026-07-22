@@ -107,8 +107,32 @@ func TestBuildProximasAcoesCandidates(t *testing.T) {
 		}
 	})
 
-	t.Run("so lactacao produção", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoParida, false)
+	t.Run("parida com lactacao sugere secagem cobertura e producao", func(t *testing.T) {
+		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoParida, true)
+		if len(got) != 3 {
+			t.Fatalf("expected 3, got %d (%+v)", len(got), got)
+		}
+		if got[0].Codigo != models.AcaoRegistrarSecagem ||
+			got[1].Codigo != models.AcaoRegistrarCobertura ||
+			got[2].Codigo != models.AcaoRegistrarProducao {
+			t.Fatalf("got %s, %s, %s", got[0].Codigo, got[1].Codigo, got[2].Codigo)
+		}
+	})
+
+	t.Run("vazia com lactacao sugere secagem cobertura e producao", func(t *testing.T) {
+		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoVazia, true)
+		if len(got) != 3 {
+			t.Fatalf("expected 3, got %d (%+v)", len(got), got)
+		}
+		if got[0].Codigo != models.AcaoRegistrarSecagem ||
+			got[1].Codigo != models.AcaoRegistrarCobertura ||
+			got[2].Codigo != models.AcaoRegistrarProducao {
+			t.Fatalf("got %s, %s, %s", got[0].Codigo, got[1].Codigo, got[2].Codigo)
+		}
+	})
+
+	t.Run("lactacao SECA omite secagem mas mantem producao", func(t *testing.T) {
+		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoSeca, false)
 		if len(got) != 1 || got[0].Codigo != models.AcaoRegistrarProducao {
 			t.Fatalf("got %+v", got)
 		}
