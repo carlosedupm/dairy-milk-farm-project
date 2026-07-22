@@ -294,5 +294,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-06-28 (pgx/v5 5.9.2; `frontend/.npmrc` registry público; npm audit fix lockfile)
+**Última atualização**: 2026-07-22 (govulncheck: `golang.org/x/text` → v0.39.0; npm audit high: axios → 1.18.1; overrides `sharp` 0.35.3 e `brace-expansion`)
 **Stack**: Go 1.25 + Next.js 16.2.9 — Fase 2 concluída; hardening de segurança 2026-06-10; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)
