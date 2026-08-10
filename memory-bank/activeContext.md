@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **CI npm audit — Next 16.3.0 + deps (2026-08-10)**: Next/eslint-config-next 16.2.9→16.3.0; overrides `brace-expansion` 1.1.18/2.1.4, `postcss` ≥8.5.23, `js-yaml` ≥4.3.1, `nanoid` ≥3.3.17; `hardNavigate` para regra ESLint `no-location-assign-relative-destination`; `npm audit --audit-level=high` = 0.
 1. ✅ **UX busca animal mobile (2026-08-10)**: match exacto → ficha; lista compacta (meta + highlight); um toque → ficha; Dialog com input sticky e blur ao scroll; desktop mantém card de contexto (BR-ANIMAIS-001/002/010).
 1. ✅ **BR-ANIMAIS-007 — CTAs VAZIA + lactação (2026-07-22)**: `proximas_acoes[]` sugere **Registrar secagem** com lactação ativa sem gestação (secagem operacional) e **Registrar cobertura** mesmo em lactação para `VAZIA`/`PARIDA`; prioridade inalterada; testes `animal_ciclo_service_test.go`; catálogo `animais.md`.
 1. ✅ **BRF-009 — Modo ordenha com turno (2026-07-21)**: `/producao/ordenha`; turnos Manhã/Tarde; `data_hora`=now; bloqueio duplicata no turno; badge restrição; `ordenha-turno.ts` + testes; BR-PRODUCAO-008/009, BR-LEITE-008, BR-ACESSO-015; briefing → **implementado** (**G3 manual OK**).
@@ -243,7 +244,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 ### **Arquitetura e Stack**
 
 - ✅ **Decidido**: Backend em **Go** usando framework **Gin**
-- ✅ **Decidido**: Frontend em **Next.js 16.2.9** com App Router e Turbopack (patch de segurança maio/2026)
+- ✅ **Decidido**: Frontend em **Next.js 16.3.0** com App Router e Turbopack (patch de segurança ago/2026: middleware/proxy, Server Actions DoS/SSRF, cache confusion, Image SVG DoS, etc.)
 - ✅ **Decidido**: **React 19.2.7** para melhor performance e novas features
 - ✅ **Decidido**: Banco de dados **PostgreSQL** mantido (schema existente)
 - ✅ **Decidido**: Estrutura **Monorepo** com `/backend` e `/frontend`
@@ -302,5 +303,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 
 ---
 
-**Última atualização**: 2026-08-10 (UX busca animal mobile — match exacto + lista compacta)
-**Contexto Ativo**: Go 1.25 + Next.js 16.2.9 | Produção Render+Vercel | **BRF-009 G3 OK** (`/producao/ordenha`) | BR-PRODUCAO-007 contínuo | BRF-006/007/008 | **M2M** BR-INTEG-001–012 | Recuperação senha aguarda SMTP
+**Última atualização**: 2026-08-10 (CI npm audit — Next 16.3.0 + overrides de segurança)
+**Contexto Ativo**: Go 1.25 + Next.js 16.3.0 | Produção Render+Vercel | **BRF-009 G3 OK** (`/producao/ordenha`) | BR-PRODUCAO-007 contínuo | BRF-006/007/008 | **M2M** BR-INTEG-001–012 | Recuperação senha aguarda SMTP

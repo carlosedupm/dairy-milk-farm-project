@@ -18,7 +18,7 @@
 
 ### Frontend
 
-- **Framework**: Next.js 16.2.9 (App Router, Turbopack como bundler padrão) — atualizado em 2026-06-10 por causa do security release de maio/2026 (13 advisories corrigidos a partir do 16.2.6: bypass de middleware/proxy, DoS RSC CVE-2026-23870, SSRF WebSocket, cache poisoning, XSS)
+- **Framework**: Next.js 16.3.0 (App Router, Turbopack como bundler padrão) — atualizado em 2026-08-10 (security release: middleware/proxy bypass, Server Actions DoS/SSRF, cache confusion, Image Optimization SVG DoS, disclosure de Server Functions; postcss 8.5.23+)
 - **React**: 19.2.7 (compatível com Next.js 16)
 - **Linguagem**: TypeScript 5.7.2
 - **Estilização**: Tailwind CSS 3.4.17
@@ -100,9 +100,9 @@ require (
 )
 ```
 
-Atualizações de segurança (2026-06-10): `golang-jwt/jwt/v5` 5.2.0→5.3.1, `webpush-go` 1.3.0→1.4.0 (remove jwt v3 vulnerável), `x/net` 0.49→0.55 — govulncheck sem achados alcançáveis. **pgx/v5** 5.5.4→**5.9.2** (2026-06-28, GO-2026-5004). Lint: `backend/.golangci.yml` (golangci-lint v2, preset standard).
+Atualizações de segurança (2026-06-10): `golang-jwt/jwt/v5` 5.2.0→5.3.1, `webpush-go` 1.3.0→1.4.0 (remove jwt v3 vulnerável), `x/net` 0.49→0.55 — govulncheck sem achados alcançáveis. **pgx/v5** 5.5.4→**5.9.2** (2026-06-28, GO-2026-5004). **grpc** 1.78.0→**1.82.1** (GO-2026-6061) e **otel** 1.39.0→**1.43.0** (GO-2026-5506) em 2026-08-10 — transitivas do cliente GenAI. Lint: `backend/.golangci.yml` (golangci-lint v2, preset standard).
 
-**npm (frontend)**: `frontend/.npmrc` fixa `registry=https://registry.npmjs.org/` — o projeto não usa GitHub Packages; evita erro Dependabot `private_registry_config_not_found` quando a conta/org tem npm ligado ao GitHub Packages. Ver `deploy-notes.md`.
+**npm (frontend)**: `frontend/.npmrc` fixa `registry=https://registry.npmjs.org/` — o projeto não usa GitHub Packages; evita erro Dependabot `private_registry_config_not_found` quando a conta/org tem npm ligado ao GitHub Packages. Ver `deploy-notes.md`. CI: `npm audit --audit-level=high`. Overrides em `package.json` (2026-08-10): `postcss` ≥8.5.23, `brace-expansion` 1.1.18 (e 2.1.4 sob `@typescript-eslint/typescript-estree`), `js-yaml` ≥4.3.1, `nanoid` ≥3.3.17 — não rebaixar nesses pins.
 
 ## Estratégia de Deploy
 
@@ -294,5 +294,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-07-22 (govulncheck: `golang.org/x/text` → v0.39.0; npm audit high: axios → 1.18.1; overrides `sharp` 0.35.3 e `brace-expansion`)
-**Stack**: Go 1.25 + Next.js 16.2.9 — Fase 2 concluída; hardening de segurança 2026-06-10; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)
+**Última atualização**: 2026-08-10 (Next.js 16.3.0 + overrides npm audit high)
+**Stack**: Go 1.25 + Next.js 16.3.0 — Fase 2 concluída; hardening de segurança 2026-06-10; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)

@@ -24,6 +24,13 @@
 
 ## ✅ O que foi concluído
 
+### **CI npm audit — Next 16.3.0 (✅ 2026-08-10)**
+
+- [x] Next.js / `eslint-config-next` 16.2.9→16.3.0 (advisories middleware, Server Actions, cache, Image SVG, etc.)
+- [x] Overrides: `brace-expansion` 1.1.18 + 2.1.4, `postcss` ≥8.5.23, `js-yaml` ≥4.3.1, `nanoid` ≥3.3.17
+- [x] `hardNavigate` (`lib/navigation.ts`) para reload completo sem violar `no-location-assign-relative-destination`
+- [x] `npm audit --audit-level=high` = 0; typecheck + lint CI verdes
+
 ### **UX busca animal mobile (✅ 2026-08-10)**
 
 - [x] Match exacto → ficha no mobile; lista compacta + um toque → ficha; desktop mantém card de contexto
@@ -1041,6 +1048,6 @@
 
 ---
 
-**Última atualização**: 2026-08-10 (UX busca animal mobile — match exacto + lista compacta)
+**Última atualização**: 2026-08-10 (CI npm audit — Next 16.3.0 + overrides)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
 **Próxima revisão**: após Tier 0 staging Render (sec. 1–5) + validação manual G3 BRF-006/007

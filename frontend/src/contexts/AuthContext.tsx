@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { hardNavigate } from '@/lib/navigation'
 import * as authService from '@/services/auth'
 
 type User = { id: number; email: string; perfil: string; nome: string }
@@ -101,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await authService.logout()
     setUser(null)
-    window.location.href = '/login'
+    hardNavigate('/login')
   }, [])
 
   const value: AuthContextValue = {

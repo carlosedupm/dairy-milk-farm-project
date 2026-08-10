@@ -367,6 +367,7 @@ Frontend: formulário de nova cobertura exibe `AnimalSelect` (reprodutoresOnly) 
 - **Password Hashing**: BCrypt com custo 10; senha mínima **8 caracteres** validada front+back (BR-ACESSO-024)
 - **Token Refresh**: Endpoint `/api/auth/refresh` para renovar access tokens usando refresh tokens
 - **Bootstrap de sessão (frontend)**: `AuthContext` usa `authService.ensureSession()` (`validate` → se 401, `refresh` → `validate`) no mount e ao voltar ao app (`visibilitychange`). Evita forçar login quando o access (15 min) expirou mas o refresh (7 dias) ainda é válido — crítico na ordenha com pausas entre vacas. O interceptor Axios em `services/api.ts` continua a renovar em 401 nas chamadas de API.
+- **Navegação com reload (frontend)**: quando for preciso reiniciar estado em memória (logout, 401 após refresh falho, redirects pós-login/fazenda), usar `hardNavigate` em `lib/navigation.ts` (URL absoluta via `new URL`) em vez de `window.location.href = '/…'` — evita a regra ESLint `@next/next/no-location-assign-relative-destination` (Next 16.3+). Para navegação in-app sem reload, preferir `useRouter().push/replace`.
 - **Modo ordenha (BR-PRODUCAO-008)**: UI `/producao/ordenha` — sessão cliente (`sessionStorage`); turno Manhã/Tarde classificado por `data_hora` (`lib/ordenha-turno.ts`); `POST /producao` unitário sem `data_hora` (servidor = now); bloqueio de duplicata no turno só nesta UI; badge restrição via `restricoes-leite/ativas`.
 
 ### **Autorização**
@@ -738,4 +739,4 @@ Público-alvo: usuários leigos em sistemas e em sua maioria idosos; objetivo é
 
 **Versão dos Padrões**: 2.31 (Go + Next.js) — modo ordenha BRF-009 + bootstrap auth.
 
-**Última atualização**: 2026-08-10 (busca animal mobile — match exacto + lista compacta)
+**Última atualização**: 2026-08-10 (hardNavigate + Next 16.3 ESLint no-location-assign)

@@ -3,6 +3,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from "axios";
+import { hardNavigate } from "@/lib/navigation";
 
 export type ApiResponse<T> = { data: T };
 
@@ -79,9 +80,7 @@ api.interceptors.response.use(
         await api.post("/api/auth/refresh");
         return api(originalRequest!);
       } catch (refreshError) {
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
+        hardNavigate("/login");
         return Promise.reject(refreshError);
       }
     }

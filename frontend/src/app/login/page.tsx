@@ -18,6 +18,7 @@ import { PageContainer } from '@/components/layout/PageContainer'
 import { FormFieldError } from '@/components/ui/form-field-error'
 import { FormValidationAlert } from '@/components/ui/form-validation-alert'
 import { getApiErrorMessage } from '@/lib/errors'
+import { hardNavigate } from '@/lib/navigation'
 import { validateLoginForm, type FieldErrors } from '@/lib/form-validation'
 import {
   getAreasMode,
@@ -100,8 +101,8 @@ function LoginForm() {
     hasRedirected.current = true
     const target = resolvePostLoginTarget(user.perfil, explicitRedirect)
     if (target !== '/login') {
-      // Usar window.location para evitar loops do Next.js router
-      window.location.href = target
+      // Reload completo evita loops do App Router após login
+      hardNavigate(target)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady, isAuthenticated, user?.perfil])

@@ -24,6 +24,7 @@ import {
   filterFazendas,
   hasActiveFazendasFilter,
 } from '@/lib/fazendas-filter'
+import { hardNavigate } from '@/lib/navigation'
 
 const fazendasFilterFields = [stringFilterField('q', 'q')]
 
@@ -107,25 +108,25 @@ function FazendasContent() {
 
     if (items.length === 0) {
       hasRedirected.current = true
-      window.location.href = '/onboarding'
+      hardNavigate('/onboarding')
       return
     }
 
     if (items.length === 1) {
       hasRedirected.current = true
-      window.location.href = '/'
+      hardNavigate('/')
       return
     }
 
     if (items.length > 1 && !fazendaAtiva) {
       hasRedirected.current = true
-      window.location.href = '/fazendas/selecionar'
+      hardNavigate('/fazendas/selecionar')
       return
     }
 
     if (fazendaAtiva) {
       hasRedirected.current = true
-      window.location.href = '/'
+      hardNavigate('/')
       return
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

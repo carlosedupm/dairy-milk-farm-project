@@ -9,6 +9,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { FazendaForm } from "@/components/fazendas/FazendaForm";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { hardNavigate } from "@/lib/navigation";
 import * as authService from "@/services/auth";
 
 function CriarMinhaFazendaContent() {
@@ -21,7 +22,7 @@ function CriarMinhaFazendaContent() {
       await queryClient.invalidateQueries({ queryKey: ["me", "fazendas"] });
       await queryClient.invalidateQueries({ queryKey: ["fazendas"] });
       await authService.validate();
-      window.location.assign("/fazendas");
+      hardNavigate("/fazendas");
     },
   });
 
