@@ -24,6 +24,12 @@
 
 ## ✅ O que foi concluído
 
+### **UX busca animal mobile (✅ 2026-08-10)**
+
+- [x] Match exacto → ficha no mobile; lista compacta + um toque → ficha; desktop mantém card de contexto
+- [x] Helpers + vitest em `animalSearchUtils.ts`; Dialog input sticky + blur ao scroll
+- [x] BR-ANIMAIS-001/002/010 + `systemPatterns.md`
+
 ### **BR-ANIMAIS-007 — CTAs VAZIA + lactação (✅ 2026-07-22)**
 
 - [x] `BuildProximasAcoes` / `buildProximasAcoesCandidates`: secagem operacional (lactação ativa sem gestação, não `SECA`); cobertura com lactação para VAZIA/PARIDA
@@ -462,6 +468,11 @@
 ```
 
 ## 🔄 Histórico de Progresso
+
+### **2026-08-10 - UX busca animal mobile**
+
+- ✅ Match exacto e um toque abrem a ficha no mobile; lista com meta + highlight do termo.
+- ✅ Desktop preserva card de contexto (BR-ANIMAIS-002); docs `animais.md` / `systemPatterns.md`.
 
 ### **2026-07-22 - BR-ANIMAIS-007 CTAs VAZIA + lactação**
 
@@ -1030,6 +1041,6 @@
 
 ---
 
-**Última atualização**: 2026-07-22 (BR-ANIMAIS-007 — CTAs VAZIA + lactação)
+**Última atualização**: 2026-08-10 (UX busca animal mobile — match exacto + lista compacta)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
 **Próxima revisão**: após Tier 0 staging Render (sec. 1–5) + validação manual G3 BRF-006/007

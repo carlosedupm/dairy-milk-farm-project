@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/errors";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -21,13 +22,17 @@ import {
   formatAnimalContextoStatusLinha,
 } from "@/components/animais/animalResumoUtils";
 import { AnimalSearchResultLabel } from "@/components/animais/AnimalSearchResultLabel";
-import { formatAnimalSearchLabel } from "@/components/animais/animalSearchUtils";
+import {
+  findExactIdentificacaoMatch,
+  formatAnimalSearchLabel,
+} from "@/components/animais/animalSearchUtils";
 import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { useAnimalSearchIncluirBaixados } from "@/hooks/useAnimalSearchIncluirBaixados";
+import { cn } from "@/lib/utils";
 
 export type AnimalSearchPanelProps = {
   /** Fecha o diálogo / painel ao navegar para a ficha do animal */
@@ -41,6 +46,13 @@ export type AnimalSearchPanelProps = {
   onIdentificacaoChange?: (value: string) => void;
   /** `header`: menos texto de ajuda no overlay */
   variant?: "default" | "header";
+  /**
+   * `mobile`: match exacto / toque → ficha directa.
+   * `desktop`: selecção → card de contexto (BR-ANIMAIS-002).
+   */
+  layout?: "mobile" | "desktop";
+  /** Chamado quando a lista de resultados começa a fazer scroll (ex.: blur do input). */
+  onResultadosScroll?: () => void;
 };
 
 const BUSCA_DEBOUNCE_MS = 400;
@@ -52,7 +64,11 @@ export function AnimalSearchPanel({
   identificacao: identificacaoControlada,
   onIdentificacaoChange,
   variant = "default",
+  layout = "desktop",
+  onResultadosScroll,
 }: AnimalSearchPanelProps) {
+  const router = useRouter();
+  const isMobileLayout = layout === "mobile";
   const { fazendaAtiva, isReady: fazendaReady } = useFazendaAtiva();
   const { incluirBaixados, setIncluirBaixados } =
     useAnimalSearchIncluirBaixados();
@@ -68,6 +84,9 @@ export function AnimalSearchPanel({
     : setIdentificacaoInterno;
   const debouncedTermo = useDebouncedValue(identificacao.trim(), BUSCA_DEBOUNCE_MS);
   const buscaSeq = useRef(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  /** Evita re-navegar no mesmo match exacto mobile após push. */
+  const lastExactNavTermoRef = useRef<string | null>(null);
 
   const [resultados, setResultados] = useState<Animal[]>([]);
   const [totalResultados, setTotalResultados] = useState(0);
@@ -85,6 +104,14 @@ export function AnimalSearchPanel({
     !loadingContexto &&
     !loadingMais;
 
+  const navegarParaFicha = useCallback(
+    (animalId: number) => {
+      onAntesNavegarDetalhe?.();
+      router.push(animalFichaCicloHref(animalId));
+    },
+    [onAntesNavegarDetalhe, router],
+  );
+
   const executarBusca = useCallback(async (termo: string) => {
     const trimmed = termo.trim();
     const seq = ++buscaSeq.current;
@@ -98,6 +125,7 @@ export function AnimalSearchPanel({
       setLoadingBusca(false);
       setLoadingMais(false);
       setLoadingContexto(false);
+      lastExactNavTermoRef.current = null;
       return;
     }
 
@@ -121,7 +149,17 @@ export function AnimalSearchPanel({
       setTotalResultados(page.total);
       setBuscaExecutada(true);
 
-      if (page.total === 1 && page.animais.length === 1) {
+      const exact = findExactIdentificacaoMatch(page.animais, trimmed);
+
+      if (isMobileLayout && exact) {
+        if (lastExactNavTermoRef.current !== trimmed) {
+          lastExactNavTermoRef.current = trimmed;
+          navegarParaFicha(exact.id);
+        }
+        return;
+      }
+
+      if (!isMobileLayout && page.total === 1 && page.animais.length === 1) {
         setLoadingContexto(true);
         const ctx = await getContexto(page.animais[0].id);
         if (seq !== buscaSeq.current) return;
@@ -141,7 +179,13 @@ export function AnimalSearchPanel({
         setLoadingContexto(false);
       }
     }
-  }, [fazendaAtiva?.id, fazendaReady, incluirBaixados]);
+  }, [
+    fazendaAtiva?.id,
+    fazendaReady,
+    incluirBaixados,
+    isMobileLayout,
+    navegarParaFicha,
+  ]);
 
   const carregarMais = useCallback(async () => {
     const trimmed = identificacao.trim();
@@ -185,10 +229,23 @@ export function AnimalSearchPanel({
 
   function handleSubmitRapido(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void executarBusca(identificacao.trim());
+    const trimmed = identificacao.trim();
+    if (isMobileLayout) {
+      const exact = findExactIdentificacaoMatch(resultados, trimmed);
+      if (exact) {
+        lastExactNavTermoRef.current = trimmed;
+        navegarParaFicha(exact.id);
+        return;
+      }
+    }
+    void executarBusca(trimmed);
   }
 
   async function handleSelecionarAnimal(animalId: number) {
+    if (isMobileLayout) {
+      navegarParaFicha(animalId);
+      return;
+    }
     setLoadingContexto(true);
     setErro(null);
     try {
@@ -231,19 +288,21 @@ export function AnimalSearchPanel({
     aguardandoDebounce;
 
   const temMaisResultados = resultados.length < totalResultados;
+  const termoHighlight = identificacao.trim();
 
-  return (
-    <div className="min-w-0 space-y-4">
+  const headerBlock = (
+    <div className="min-w-0 space-y-3">
       {!hideInput ? (
         <form onSubmit={handleSubmitRapido} className="min-w-0 space-y-1.5">
           <Input
+            ref={inputRef}
             value={identificacao}
             onChange={(event) => setIdentificacao(event.target.value)}
             placeholder="Ex.: 123, brinco, nome ou parte da identificação"
             aria-label="Pesquisar animal por brinco ou nome"
             autoFocus={autoFocus}
             aria-busy={loadingBusca || loadingContexto || loadingMais}
-            className="min-w-0"
+            className="min-w-0 text-base"
           />
           {showInputHelp ? (
             <p className="text-xs text-muted-foreground">
@@ -259,7 +318,12 @@ export function AnimalSearchPanel({
         </form>
       ) : null}
 
-      <div className="flex min-h-11 items-center gap-2">
+      <div
+        className={cn(
+          "flex items-center gap-2",
+          isMobileLayout ? "min-h-9" : "min-h-11",
+        )}
+      >
         <input
           type="checkbox"
           id="animal-search-incluir-baixados"
@@ -269,12 +333,19 @@ export function AnimalSearchPanel({
         />
         <Label
           htmlFor="animal-search-incluir-baixados"
-          className="cursor-pointer text-sm font-normal"
+          className={cn(
+            "cursor-pointer font-normal",
+            isMobileLayout ? "text-sm text-muted-foreground" : "text-sm",
+          )}
         >
           Incluir animais baixados
         </Label>
       </div>
+    </div>
+  );
 
+  const resultadosBlock = (
+    <>
       {erro ? <p className="text-sm text-destructive">{erro}</p> : null}
 
       {buscaExecutada && !loadingBusca && totalResultados === 0 ? (
@@ -294,21 +365,36 @@ export function AnimalSearchPanel({
       {totalResultados > 0 ? (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Mostrando {resultados.length} de {totalResultados} resultados
+            {isMobileLayout
+              ? totalResultados === 1
+                ? "1 resultado — toque para abrir a ficha"
+                : `${totalResultados} resultados — toque para abrir a ficha`
+              : `Mostrando ${resultados.length} de ${totalResultados} resultados`}
           </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div
+            className={cn(
+              "grid gap-2",
+              isMobileLayout ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2",
+            )}
+          >
             {resultados.map((animal) => (
               <Button
                 key={animal.id}
                 type="button"
                 variant={
-                  contexto?.animal.id === animal.id ? "default" : "outline"
+                  !isMobileLayout && contexto?.animal.id === animal.id
+                    ? "default"
+                    : "outline"
                 }
                 className="h-auto min-h-11 justify-start whitespace-normal py-2.5 text-left break-words"
                 onClick={() => handleSelecionarAnimal(animal.id)}
                 disabled={loadingContexto}
               >
-                <AnimalSearchResultLabel animal={animal} />
+                <AnimalSearchResultLabel
+                  animal={animal}
+                  highlightTermo={termoHighlight}
+                  showMeta
+                />
               </Button>
             ))}
           </div>
@@ -327,11 +413,11 @@ export function AnimalSearchPanel({
         </div>
       ) : null}
 
-      {loadingContexto ? (
+      {!isMobileLayout && loadingContexto ? (
         <p className="text-sm text-muted-foreground">Carregando contexto…</p>
       ) : null}
 
-      {contexto ? (
+      {!isMobileLayout && contexto ? (
         <Link
           href={animalFichaCicloHref(contexto.animal.id)}
           onClick={() => onAntesNavegarDetalhe?.()}
@@ -401,6 +487,32 @@ export function AnimalSearchPanel({
           </span>
         </Link>
       ) : null}
+    </>
+  );
+
+  if (isMobileLayout) {
+    return (
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="shrink-0 border-b border-border/60 pb-3">
+          {headerBlock}
+        </div>
+        <div
+          className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden overscroll-contain pb-1 pt-3"
+          onScroll={() => {
+            onResultadosScroll?.();
+            inputRef.current?.blur();
+          }}
+        >
+          {resultadosBlock}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-w-0 space-y-4">
+      {headerBlock}
+      {resultadosBlock}
     </div>
   );
 }

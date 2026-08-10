@@ -19,17 +19,20 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 - **Efeito**: bloqueio no servidor para fazendas não vinculadas; UI exibe apenas resultados autorizados.
 - **Implementação**:
   - Busca por identificação (parcial + equivalência número ↔ por extenso, paginada): `GET /api/v1/animais/search/by-identificacao?limit=20&offset=0`.
-  - Contexto do animal: `GET /api/v1/animais/:id/contexto` (animal + resumo de produção + gestação + restrição de leite opcional).
-  - UI: `AnimalSearchPanel` em `AnimalSearchHeaderField` + `AnimalSearchDialogContext`; atalho `openSearch()` no `Dashboard` (mobile).
+  - Contexto do animal: `GET /api/v1/animais/:id/contexto` (animal + resumo de produção + gestação + restrição de leite opcional) — usado no **desktop** após selecção (BR-ANIMAIS-002).
+  - UI: `AnimalSearchPanel` (`layout="mobile"|"desktop"`) em `HeaderBuscaTrigger` + `AnimalSearchDialogContext`; atalho `openSearch()` no `Dashboard` (mobile).
+  - **Mobile**: match exacto da identificação (trim, case-insensitive) após busca ou Enter → navega directamente para `/animais/:id?tab=ciclo`; com ambiguidade, lista compacta com meta (categoria · sexo · …) e **um toque → ficha** (sem card intermédio). Input sticky no Dialog; scroll na lista faz `blur` do campo (reduz teclado a cobrir resultados).
+  - **Desktop**: selecção → card de contexto → link «Abrir ficha» (inalterado).
+  - Helpers: `normalizeIdentificacao`, `findExactIdentificacaoMatch`, `formatAnimalSearchResultMeta` em `animalSearchUtils.ts`.
   - Validação de acesso: `ValidateFazendaAccess` + filtro por `GetByUsuarioID` na busca.
 - **Estado**: Implementado.
 
 ### BR-ANIMAIS-002 — Contexto mínimo obrigatório no resultado inteligente
 
-- **Enunciado**: Ao selecionar um resultado, o sistema deve apresentar dados essenciais do animal e indicadores de produção consolidados, com rótulos legíveis para o usuário.
-- **Escopo**: Resumo exibido no popover/diálogo de busca do header e após seleção de resultado (inclui fluxo aberto pelo atalho mobile na home).
-- **Efeito**: informativo na UI; consulta consolidada no backend.
-- **Dados exibidos**:
+- **Enunciado**: No **desktop**, ao selecionar um resultado, o sistema deve apresentar dados essenciais do animal e indicadores de produção consolidados, com rótulos legíveis. No **mobile**, a lista mostra meta compacta (dados do payload da busca) e a selecção / match exacto abre a **ficha** directamente — o contexto detalhado (produção, gestação, restrição) fica na ficha (`/animais/:id`).
+- **Escopo**: Resumo no popover de busca do header (**desktop**); lista compacta + navegação directa no Dialog (**mobile**, inclui atalho na home).
+- **Efeito**: informativo na UI (desktop); navegação rápida no mobile; consulta consolidada no backend quando o card de contexto é pedido.
+- **Dados exibidos (card de contexto — desktop)**:
   - identificação do animal;
   - categoria, sexo e raça (quando preenchidos);
   - status de saúde e reprodutivo **somente quando cadastrados** (nunca «Não informado» no resumo); em **bezerra/bezerro** omitir reprodução e integrar **nasc.** na linha meta;
@@ -38,8 +41,9 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
   - resumo de produção **histórico** **somente se houver registros** (omitir linha se zero — evita ruído no resumo rápido);
   - meta compacta (categoria · sexo · raça) sem rótulos repetitivos;
   - quando existir episódio aberto: `restricao_leite_ativa` (ver [leite-restricoes.md](./leite-restricoes.md) — BR-LEITE-004).
+- **Lista de resultados (mobile e desktop)**: identificação (+ destaque do termo) e linha meta `formatAnimalSearchResultMeta` (categoria · sexo · raça · status reprodutivo quando aplicável); badges de saúde / baixado.
 - **Regra de exibição da fazenda na busca**: na lista de resultados, **não** exibir nome/ID da fazenda, pois o contexto já é da fazenda ativa do usuário logado.
-- **Implementação**: payload `data.animal` + `data.resumo_producao` + `data.gestacao_resumo` do endpoint `GET /api/v1/animais/:id/contexto`; formatação em `frontend/src/components/animais/animalResumoUtils.ts`.
+- **Implementação**: payload `data.animal` + `data.resumo_producao` + `data.gestacao_resumo` do endpoint `GET /api/v1/animais/:id/contexto` (desktop); formatação em `frontend/src/components/animais/animalResumoUtils.ts` e `animalSearchUtils.ts`.
 - **Estado**: Implementado.
 
 ### BR-ANIMAIS-003 — Gestação confirmada no resumo contextual
@@ -119,7 +123,8 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 - **Efeito**: bloqueio no servidor para fazendas não vinculadas; ordenação por relevância conforme **BR-ANIMAIS-012**.
 - **Regras**:
   - Match parcial (`ILIKE`) + equivalência número ↔ extenso (BR-ANIMAIS-009).
-  - UI: exibir `identificacao` tal como cadastrada (`formatAnimalSearchLabel`, sem prefixo `#`).
+  - UI: exibir `identificacao` tal como cadastrada (`formatAnimalSearchLabel`, sem prefixo `#`); na lista, destacar o trecho do termo e meta compacta (`formatAnimalSearchResultMeta`).
+  - **Mobile**: se o termo normalizado coincidir exactamente com a identificação de um resultado, navegar para a ficha (Enter ou auto após debounce); caso contrário, um toque no resultado abre a ficha (BR-ANIMAIS-001/002).
 - **Parâmetros adicionais**: `fazenda_id` (opcional) — quando omitido, mantém busca em todas as fazendas vinculadas (assistente/integrações).
 - **Implementação**:
   - Frontend: `animalSearchUtils.ts`, `searchByIdentificacao` com `fazenda_id`, `useFazendaAtiva` no painel.
@@ -172,4 +177,4 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 ---
 
-**Última atualização**: 2026-07-22 (BR-ANIMAIS-007 — secagem operacional e cobertura com lactação em VAZIA/PARIDA)
+**Última atualização**: 2026-08-10 (BR-ANIMAIS-001/002/010 — busca mobile: match exacto → ficha; lista compacta com um toque)

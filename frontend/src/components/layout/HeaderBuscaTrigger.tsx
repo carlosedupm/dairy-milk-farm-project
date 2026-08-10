@@ -120,6 +120,7 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
           >
             <AnimalSearchPanel
               variant="header"
+              layout="desktop"
               hideInput
               identificacao={identificacao}
               onIdentificacaoChange={setIdentificacao}
@@ -148,13 +149,14 @@ export function HeaderBuscaTrigger({ compact = false }: HeaderBuscaTriggerProps)
             <DialogHeader className="shrink-0 space-y-2 pr-8 text-left">
               <DialogTitle>Buscar animal</DialogTitle>
               <DialogDescription>
-                Brinco, número ou nome — resultados ao parar de digitar; resumo e
-                opção de abrir a ficha do animal.
+                Digite o brinco ou nome. Match exacto abre a ficha; com vários
+                resultados, toque no animal desejado.
               </DialogDescription>
             </DialogHeader>
-            <div className="mt-4 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pb-1">
+            <div className="mt-3 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
               <AnimalSearchPanel
                 variant="header"
+                layout="mobile"
                 autoFocus
                 identificacao={identificacao}
                 onIdentificacaoChange={setIdentificacao}
