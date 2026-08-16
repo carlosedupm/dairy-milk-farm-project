@@ -96,6 +96,33 @@ export function hormoniosLactacaoPendentesQueryKey(fazendaId: number) {
   return ["hormonios-lactacao-pendentes", fazendaId] as const;
 }
 
+/** Listagem operacional de doses pendentes (BR-HORM-009). */
+export const HORMONIOS_LACTACAO_PENDENTES_HREF =
+  "/gestao/hormonios-lactacao/pendentes";
+
+export const HORMONIO_LACTACAO_FROM_PENDENTES = "pendentes";
+
+export function hormonioLactacaoNovoHref(
+  animalId: number,
+  from?: typeof HORMONIO_LACTACAO_FROM_PENDENTES,
+): string {
+  const base = `/animais/${animalId}/hormonios-lactacao/novo`;
+  if (from === HORMONIO_LACTACAO_FROM_PENDENTES) {
+    return `${base}?from=${HORMONIO_LACTACAO_FROM_PENDENTES}`;
+  }
+  return base;
+}
+
+/** Allowlist: só `from=pendentes` devolve a listagem; outros valores são ignorados. */
+export function hormonioLactacaoReturnHrefFromQuery(
+  from: string | null | undefined,
+): string | undefined {
+  if (from === HORMONIO_LACTACAO_FROM_PENDENTES) {
+    return HORMONIOS_LACTACAO_PENDENTES_HREF;
+  }
+  return undefined;
+}
+
 export async function listByAnimal(
   animalId: number,
 ): Promise<HormonioLactacaoAplicacao[]> {

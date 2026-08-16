@@ -73,9 +73,10 @@ Registro de **aplicações de somatotropina bovina recombinante** (ex.: Lactropi
 
 ### BR-HORM-009 — Listagem de pendentes
 
-- **Enunciado**: `GET /api/v1/fazendas/:id/hormonios-lactacao/pendentes` retorna animais elegíveis (BR-HORM-003/004/005/007) **sem protocolo na lactação** (1ª dose pendente) **ou** com protocolo `ATIVO` e `data_proxima_aplicacao <= hoje`, excluindo janela de 70d e protocolos encerrados. A mesma lógica alimenta alerta automático `HORMONIO_LACTACAO_PENDENTE` (BR-ALERTA-018 / BR-HORM-012).
+- **Enunciado**: `GET /api/v1/fazendas/:id/hormonios-lactacao/pendentes` retorna animais elegíveis (BR-HORM-003/004/005/007) **sem protocolo na lactação** (1ª dose pendente) **ou** com protocolo `ATIVO` e `data_proxima_aplicacao <= hoje`, excluindo janela de 70d e protocolos encerrados. A mesma lógica alimenta alerta automático `HORMONIO_LACTACAO_PENDENTE` (BR-ALERTA-018 / BR-HORM-012). Na UI, **Registrar** a partir de `/gestao/hormonios-lactacao/pendentes` abre o formulário com `?from=pendentes`; após POST bem-sucedido (ou Voltar), o operador **regressa à listagem** para o próximo animal — o registado deixa de constar se a dose cobriu a pendência. Toast de sucesso inclui atalho **Ver ficha**. Registo a partir da ficha (`Nova aplicação`) continua a voltar à tab hormônio da ficha.
 - **Escopo**: UI `/gestao/hormonios-lactacao/pendentes` + geração diária de alertas.
-- **Implementação**: `ListPendentesByFazendaID` em [`animal_hormonio_lactacao_repository.go`](../../backend/internal/repository/animal_hormonio_lactacao_repository.go); regra 9 em `alerta_geracao_service.go`.
+- **Efeito**: apenas UX de navegação; validações de domínio (BR-HORM-003–007) inalteradas.
+- **Implementação**: `ListPendentesByFazendaID` em [`animal_hormonio_lactacao_repository.go`](../../backend/internal/repository/animal_hormonio_lactacao_repository.go); regra 9 em `alerta_geracao_service.go`; frontend `hormonioLactacaoNovoHref` / `returnHref` em [`animalHormoniosLactacao.ts`](../../frontend/src/services/animalHormoniosLactacao.ts) e [`AnimalHormonioLactacaoForm.tsx`](../../frontend/src/components/animais/AnimalHormonioLactacaoForm.tsx).
 - **Estado**: implementado.
 
 ### BR-HORM-010 — Aplicações na timeline da ficha
@@ -112,4 +113,4 @@ Registro de **aplicações de somatotropina bovina recombinante** (ex.: Lactropi
 
 ---
 
-**Última atualização**: 2026-06-14 (BR-HORM-012 implementado — BRF-006)
+**Última atualização**: 2026-08-16 (BR-HORM-009 — após registrar a partir de pendentes, regressa à listagem)

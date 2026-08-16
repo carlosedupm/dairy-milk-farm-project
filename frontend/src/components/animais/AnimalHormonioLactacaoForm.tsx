@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast as sonnerToast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   canCriarHormonioLactacao,
@@ -17,6 +18,7 @@ import {
 } from "@/components/animais/AnimalHormonioLactacaoFormFields";
 import {
   create,
+  HORMONIOS_LACTACAO_PENDENTES_HREF,
   hormonioLactacaoProtocoloQueryKey,
   hormoniosLactacaoListQueryKey,
   hormoniosLactacaoPendentesQueryKey,
@@ -40,6 +42,8 @@ type Props = {
   mode: "create" | "edit";
   initial?: HormonioLactacaoAplicacao;
   aplicacaoId?: number;
+  /** Origem allowlist (ex. listagem de pendentes). Só aplica em create. */
+  returnHref?: string;
 };
 
 function stateFromRegistro(
@@ -93,6 +97,7 @@ export function AnimalHormonioLactacaoForm({
   mode,
   initial,
   aplicacaoId,
+  returnHref,
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -111,7 +116,12 @@ export function AnimalHormonioLactacaoForm({
   >();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  const listHref = animalFichaHormonioLactacaoTabHref(animalId);
+  const fichaHref = animalFichaHormonioLactacaoTabHref(animalId);
+  const fromPendentes =
+    mode === "create" && returnHref === HORMONIOS_LACTACAO_PENDENTES_HREF;
+  const listHref = fromPendentes
+    ? HORMONIOS_LACTACAO_PENDENTES_HREF
+    : fichaHref;
   const canSubmit =
     mode === "create"
       ? canCriarHormonioLactacao(user?.perfil)
@@ -139,11 +149,22 @@ export function AnimalHormonioLactacaoForm({
         queryKey: animalSaudeListQueryKey(animalId),
       });
       invalidateAnimalTimeline(queryClient, animalId);
-      toast.success(
-        mode === "create"
-          ? "Aplicação registrada."
-          : "Aplicação atualizada.",
-      );
+      if (fromPendentes) {
+        sonnerToast.success("Aplicação registrada.", {
+          action: {
+            label: "Ver ficha",
+            onClick: () => {
+              router.push(fichaHref);
+            },
+          },
+        });
+      } else {
+        toast.success(
+          mode === "create"
+            ? "Aplicação registrada."
+            : "Aplicação atualizada.",
+        );
+      }
       router.push(listHref);
     },
     onError: (err: unknown) => {

@@ -20,12 +20,12 @@ import { Button } from "@/components/ui/button";
 import { useFazendaAtiva } from "@/contexts/FazendaContext";
 import { formatDatePtBr } from "@/lib/format";
 import {
+  hormonioLactacaoNovoHref,
   hormoniosLactacaoPendentesQueryKey,
   listPendentes,
   produtoHormonioLabel,
   tipoPendenciaLabel,
 } from "@/services/animalHormoniosLactacao";
-import { animalFichaHormonioLactacaoTabHref } from "@/components/animais/ficha/animalFichaTabs";
 
 function PendentesContent() {
   const { fazendaAtiva, isReady } = useFazendaAtiva();
@@ -98,7 +98,10 @@ function PendentesContent() {
                       <TableCell className="text-right">
                         <Button asChild size="sm" variant="outline">
                           <Link
-                            href={`/animais/${item.animal_id}/hormonios-lactacao/novo`}
+                            href={hormonioLactacaoNovoHref(
+                              item.animal_id,
+                              "pendentes",
+                            )}
                           >
                             Registrar
                           </Link>
@@ -122,7 +125,10 @@ function PendentesContent() {
                 actions={
                   <Button asChild size="sm" variant="outline">
                     <Link
-                      href={`/animais/${item.animal_id}/hormonios-lactacao/novo`}
+                      href={hormonioLactacaoNovoHref(
+                        item.animal_id,
+                        "pendentes",
+                      )}
                     >
                       Registrar
                     </Link>

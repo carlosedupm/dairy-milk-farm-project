@@ -24,6 +24,13 @@
 
 ## ✅ O que foi concluído
 
+### **BR-HORM-009 — Navegação após registrar hormônio pendente (✅ 2026-08-16)**
+
+- [x] Links Registrar em `/gestao/hormonios-lactacao/pendentes` com `?from=pendentes`
+- [x] Após POST (create) ou Voltar, regresso à listagem; toast com atalho «Ver ficha»
+- [x] Registo a partir da ficha e edição de aplicação continuam na tab hormônio
+- [x] Catálogo `docs/business/hormonios-lactacao.md` (BR-HORM-009)
+
 ### **CI npm audit — Next 16.3.0 (✅ 2026-08-10)**
 
 - [x] Next.js / `eslint-config-next` 16.2.9→16.3.0 (advisories middleware, Server Actions, cache, Image SVG, etc.)
@@ -1048,6 +1055,6 @@
 
 ---
 
-**Última atualização**: 2026-08-10 (CI npm audit — Next 16.3.0 + overrides)
+**Última atualização**: 2026-08-16 (BR-HORM-009 — regresso à listagem após registrar hormônio pendente)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
 **Próxima revisão**: após Tier 0 staging Render (sec. 1–5) + validação manual G3 BRF-006/007
