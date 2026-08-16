@@ -24,6 +24,12 @@
 
 ## ✅ O que foi concluído
 
+### **CI govulncheck — Go 1.25.13 (✅ 2026-08-16)**
+
+- [x] `backend/go.mod` `go 1.25.12`→`1.25.13` (CI `setup-go` lê este ficheiro)
+- [x] Dockerfiles raiz/`backend/` e `.devcontainer` com `golang:1.25.13` / `GO_VERSION=1.25.13`
+- [x] Fecha GO-2026-6218, 6091, 6090, 6089, 6088, 5972, 5026 (stdlib 1.25.12)
+
 ### **BR-HORM-009 — Navegação após registrar hormônio pendente (✅ 2026-08-16)**
 
 - [x] Links Registrar em `/gestao/hormonios-lactacao/pendentes` com `?from=pendentes`
@@ -1055,6 +1061,6 @@
 
 ---
 
-**Última atualização**: 2026-08-16 (BR-HORM-009 — regresso à listagem após registrar hormônio pendente)
+**Última atualização**: 2026-08-16 (Go 1.25.13 — govulncheck stdlib + BR-HORM-009)
 **Status**: Produção Render+Vercel ✅ | **Fase 2 concluída** | **Fase 3 concluída em código** (saúde, vacinas, hormônios, alertas) | **Tier 0 staging pendente** — ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md) | **M2M** BR-INTEG-001–012 | Senha aguarda SMTP
 **Próxima revisão**: após Tier 0 staging Render (sec. 1–5) + validação manual G3 BRF-006/007

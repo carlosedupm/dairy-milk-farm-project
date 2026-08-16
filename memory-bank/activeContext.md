@@ -8,6 +8,7 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 
 ### ✅ Concluído desde a última atualização:
 
+1. ✅ **CI govulncheck — Go 1.25.13 (2026-08-16)**: toolchain `go 1.25.12`→`1.25.13` (stdlib: `net/url`, `html/template`, `crypto/tls`, `net/http`, `encoding/xml`, `encoding/asn1`); imagens `golang:1.25.13-alpine` + devcontainer alinhados. Patch de 2026-08-13 (GO-2026-6218/6091/6090/6089/6088/5972/5026).
 1. ✅ **BR-HORM-009 — Navegação após registrar pendente (2026-08-16)**: de `/gestao/hormonios-lactacao/pendentes`, Registrar usa `?from=pendentes`; após save (ou Voltar) regressa à listagem para o próximo animal; toast com «Ver ficha». Registo a partir da ficha e edição inalterados.
 1. ✅ **CI npm audit — Next 16.3.0 + deps (2026-08-10)**: Next/eslint-config-next 16.2.9→16.3.0; overrides `brace-expansion` 1.1.18/2.1.4, `postcss` ≥8.5.23, `js-yaml` ≥4.3.1, `nanoid` ≥3.3.17; `hardNavigate` para regra ESLint `no-location-assign-relative-destination`; `npm audit --audit-level=high` = 0.
 1. ✅ **UX busca animal mobile (2026-08-10)**: match exacto → ficha; lista compacta (meta + highlight); um toque → ficha; Dialog com input sticky e blur ao scroll; desktop mantém card de contexto (BR-ANIMAIS-001/002/010).
@@ -304,5 +305,5 @@ Stack **Go + Next.js** em produção (Render + Vercel). **Fase 2** e **Fase 3** 
 
 ---
 
-**Última atualização**: 2026-08-16 (BR-HORM-009 — regresso à listagem após registrar hormônio pendente)
+**Última atualização**: 2026-08-16 (Go 1.25.13 — govulncheck stdlib + BR-HORM-009)
 **Contexto Ativo**: Go 1.25 + Next.js 16.3.0 | Produção Render+Vercel | **BRF-009 G3 OK** (`/producao/ordenha`) | BR-PRODUCAO-007 contínuo | BRF-006/007/008 | **M2M** BR-INTEG-001–012 | Recuperação senha aguarda SMTP

@@ -4,7 +4,7 @@
 
 ### Backend
 
-- **Linguagem**: Go 1.25 (toolchain go1.25.12 — atualizado em 2026-07-15 para GO-2026-5856 crypto/tls ECH; govulncheck)
+- **Linguagem**: Go 1.25 (toolchain go1.25.13 — atualizado em 2026-08-16 para GO-2026-6218/6091/6090/6089/6088/5972/5026; govulncheck)
 - **Framework Web**: Gin (HTTP router e middleware)
 - **Banco de Dados**: PostgreSQL 15
 - **Acesso a Dados**: pgx/v5 (driver PostgreSQL nativo com type safety)
@@ -42,7 +42,7 @@
 
 ### Backend (Render)
 
-- **Imagem Base**: `golang:1.25.12-alpine` (build) → `alpine:3.22` (runtime)
+- **Imagem Base**: `golang:1.25.13-alpine` (build) → `alpine:3.22` (runtime)
 - **Porta**: 8080 (configurável via `PORT` env var)
 - **Health Check**: `/health` endpoint
 - **Variáveis de Ambiente**:
@@ -84,7 +84,7 @@
 ```go
 module github.com/ceialmilk/api
 
-go 1.25.12
+go 1.25.13
 
 require (
     github.com/getsentry/sentry-go v0.41.0
@@ -294,5 +294,5 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 
 ---
 
-**Última atualização**: 2026-08-10 (Next.js 16.3.0 + overrides npm audit high)
+**Última atualização**: 2026-08-16 (Go 1.25.13 — patch stdlib govulncheck GO-2026-6218 e correlatas)
 **Stack**: Go 1.25 + Next.js 16.3.0 — Fase 2 concluída; hardening de segurança 2026-06-10; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)
