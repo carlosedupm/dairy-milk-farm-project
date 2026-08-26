@@ -132,6 +132,6 @@ OpenAPI da API JWT completa; admin de integrações no OpenAPI; upload PDF; webh
 - Catálogo de negócio: `docs/business/README.md`
 - Integrações Swagger: `GET /api/v1/integracoes/docs`
 - Regressão ciclo: `docs/tests/regressao-ciclo-fase2.md`
-- **TestSprite** (MCP em [`.cursor/mcp.json`](.cursor/mcp.json)): suites em `testsprite_tests/`; testes da API M2M contra o backend em **`:8080`**, não Next.js `:3000`. Requer `TESTSPRITE_API_KEY` no ambiente.
+- **TestSprite** (MCP em `.cursor/mcp.json`, local/gitignored): suites em `testsprite_tests/`; testes da API M2M contra o backend em **`:8080`**, não Next.js `:3000`. Requer `TESTSPRITE_API_KEY` no ambiente.
 
 **Última atualização**: 2026-08-25

@@ -25,7 +25,7 @@ Ao mudar uma **regra path-scoped**, atualize no **mesmo PR**: `.cursor/rules/*.m
 
 ## MCP
 
-- **TestSprite**: só Cursor ([`.cursor/mcp.json`](../../.cursor/mcp.json)); testes M2M na porta **`:8080`**. Não espelhado noutros tools.
+- **TestSprite**: só Cursor (`.cursor/mcp.json`, local/gitignored); testes M2M na porta **`:8080`**. Não espelhado noutros tools.
 
 ## Validadores
 
