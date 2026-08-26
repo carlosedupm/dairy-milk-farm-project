@@ -15,7 +15,7 @@ Passar por este checklist antes de promover mudanças significativas para produ�
 
 - [ ] CI verde: `golangci-lint`, `govulncheck`, `go test`, `npm audit --audit-level=high`, `test:unit`, `typecheck`, builds
 - [ ] CodeQL sem novos alertas críticos
-- [ ] Dependabot: só merge de PRs patch/minor (ou Actions) com CI verde; majors fechados/ignorados — ver `deploy-notes.md` § Dependabot
+- [ ] Dependabot: só merge de PRs patch/minor (ou Actions) com CI verde; majors fechados/ignorados — ver `memory-bank/deploy/render-vercel.md`
 
 ## Autenticação e sessão
 
@@ -26,7 +26,7 @@ Passar por este checklist antes de promover mudanças significativas para produ�
 ## Infra
 
 - [ ] `render.yaml` com `autoDeployTrigger: checksPass`
-- [ ] Ruleset `Protect main` ativo (mínimo: block force push + restrict deletions) — ver `memory-bank/deploy-notes.md`
+- [ ] Ruleset `Protect main` ativo (mínimo: block force push + restrict deletions) — ver `memory-bank/deploy/render-vercel.md`
 - [ ] *(Opcional / fase posterior)* Ruleset completo: PR obrigatório + status checks do CI — só quando sair do push direto frequente na `main`
 - [ ] `METRICS_TOKEN` configurado em produção
 - [ ] Migrações testadas localmente (up e down) antes do deploy

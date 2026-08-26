@@ -1,0 +1,36 @@
+---
+paths:
+  - "frontend/src/**/*.{tsx,ts}"
+---
+# Frontend UI — padrões CeialMilk
+
+Consulte [`memory-bank/patterns/design.md`](../../memory-bank/patterns/design.md) e [`memory-bank/patterns/ui.md`](../../memory-bank/patterns/ui.md). Checklist completo: [`frontend/AGENTS.md`](../../frontend/AGENTS.md).
+
+## Proibido / obrigatório
+
+| Situação | ❌ Não | ✅ Sim |
+|---|---|---|
+| Campo só data | `Input type="date"` | `DatePicker` / `DatePickerUnificado` — input `DD/MM/AAAA` + calendário (`YYYY-MM-DD`) |
+| Data+hora (parto, cio, produção) | `.slice(0,16)` em ISO | `DateTimePickerUnificado` (alias `DateTimePickerPtBr`) + `toDatetimeLocalInputValue` |
+| Animal da fazenda | `Input type="number"` (ID) | `AnimalSelect`; listagem operacional (`useAnimaisOperacionalList`) ou **`cicloContext`** em forms de ciclo (`useAnimaisCicloContext`) |
+| Litros de leite (produção) | `Input type="number"` ou `DecimalInput` genérico | **`LitrosInput`** (`components/producao/LitrosInput.tsx`) + `lib/litros-format.ts` — pt-BR, máx. 2 decimais, vírgula |
+| Erro em form (validação ou API) | `<p className="text-destructive">` só no campo ou só no fim | `FormFieldError` inline + `FormValidationAlert` no topo + `getApiErrorMessage` / `validate*` em `lib/form-validation.ts` |
+| Sucesso após guardar (form/página) | redirect silencioso | `toast.success` (`hooks/use-toast.ts`) |
+| Listagem com Ações | só tabela | `ResponsiveListContainer` + `MobileListCard` + `ListRowActionsMenu` + `DeleteRecordDialog` |
+| Paginação server-side | offset ad hoc | `ListPaginationBar` |
+| Loading/erro/empty de lista | spinner custom / `<p>` solto | `QueryListContent` + `EmptyState` (`components/ui/empty-state.tsx`) |
+| HTTP no componente | axios/fetch inline | `services/*` + TanStack Query |
+| Labels/maps duplicados | copiar entre ficheiros | `services/*` ou `components/<domínio>/*-utils.ts` |
+| Cores de feedback (aviso/sucesso/erro/info) | `text-amber-*`, `bg-green-*`, `border-blue-*` | tokens semânticos `text-feedback-warning`, `bg-feedback-success/10`, etc. — ver [`design-tokens.md`](design-tokens.md) |
+
+## Composição
+
+- `app/*/page.tsx` orquestra (~200 linhas); extrair `*Table`, `*ListToolbar`, `*Form`/`*Dialog` para `components/<domínio>/`.
+- Lógica pesada: `hooks/use*Page.ts` (ref.: `useFolgasPage.ts`).
+- Listagem topo: `PageContainer` + `ListCardLayout`. Gestão pecuária: `GestaoListLayout` + `BackLink`.
+- Fazenda: `useFazendaAtiva()` + aguardar `isReady` antes de «Selecione uma fazenda».
+
+## Referências antes de implementar
+
+- Listagem: `AnimaisListToolbar` + `AnimalTable`; gestão: `CoberturasListToolbar` + `CoberturaTable`; alertas: `AlertasListToolbar` + `AlertasTable` + `useAlertasPage`.
+- Dialog com animal/data: `RestricoesLeiteHomePanel`.

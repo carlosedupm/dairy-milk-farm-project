@@ -27,7 +27,7 @@ Fluxo **agnóstico de ferramenta e de agente**: os papéis abaixo podem ser exer
 2. **Recusar briefing com perguntas em aberto** sem resposta registrada.
 3. **Proibido criar/alterar regra de negócio**: se descobrir lacuna ou conflito durante a implementação, **parar**, registrar em «Perguntas em aberto» e devolver ao gate G1.
 4. **Não sair do escopo**: respeitar a seção «O que NÃO mexer».
-5. Ao concluir: atualizar estado das `BR-*` para `implementado` (com ponteiros ao código), atualizar memory-bank conforme `.cursor/rules/documentation-maintenance.mdc`, e marcar isso no PR.
+5. Ao concluir: atualizar estado das `BR-*` para `implementado` (com ponteiros ao código), atualizar memory-bank conforme a skill `atualizar-documentacao`, e marcar isso no PR.
 
 ## Ciclo de vida e gates de aprovação
 
@@ -83,7 +83,7 @@ Executado no CI. Falha se:
 | Invariantes do ciclo | `docs/business/ciclo-rebanho.md` |
 | Validações temporais TMP-001–006 e integridade INT-001–007 | `docs/business/auditoria.md` |
 | Perfis e permissões (RBAC) | `docs/business/acessos-perfil.md` |
-| Formato de resposta/erro da API | `memory-bank/systemPatterns.md` (`response.go`: sucesso `{data, message, timestamp}`; erro `{error: {code, message, details?}, timestamp}`) |
+| Formato de resposta/erro da API | `memory-bank/patterns/api.md` (`response.go`: sucesso `{data, message, timestamp}`; erro `{error: {code, message, details?}, timestamp}`) |
 | Checklist de UI obrigatório | `.cursor/rules/frontend-ui-patterns.mdc` e `frontend/AGENTS.md` |
 | Camadas backend | `backend/AGENTS.md` (Handlers → Services → Repositories) |
 | Integrações M2M (perfil `INTEGRACAO`) | `docs/business/integracoes.md` |

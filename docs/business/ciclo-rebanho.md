@@ -164,7 +164,7 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 - **Enunciado**: Qualquer mudança de comportamento de produto no ciclo do rebanho atualiza este ficheiro (se transversal) e o módulo em `docs/business/*.md` no **mesmo PR/ciclo**, com estado da regra atualizado.
 - **Escopo**: Processo de engenharia.
 - **Efeito**: critério de aceite de entrega.
-- **Implementação**: [AGENTS.md](../../AGENTS.md), `.cursor/rules/documentation-maintenance.mdc`.
+- **Implementação**: [AGENTS.md](../../AGENTS.md), skill `atualizar-documentacao`.
 - **Estado**: **implementado** (processo e catálogo dos módulos do ciclo pecuário na Fase 2).
 
 ### BR-CICLO-012 — Eventos do ciclo não podem ser futuros

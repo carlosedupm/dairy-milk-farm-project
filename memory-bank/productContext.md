@@ -63,9 +63,9 @@ Detalhe transversal: **[docs/business/ciclo-rebanho.md](../docs/business/ciclo-r
 2. **Registar**: Produção do dia, restrição de leite, eventos reprodutivos permitidos ao perfil.
 3. **Meta**: Mesmo fluxo na ficha da vaca, sem saltar entre oito ecrãs de gestão.
 
-### **Veterinário** *(roadmap)*
-1. Histórico de saúde, vacinas e tratamentos por animal.
-2. Hoje: apenas `status_saude` no cadastro.
+### **Veterinário / saúde na fazenda**
+1. Histórico de saúde, vacinas e tratamentos por animal (ficha + calendário preventivo).
+2. `status_saude` derivado dos casos ativos; perfil dedicado de veterinário externo permanece roadmap.
 
 ## 🏗️ Arquitetura da Experiência
 

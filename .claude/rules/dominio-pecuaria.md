@@ -1,0 +1,82 @@
+---
+paths:
+  - "backend/internal/service/**/*.go"
+  - "backend/internal/handlers/**/*.go"
+  - "docs/business/**/*.md"
+  - "frontend/src/components/gestao/**/*"
+  - "frontend/src/app/gestao/**/*"
+  - "frontend/src/app/producao/**/*"
+  - "frontend/src/components/producao/**/*"
+---
+# Dominio de Pecuaria Leiteira - CeialMilk
+
+## Vocabulario Essencial de Pecuaria
+
+### Animais e Categorias
+- Matriz: femea adulta do rebanho reprodutor (vaca que ja pariu)
+- Novilha: femea jovem que ainda nao pariu, em fase de recria/crescimento
+- Bezerra/Bezerro: cria recem-nascida (femea/macho)
+- Cria: filhote em geral
+- Reprodutor/Touro: macho usado para reproducao
+
+### Ciclo Reprodutivo (sequencia natural)
+1. Cio (estro): periodo de receptividade sexual da femea (~21 dias)
+2. Cobertura: inseminacao artificial (IA) ou monta natural
+3. Toque (palpacao/ultrassom): diagnostico de gestacao; elegivel a partir de 15 dias pos-cobertura (BR-CICLO-015, const DiasMinimosToque)
+4. Gestacao: 283 dias no calculo de data_prevista_parto (const diasGestacaoBovino)
+5. Secagem: interrupcao da lactacao antes do parto; alerta aos 250 dias de gestacao sem secagem (BR-ALERTA-008, const diasGestacaoSemSecagemAlerta)
+6. Parto: nascimento -> abre nova lactacao
+7. Lactacao: periodo de producao de leite (~305 dias)
+8. Producao de leite: registro diario (litros/dia)
+
+Os numeros com nome de constante vivem em backend/internal/service/ e sao a
+regra do produto — confirme com grep antes de calcular. Os valores com "~" sao
+referencia zootecnica de fundo, sem regra associada.
+
+### Status Reprodutivos
+VAZIA=sem gestacao | SERVIDA=coberta | PRENHE=confirmada | SECA=secou | PARIDA=ja pariu
+
+### Racas Leiteiras do Brasil
+Holandesa (~30-40 L/dia) | Jersey (alto teor gordura) | Gir (zebuina, clima tropical) | Girolando (Holandes x Gir) | Pardo Suico (queijos)
+
+### Saude Animal
+Status: SAUDAVEL | DOENTE | EM_TRATAMENTO
+Tipos: TRATAMENTO | PREVENTIVO | CIRURGIA | OUTRO
+Caso: ATIVO | CONCLUIDO | CANCELADO
+Sync: TRATAMENTO/CIRURGIA ativo->EM_TRATAMENTO; outro ativo->DOENTE; nenhum->SAUDAVEL
+
+### Restricao de Leite
+Status: AGUARDANDO_LAB | LIBERADO | CANCELADO
+Maximo 1 AGUARDANDO_LAB ativa por animal
+
+### Baixa do Rebanho
+Motivos: MORTE | VENDA | DOACAO | DESCARTE
+Efeitos: encerra lactacao, fecha gestacao como PERDA, cancela restricao
+Nao altera status_reprodutivo
+
+### Validacao Temporal
+Codigos TMP-001 a TMP-006 (BR-CICLO-012/013/014). Tabela canonica em
+docs/business/auditoria.md; implementacao em
+backend/internal/service/ciclo_integridade_temporal.go.
+Nao reproduza a numeracao aqui — consulte a fonte antes de emitir o codigo.
+
+### RBAC
+ADMIN/DEVELOPER=global | GESTAO=sem vinculo | PROPRIETARIO/GERENTE=vinculo
+FUNCIONARIO=GET+POST saude+producao, baixa so morte | USER=pendente
+
+## 8 Invariantes do Ciclo (NUNCA violar)
+1. Uma lactacao ativa por animal
+2. Gestacao confirmada so apos toque positivo com cobertura vinculada
+3. Parto abre lactacao e encerra gestacao vinculada
+4. Secagem encerra a lactacao ativa (se existir) na mesma transacao; sem lactacao ativa prossegue como pre-parto
+5. Producao exige lactacao ativa na data
+6. Animal baixado = so consulta
+7. Status reprodutivo propaga por evento, BR-CICLO-002 (cio->VAZIA salvo se ja PRENHE, cobertura->SERVIDA, toque positivo->PRENHE, toque NEGATIVO->VAZIA, parto->PARIDA, secagem->SECA); baixa nao propaga
+8. Validacao temporal em TODAS as escritas (TMP-001 a TMP-006)
+
+## Guia: Conceito -> Codigo
+1. Identificar modulo -> docs/business/
+2. Verificar BR-* afetadas
+3. Checar invariantes
+4. Atualizar docs/business/ no mesmo PR
+5. Atualizar activeContext.md

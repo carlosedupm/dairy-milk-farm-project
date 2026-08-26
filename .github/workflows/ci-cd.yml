@@ -8,7 +8,7 @@ on:
 
 jobs:
   docs-validate:
-    name: Docs - Validate BR references
+    name: Docs - Validate references and integrity
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +22,9 @@ jobs:
 
     - name: Validate business rule references
       run: node scripts/validate-br-refs.mjs
+
+    - name: Validate documentation integrity
+      run: node scripts/validate-docs.mjs
 
   backend-lint-build:
     name: Backend - Lint and Build

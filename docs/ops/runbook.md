@@ -67,7 +67,7 @@ Nunca usar `force` sem antes confirmar o estado real do schema.
 
 ## 4. Variáveis de ambiente críticas (produção)
 
-Ver lista completa em [`memory-bank/deploy-notes.md`](../../memory-bank/deploy-notes.md). Destaques de segurança:
+Ver lista completa em [`memory-bank/deploy/env-vars.md`](../../memory-bank/deploy/env-vars.md). Destaques de segurança:
 
 - `METRICS_TOKEN` — obrigatório em produção; sem ele `/metrics` responde 404
 - `TRUSTED_PROXIES` — CSV de CIDRs; default cobre ranges privados (LB Render)

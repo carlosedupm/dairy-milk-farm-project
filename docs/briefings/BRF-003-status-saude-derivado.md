@@ -126,5 +126,5 @@ Este trabalho torna o status **derivado** quando existem casos ATIVOS (bloqueio 
 ## 7. Notas adicionais
 
 - **Persistência da flag parto**: preferir campo no payload `crias[]` sem migration (`status_saude_inicial` transitório aplicado só na criação do animal); se necessário auditoria, migration opcional em `crias` — decisão implementador, desde que OpenAPI/Postman documentados.
-- **Cria gerada** ([`cria_service.go`](backend/internal/service/cria_service.go) `insertCriaVivaComAnimalGeradoTx`): `resolveStatusSaudeCriaViva` define `StatusSaude` (`SAUDAVEL` ou `DOENTE`/`EM_TRATAMENTO` via payload).
+- **Cria gerada** ([`cria_service.go`](../../backend/internal/service/cria_service.go) `insertCriaVivaComAnimalGeradoTx`): `resolveStatusSaudeCriaViva` define `StatusSaude` (`SAUDAVEL` ou `DOENTE`/`EM_TRATAMENTO` via payload).
 - **Assistente Live** já orienta usar `registrar_saude` em vez de `editar_animal` para tratamentos — reforçar no system prompt após bloqueio.

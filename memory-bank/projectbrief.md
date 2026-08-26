@@ -34,10 +34,11 @@ A stack **Go + Next.js** serve esse objetivo de negócio: performance, deploy si
 - **Lotes** e movimentação de animais.
 - **Agricultura**: custos, safras e resultado (domínio separado, mesma conta/fazenda).
 
-### **Controle de saúde** (roadmap)
+### **Controle de saúde** (implementado — BRF-001–003)
 
-- Hoje: `status_saude` no cadastro do animal.
-- Planejado: vacinas, tratamentos e histórico veterinário (módulo dedicado).
+- Casos de saúde animal (`animal_saude`), `status_saude` **derivado** dos casos ativos.
+- Calendário de vacinas preventivas (agendar/aplicar, alertas, RBAC `FUNCIONARIO`).
+- Validação temporal em escritas de saúde alinhada ao ciclo (`BR-CICLO-*` / TMP).
 
 ### **Performance técnica**
 

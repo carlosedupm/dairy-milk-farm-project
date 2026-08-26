@@ -4,7 +4,7 @@ Instruções específicas do API Go. Contexto global: [`../AGENTS.md`](../AGENTS
 
 ## Stack
 
-Go 1.24+, Gin, PostgreSQL 15, pgx/v5, golang-migrate, JWT RS256, slog.
+Go 1.25+ (versão exata em `go.mod`), Gin, PostgreSQL 15, pgx/v5, golang-migrate, JWT RS256, slog. Métricas Prometheus em `internal/middleware/metrics.go`.
 
 ## Estrutura
 
@@ -35,7 +35,17 @@ backend/
 ```bash
 go run ./cmd/api                        # dev (:8080)
 go test ./internal/service/... -count=1 # validação rápida
-go test ./...                           # suite completa
 ```
 
-Detalhe: [`../memory-bank/systemPatterns.md`](../memory-bank/systemPatterns.md).
+Gates de merge que o CI aplica ao backend:
+
+```bash
+go mod verify
+golangci-lint run
+go test ./... -count=1
+go build -o /tmp/api ./cmd/api
+```
+
+O CI roda também `govulncheck ./...`. Migrações são aplicadas por `cmd/api/main.go` — não existe `cmd/migrate/`.
+
+Detalhe: [`../memory-bank/systemPatterns.md`](../memory-bank/systemPatterns.md). Workflow completo: skill `novo-endpoint`.

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "node .cursor/hooks/mark-sensitive-edit.js",
+        "timeout": 5
+      }
+    ],
+    "stop": [
+      {
+        "command": "node .cursor/hooks/docs-remind-on-stop.js",
+        "timeout": 5
+      }
+    ]
+  }
+}

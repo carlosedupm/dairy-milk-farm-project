@@ -121,6 +121,11 @@ func main() {
 			if err := runMigrations(cfg.DatabaseURL); err != nil {
 				slog.Warn("Falha ao executar migrações; apenas /health disponível", "error", err)
 			} else {
+				if cfg.Env == "development" && cfg.SeedDev {
+					if err := runSeedDev(context.Background(), pool); err != nil {
+						slog.Warn("Falha ao executar seed de desenvolvimento", "error", err)
+					}
+				}
 
 				privateKey, publicKey := cfg.JWTPrivateKey, cfg.JWTPublicKey
 				if privateKey == "" || publicKey == "" {

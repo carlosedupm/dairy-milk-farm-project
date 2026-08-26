@@ -47,7 +47,7 @@ Facilitar a tomada de decisão, auditoria e gestão operacional na interface mó
 | Arquivo | Alteração | Exemplo de Código |
 |---------|-----------|-------------------|
 | `frontend/src/components/animais/AnimalTimelineList.tsx` | Renderizar `<Link href={eventoHref}>evento.titulo</Link>` quando `evento.ref_id` existir e a rota estiver mapeada. | ```tsx {eventoHref && <Link href={eventoHref} variant="inherit" className="text-primary">evento.titulo</Link> }``` |
-| `frontend/src/components/animais/ficha/AnimalCicloTimelineVisual.tsx` | Envolver o título do evento em um Link com `eventoHref`. | ```tsx <h4 className="cursor-pointer"><Link href={eventoHref}>{evento.titulo}</Link></h4>``` |
+| `frontend/src/components/animais/AnimalCicloTimelineVisual.tsx` | Envolver o título do evento em um Link com `eventoHref`. | ```tsx <h4 className="cursor-pointer"><Link href={eventoHref}>{evento.titulo}</Link></h4>``` |
 | `frontend/src/components/animais/ficha/AnimalFichaTabCiclo.tsx` | Adicionar `onClick` ou `asChild` para navegar ao detalhe ao clicar no evento da timeline visual. | ```tsx <Link href={eventoHref}>Evento</Link>``` |
 | `frontend/src/components/animais/AnimalCicloMiniPreview.tsx` | Tornar o card inteiro clicável para abrir o detalhe da fase correspondente. | ```tsx <Card onClick={() => navigate(event.Href)} …>``` |
 | `frontend/src/components/animais/ficha/AnimalFichaTabVisaoGeral.tsx` (sidebar) | Adicionar link ao título “Eventos do ciclo” que leva ao detalhe da phase correta. | ```tsx <Link href={eventoHref}>Ver detalhes</Link>``` |
@@ -106,7 +106,7 @@ router.GET("/api/v1/animais/:animalId/lactacoes/:eventId", GetLactacaoById)
 | **Rotas não existentes** – criar novas rotas (`vacina`, `hormonio-lactacao`, `lactacao`) | Criar endpoints backend primeiro; escrever testes unitários de API antes de implementar UI. |
 | **Sobrecarga de navegação** – abrir muitos detalhes simultâneos pode poluir a UI | Limitar a apenas um detalhe aberto por vez; usar `useModal` ou `Dialog` quando a página de detalhe for rica. |
 | **RBAC inconsistente** – esquecer de atualizar permissões | Implementar helper de permissões centralizado e testar com perfis diferentes nas rotas de detalhamento. |
-| **Manutenção futura** – novos tipos de evento podem surgir | Documentar padrão `evento.tipo → rota` em arquivo `frontend/src/services/animal-links.ts` para evitar divergências. |
+| **Manutenção futura** – novos tipos de evento podem surgir | Documentar padrão `evento.tipo → rota` num mapper único — implementado em `frontend/src/lib/animalEventoLinks.ts` (`timelineItemHref`). |
 
 ### 10. Checklist de Implementação
 - [ ] Atualizar `export type TimelineFilterTipo` (se necessário).  

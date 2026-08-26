@@ -1,19 +1,41 @@
 ---
-description: Contexto do projeto CeialMilk - sempre consulte o memory-bank antes de decisões
+description: Contexto do projeto CeialMilk - roteamento de documentação e invariantes de arquitetura
 alwaysApply: true
 ---
 
-# Contexto CeialMilk (Cursor)
+# Contexto CeialMilk
 
-Antes de decisões técnicas ou mudanças significativas, consulte **`memory-bank/activeContext.md`**, **`systemPatterns.md`**, **`progress.md`** e **`techContext.md`**.
+Gestão para fazendas leiteiras, centrada no ciclo de vida do animal. Monorepo **Go/Gin** (`backend/`) + **Next.js App Router** (`frontend/`).
 
-Mapa completo, comandos e índice de docs: **[`AGENTS.md`](../../AGENTS.md)** na raiz.
+Mapa completo, comandos e gates de merge: **[`AGENTS.md`](../../AGENTS.md)** na raiz.
 
-## Obrigatório
+## Invariantes
 
-- Seguir camadas **Handlers → Services → Repositories** (Go + Gin + pgx)
-- Regras de domínio: [`docs/business/`](../../docs/business/) — atualizar no mesmo PR se mudar comportamento de produto
-- Manutenção de docs: regra **[`documentation-maintenance.mdc`](documentation-maintenance.mdc)**
-- Frontend: zoom/reflow em **`systemPatterns.md`** (secção UX e Acessibilidade)
-- Frontend (páginas, componentes, hooks UI): regra **[`frontend-ui-patterns.mdc`](frontend-ui-patterns.mdc)** — DatePicker, AnimalSelect, FormValidationAlert, listagens responsivas, páginas finas
-- Novo endpoint: `systemPatterns.md` + `docs/postman/`; integrações M2M: `docs/integracoes/README.md`
+- Backend em camadas: `internal/handlers` → `internal/service` → `internal/repository` → PostgreSQL (pgx). Pastas **singulares** (`service/`, `repository/`), exceto `handlers/`.
+- Respostas HTTP via `internal/response`; endpoints versionados `/api/v1/{recurso}`.
+- Frontend: TypeScript strict; estado servidor com TanStack Query; chamadas API em `src/services/`.
+- Mudança de **comportamento de produto** exige atualizar `docs/business/<modulo>.md` no mesmo trabalho (IDs `BR-*`, validados no CI por `scripts/validate-br-refs.mjs`).
+
+## Leitura dirigida, não exaustiva
+
+Não leia o `memory-bank/` inteiro — são ~200 KB. Abra só o que a tarefa exige (tabela de roteamento em `AGENTS.md`):
+
+- Orientação inicial em qualquer tarefa: `memory-bank/activeContext.md` (curto de propósito)
+- Padrões de API, segurança, dados: índice `memory-bank/systemPatterns.md` → abra só `memory-bank/patterns/<modulo>.md`
+- Stack e versões: `memory-bank/techContext.md`
+- Deploy e env vars: índice `memory-bank/deploy-notes.md` → `memory-bank/deploy/`
+
+## Workflows
+
+Use as skills em `.cursor/skills/` em vez de improvisar:
+
+- Fim de tarefa, sincronizar docs → **`atualizar-documentacao`**
+- Requisito novo (`BR-*` + `BRF-NNN`) → **`nova-regra-negocio`**
+- Endpoint novo → **`novo-endpoint`**
+- Página, listagem ou formulário → **`nova-pagina-ui`**
+- Migration SQL → **`nova-migration`**
+- Correção de bug → **`corrigir-bug`**
+
+Regras com escopo automático:
+- [`frontend-ui-patterns.mdc`](frontend-ui-patterns.mdc) e [`design-tokens.mdc`](design-tokens.mdc) — ao editar `frontend/src/`
+- [`dominio-pecuaria.mdc`](dominio-pecuaria.mdc) — ao editar services/handlers Go, `docs/business/`, gestão/produção no frontend; também **requestable** (peça a regra) em qualquer tarefa de ciclo, saúde, produção ou `BR-*`

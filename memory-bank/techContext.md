@@ -18,14 +18,14 @@
 
 ### Frontend
 
-- **Framework**: Next.js 16.3.0 (App Router, Turbopack como bundler padrão) — atualizado em 2026-08-10 (security release: middleware/proxy bypass, Server Actions DoS/SSRF, cache confusion, Image Optimization SVG DoS, disclosure de Server Functions; postcss 8.5.23+)
-- **React**: 19.2.7 (compatível com Next.js 16)
+- **Framework**: Next.js 16.3.0 (App Router). **Bundler: webpack** — o script `dev` usa `next dev --webpack` explicitamente, não Turbopack. Atualizado em 2026-08-10 (security release: middleware/proxy bypass, Server Actions DoS/SSRF, cache confusion, Image Optimization SVG DoS, disclosure de Server Functions; postcss 8.5.23+)
+- **React**: 19 (`^19.0.0`; versão exata resolvida no `package-lock.json`)
 - **Linguagem**: TypeScript 5.7.2
 - **Estilização**: Tailwind CSS 3.4.17
 - **Tailwind `content`**: `frontend/tailwind.config.ts` inclui `src/app`, `src/components`, `src/pages` e **`src/contexts`** — ficheiros em `contexts/` com `className` (ex.: `AnimalSearchDialogContext`) devem estar no scan; caso contrário utilitários arbitrários não entram no CSS e `tailwind-merge` pode deixar o DOM sem `width`/`max-height` efetivos (diálogo “invisível” por cima do overlay).
 - **Componentes**: Shadcn/UI (compatível com React 19); `@radix-ui/react-tabs` para tabs acessíveis (`components/ui/tabs.tsx`)
 - **Gerenciamento de Estado**: TanStack Query 5.x
-- **Cliente HTTP**: Axios 1.7.9
+- **Cliente HTTP**: Axios `^1.18.1`
 - **Toast (feedback)**: Sonner (`sonner`) — `hooks/use-toast.ts`, `components/ui/sonner.tsx`, `<Toaster />` em `Providers` (canto superior direito)
 - **Datas**: `date-fns` v4 — tipos embutidos via campo `exports` do pacote; imports como `date-fns` e `date-fns/locale`
 - **TypeScript (resolução de módulos)**: `tsconfig.json` usa `"moduleResolution": "bundler"` — **obrigatório** para resolver `exports` de `date-fns` v4, `sonner` v2 e `@radix-ui/*`. **Não** instalar `@types/sonner` (pacote inexistente no npm; sonner traz `.d.ts` próprio). Se `tsc` falhar com "Cannot find module", confirmar `npm ci` e que `moduleResolution` não foi alterado para `"node"`.
@@ -127,14 +127,14 @@ O projeto inclui um **Dev Container** (`.devcontainer/`) alinhado à stack Go + 
 
 ```
 .devcontainer/
-├── devcontainer.json   # Configuração (extensões, features, comandos, portas)
-└── Dockerfile          # Opcional (referência); uso padrão: image + features
+├── devcontainer.json   # Configuração (extensões, comandos, portas)
+└── Dockerfile          # Imagem do serviço `ceialmilk-dev`, referenciada pelo docker-compose.yml
 ```
 
 ### Stack do Container
 
 - **Base**: `mcr.microsoft.com/devcontainers/base:ubuntu-22.04`
-- **Features**: `go` (1.24) e `node` (LTS) via Dev Container features
+- **Go e Node**: instalados via `.devcontainer/Dockerfile` (`GO_VERSION` alinhado ao `backend/go.mod`), não por Dev Container features
 - **Ferramentas**: `postgresql-client` (instalado no postCreateCommand), git, curl
 
 ### Uso
@@ -166,11 +166,20 @@ Definidas no `docker-compose` para o serviço `ceialmilk-dev`:
 
 O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar localmente se necessário.
 
+### Seed operacional (somente `ENV=development`)
+
+Após as migrações, o API aplica [`backend/scripts/seed_dev.sql`](../backend/scripts/seed_dev.sql) quando `ENV=development` e `SEED_DEV` não está `false` (default: ligado em development).
+
+- **Login**: `admin@ceialmilk.com` / `password` (migração 3; perfil `DEVELOPER`; fazenda `"Fazenda Desenvolvimento"`)
+- **Dados**: lote `Lote Lactação Dev`, animais `DEV-001`…`DEV-005`, lactações ativas em `DEV-001` e `DEV-002`
+- **Opt-out**: `SEED_DEV=false`
+- Idempotente; não roda em staging/produção (`ENV` ≠ `development`)
+
 ## Estrutura de pastas atual
 
-- **Backend**: `backend/cmd/api`, `backend/internal/{handlers,service,repository,models,response,auth,middleware,config,observability}`, `backend/migrations`.
-- **Frontend**: `frontend/src/app`, `frontend/src/components/{fazendas,agricultura,dev-studio,layout,ui}`, `frontend/src/services`, `frontend/src/contexts`, `frontend/src/lib`.
-- **Referência de CRUD**: Fazenda (handler → service → repository → model). Ver `memory-bank/systemPatterns.md` para padrões e estrutura detalhada.
+Fonte canónica: [`patterns/architecture.md`](patterns/architecture.md) (via índice [`systemPatterns.md`](systemPatterns.md)) e os arquivos [`backend/AGENTS.md`](../backend/AGENTS.md) / [`frontend/AGENTS.md`](../frontend/AGENTS.md). Não duplicar a árvore aqui.
+
+- **Referência de CRUD**: Fazenda (handler → service → repository → model).
 - **Dev Studio**: `GitHubService.GetFileContent(ctx, branch, path)` obtém conteúdo de arquivos na branch de produção (GitHub Contents API). Usado para contexto da IA quando `GITHUB_*` configurados.
 
 ## Testes de API (TestSprite / MCP)
@@ -272,27 +281,13 @@ O frontend usa `NEXT_PUBLIC_API_URL` (ex.: `http://localhost:8080`); configurar 
 | 33 | `33_push_subscriptions_fazenda_ativa` | Web Push + `fazenda_ativa_id` |
 | 34 | `34_add_lactacao_id_producao_leite` | FK `lactacao_id` em `producao_leite` (nullable; legado preservado) |
 
-## Vantagens da Nova Stack
+## Características operacionais da stack
 
-### Performance
-
-- **Memória**: Go consome ~30MB vs ~300MB do Java
-- **Startup**: < 1 segundo vs 15-30 segundos do Java
-- **Binário**: Único arquivo executável vs JAR + JVM
-
-### Desenvolvimento
-
-- **Simplicidade**: Código Go mais direto que Spring WebFlux
-- **Type Safety**: TypeScript no frontend garante tipos seguros
-- **Hot Reload**: Desenvolvimento rápido com ferramentas modernas
-
-### Deploy
-
-- **Simplicidade**: Binário único, sem necessidade de JVM
-- **Tamanho**: Imagem Docker final ~20MB vs ~200MB do Java
-- **Conectividade**: Driver pgx mais robusto que R2DBC em ambientes cloud
+- **Memória**: ~30 MB por instância do backend
+- **Startup**: < 1 s, o que viabiliza o plano gratuito do Render com cold start aceitável
+- **Artefato**: binário único; imagem Docker final ~20 MB
 
 ---
 
-**Última atualização**: 2026-08-16 (Go 1.25.13 — patch stdlib govulncheck GO-2026-6218 e correlatas)
-**Stack**: Go 1.25 + Next.js 16.3.0 — Fase 2 concluída; hardening de segurança 2026-06-10; Fase 3 saúde/alertas/Web Push; timeline paginada; M2M BR-INTEG-001–011; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)
+**Última atualização**: 2026-08-25
+**Stack**: Go 1.25 + Next.js 16.3.0 — Fases 2 e 3 concluídas; hardening de segurança 2026-06-10; M2M `BR-INTEG-001`–`012`; Folgas 5x1; Dev Studio; TestSprite (`testsprite_tests/`)

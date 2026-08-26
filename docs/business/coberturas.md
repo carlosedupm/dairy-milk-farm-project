@@ -7,7 +7,7 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 - Backend: `backend/internal/service/cobertura_service.go`, handler em `backend/internal/handlers/gestao_pecuaria_handlers.go` (`CoberturaHandler`); rotas `GET|POST|PUT|DELETE /api/v1/coberturas` em `backend/cmd/api/main.go`.
 - Repositório: `backend/internal/repository/cobertura_repository.go`.
 - Frontend: `frontend/src/services/coberturas.ts`, `frontend/src/components/gestao/CoberturaFormFields.tsx`, `frontend/src/components/gestao/CoberturaTable.tsx`, páginas `/gestao/coberturas/*`.
-- Persistência: `coberturas` em `backend/migrations/12_add_gestao_pecuaria.up.sql`; coluna `touro_animal_id` em `backend/migrations/14_coberturas_touro_animal_id.up.sql`.
+- Persistência: `coberturas` em `backend/migrations/12_add_gestao_pecuaria.up.sql`; coluna `touro_animal_id` em `backend/migrations/14_add_touro_animal_id_coberturas.up.sql`.
 
 ---
 

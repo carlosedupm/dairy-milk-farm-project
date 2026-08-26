@@ -1,0 +1,27 @@
+# Dependências e builds — não indexar para agentes
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+**/coverage/
+**/*.tsbuildinfo
+
+# Artefactos de testes gerados / temporários
+testsprite_tests/tmp/
+**/playwright-report/
+**/test-results/
+
+# Binários e dumps
+**/*.exe
+**/*.dll
+**/*.so
+**/*.dylib
+**/__pycache__/
+**/.turbo/
+
+# Env locais (secrets) — manter fora do índice do agente
+**/.env
+**/.env.local
+**/.env.*.local
+backend/.env
+frontend/.env.local

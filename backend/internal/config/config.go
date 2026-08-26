@@ -36,6 +36,7 @@ type Config struct {
 	VAPIDSubject                string // contact URI (ex.: mailto:suporte@ceialmilk.com)
 	MetricsToken                string // token Bearer para proteger /metrics (obrigatório em produção)
 	TrustedProxies              string // CSV de CIDRs confiáveis para X-Forwarded-For (default: ranges privados)
+	SeedDev                     bool   // seed operacional local (default: true quando ENV=development)
 }
 
 func Load() *Config {
@@ -73,9 +74,10 @@ func Load() *Config {
 		fmt.Println("ℹ️  Arquivo .env não encontrado. Usando variáveis de ambiente do sistema.")
 	}
 
+	env := getEnv("ENV", "development")
 	return &Config{
 		Port:                        getEnv("PORT", "8080"),
-		Env:                         getEnv("ENV", "development"),
+		Env:                         env,
 		LogLevel:                    getEnv("LOG_LEVEL", "INFO"),
 		DatabaseURL:                 getEnv("DATABASE_URL", ""),
 		JWTPrivateKey:               getEnv("JWT_PRIVATE_KEY", ""),
@@ -101,6 +103,7 @@ func Load() *Config {
 		VAPIDSubject:                getEnv("VAPID_SUBJECT", "mailto:suporte@ceialmilk.com"),
 		MetricsToken:                getEnv("METRICS_TOKEN", ""),
 		TrustedProxies:              getEnv("TRUSTED_PROXIES", ""),
+		SeedDev:                     getEnvBool("SEED_DEV", env == "development"),
 	}
 }
 

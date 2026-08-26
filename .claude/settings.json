@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .cursor/hooks/docs-remind-on-stop.js"
+          }
+        ]
+      }
+    ]
+  }
+}

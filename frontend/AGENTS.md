@@ -24,15 +24,15 @@ frontend/src/
 - Estado servidor: TanStack Query; chamadas API via `services/`
 - Estilo: Tailwind + Shadcn; `tailwind.config.ts` deve incluir pastas com `className` (ex.: `contexts/`)
 - **Design tokens**: [`docs/design-system/tokens.md`](../docs/design-system/tokens.md) — cores semânticas (`feedback-*`, `surface-*`); runtime em `src/app/globals.css`; JSON em `design-tokens/tokens.json`; regra Cursor [`.cursor/rules/design-tokens.mdc`](../.cursor/rules/design-tokens.mdc); validar com `npm run validate:tokens`
-- **A11y**: assumir zoom do navegador e fonte ampliada — reflow sem cortar informação essencial (`systemPatterns.md`)
+- **A11y**: assumir zoom do navegador e fonte ampliada — reflow sem cortar informação essencial ([`memory-bank/patterns/ui.md`](../memory-bank/patterns/ui.md))
 - **Regra Cursor**: [`.cursor/rules/frontend-ui-patterns.mdc`](../.cursor/rules/frontend-ui-patterns.mdc) — ativa ao editar ficheiros em `frontend/src/`
 
 ## Checklist UI (antes de PR)
 
-Ao criar ou alterar página, listagem ou formulário:
+Ao criar ou alterar página, listagem ou formulário. Caminhos abaixo são relativos a `frontend/src/`. Roteiro de execução: skill `nova-pagina-ui`.
 
 1. **Data**: `DatePicker` / `DatePickerUnificado` (input `DD/MM/AAAA` + calendário; não `Input type="date"`); data+hora → `DateTimePickerUnificado` / alias `DateTimePickerPtBr` (input data + selects inline hora/minuto).
-2. **Animal**: `AnimalSelect` — operacional (`useAnimaisOperacionalList`) ou **`cicloContext`** em forms de ciclo (`useAnimaisCicloContext`).
+2. **Animal**: `AnimalSelect` — operacional (`useAnimaisOperacionalList`, em `components/gestao/useAnimaisMap.ts`) ou **`cicloContext`** em forms de ciclo (`useAnimaisCicloContext`).
 3. **Erros e sucesso**: validação client → `FormFieldError` no campo + `FormValidationAlert` no topo do form (`isValidation` quando aplicável); API → `getApiErrorMessage` + `getApiErrorConformidadeCode`; sucesso → `toast.success` / `toast.info` / `toast.warning` via `hooks/use-toast.ts` (`useToast()` ou `toast`); ver [`docs/design-system/form-patterns.md`](../docs/design-system/form-patterns.md).
 4. **Listagem com ações**: `ResponsiveListContainer`, `MobileListCard`, `ListRowActionsMenu`, `DeleteRecordDialog`, `QueryListContent`, `ListPaginationBar`.
 5. **Página fina**: extrair `*Table`, `*ListToolbar`, `*Dialog` para `components/<domínio>/`; lógica pesada em `hooks/use*Page.ts`.
@@ -45,11 +45,19 @@ Referências: `/animais` (`AnimaisListToolbar`, `lib/animais-filter-sync.ts`); `
 ## Comandos
 
 ```bash
-npm run dev                   # :3000
-npm run lint
-npm run validate:tokens       # paridade CSS↔JSON + cores literais proibidas
-npx tsc --noEmit
-npm run test:e2e              # Playwright
+npm run dev                   # :3000 (webpack, não Turbopack)
 ```
+
+Gates de merge que o CI aplica ao frontend — rode todos antes do PR:
+
+```bash
+npm run test:unit             # Vitest
+npm run typecheck             # tsc --noEmit
+npm run lint:ci               # ESLint com cache (o CI usa este, não `lint`)
+npm run validate:tokens       # paridade CSS↔JSON + cores literais proibidas
+npm run build                 # job frontend-build
+```
+
+O CI roda também `npm audit --audit-level=high`. `npm run test:e2e` (Playwright) é validação **local**, não está no CI.
 
 Detalhe: [`../memory-bank/systemPatterns.md`](../memory-bank/systemPatterns.md).
