@@ -71,17 +71,17 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 - **Escopo**: `GET /api/v1/animais/:id/contexto`; UI nas tabs **Visão Geral** e **Ciclo** de `/animais/:id`.
 - **Perfis / permissões**: CTAs visíveis conforme `proximas_acoes[]`; botão **desabilitado** na UI se `href_path` não permitido para o perfil (`appAccess` / `perfil_access.go`).
 - **Efeito**: orientação no curral; bloqueio de escrita mantido na API ao submeter formulários.
-- **Implementação**: `AnimalCicloService.BuildProximasAcoes`, `CoberturaRepository.HasPendenteToqueByAnimalID`; `AnimalProximasAcoesCta.tsx`, `animalProximasAcoesUtils.ts`, `AnimalFichaCiclo.tsx`.
+- **Implementação**: `AnimalCicloService.BuildProximasAcoes`, `CoberturaRepository.HasPendenteToqueByAnimalID`; `AnimalProximasAcoesCta.tsx`, `animalProximasAcoesUtils.ts`, `AnimalFichaCiclo.tsx` (tab Ciclo), `AnimalCicloMiniPreview.tsx` (tab Visão Geral).
 - **UI**: botões primários (`variant="default"`, `size="touch"`); desktop = card «Próximas ações» em linha (wrap); mobile = barra fixa inferior com botões empilhados, `env(safe-area-inset-bottom)` e spacer dinâmico (`pb-32` ou `pb-56` conforme quantidade) nas tabs Visão Geral e Ciclo para não tapar o scroll.
 - **Estado**: implementado.
 
 ### BR-ANIMAIS-008 — Ficha com tabs e sidebar
 
-- **Enunciado**: A ficha `/animais/:id` organiza o conteúdo em **cinco tabs** — **Visão Geral** (resumo do ciclo com mini-timeline, cadastro colapsável), **Ciclo** (estado atual, timeline visual completa, próximas ações e CTAs), **Saúde**, **Produção** e **Histórico** (eventos saúde/alertas/baixa; ciclo na tab dedicada) — com **sidebar fixa** de resumo (identificação, meta, gestação, link para tab Ciclo).
-- **Escopo**: UI; URLs `?tab=ciclo|saude|producao|historico` e `?tab=historico&tipo=saude|alertas|todos` (Visão Geral sem query; `historico&tipo=ciclo` redireciona para `?tab=ciclo`); rotas legadas `/animais/:id/saude` e `/producao` redirecionam para a tab equivalente.
+- **Enunciado**: A ficha `/animais/:id` organiza o conteúdo em tabs — **Visão Geral** (alertas compactos se restrição/baixa, mini-timeline do ciclo, CTAs de próximas ações, cadastro colapsável), **Ciclo** (hub: estado atual completo, timeline visual, próximas ações), **Saúde**, **Vacinas**, **Hormônio lactação**, **Produção** e **Histórico** (eventos saúde/alertas/baixa; ciclo na tab dedicada) — com **sidebar fixa** de decisão rápida (identificação, badges de saúde/baixa, meta, reprodução com link para Ciclo, restrição de leite, tratamentos ativos, gestação, lactação ativa, produção).
+- **Escopo**: UI; URLs `?tab=ciclo|saude|vacinas|hormonio-lactacao|producao|historico` e `?tab=historico&tipo=saude|alertas|todos` (Visão Geral sem query; `historico&tipo=ciclo` redireciona para `?tab=ciclo`); rotas legadas `/animais/:id/saude` e `/producao` redirecionam para a tab equivalente. A lista de tabs é sticky sob o header da app.
 - **Perfis / permissões**: mesmas regras das secções integradas (saúde, produção, gestão de animal).
-- **Efeito**: informativo e navegação client-side sem reload; breadcrumb contextual.
-- **Implementação**: `AnimalFichaShell`, `AnimalFichaSidebar`, `AnimalFichaTabs`, tab panels em `frontend/src/components/animais/ficha/`; `useAnimalFichaPage`; `components/ui/tabs.tsx` (Radix).
+- **Efeito**: informativo e navegação client-side sem reload; breadcrumb contextual; Visão Geral **não** duplica o card «Estado atual» (esse hub fica só na tab Ciclo).
+- **Implementação**: `AnimalFichaShell`, `AnimalFichaSidebar`, `AnimalFichaTabs`, `AnimalCicloMiniPreview`, tab panels em `frontend/src/components/animais/ficha/`; `useAnimalFichaPage`; `components/ui/tabs.tsx` (Radix); linhas de resumo em `animalResumoUtils.buildAnimalContextoLinhasResumo`.
 - **Estado**: implementado.
 
 ### BR-ANIMAIS-006 — Baixa do rebanho (fluxo dedicado)
@@ -177,4 +177,4 @@ Regras de consulta de animais por identificação com foco em retorno rápido e 
 
 ---
 
-**Última atualização**: 2026-08-10 (BR-ANIMAIS-001/002/010 — busca mobile: match exacto → ficha; lista compacta com um toque)
+**Última atualização**: 2026-08-25 (BR-ANIMAIS-008 — sidebar de decisão + Visão Geral sem hub duplicado)

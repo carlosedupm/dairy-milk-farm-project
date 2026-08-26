@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ORIGEM_LABELS,
   SEXO_LABELS,
-  STATUS_SAUDE_LABELS,
   getCategoriaLabel,
   MOTIVO_SAIDA_LABELS,
   type MotivoSaida,
@@ -26,7 +25,7 @@ import { DeleteRecordDialog } from "@/components/layout/list/DeleteRecordDialog"
 import { getApiErrorMessage } from "@/lib/errors";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { AnimalStatusSaudeBadge } from "@/components/animais/AnimalStatusSaudeBadge";
 import {
   Dialog,
   DialogClose,
@@ -39,15 +38,6 @@ import {
 } from "@/components/ui/dialog";
 import { ChevronRight, Edit, LogOut, Trash2 } from "lucide-react";
 import type { UseMutationResult } from "@tanstack/react-query";
-
-const STATUS_VARIANT: Record<
-  StatusSaude,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  SAUDAVEL: "default",
-  DOENTE: "destructive",
-  EM_TRATAMENTO: "secondary",
-};
 
 type Props = {
   animalId: number;
@@ -191,9 +181,7 @@ export function AnimalFichaTabVisaoGeral({
               </dt>
               <dd className="mt-0.5">
                 {statusSaude ? (
-                  <Badge variant={STATUS_VARIANT[statusSaude] ?? "default"}>
-                    {STATUS_SAUDE_LABELS[statusSaude] ?? statusSaude}
-                  </Badge>
+                  <AnimalStatusSaudeBadge status={statusSaude} />
                 ) : (
                   "—"
                 )}

@@ -470,7 +470,7 @@ export function AnimalSearchPanel({
           ) : null}
           {linhasDetalhe.map((linha) => (
             <p
-              key={linha.label}
+              key={linha.key}
               className={
                 linha.destaque
                   ? "break-words text-sm font-medium text-foreground"

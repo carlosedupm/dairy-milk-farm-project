@@ -5,7 +5,6 @@ import { Beef } from "lucide-react";
 import type { Animal, AnimalContexto } from "@/services/animais";
 import type { Fazenda } from "@/services/fazendas";
 import type { StatusSaude } from "@/services/animais";
-import { STATUS_SAUDE_LABELS } from "@/services/animais";
 import {
   buildAnimalContextoLinhasResumo,
   formatAnimalContextoMeta,
@@ -13,20 +12,12 @@ import {
   getStatusReprodutivoLabel,
 } from "@/components/animais/animalResumoUtils";
 import { AnimalBaixadoBadge } from "@/components/animais/AnimalBaixadoBadge";
+import { AnimalStatusSaudeBadge } from "@/components/animais/AnimalStatusSaudeBadge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TOUR_STEP_FICHA_SIDEBAR } from "@/components/ui/tour";
 import { cn } from "@/lib/utils";
 import { animalFichaCicloHref } from "@/lib/animalFichaLinks";
-
-const STATUS_VARIANT: Record<
-  StatusSaude,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  SAUDAVEL: "default",
-  DOENTE: "destructive",
-  EM_TRATAMENTO: "secondary",
-};
 
 type Props = {
   animal: Animal;
@@ -52,6 +43,10 @@ export function AnimalFichaSidebar({
         animal: contexto.animal,
         resumo_producao: contexto.resumo_producao,
         gestacao_resumo: contexto.gestacao_resumo,
+        tratamentos_ativos: contexto.tratamentos_ativos,
+        fora_do_rebanho: contexto.fora_do_rebanho ?? foraDoRebanho,
+        restricao_leite_ativa: contexto.restricao_leite_ativa,
+        lactacao_ativa: contexto.lactacao_ativa,
       })
     : [];
 
@@ -76,11 +71,7 @@ export function AnimalFichaSidebar({
               <AnimalBaixadoBadge variant="prominent" />
             </>
           ) : null}
-          {statusSaude ? (
-            <Badge variant={STATUS_VARIANT[statusSaude] ?? "default"}>
-              {STATUS_SAUDE_LABELS[statusSaude] ?? statusSaude}
-            </Badge>
-          ) : null}
+          <AnimalStatusSaudeBadge status={statusSaude} />
         </div>
         {meta ? (
           <p className="text-sm text-muted-foreground break-words">{meta}</p>
@@ -110,7 +101,7 @@ export function AnimalFichaSidebar({
         ) : null}
         {resumoLinhas.map((linha) => (
           <div
-            key={linha.label}
+            key={linha.key}
             className={cn(
               linha.destaque &&
                 "rounded-md border border-feedback-warning/40 bg-feedback-warning/10 p-2 -mx-1"

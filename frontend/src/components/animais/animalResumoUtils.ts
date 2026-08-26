@@ -3,6 +3,7 @@ import { formatLitrosFlexible } from "@/lib/litros-format";
 import {
   type Animal,
   type GestacaoResumoContexto,
+  type LactacaoAtiva,
   type ProducaoResumo,
   SEXO_LABELS,
   type Sexo,
@@ -12,6 +13,11 @@ import {
   getCategoriaLabel,
 } from "@/services/animais";
 import { TIPO_CASO_SAUDE_LABELS, type TipoCasoSaude } from "@/services/animalSaude";
+import {
+  MOTIVO_RESTRICAO_LEITE_LABELS,
+  type MotivoRestricaoLeite,
+  type RestricaoLeite,
+} from "@/services/restricoesLeite";
 
 export function getStatusReprodutivoLabel(status?: string | null): string {
   if (!status) return "Não informado";
@@ -126,45 +132,115 @@ export function formatAnimalContextoMeta(animal: Animal): string | null {
 }
 
 export type AnimalContextoLinhaResumo = {
+  /** Chave estável para listas (vários tratamentos partilham o rótulo «Saúde»). */
+  key: string;
   label: string;
   value: string;
   /** Destaque visual (ex.: gestação confirmada, restrição de leite). */
   destaque?: boolean;
 };
 
-/** Monta apenas linhas com informação útil para decisão rápida na busca. */
+/** Motivo legível da restrição de leite ativa; null se ausente. */
+export function formatRestricaoLeiteResumoLinha(
+  restricao: RestricaoLeite | null | undefined,
+): string | null {
+  if (!restricao) {
+    return null;
+  }
+  return (
+    MOTIVO_RESTRICAO_LEITE_LABELS[
+      restricao.motivo as MotivoRestricaoLeite
+    ] ?? restricao.motivo
+  );
+}
+
+/** Lactação ativa: número + data de início. */
+export function formatLactacaoAtivaResumoLinha(
+  lactacao: LactacaoAtiva | null | undefined,
+): string | null {
+  if (!lactacao) {
+    return null;
+  }
+  const inicio = formatDatePtBr(lactacao.data_inicio);
+  return `Lactação #${lactacao.numero_lactacao} desde ${
+    inicio !== "—" ? inicio : lactacao.data_inicio
+  }`;
+}
+
+/**
+ * Monta linhas úteis para decisão rápida (busca desktop e sidebar da ficha).
+ * Ordem: restrição → tratamentos → gestação → lactação → nascimento → produção.
+ * `restricao_leite_ativa` / `lactacao_ativa` são opcionais (ficha passa; busca pode omitir).
+ */
 export function buildAnimalContextoLinhasResumo(input: {
   animal: Animal;
   resumo_producao: ProducaoResumo;
   gestacao_resumo?: GestacaoResumoContexto | null;
   tratamentos_ativos?: TratamentoAtivoContexto[] | null;
   fora_do_rebanho?: boolean;
+  restricao_leite_ativa?: RestricaoLeite | null;
+  lactacao_ativa?: LactacaoAtiva | null;
 }): AnimalContextoLinhaResumo[] {
   const linhas: AnimalContextoLinhaResumo[] = [];
 
-  if (!input.fora_do_rebanho && input.tratamentos_ativos?.length) {
-    for (const tratamento of input.tratamentos_ativos) {
+  if (!input.fora_do_rebanho) {
+    const restricao = formatRestricaoLeiteResumoLinha(
+      input.restricao_leite_ativa,
+    );
+    if (restricao) {
       linhas.push({
-        label: "Saúde",
-        value: formatTratamentoAtivoLinha(tratamento),
+        key: "restricao-leite",
+        label: "Leite aguardando laboratório",
+        value: restricao,
         destaque: true,
+      });
+    }
+
+    if (input.tratamentos_ativos?.length) {
+      input.tratamentos_ativos.forEach((tratamento, index) => {
+        linhas.push({
+          key: `tratamento-${index}-${tratamento.tipo_caso}-${tratamento.data_inicio}`,
+          label: "Saúde",
+          value: formatTratamentoAtivoLinha(tratamento),
+          destaque: true,
+        });
       });
     }
   }
 
   const gestacao = formatGestacaoResumoLinha(input.gestacao_resumo);
   if (gestacao) {
-    linhas.push({ label: "Gestação", value: gestacao, destaque: true });
+    linhas.push({
+      key: "gestacao",
+      label: "Gestação",
+      value: gestacao,
+      destaque: true,
+    });
+  }
+
+  if (!input.fora_do_rebanho) {
+    const lactacao = formatLactacaoAtivaResumoLinha(input.lactacao_ativa);
+    if (lactacao) {
+      linhas.push({
+        key: "lactacao",
+        label: "Lactação",
+        value: lactacao,
+      });
+    }
   }
 
   const nascimento = formatAnimalNascimento(input.animal);
   if (nascimento && !isAnimalCriaJovem(input.animal)) {
-    linhas.push({ label: "Nascimento", value: nascimento });
+    linhas.push({
+      key: "nascimento",
+      label: "Nascimento",
+      value: nascimento,
+    });
   }
 
   const producao = formatProducaoHistoricoResumo(input.resumo_producao);
   if (producao) {
-    linhas.push({ label: "Produção", value: producao });
+    linhas.push({ key: "producao", label: "Produção", value: producao });
   }
 
   return linhas;

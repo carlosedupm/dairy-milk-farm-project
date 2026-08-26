@@ -91,7 +91,10 @@ export function AnimalFichaTabs({
           ),
       )}
     >
-      <TabsList aria-label="Secções da ficha do animal" className="flex-wrap h-auto gap-1">
+      <TabsList
+        aria-label="Secções da ficha do animal"
+        className="sticky top-[calc(3.5rem+1rem)] z-10 flex-wrap h-auto gap-1 bg-background border-b border-border/60 pb-2 mb-1"
+      >
         <TabsTrigger value="geral" className="min-h-11">
           {ANIMAL_FICHA_TAB_LABELS.geral}
         </TabsTrigger>

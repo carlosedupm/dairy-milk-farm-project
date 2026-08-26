@@ -326,7 +326,7 @@ const ANIMAL_FICHA_TOUR_STEPS: TourStepDef[] = [
     targetId: TOUR_STEP_FICHA_SIDEBAR,
     title: "Resumo do animal",
     description:
-      "Aqui vês identificação, estado de saúde, reprodução e um resumo rápido do animal.",
+      "Aqui vês identificação, saúde, reprodução, restrições, lactação e um resumo rápido para decisão.",
   },
   {
     targetId: TOUR_STEP_FICHA_CICLO_MINI,
