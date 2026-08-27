@@ -948,6 +948,62 @@
       "name": "Gestao (detalhe BRF-008)",
       "item": [
         {
+          "name": "GET Cios by Animal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cios/by-animal/{{animalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cios",
+                "by-animal",
+                "{{animalId}}"
+              ]
+            },
+            "description": "Cios do animal — formulário de cobertura (BR-COBERTURAS-008)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Coberturas by Animal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/coberturas/by-animal/{{animalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "coberturas",
+                "by-animal",
+                "{{animalId}}"
+              ]
+            },
+            "description": "BR-COBERTURAS-008 — coberturas do animal (cio_id para o formulário)"
+          },
+          "response": []
+        },
+        {
           "name": "GET Toque by ID",
           "request": {
             "method": "GET",

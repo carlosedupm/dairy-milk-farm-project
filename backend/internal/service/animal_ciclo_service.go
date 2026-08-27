@@ -208,11 +208,11 @@ func (s *AnimalCicloService) BuildTimeline(ctx context.Context, animalID int64) 
 			break
 		}
 		items = append(items, models.CicloTimelineItem{
-			Tipo:    "PRODUCAO",
-			Data:    p.DataHora,
-			Titulo:  "Produção de leite",
-			Detalhe: fmt.Sprintf("%.1f L", p.Quantidade),
-			RefID:   p.ID,
+			Tipo:      "PRODUCAO",
+			Data:      p.DataHora,
+			Titulo:    "Produção de leite",
+			Detalhe:   fmt.Sprintf("%.1f L", p.Quantidade),
+			RefID:     p.ID,
 			CreatedBy: p.CreatedBy,
 		})
 		n++
@@ -340,6 +340,7 @@ func buildProximasAcoesCandidates(
 	pendenteToque bool,
 	statusReprodutivo string,
 	secagemPendente bool,
+	cioAberto bool,
 ) []models.ProximaAcao {
 	var acoes []models.ProximaAcao
 	if lact != nil {
@@ -371,16 +372,12 @@ func buildProximasAcoesCandidates(
 			HrefPath: fmt.Sprintf("/gestao/toques/novo?animal_id=%d", animalID),
 		})
 	}
-	if statusReprodutivo == "" ||
-		statusReprodutivo == models.StatusReprodutivoVazia ||
-		statusReprodutivo == models.StatusReprodutivoParida {
-		if gest == nil {
-			acoes = append(acoes, models.ProximaAcao{
-				Codigo:   models.AcaoRegistrarCobertura,
-				Label:    "Registrar cobertura",
-				HrefPath: fmt.Sprintf("/gestao/coberturas/novo?animal_id=%d", animalID),
-			})
-		}
+	if cioAberto {
+		acoes = append(acoes, models.ProximaAcao{
+			Codigo:   models.AcaoRegistrarCobertura,
+			Label:    "Registrar cobertura",
+			HrefPath: fmt.Sprintf("/gestao/coberturas/novo?animal_id=%d", animalID),
+		})
 	}
 	return prioritizeProximasAcoes(acoes, maxProximasAcoes)
 }
@@ -428,7 +425,12 @@ func (s *AnimalCicloService) BuildProximasAcoes(ctx context.Context, animal *mod
 		secagemPendente = true
 	}
 
-	return buildProximasAcoesCandidates(aid, lact, gest, pendenteToque, st, secagemPendente), nil
+	cioAberto, err := s.coberturaRepo.HasCioSemCoberturaByAnimalID(ctx, aid, animal.FazendaID)
+	if err != nil {
+		return nil, err
+	}
+
+	return buildProximasAcoesCandidates(aid, lact, gest, pendenteToque, st, secagemPendente, cioAberto), nil
 }
 
 func formatClassificacaoOperacionalLabel(classificacao string) string {

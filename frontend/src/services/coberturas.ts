@@ -26,12 +26,19 @@ export async function listByFazenda(fazendaId: number): Promise<Cobertura[]> {
   return data.data ?? [];
 }
 
+export async function listByAnimal(animalId: number): Promise<Cobertura[]> {
+  const { data } = await api.get<ApiResponse<Cobertura[]>>(
+    `/api/v1/coberturas/by-animal/${animalId}`,
+  );
+  return data.data ?? [];
+}
+
 export type CoberturaCreate = {
   animal_id: number;
   tipo: string;
   data: string;
   fazenda_id: number;
-  cio_id?: number | null;
+  cio_id: number;
   touro_animal_id?: number | null;
   touro_info?: string | null;
   semen_partida?: string | null;

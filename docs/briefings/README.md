@@ -55,7 +55,7 @@ Análise ──► G1: briefing aprovado ──► Implementação ──► G2:
 
 | ID | Título | Status |
 |----|--------|--------|
-| BRF-010 | Cio obrigatório na cobertura e status | rascunho |
+| BRF-010 | Cio obrigatório na cobertura e status | aprovado |
 | BRF-009 | Modo ordenha com turno | implementado |
 | BRF-008 | Links de navegação para eventos do ciclo na ficha | implementado |
 | BRF-006 | Alerta hormônio lactação pendente | implementado |
@@ -91,4 +91,4 @@ Executado no CI. Falha se:
 
 ---
 
-**Última atualização**: 2026-08-26 (BRF-010 rascunho — cio↔cobertura)
+**Última atualização**: 2026-08-26 (BRF-010 aprovado — cio↔cobertura)

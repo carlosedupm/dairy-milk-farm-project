@@ -556,7 +556,10 @@ func mapCoberturaError(c *gin.Context, err error) {
 		errors.Is(err, service.ErrCoberturaApenasFemea),
 		errors.Is(err, service.ErrCoberturaReprodutorObrigatorio),
 		errors.Is(err, service.ErrCoberturaReprodutorNaoEncontrado),
-		errors.Is(err, service.ErrCoberturaReprodutorInvalido):
+		errors.Is(err, service.ErrCoberturaReprodutorInvalido),
+		errors.Is(err, service.ErrCoberturaCioObrigatorio),
+		errors.Is(err, service.ErrCoberturaCioInvalido),
+		errors.Is(err, service.ErrCoberturaCioJaVinculado):
 		response.ErrorValidation(c, err.Error(), nil)
 	default:
 		response.ErrorInternal(c, "Erro ao registrar cobertura", err.Error())

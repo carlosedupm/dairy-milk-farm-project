@@ -102,7 +102,17 @@ export function toqueChronologyForAnimalCoberturas(
   return { minDate, coberturaDateIso, referenceDateIso: coberturaDateIso };
 }
 
-export function coberturaChronologyFromCios(cios: Cio[]): GestaoChronologyContext {
+export function coberturaChronologyFromCios(
+  cios: Cio[],
+  cioId?: string
+): GestaoChronologyContext {
+  if (cioId) {
+    const selected = cios.find((c) => c.id.toString() === cioId);
+    if (selected) {
+      const iso = isoDateFromDatetime(selected.data_detectado);
+      return { minDate: iso || undefined, referenceDateIso: iso || undefined };
+    }
+  }
   const referenceDateIso = minDateCoberturaFromCios(cios);
   return { minDate: referenceDateIso, referenceDateIso };
 }

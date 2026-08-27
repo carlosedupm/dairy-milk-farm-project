@@ -36,6 +36,24 @@ func (h *CoberturaHandler) GetByFazendaID(c *gin.Context) {
 	}
 	response.SuccessOK(c, list, "OK")
 }
+
+func (h *CoberturaHandler) GetByAnimalID(c *gin.Context) {
+	animalID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || animalID <= 0 {
+		response.ErrorBadRequest(c, "ID invalido", nil)
+		return
+	}
+	list, err := h.svc.GetByAnimalID(c.Request.Context(), animalID)
+	if err != nil {
+		response.ErrorInternal(c, "Erro ao listar coberturas", err.Error())
+		return
+	}
+	if len(list) > 0 && !ValidateFazendaAccess(c, h.fazendaSvc, list[0].FazendaID) {
+		return
+	}
+	response.SuccessOK(c, list, "OK")
+}
+
 func (h *CoberturaHandler) Create(c *gin.Context) {
 	var req struct {
 		AnimalID      int64   `json:"animal_id" binding:"required"`
@@ -72,6 +90,12 @@ func (h *CoberturaHandler) Create(c *gin.Context) {
 		}
 		if errors.Is(err, service.ErrAnimalNotFound) {
 			response.ErrorNotFound(c, "Animal nao encontrado")
+			return
+		}
+		if errors.Is(err, service.ErrCoberturaCioObrigatorio) ||
+			errors.Is(err, service.ErrCoberturaCioInvalido) ||
+			errors.Is(err, service.ErrCoberturaCioJaVinculado) {
+			response.ErrorValidation(c, err.Error(), nil)
 			return
 		}
 		response.ErrorInternal(c, "Erro ao registrar cobertura", err.Error())
@@ -151,6 +175,12 @@ func (h *CoberturaHandler) Update(c *gin.Context) {
 		}
 		if errors.Is(err, service.ErrAnimalNotFound) {
 			response.ErrorNotFound(c, "Animal nao encontrado")
+			return
+		}
+		if errors.Is(err, service.ErrCoberturaCioObrigatorio) ||
+			errors.Is(err, service.ErrCoberturaCioInvalido) ||
+			errors.Is(err, service.ErrCoberturaCioJaVinculado) {
+			response.ErrorValidation(c, err.Error(), nil)
 			return
 		}
 		if RespondIfDomainWriteError(c, err) {
@@ -257,16 +287,16 @@ func (h *DiagnosticoGestacaoHandler) GetByID(c *gin.Context) {
 }
 func (h *DiagnosticoGestacaoHandler) Create(c *gin.Context) {
 	var req struct {
-		AnimalID                int64   `json:"animal_id" binding:"required"`
-		Data                    string  `json:"data" binding:"required"`
-		Resultado               string  `json:"resultado"`
+		AnimalID                 int64   `json:"animal_id" binding:"required"`
+		Data                     string  `json:"data" binding:"required"`
+		Resultado                string  `json:"resultado"`
 		ClassificacaoOperacional *string `json:"classificacao_operacional"`
-		FazendaID               int64   `json:"fazenda_id" binding:"required"`
-		CoberturaID             *int64  `json:"cobertura_id"`
-		DiasGestacaoEstimados   *int    `json:"dias_gestacao_estimados"`
-		Metodo                  *string `json:"metodo"`
-		Veterinario             *string `json:"veterinario"`
-		Observacoes             *string `json:"observacoes"`
+		FazendaID                int64   `json:"fazenda_id" binding:"required"`
+		CoberturaID              *int64  `json:"cobertura_id"`
+		DiasGestacaoEstimados    *int    `json:"dias_gestacao_estimados"`
+		Metodo                   *string `json:"metodo"`
+		Veterinario              *string `json:"veterinario"`
+		Observacoes              *string `json:"observacoes"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorValidation(c, "Dados invalidos", err.Error())
@@ -283,7 +313,7 @@ func (h *DiagnosticoGestacaoHandler) Create(c *gin.Context) {
 	d := &models.DiagnosticoGestacao{
 		AnimalID: req.AnimalID, Data: t, Resultado: req.Resultado, FazendaID: req.FazendaID,
 		ClassificacaoOperacional: req.ClassificacaoOperacional,
-		CoberturaID: req.CoberturaID, DiasGestacaoEstimados: req.DiasGestacaoEstimados,
+		CoberturaID:              req.CoberturaID, DiasGestacaoEstimados: req.DiasGestacaoEstimados,
 		Metodo: req.Metodo, Veterinario: req.Veterinario, Observacoes: req.Observacoes,
 	}
 	if actorID, ok := GetActorUserID(c); ok {

@@ -7,7 +7,7 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 - Backend: `backend/internal/service/cobertura_service.go`, handler em `backend/internal/handlers/gestao_pecuaria_handlers.go` (`CoberturaHandler`); rotas `GET|POST|PUT|DELETE /api/v1/coberturas` em `backend/cmd/api/main.go`.
 - Repositório: `backend/internal/repository/cobertura_repository.go`.
 - Frontend: `frontend/src/services/coberturas.ts`, `frontend/src/components/gestao/CoberturaFormFields.tsx`, `frontend/src/components/gestao/CoberturaTable.tsx`, páginas `/gestao/coberturas/*`.
-- Persistência: `coberturas` em `backend/migrations/12_add_gestao_pecuaria.up.sql`; coluna `touro_animal_id` em `backend/migrations/14_add_touro_animal_id_coberturas.up.sql`.
+- Persistência: `coberturas` em `backend/migrations/12_add_gestao_pecuaria.up.sql`; coluna `touro_animal_id` em `backend/migrations/14_add_touro_animal_id_coberturas.up.sql`; índice único parcial `cio_id` em `backend/migrations/40_unique_coberturas_cio_id.up.sql`.
 
 ---
 
@@ -52,7 +52,7 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 - **Enunciado**: `GET /api/v1/fazendas/:id/animais/para-cobertura` retorna fêmeas no rebanho com cio registrado sem cobertura vinculada (`cio_id`); UI usa `AnimalSelect` com `cicloContext="cobertura"`. A escrita exige o vínculo — ver **BR-COBERTURAS-008**.
 - **Efeito**: filtro na listagem; bloqueio na escrita em `CoberturaService` (**BR-COBERTURAS-008**).
 - **Implementação**: `AnimalRepository.ListParaCoberturaByFazendaID`; `CoberturaFormFields`.
-- **Estado**: implementado (listagem); escrita reforçada em **BR-COBERTURAS-008** (planejado, briefing **BRF-010**).
+- **Estado**: implementado (listagem); escrita reforçada em **BR-COBERTURAS-008**.
 
 ### BR-COBERTURAS-007 — Elegibilidade por fase de vida (categoria e idade)
 
@@ -64,23 +64,23 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 
 ### BR-COBERTURAS-008 — Cio vinculado obrigatório
 
-- **Enunciado**: Toda cobertura (JWT, M2M e assistente) **exige** `cio_id` preenchido. O cio deve existir, pertencer ao **mesmo** `animal_id` e `fazenda_id`, e **não** estar já referenciado por outra cobertura. A data da cobertura deve ser ≥ data do cio (**TMP-003** / BR-CICLO-014). Aplica-se a todos os tipos (`IA`, `IATF`, `MONTA_NATURAL`, `TE`): IATF também regista cio (observado ou do dia do protocolo) antes da cobertura.
+- **Enunciado**: Toda cobertura (JWT, M2M e assistente) **exige** `cio_id` preenchido nas escritas novas (Create/Update). O cio deve existir, pertencer ao **mesmo** `animal_id` e `fazenda_id`, e **não** estar já referenciado por outra cobertura. A data da cobertura deve ser ≥ data do cio (**TMP-003** / BR-CICLO-014). Aplica-se a todos os tipos (`IA`, `IATF`, `MONTA_NATURAL`, `TE`): IATF também regista cio (observado ou do dia do protocolo) antes da cobertura. Registos legados sem `cio_id` permanecem **legíveis**; a coluna **não** é `NOT NULL`.
 - **Escopo**: `POST|PUT /api/v1/coberturas`; `POST /api/v1/integracoes/coberturas` (+ lote); UI `/gestao/coberturas/*`.
 - **Perfis**: conforme [acessos-perfil.md](./acessos-perfil.md) BR-ACESSO-002 (FUNCIONARIO inclui POST cios/coberturas).
 - **Efeito**: bloqueio no servidor (400) se `cio_id` ausente, inválido, de outro animal/fazenda ou já vinculado; UI envia `cio_id` (seleção automática do cio aberto do animal ou select explícito).
-- **Implementação prevista**: `CoberturaService.validateCoberturaRegras`; `CoberturaFormFields` + `novo`/`editar`; `proximas_acoes` só sugere cobertura quando existir cio sem cobertura; M2M OpenAPI/exemplos.
-- **Migration/constraint**: avaliar `NOT NULL` em `coberturas.cio_id` após backfill/legado (ou rejeitar só escritas novas se houver legado sem vínculo).
-- **Estado**: planejado (briefing **BRF-010**).
+- **Implementação**: `CoberturaService.validateCioVinculo`; `CoberturaFormFields`; `GET /api/v1/coberturas/by-animal/:id`; `proximas_acoes` via `HasCioSemCoberturaByAnimalID`; OpenAPI Create/lote com `cio_id` required.
+- **Migration/constraint**: `backend/migrations/40_unique_coberturas_cio_id.up.sql` (`uq_coberturas_cio_id`); sem `NOT NULL`.
+- **Estado**: implementado (briefing **BRF-010**).
 
 ### BR-COBERTURAS-009 — Cobertura permitida em animal PRENHE
 
-- **Enunciado**: É **permitido** registar cobertura (com cio vinculado — BR-COBERTURAS-008) em animal com `status_reprodutivo = PRENHE`, para corrigir erro de diagnóstico veterinário quando o animal voltou a dar cio. Ao criar a cobertura, o status passa a `SERVIDA` (BR-CICLO-002).
+- **Enunciado**: É **permitido** registar cobertura (com cio vinculado — BR-COBERTURAS-008) em animal com `status_reprodutivo = PRENHE`, para corrigir erro de diagnóstico veterinário quando o animal voltou a dar cio. Na mesma transação: se existir gestação `CONFIRMADA` ativa, passa a `PERDA`; o status reprodutivo passa a `SERVIDA` (BR-CICLO-002).
 - **Escopo**: Create de cobertura; não altera a regra de cio em PRENHE (BR-CIOS-003 mantém `PRENHE` ao registar cio).
 - **Perfis**: mesmos de cobertura.
-- **Efeito**: sem bloqueio por status `PRENHE`; efeito sobre gestação `CONFIRMADA` ativa — ver pergunta em aberto no **BRF-010** (não implementado até resposta).
-- **Implementação prevista**: remover qualquer bloqueio futuro por status; documentar fluxo cio→cobertura em prenhe; tratar gestação conforme decisão G1.
-- **Migration/constraint**: nenhuma (pendente decisão gestação).
-- **Estado**: planejado (briefing **BRF-010**).
+- **Efeito**: sem bloqueio por status `PRENHE`; gestação `CONFIRMADA` → `PERDA` via `CloseConfirmadaComoPerdaTx`.
+- **Implementação**: `CoberturaService.Create` em TX (`CloseConfirmadaComoPerdaTx` + `UpdateStatusReprodutivoTx`).
+- **Migration/constraint**: nenhuma.
+- **Estado**: implementado (briefing **BRF-010**).
 
 ### BR-COBERTURAS-010 — Campos MVP de IA / IATF / TE
 
@@ -88,19 +88,19 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 - **Escopo**: UI `/gestao/coberturas/novo` e `.../editar`; API já aceita os campos; listagem/detalhe podem mostrar valores quando existirem.
 - **Perfis**: mesmos de cobertura.
 - **Efeito**: informativo/captura de dados; sem novos códigos de erro obrigatórios neste MVP.
-- **Implementação prevista**: `CoberturaFormFields`; serviço frontend `coberturas.ts`; select de protocolos via API existente de `protocolos_iatf` (quando tipo `IATF`).
+- **Implementação**: `CoberturaFormFields`; `frontend/src/services/coberturas.ts`; `frontend/src/services/protocolos_iatf.ts` quando tipo `IATF`.
 - **Migration/constraint**: nenhuma.
-- **Estado**: planejado (briefing **BRF-010**).
+- **Estado**: implementado (briefing **BRF-010**).
 
 ### BR-COBERTURAS-011 — Exclusão de cobertura recalcula status reprodutivo
 
-- **Enunciado**: Após exclusão bem-sucedida de cobertura (já bloqueada se houver gestação ou toque — BR-COBERTURAS-004), o servidor **recalcula** `status_reprodutivo` do animal: se ainda existir outra cobertura do mesmo animal **sem** diagnóstico/gestação vinculada que a mantenha “servida”, permanece `SERVIDA`; caso contrário, define `VAZIA`. Atualização **silenciosa** (sem diálogo de confirmação extra além do delete).
+- **Enunciado**: Após exclusão bem-sucedida de cobertura (já bloqueada se houver gestação ou toque — BR-COBERTURAS-004), o servidor **recalcula** `status_reprodutivo` do animal: se ainda houver gestação `CONFIRMADA` → `PRENHE`; senão, se restar cobertura sem toque/gestação → `SERVIDA`; senão → `VAZIA`. Atualização **silenciosa**.
 - **Escopo**: `DELETE /api/v1/coberturas/:id` (e caminhos que reutilizem `CoberturaService.Delete`).
 - **Perfis**: quem já pode excluir cobertura.
 - **Efeito**: atualização no servidor após delete.
-- **Implementação prevista**: `CoberturaService.Delete` + `AnimalRepository.UpdateStatusReprodutivo`; testes de regressão (última cobertura vs. ainda há outra).
+- **Implementação**: `CoberturaService.Delete` + `statusAposExclusaoCobertura` + `HasCoberturaAbertaByAnimalID`.
 - **Migration/constraint**: nenhuma.
-- **Estado**: planejado (briefing **BRF-010**).
+- **Estado**: implementado (briefing **BRF-010**).
 
 ### Canal de integração externa
 
@@ -108,4 +108,4 @@ Registro de **inseminação / monta** na matriz, com tipo de serviço e identifi
 
 ---
 
-**Última atualização**: 2026-08-26 (BR-COBERTURAS-008–011 planejados — BRF-010)
+**Última atualização**: 2026-08-26 (BR-COBERTURAS-008–011 implementados — BRF-010)

@@ -190,6 +190,9 @@ export function validateCoberturaForm(
   if (!formState.animalId) {
     fields.animalId = "Selecione um animal.";
   }
+  if (!formState.cioId) {
+    fields.cioId = "Selecione o cio vinculado.";
+  }
   if (!formState.data.trim()) {
     fields.data = "Informe a data e hora da cobertura.";
   } else {

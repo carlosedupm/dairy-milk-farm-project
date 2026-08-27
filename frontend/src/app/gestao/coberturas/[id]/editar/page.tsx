@@ -28,10 +28,14 @@ function initialFormState(c: Cobertura): CoberturaFormState {
   const linked = c.touro_animal_id != null && c.touro_animal_id > 0;
   return {
     animalId: c.animal_id.toString(),
+    cioId: c.cio_id != null && c.cio_id > 0 ? String(c.cio_id) : "",
     tipo: c.tipo,
     data: c.data ? toDatetimeLocalInputValue(c.data) : "",
     touroAnimalId: linked ? String(c.touro_animal_id) : "",
     touroInfo: linked ? "" : (c.touro_info ?? ""),
+    semenPartida: c.semen_partida ?? "",
+    tecnico: c.tecnico ?? "",
+    protocoloId: c.protocolo_id != null && c.protocolo_id > 0 ? String(c.protocolo_id) : "",
     observacoes: c.observacoes ?? "",
   };
 }
@@ -49,12 +53,13 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
   const [isValidationError, setIsValidationError] = useState(false);
   const [conformidadeCode, setConformidadeCode] = useState<string | undefined>();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const chronology = useCoberturaChronology(formState.animalId);
+  const chronology = useCoberturaChronology(formState.animalId, formState.cioId);
 
   const mutation = useMutation({
     mutationFn: () =>
       update(cobertura.id, {
         animal_id: Number(formState.animalId),
+        cio_id: Number(formState.cioId),
         tipo: formState.tipo,
         data: new Date(formState.data).toISOString(),
         fazenda_id: fazendaId,
@@ -62,6 +67,9 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
         touro_info: formState.touroAnimalId
           ? undefined
           : formState.touroInfo.trim() || undefined,
+        semen_partida: formState.semenPartida.trim() || undefined,
+        tecnico: formState.tecnico.trim() || undefined,
+        protocolo_id: formState.protocoloId ? Number(formState.protocoloId) : undefined,
         observacoes: formState.observacoes.trim() || undefined,
       }),
     onSuccess: () => {
@@ -122,6 +130,7 @@ function CoberturaEditForm({ cobertura, fazendaId }: CoberturaEditFormProps) {
         formState={formState}
         setFormState={setFormState}
         preserveSelected
+        coberturaId={cobertura.id}
       />
     </GestaoFormLayout>
   );

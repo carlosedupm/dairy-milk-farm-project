@@ -54,10 +54,10 @@ Registro de **detecção de cio** na matriz (data/hora e metadados opcionais).
 - **Escopo**: Create (e Update se no futuro reaplicar status) em `/gestao/cios/*` e fluxos equivalentes (assistente).
 - **Perfis**: conforme BR-ACESSO-002.
 - **Efeito**: apenas UX — servidor mantém a regra actual; proibido adicionar modal «confirmar mudança de status» neste fluxo.
-- **Implementação prevista**: garantir que `CioFormFields` / páginas novo/editar não introduzam confirmação de status; testes E2E/manuais de regressão se existirem.
+- **Implementação**: `CioFormFields` / páginas `/gestao/cios/novo` e editar — submit directo sem modal de status (`applyStatusAfterCio`).
 - **Migration/constraint**: nenhuma.
-- **Estado**: planejado (briefing **BRF-010**).
+- **Estado**: implementado (briefing **BRF-010**).
 
 ---
 
-**Última atualização**: 2026-08-26 (BR-CIOS-006 planejado — BRF-010)
+**Última atualização**: 2026-08-26 (BR-CIOS-006 implementado — BRF-010)

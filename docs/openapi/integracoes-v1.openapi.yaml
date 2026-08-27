@@ -666,7 +666,7 @@ components:
 
     CreateCoberturaRequest:
       type: object
-      required: [animal_id, tipo, data, fazenda_id]
+      required: [animal_id, tipo, data, fazenda_id, cio_id]
       properties:
         animal_id:
           type: integer
@@ -683,7 +683,7 @@ components:
         cio_id:
           type: integer
           format: int64
-          nullable: true
+          description: Obrigatório (BR-COBERTURAS-008)
         touro_animal_id:
           type: integer
           format: int64
@@ -725,7 +725,7 @@ components:
 
     CoberturaLoteItem:
       type: object
-      required: [identificacao, tipo, data]
+      required: [identificacao, tipo, data, cio_id]
       properties:
         identificacao:
           type: string
@@ -737,7 +737,7 @@ components:
         cio_id:
           type: integer
           format: int64
-          nullable: true
+          description: Obrigatório (BR-COBERTURAS-008)
         touro_animal_id:
           type: integer
           format: int64

@@ -20,9 +20,19 @@ func NewCoberturaRepository(db *pgxpool.Pool) *CoberturaRepository {
 }
 
 func (r *CoberturaRepository) Create(ctx context.Context, c *models.Cobertura) error {
+	return r.createWithQuerier(ctx, r.db, c)
+}
+
+func (r *CoberturaRepository) CreateTx(ctx context.Context, tx pgx.Tx, c *models.Cobertura) error {
+	return r.createWithQuerier(ctx, tx, c)
+}
+
+func (r *CoberturaRepository) createWithQuerier(ctx context.Context, q interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}, c *models.Cobertura) error {
 	query := `INSERT INTO coberturas (animal_id, cio_id, tipo, data, touro_animal_id, touro_info, semen_partida, tecnico, protocolo_id, observacoes, fazenda_id, created_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at, updated_at`
-	return r.db.QueryRow(ctx, query, c.AnimalID, c.CioID, c.Tipo, c.Data, c.TouroAnimalID, c.TouroInfo, c.SemenPartida, c.Tecnico, c.ProtocoloID, c.Observacoes, c.FazendaID, c.CreatedBy).
+	return q.QueryRow(ctx, query, c.AnimalID, c.CioID, c.Tipo, c.Data, c.TouroAnimalID, c.TouroInfo, c.SemenPartida, c.Tecnico, c.ProtocoloID, c.Observacoes, c.FazendaID, c.CreatedBy).
 		Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 }
 
@@ -92,6 +102,51 @@ func (r *CoberturaRepository) Update(ctx context.Context, c *models.Cobertura) e
 func (r *CoberturaRepository) Delete(ctx context.Context, id int64) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM coberturas WHERE id = $1`, id)
 	return err
+}
+
+func (r *CoberturaRepository) DeleteTx(ctx context.Context, tx pgx.Tx, id int64) error {
+	_, err := tx.Exec(ctx, `DELETE FROM coberturas WHERE id = $1`, id)
+	return err
+}
+
+// ExistsByCioID indica se alguma cobertura (exceto excludeID) já referencia o cio.
+func (r *CoberturaRepository) ExistsByCioID(ctx context.Context, cioID, excludeID int64) (bool, error) {
+	query := `SELECT EXISTS (SELECT 1 FROM coberturas WHERE cio_id = $1 AND id <> $2)`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, cioID, excludeID).Scan(&exists)
+	return exists, err
+}
+
+// HasCoberturaAbertaByAnimalID: resta cobertura sem toque e sem gestação (BR-COBERTURAS-011).
+func (r *CoberturaRepository) HasCoberturaAbertaByAnimalID(ctx context.Context, tx pgx.Tx, animalID int64) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM coberturas cb
+			WHERE cb.animal_id = $1
+			AND NOT EXISTS (SELECT 1 FROM diagnosticos_gestacao dg WHERE dg.cobertura_id = cb.id)
+			AND NOT EXISTS (SELECT 1 FROM gestacoes g WHERE g.cobertura_id = cb.id)
+		)`
+	var exists bool
+	var err error
+	if tx != nil {
+		err = tx.QueryRow(ctx, query, animalID).Scan(&exists)
+	} else {
+		err = r.db.QueryRow(ctx, query, animalID).Scan(&exists)
+	}
+	return exists, err
+}
+
+// HasCioSemCoberturaByAnimalID: cio do animal ainda sem cobertura vinculada (BR-COBERTURAS-008).
+func (r *CoberturaRepository) HasCioSemCoberturaByAnimalID(ctx context.Context, animalID, fazendaID int64) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM cios ci
+			WHERE ci.animal_id = $1 AND ci.fazenda_id = $2
+			AND NOT EXISTS (SELECT 1 FROM coberturas cb WHERE cb.cio_id = ci.id)
+		)`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, animalID, fazendaID).Scan(&exists)
+	return exists, err
 }
 
 // HasPendenteToqueByAnimalID indica cobertura há diasMinimos+ dias sem diagnóstico de gestação.

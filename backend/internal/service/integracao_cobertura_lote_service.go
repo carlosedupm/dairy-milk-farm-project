@@ -10,10 +10,13 @@ import (
 )
 
 const (
-	CodeCoberturaTipoInvalido         = "TIPO_INVALIDO"
-	CodeCoberturaFemeaObrigatoria    = "FEMEA_OBRIGATORIA"
+	CodeCoberturaTipoInvalido          = "TIPO_INVALIDO"
+	CodeCoberturaFemeaObrigatoria      = "FEMEA_OBRIGATORIA"
 	CodeCoberturaReprodutorObrigatorio = "REPRODUTOR_OBRIGATORIO"
-	CodeCoberturaReprodutorInvalido   = "REPRODUTOR_INVALIDO"
+	CodeCoberturaReprodutorInvalido    = "REPRODUTOR_INVALIDO"
+	CodeCoberturaCioObrigatorio        = "CIO_OBRIGATORIO"
+	CodeCoberturaCioInvalido           = "CIO_INVALIDO"
+	CodeCoberturaCioJaVinculado        = "CIO_JA_VINCULADO"
 )
 
 type IntegracaoCoberturaLoteService struct {
@@ -68,6 +71,12 @@ func mapCoberturaErrorToCode(err error) string {
 		return CodeCoberturaReprodutorObrigatorio
 	case errors.Is(err, ErrCoberturaReprodutorNaoEncontrado), errors.Is(err, ErrCoberturaReprodutorInvalido):
 		return CodeCoberturaReprodutorInvalido
+	case errors.Is(err, ErrCoberturaCioObrigatorio):
+		return CodeCoberturaCioObrigatorio
+	case errors.Is(err, ErrCoberturaCioInvalido):
+		return CodeCoberturaCioInvalido
+	case errors.Is(err, ErrCoberturaCioJaVinculado):
+		return CodeCoberturaCioJaVinculado
 	case errors.Is(err, ErrAnimalNotFound):
 		return CodeAnimalNaoEncontrado
 	default:

@@ -9,8 +9,8 @@
 | ID | `BRF-010` |
 | Data | 2026-08-26 |
 | Analista | Agente (análise cio/cobertura) |
-| Status | rascunho |
-| Aprovado por (G1) | — |
+| Status | aprovado |
+| Aprovado por (G1) | desenvolvedor (decisões 1a/2a + ordem de implementação, 2026-08-26) |
 | PR vinculado (G2) | — |
 
 ## 1. Objetivo
@@ -21,11 +21,11 @@ Garantir que toda cobertura (IA, IATF, monta ou TE) fique **ligada a um cio** do
 
 | ID | Módulo | Estado atual | O que muda |
 |----|--------|--------------|------------|
-| `BR-COBERTURAS-008` | [`coberturas.md`](../business/coberturas.md) | planejado | `cio_id` obrigatório na escrita (JWT/M2M/UI) |
-| `BR-COBERTURAS-009` | [`coberturas.md`](../business/coberturas.md) | planejado | Cobertura permitida em animal `PRENHE` |
-| `BR-COBERTURAS-010` | [`coberturas.md`](../business/coberturas.md) | planejado | Campos MVP `semen_partida`, `tecnico`, `protocolo_id` na UI |
-| `BR-COBERTURAS-011` | [`coberturas.md`](../business/coberturas.md) | planejado | Delete de cobertura recalcula status |
-| `BR-CIOS-006` | [`cios.md`](../business/cios.md) | planejado | Atualização de status ao cio é silenciosa na UI |
+| `BR-COBERTURAS-008` | [`coberturas.md`](../business/coberturas.md) | implementado | `cio_id` obrigatório na escrita (JWT/M2M/UI) |
+| `BR-COBERTURAS-009` | [`coberturas.md`](../business/coberturas.md) | implementado | Cobertura permitida em animal `PRENHE` + gestação `PERDA` |
+| `BR-COBERTURAS-010` | [`coberturas.md`](../business/coberturas.md) | implementado | Campos MVP `semen_partida`, `tecnico`, `protocolo_id` na UI |
+| `BR-COBERTURAS-011` | [`coberturas.md`](../business/coberturas.md) | implementado | Delete de cobertura recalcula status |
+| `BR-CIOS-006` | [`cios.md`](../business/cios.md) | implementado | Atualização de status ao cio é silenciosa na UI |
 | `BR-COBERTURAS-006` | [`coberturas.md`](../business/coberturas.md) | implementado (ajustado) | Aponta escrita para 008 |
 | `BR-CICLO-002` | [`ciclo-rebanho.md`](../business/ciclo-rebanho.md) | implementado (nota) | Referências às extensões 008/009/011 e CIOS-006 |
 | `BR-CIOS-003` | [`cios.md`](../business/cios.md) | implementado (nota) | Explicitar `SERVIDA` → `VAZIA`; UX em 006 |
@@ -35,7 +35,7 @@ Garantir que toda cobertura (IA, IATF, monta ou TE) fique **ligada a um cio** do
 - `TMP-001` / `TMP-002` — data da cobertura e do cio (já em BR-CICLO-012/013)
 - `TMP-003` — cobertura ≥ cio vinculado (passa a aplicar sempre que `cio_id` for obrigatório)
 - `INT-008` — elegibilidade NOVILHA/MATRIZ (BR-CICLO-016/017)
-- `INT-003` / `INT-005` — gestação confirmada vs. status `PRENHE` (impacto da cobertura em prenhe — ver pergunta #1)
+- `INT-003` / `INT-005` — gestação `CONFIRMADA` fecha como `PERDA` na TX da cobertura em prenhe (resposta G1 #1a)
 - `BR-COBERTURAS-004` — exclusão ainda bloqueada com gestação/toque
 
 **Perfis autorizados** (conforme [`acessos-perfil.md`](../business/acessos-perfil.md)):
@@ -49,7 +49,7 @@ Garantir que toda cobertura (IA, IATF, monta ou TE) fique **ligada a um cio** do
 
 - **Endpoints**: `POST|PUT|DELETE /api/v1/coberturas`; `POST /api/v1/integracoes/coberturas` (+ lote); sem mudança de contrato de cios além de garantir UX alinhada a BR-CIOS-006
 - **Camadas tocadas**: `cobertura_service.go` (validação `cio_id`, delete→status, prenhe permitido); handlers JWT/M2M; OpenAPI integrações; possivelmente `animal_ciclo_service.go` (`proximas_acoes` só com cio aberto)
-- **Migration/constraint**: avaliar `NOT NULL` / backfill de `cio_id` legado — só após inventário; se legado sem cio, bloquear só escritas novas até decisão
+- **Migration/constraint**: índice único parcial `coberturas(cio_id) WHERE cio_id IS NOT NULL` (sem `NOT NULL` — legado); escritas novas exigem `cio_id`
 - **Códigos de erro**: 400 com mensagem clara para cio ausente/inválido/já vinculado; 409 mantém `ErrCoberturaTemVinculos` (BR-COBERTURAS-004)
 
 ### Frontend
@@ -85,8 +85,8 @@ Garantir que toda cobertura (IA, IATF, monta ou TE) fique **ligada a um cio** do
 
 | # | Pergunta | Resposta (desenvolvedor) |
 |---|----------|--------------------------|
-| 1 | Ao registar cobertura em animal com gestação `CONFIRMADA` ativa (caso de correção após cio em prenhe — BR-COBERTURAS-009), a gestação deve: **(a)** passar a `PERDA` na mesma transação; **(b)** bloquear a cobertura até existir toque `NEGATIVO` (ou outro encerramento); **(c)** outra regra? | |
-| 2 | Registos legados de cobertura **sem** `cio_id`: na migration, **backfill** impossível sem inventar cio — preferir **(a)** só exigir `cio_id` em escritas novas (legado read-only sem NOT NULL); **(b)** exigir limpeza manual antes do deploy? | |
+| 1 | Ao registar cobertura em animal com gestação `CONFIRMADA` ativa (caso de correção após cio em prenhe — BR-COBERTURAS-009), a gestação deve: **(a)** passar a `PERDA` na mesma transação; **(b)** bloquear a cobertura até existir toque `NEGATIVO` (ou outro encerramento); **(c)** outra regra? | **(a)** — gestação → `PERDA` na mesma TX; status → `SERVIDA`. |
+| 2 | Registos legados de cobertura **sem** `cio_id`: na migration, **backfill** impossível sem inventar cio — preferir **(a)** só exigir `cio_id` em escritas novas (legado read-only sem NOT NULL); **(b)** exigir limpeza manual antes do deploy? | **(a)** — exigir `cio_id` só em Create/Update; GET legado `nullable`; sem `NOT NULL`. |
 
 ## 6. Critérios de aceite (gate G3)
 

@@ -220,7 +220,7 @@ func main() {
 					movimentacaoLoteHandler := handlers.NewMovimentacaoLoteHandler(movimentacaoLoteSvc, animalSvc, fazendaSvc)
 					cioHandler := handlers.NewCioHandler(cioSvc, fazendaSvc)
 					protocoloIatfSvc := service.NewProtocoloIATFService(protocoloIatfRepo, fazendaRepo)
-					coberturaSvc := service.NewCoberturaService(coberturaRepo, animalRepo, fazendaRepo, gestacaoRepo, diagnosticoGestacaoRepo, cioRepo)
+					coberturaSvc := service.NewCoberturaService(pool, coberturaRepo, animalRepo, fazendaRepo, gestacaoRepo, diagnosticoGestacaoRepo, cioRepo)
 					diagnosticoGestacaoSvc := service.NewDiagnosticoGestacaoService(diagnosticoGestacaoRepo, animalRepo, gestacaoRepo, coberturaRepo, fazendaRepo)
 					gestacaoSvc := service.NewGestacaoService(gestacaoRepo, animalRepo, fazendaRepo)
 					timelineRepo := repository.NewTimelineRepository(pool)
@@ -494,6 +494,7 @@ func main() {
 					coberturas := api.Group("/v1/coberturas", auth.AuthMiddleware(jwtSvc), auth.RequirePerfilAPIAccess())
 					{
 						coberturas.GET("", coberturaHandler.GetByFazendaID)
+						coberturas.GET("/by-animal/:id", coberturaHandler.GetByAnimalID)
 						coberturas.GET("/:id", coberturaHandler.GetByID)
 						coberturas.POST("", coberturaHandler.Create)
 						coberturas.PUT("/:id", coberturaHandler.Update)

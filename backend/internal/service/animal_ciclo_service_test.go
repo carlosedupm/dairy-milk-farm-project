@@ -89,7 +89,7 @@ func TestBuildProximasAcoesCandidates(t *testing.T) {
 	lact := &models.Lactacao{ID: 3}
 
 	t.Run("gestacao e lactacao prioriza parto secagem e producao", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, lact, gest, false, models.StatusReprodutivoPrenhe, true)
+		got := buildProximasAcoesCandidates(1, lact, gest, false, models.StatusReprodutivoPrenhe, true, false)
 		if len(got) != 3 {
 			t.Fatalf("expected 3, got %d", len(got))
 		}
@@ -101,14 +101,14 @@ func TestBuildProximasAcoesCandidates(t *testing.T) {
 	})
 
 	t.Run("gestacao seca omite secagem mas mantem parto", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, nil, gest, false, models.StatusReprodutivoSeca, false)
+		got := buildProximasAcoesCandidates(1, nil, gest, false, models.StatusReprodutivoSeca, false, false)
 		if len(got) != 1 || got[0].Codigo != models.AcaoRegistrarParto {
 			t.Fatalf("got %+v", got)
 		}
 	})
 
 	t.Run("parida com lactacao sugere secagem cobertura e producao", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoParida, true)
+		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoParida, true, true)
 		if len(got) != 3 {
 			t.Fatalf("expected 3, got %d (%+v)", len(got), got)
 		}
@@ -120,7 +120,7 @@ func TestBuildProximasAcoesCandidates(t *testing.T) {
 	})
 
 	t.Run("vazia com lactacao sugere secagem cobertura e producao", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoVazia, true)
+		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoVazia, true, true)
 		if len(got) != 3 {
 			t.Fatalf("expected 3, got %d (%+v)", len(got), got)
 		}
@@ -132,30 +132,47 @@ func TestBuildProximasAcoesCandidates(t *testing.T) {
 	})
 
 	t.Run("lactacao SECA omite secagem mas mantem producao", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoSeca, false)
+		got := buildProximasAcoesCandidates(1, lact, nil, false, models.StatusReprodutivoSeca, false, false)
 		if len(got) != 1 || got[0].Codigo != models.AcaoRegistrarProducao {
 			t.Fatalf("got %+v", got)
 		}
 	})
 
 	t.Run("pendente toque sem gestacao", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, nil, nil, true, models.StatusReprodutivoServida, false)
+		got := buildProximasAcoesCandidates(1, nil, nil, true, models.StatusReprodutivoServida, false, false)
 		if len(got) != 1 || got[0].Codigo != models.AcaoRegistrarToque {
 			t.Fatalf("got %+v", got)
 		}
 	})
 
 	t.Run("servida sem elegibilidade toque", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, nil, nil, false, models.StatusReprodutivoServida, false)
+		got := buildProximasAcoesCandidates(1, nil, nil, false, models.StatusReprodutivoServida, false, false)
 		if len(got) != 0 {
 			t.Fatalf("expected empty, got %+v", got)
 		}
 	})
 
 	t.Run("vazia sugere cobertura", func(t *testing.T) {
-		got := buildProximasAcoesCandidates(1, nil, nil, false, models.StatusReprodutivoVazia, false)
+		got := buildProximasAcoesCandidates(1, nil, nil, false, models.StatusReprodutivoVazia, false, true)
 		if len(got) != 1 || got[0].Codigo != models.AcaoRegistrarCobertura {
 			t.Fatalf("got %+v", got)
+		}
+	})
+
+	t.Run("vazia sem cio aberto nao sugere cobertura", func(t *testing.T) {
+		got := buildProximasAcoesCandidates(1, nil, nil, false, models.StatusReprodutivoVazia, false, false)
+		if len(got) != 0 {
+			t.Fatalf("expected empty, got %+v", got)
+		}
+	})
+
+	t.Run("prenhe com cio aberto sugere cobertura alem do parto", func(t *testing.T) {
+		got := buildProximasAcoesCandidates(1, nil, gest, false, models.StatusReprodutivoPrenhe, false, true)
+		if len(got) != 2 {
+			t.Fatalf("expected 2, got %d (%+v)", len(got), got)
+		}
+		if got[0].Codigo != models.AcaoRegistrarParto || got[1].Codigo != models.AcaoRegistrarCobertura {
+			t.Fatalf("got %s, %s", got[0].Codigo, got[1].Codigo)
 		}
 	})
 }

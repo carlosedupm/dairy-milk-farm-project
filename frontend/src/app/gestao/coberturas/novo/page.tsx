@@ -29,10 +29,14 @@ import { nowDatetimeLocalInputValue } from "@/lib/format";
 function emptyFormState(animalId = ""): CoberturaFormState {
   return {
     animalId,
+    cioId: "",
     tipo: "MONTA_NATURAL",
     data: nowDatetimeLocalInputValue(),
     touroAnimalId: "",
     touroInfo: "",
+    semenPartida: "",
+    tecnico: "",
+    protocoloId: "",
     observacoes: "",
   };
 }
@@ -52,12 +56,13 @@ function NovoContent() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fazendaId = fazendaAtiva?.id ?? 0;
-  const chronology = useCoberturaChronology(formState.animalId);
+  const chronology = useCoberturaChronology(formState.animalId, formState.cioId);
 
   const mutation = useMutation({
     mutationFn: () =>
       create({
         animal_id: Number(formState.animalId),
+        cio_id: Number(formState.cioId),
         tipo: formState.tipo,
         data: new Date(formState.data).toISOString(),
         fazenda_id: fazendaAtiva!.id,
@@ -65,6 +70,9 @@ function NovoContent() {
         touro_info: formState.touroAnimalId
           ? undefined
           : formState.touroInfo.trim() || undefined,
+        semen_partida: formState.semenPartida.trim() || undefined,
+        tecnico: formState.tecnico.trim() || undefined,
+        protocolo_id: formState.protocoloId ? Number(formState.protocoloId) : undefined,
         observacoes: formState.observacoes.trim() || undefined,
       }),
     onSuccess: async () => {

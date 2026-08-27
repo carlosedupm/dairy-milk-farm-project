@@ -68,7 +68,9 @@
 - `GET /api/v1/animais/:id/timeline?limit=&offset=&tipo=` — histórico paginado (`todos|ciclo|saude|alertas|vacinas`); resposta `{ timeline, total }`
 - `GET|POST /api/v1/animais/:id/vacinas` + `GET|PUT|DELETE /api/v1/animais/:id/vacinas/:vacinaId` + `PATCH .../:vacinaId/aplicar` — calendário de vacinação (BRF-001, BR-SAUDE-007–011); status derivado (`PREVISTA|APLICADA|ATRASADA|REFORCO_VENCIDO`); aplicar → auto-resolve alertas + caso PREVENTIVO em `animal_saude` (`vacina_id`); FUNCIONARIO: GET + POST aplicada + PATCH aplicar (agendar/PUT/DELETE → 403, BR-ACESSO-022)
 - `GET /api/v1/fazendas/:id/animais/em-lactacao` (animais com lactação ativa; mesma autorização que listagem por fazenda)
-- `GET /api/v1/fazendas/:id/animais/para-cobertura` | `para-toque` | `para-parto` | `para-abertura-lactacao` — listagens de elegibilidade por marco do ciclo (BR-CICLO-015); `AnimalSelect` com `cicloContext` no frontend
+- `GET /api/v1/fazendas/:id/animais/para-cio` | `para-cobertura` | `para-toque` | `para-parto` | `para-abertura-lactacao` — listagens de elegibilidade por marco do ciclo (BR-CICLO-015/018); `AnimalSelect` com `cicloContext` no frontend
+- `GET /api/v1/cios/by-animal/:id` — cios do animal (form de cobertura escolhe cio aberto)
+- `GET|POST|PUT|DELETE /api/v1/coberturas` + `GET /api/v1/coberturas/by-animal/:id` — escritas novas exigem `cio_id` (BR-COBERTURAS-008); Create em TX fecha gestação `CONFIRMADA` como `PERDA` se o animal estiver prenhe (BR-COBERTURAS-009)
 - `GET /api/v1/fazendas/:id/restricoes-leite/ativas` | `POST /api/v1/fazendas/:id/restricoes-leite` | `PATCH /api/v1/fazendas/:id/restricoes-leite/:restricaoId/liberar` (descarte até laboratório; ver `docs/business/leite-restricoes.md`)
 - `GET /api/v1/dev-studio/usage` | `POST /api/v1/dev-studio/chat|refine|validate|implement` | `GET /history|/status/:id`
 
@@ -88,3 +90,5 @@
 - **Exibição da resposta (modo Live)**: Texto exibido como texto puro (`whitespace-pre-wrap`), sem interpretação de markdown (sem negrito a partir de `*`), para que o usuário não precise "falar" asterisco e TTS/visual permaneçam consistentes. Implementação: `AssistenteInput.tsx` — `<p className="text-foreground whitespace-pre-wrap">` em vez de ReactMarkdown.
 - **Formato de resposta (API)**: O system instruction do Assistente Live e o prompt do endpoint interpretar instruem o modelo a responder em texto puro, sem markdown e sem asteriscos (*), para exibição e TTS consistentes.
 - **UX uso sem fone**: Fala do usuário é prioridade. Barge-in no frontend ocorre em dois níveis: detecção precoce de fala (interim) para cortar TTS rapidamente e envio final do texto reconhecido. Anti-eco usa `isEchoTranscript` + `ECHO_PHRASES`, janela pós-TTS maior no mobile e reabertura inteligente do microfone no Live (respeitando fim do TTS/janela anti-eco). Prewarm de microfone usa `echoCancellation`, `noiseSuppression` e `autoGainControl`. UI mantém dicas: "Pode falar agora" e mensagem para uso com alto-falante.
+
+**Última atualização**: 2026-08-26

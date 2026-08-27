@@ -4,22 +4,21 @@
 
 ## Status geral
 
-Stack **Go + Next.js** em produção (Render + Vercel). Fases 2 e 3 fechadas em código; briefings BRF-001 a BRF-009 implementados.
+Stack **Go + Next.js** em produção (Render + Vercel). Fases 2 e 3 fechadas em código; briefings BRF-001 a BRF-009 implementados. **BRF-010** implementado em código (G3 manual pendente).
 
-**Foco atual:** fechar G1 do **BRF-010** (cio↔cobertura) e validação operacional Tier 0 em staging.
+**Foco atual:** validação operacional Tier 0 em staging e aceite G3 do BRF-010.
 
 ## Em andamento
 
-- **BRF-010 (rascunho)** — cio obrigatório na cobertura, cobertura em prenhe, campos IA MVP, delete→status, cio silencioso (`BR-COBERTURAS-008`–`011`, `BR-CIOS-006`). Aguarda 2 respostas no briefing e `Status → aprovado`. Ver [`docs/briefings/BRF-010-cio-cobertura-vinculo-status.md`](../docs/briefings/BRF-010-cio-cobertura-vinculo-status.md).
 - **Validação operacional Tier 0** — checklist Fase 2, migrations 36/37, M2M em staging, e ações manuais de segurança (`METRICS_TOKEN`, rotação de chave TestSprite). Ver [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md).
+- **BRF-010 G3** — fluxo cio→cobertura vinculada, cobertura em prenhe (`PERDA`), delete→status. Briefing `aprovado`. Ver [`docs/briefings/BRF-010-cio-cobertura-vinculo-status.md`](../docs/briefings/BRF-010-cio-cobertura-vinculo-status.md).
 
 ## Próximos passos imediatos
 
-1. **G1 BRF-010** — responder perguntas em aberto (gestação `CONFIRMADA` ao cobrir prenhe; legado sem `cio_id`); promover briefing a `aprovado`; só então implementar.
-2. **Tier 0 staging (Render)** — seções 1–5 de [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md): `METRICS_TOKEN`, TestSprite, regressão Fase 2 manual, M2M em `:8080`, migration 38 em ambiente real.
-3. **Validação manual G3** — BRF-006 (geração admin/cron) e BRF-007 (assistente no curral com perfil `FUNCIONARIO`).
-4. **Tier 2** — `BR-INTEG-013`/`014` (M2M produção e partos); testes de integração; `BR-ACESSO-010` (convites); assistente fases 2–4.
-5. **Recuperação de senha** — adiada até definir SMTP (ver [`deploy/env-vars.md`](deploy/env-vars.md)).
+1. **Tier 0 staging (Render)** — seções 1–5 de [`docs/tests/staging-validation-tier0.md`](../docs/tests/staging-validation-tier0.md): `METRICS_TOKEN`, TestSprite, regressão Fase 2 manual, M2M em `:8080`, migration 38 em ambiente real.
+2. **Validação manual G3** — BRF-010 (cio/cobertura); BRF-006 (geração admin/cron) e BRF-007 (assistente no curral com perfil `FUNCIONARIO`).
+3. **Tier 2** — `BR-INTEG-013`/`014` (M2M produção e partos); testes de integração; `BR-ACESSO-010` (convites); assistente fases 2–4.
+4. **Recuperação de senha** — adiada até definir SMTP (ver [`deploy/env-vars.md`](deploy/env-vars.md)).
 
 ## Módulos em produção
 
