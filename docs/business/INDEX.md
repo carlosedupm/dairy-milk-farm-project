@@ -4,7 +4,7 @@
 > o CI (`validate-br-refs.mjs`) exige paridade com headings/tabelas em
 > `docs/business/`.
 
-**Total**: 226 IDs formais.
+**Total**: 231 IDs formais.
 
 ## ACESSO
 
@@ -151,6 +151,7 @@
 | `BR-CIOS-003` | [cios.md](./cios.md) |
 | `BR-CIOS-004` | [cios.md](./cios.md) |
 | `BR-CIOS-005` | [cios.md](./cios.md) |
+| `BR-CIOS-006` | [cios.md](./cios.md) |
 
 ## COBERTURAS
 
@@ -163,6 +164,10 @@
 | `BR-COBERTURAS-005` | [coberturas.md](./coberturas.md) |
 | `BR-COBERTURAS-006` | [coberturas.md](./coberturas.md) |
 | `BR-COBERTURAS-007` | [coberturas.md](./coberturas.md) |
+| `BR-COBERTURAS-008` | [coberturas.md](./coberturas.md) |
+| `BR-COBERTURAS-009` | [coberturas.md](./coberturas.md) |
+| `BR-COBERTURAS-010` | [coberturas.md](./coberturas.md) |
+| `BR-COBERTURAS-011` | [coberturas.md](./coberturas.md) |
 
 ## FOLGAS
 
@@ -347,4 +352,4 @@
 | `BR-TOQUES-007` | [toques.md](./toques.md) |
 | `BR-TOQUES-008` | [toques.md](./toques.md) |
 
-**Gerado em**: 2026-08-26
+**Gerado em**: 2026-08-27

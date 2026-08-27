@@ -47,8 +47,8 @@ Ver também [AGENTS.md](../../AGENTS.md) e a skill `atualizar-documentacao` (`.c
 | Módulo | Arquivo | Estado do catálogo |
 |--------|---------|-------------------|
 | Animais (busca contextual) | [animais.md](./animais.md) | ✅ |
-| Cios (detecção) | [cios.md](./cios.md) | ✅ |
-| Coberturas (reprodução) | [coberturas.md](./coberturas.md) | ✅ |
+| Cios (detecção) | [cios.md](./cios.md) | ✅ (+ `BR-CIOS-006` planejado — BRF-010) |
+| Coberturas (reprodução) | [coberturas.md](./coberturas.md) | ✅ (+ `BR-COBERTURAS-008`–`011` planejados — BRF-010) |
 | Toques (diagnóstico gestação) | [toques.md](./toques.md) | ✅ |
 | Gestações | [gestacoes.md](./gestacoes.md) | ✅ |
 | Secagens | [secagens.md](./secagens.md) | ✅ |
@@ -76,4 +76,4 @@ Ver também [AGENTS.md](../../AGENTS.md) e a skill `atualizar-documentacao` (`.c
 
 ---
 
-**Última atualização**: 2026-08-25 (índice: BR-CICLO-019; harness multi-tool)
+**Última atualização**: 2026-08-26 (BRF-010 — cio↔cobertura planejado)

@@ -81,18 +81,19 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 ### BR-CICLO-002 — Propagação de status reprodutivo por eventos
 
 - **Enunciado**: O campo `animais.status_reprodutivo` deve refletir o **último marco reprodutivo relevante**, atualizado pelo servidor ao registrar:
-  - cobertura → `SERVIDA`;
+  - cobertura → `SERVIDA` (permitido também em animal `PRENHE` — [coberturas.md](./coberturas.md) **BR-COBERTURAS-009**, planejado);
   - toque positivo com `cobertura_id` → `PRENHE` (+ gestação `CONFIRMADA`);
   - toque `NEGATIVO` → `VAZIA`;
-  - cio detectado → `VAZIA` (exceto animal já `PRENHE`);
+  - cio detectado → `VAZIA` (exceto animal já `PRENHE`); atualização **silenciosa** na UI — [cios.md](./cios.md) **BR-CIOS-006**;
   - parto → `PARIDA`;
-  - secagem → `SECA`.
+  - secagem → `SECA`;
+  - **exclusão** de cobertura sem vínculos → recalcula `VAZIA` ou mantém `SERVIDA` se restar cobertura “aberta” — **BR-COBERTURAS-011** (planejado).
 - **Escopo**: Por animal.
 - **Efeito**: bloqueio/atualização no servidor; UI exibe rótulo derivado do cadastro.
 - **Implementação**: `CoberturaService`, `DiagnosticoGestacaoService`, `CioService`, `PartoService`, `SecagemService` → `AnimalRepository.UpdateStatusReprodutivo`.
-- **Nota**: na UI/API de curral, o operador pode informar `classificacao_operacional` (`PRENHA`, `VAZIA`, … — ver [toques.md](./toques.md) BR-TOQUES-006); o servidor deriva `resultado` canônico antes de aplicar as regras acima.
+- **Nota**: na UI/API de curral, o operador pode informar `classificacao_operacional` (`PRENHA`, `VAZIA`, … — ver [toques.md](./toques.md) BR-TOQUES-006); o servidor deriva `resultado` canônico antes de aplicar as regras acima. Cobertura **exige** `cio_id` — **BR-COBERTURAS-008** (planejado, BRF-010).
 - **Exceção — baixa do rebanho**: a **saída** do animal ([baixa-rebanho.md](./baixa-rebanho.md) BR-BAIXA-008) **não** propaga `status_reprodutivo`; o valor mantém-se como arquivo «estado ao sair».
-- **Estado**: **implementado** (toque `INCONCLUSIVO` não altera status; edição manual no cadastro do animal ainda possível).
+- **Estado**: **implementado** (núcleo); extensões BR-COBERTURAS-008/009/011 e BR-CIOS-006 em **planejado** (BRF-010).
 
 ### BR-CICLO-003 — Gestação confirmada só após toque positivo
 
@@ -235,8 +236,8 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 | Etapa | Estado produto | Notas |
 |-------|----------------|-------|
 | Cadastro / origem / cria no rebanho | Implementado | Parto → animal automático |
-| Cio | Implementado | BR-CIOS-003/005; elegibilidade categoria/idade (BRF-004) |
-| Cobertura → servida | Implementado | [coberturas.md](./coberturas.md) |
+| Cio | Implementado | BR-CIOS-003/005; elegibilidade (BRF-004); UX silenciosa BR-CIOS-006 (BRF-010 planejado) |
+| Cobertura → servida | Parcial | Cio obrigatório + MVP IA + exclusão→status (BR-COBERTURAS-008–011, BRF-010) |
 | Toque → gestação | Implementado | FUNCIONARIO com toques (BR-ACESSO-015) |
 | Gestação (lista) | Implementado | Partos previstos na home (BR-CICLO-009) |
 | Secagem | Implementado | Encerra lactação ativa na mesma transação |
@@ -262,7 +263,8 @@ Matriz completa (severidade, push, limiares): [alertas.md](./alertas.md).
 | BR-ALERTA-018 / BR-HORM-012 | Alerta automático hormônio lactação pendente | [BRF-006](../briefings/BRF-006-alerta-hormonio-lactacao-pendente.md) | implementado |
 | BR-ACESSO-006 ext. | Assistente FUNCIONARIO fase 1 (consulta) | Plano [assistente-funcionario-fases.md](../ops/assistente-funcionario-fases.md) | planejado |
 | BR-CICLO-019 / BR-ANIMAIS-013 | Links de navegação para eventos do ciclo na ficha | [BRF-008](../briefings/BRF-008-links-navegacao-eventos-ciclo-ficha.md) | implementado |
+| BR-COBERTURAS-008–011 / BR-CIOS-006 | Cio obrigatório na cobertura; prenhe coberta; campos IA MVP; delete→status; cio silencioso | [BRF-010](../briefings/BRF-010-cio-cobertura-vinculo-status.md) | planejado |
 
 ---
 
-**Última atualização**: 2026-08-25 (BR-CICLO-008 — Visão Geral resumo curto; hub só na tab Ciclo)
+**Última atualização**: 2026-08-26 (backlog BRF-010 — cio↔cobertura)

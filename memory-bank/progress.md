@@ -44,6 +44,7 @@ Briefings BRF-001 a BRF-009: todos `implementado`. Ver [`docs/briefings/README.m
 
 ### Funcionalidades
 
+- [ ] **BRF-010** (`rascunho`) — cio obrigatório na cobertura; cobertura em prenhe; campos IA MVP; delete→status; cio silencioso (`BR-COBERTURAS-008`–`011`, `BR-CIOS-006`) — aguarda G1
 - [ ] `BR-INTEG-013`/`014` — escopos M2M de produção e partos
 - [ ] `BR-ACESSO-010` — convites de usuário
 - [ ] Assistente fases 2–4
@@ -59,4 +60,4 @@ Briefings BRF-001 a BRF-009: todos `implementado`. Ver [`docs/briefings/README.m
 
 ---
 
-**Última atualização**: 2026-08-25
+**Última atualização**: 2026-08-26

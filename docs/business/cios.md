@@ -28,10 +28,10 @@ Registro de **detecção de cio** na matriz (data/hora e metadados opcionais).
 
 ### BR-CIOS-003 — Cio atualiza status reprodutivo
 
-- **Enunciado**: Ao registrar cio, o servidor define `status_reprodutivo` = `VAZIA`, exceto se o animal já estiver `PRENHE`.
+- **Enunciado**: Ao registrar cio, o servidor define `status_reprodutivo` = `VAZIA`, exceto se o animal já estiver `PRENHE`. Inclui animal `SERVIDA` (retorno de cio → `VAZIA`).
 - **Efeito**: atualização no servidor (BR-CICLO-002); `usuario_id` gravado com o utilizador autenticado.
 - **Implementação**: `CioService.Create` + `applyStatusAfterCio`; `CioHandler.Create` preenche `usuario_id`.
-- **Estado**: implementado.
+- **Estado**: implementado. Comportamento de UI (sem confirmação): ver **BR-CIOS-006**.
 
 ### BR-CIOS-004 — Data do cio (temporal)
 
@@ -48,6 +48,16 @@ Registro de **detecção de cio** na matriz (data/hora e metadados opcionais).
 - **Implementação**: `CioService.Create`/`Update` + `ValidateElegibilidadeReprodutiva`; `CioFormFields` com `cicloContext="cio"`.
 - **Estado**: implementado (briefing **BRF-004**).
 
+### BR-CIOS-006 — Atualização silenciosa de status ao registar cio
+
+- **Enunciado**: A mudança de `status_reprodutivo` provocada pelo registo de cio (**BR-CIOS-003** / BR-CICLO-002) — nomeadamente `SERVIDA` → `VAZIA` — é **silenciosa**: a UI **não** apresenta diálogo de confirmação adicional além do submit normal do formulário. Animal já `PRENHE` continua sem alteração de status (BR-CIOS-003).
+- **Escopo**: Create (e Update se no futuro reaplicar status) em `/gestao/cios/*` e fluxos equivalentes (assistente).
+- **Perfis**: conforme BR-ACESSO-002.
+- **Efeito**: apenas UX — servidor mantém a regra actual; proibido adicionar modal «confirmar mudança de status» neste fluxo.
+- **Implementação prevista**: garantir que `CioFormFields` / páginas novo/editar não introduzam confirmação de status; testes E2E/manuais de regressão se existirem.
+- **Migration/constraint**: nenhuma.
+- **Estado**: planejado (briefing **BRF-010**).
+
 ---
 
-**Última atualização**: 2026-06-09 (BR-CIOS-005 implementado — BRF-004)
+**Última atualização**: 2026-08-26 (BR-CIOS-006 planejado — BRF-010)
